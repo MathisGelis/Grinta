@@ -18,13 +18,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reset Git Credentials (Prevent conflict)
-        run: |
-          git remote remove epitech || true
-          git remote add epitech https://x-access-token:${{ secrets.TEK_REPO_PAT }}@github.com/EpitechPromo2027/G-EIP-600-LYN-6-1-eip-ethan.bas.git
-
-      - name: Push to Epitech Repo
+      - name: Setup Git credentials
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
+
+      - name: Add Epitech repo as remote
+        run: |
+          git remote remove epitech || true
+          git remote add epitech https://github_pat:${{ secrets.TEK_REPO_PAT }}@github.com/EpitechPromo2027/G-EIP-600-LYN-6-1-eip-ethan.bas.git
+
+      - name: Push to Epitech repository
+        run: |
           git push --mirror epitech
