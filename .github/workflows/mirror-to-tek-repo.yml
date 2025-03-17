@@ -1,0 +1,25 @@
+name: Mirror Repository to Epitech Repository
+
+on:
+  push:
+    branches:
+      - "**"
+  delete:
+    branches:
+      - "**"
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Epitech Repo
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git remote add epitech https://x-access-token:${{ secrets.TEK_REPO_PAT }}@github.com:EpitechPromo2027/G-EIP-600-LYN-6-1-eip-ethan.bas.git
