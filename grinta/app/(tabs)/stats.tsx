@@ -1,56 +1,87 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
 import { useRouter } from "expo-router";
-import BottomBar from '../(tabs)/bottomBar';
+import BottomBar from "../bottomBar";
 import { LineChart, BarChart } from "react-native-chart-kit";
 
 export default function StatsScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('week');
-  
+  const [activeTab, setActiveTab] = useState("week");
+
   const caloriesData = {
     week: {
       labels: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
       datasets: [
         {
           data: [520, 680, 750, 420, 890, 730, 600],
-          color: () => '#8A2BE2',
-          strokeWidth: 2
-        }
-      ]
+          color: () => "#8A2BE2",
+          strokeWidth: 2,
+        },
+      ],
     },
     month: {
       labels: ["Sem 1", "Sem 2", "Sem 3", "Sem 4"],
       datasets: [
         {
           data: [3200, 4100, 3750, 4500],
-          color: () => '#8A2BE2',
-          strokeWidth: 2
-        }
-      ]
-    }
+          color: () => "#8A2BE2",
+          strokeWidth: 2,
+        },
+      ],
+    },
   };
 
   const activitiesData = {
     labels: ["Course", "Musculation", "Cardio", "Yoga"],
     datasets: [
       {
-        data: [45, 25, 20, 10]
-      }
-    ]
+        data: [45, 25, 20, 10],
+      },
+    ],
   };
 
   const metricsData = [
-    { title: "Calories", value: "12,540", unit: "kcal", change: "+8%", timeframe: "ce mois" },
-    { title: "Temps d'activité", value: "18.5", unit: "heures", change: "+12%", timeframe: "ce mois" },
-    { title: "Distance", value: "42.7", unit: "km", change: "+5%", timeframe: "ce mois" },
-    { title: "Entraînements", value: "24", unit: "", change: "+3", timeframe: "ce mois" }
+    {
+      title: "Calories",
+      value: "12,540",
+      unit: "kcal",
+      change: "+8%",
+      timeframe: "ce mois",
+    },
+    {
+      title: "Temps d'activité",
+      value: "18.5",
+      unit: "heures",
+      change: "+12%",
+      timeframe: "ce mois",
+    },
+    {
+      title: "Distance",
+      value: "42.7",
+      unit: "km",
+      change: "+5%",
+      timeframe: "ce mois",
+    },
+    {
+      title: "Entraînements",
+      value: "24",
+      unit: "",
+      change: "+3",
+      timeframe: "ce mois",
+    },
   ];
 
   const goalsData = [
     { title: "Brûler 3000 kcal/semaine", progress: 85 },
     { title: "S'entraîner 5x par semaine", progress: 100 },
-    { title: "Courir 20km par semaine", progress: 65 }
+    { title: "Courir 20km par semaine", progress: 65 },
   ];
 
   const screenWidth = Dimensions.get("window").width;
@@ -58,29 +89,43 @@ export default function StatsScreen() {
   const chartConfig = {
     backgroundGradientFrom: "#ffffff",
     backgroundGradientTo: "#ffffff",
-    color: () => '#8A2BE2',
+    color: () => "#8A2BE2",
     strokeWidth: 2,
     barPercentage: 0.5,
     decimalPlaces: 0,
     propsForLabels: {
       fontSize: 10,
-    }
+    },
   };
 
   const renderTabs = () => {
     return (
       <View style={styles.tabsContainer}>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'week' && styles.activeTab]} 
-          onPress={() => setActiveTab('week')}
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "week" && styles.activeTab]}
+          onPress={() => setActiveTab("week")}
         >
-          <Text style={[styles.tabText, activeTab === 'week' && styles.activeTabText]}>Semaine</Text>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "week" && styles.activeTabText,
+            ]}
+          >
+            Semaine
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'month' && styles.activeTab]} 
-          onPress={() => setActiveTab('month')}
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "month" && styles.activeTab]}
+          onPress={() => setActiveTab("month")}
         >
-          <Text style={[styles.tabText, activeTab === 'month' && styles.activeTabText]}>Mois</Text>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "month" && styles.activeTabText,
+            ]}
+          >
+            Mois
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -96,7 +141,12 @@ export default function StatsScreen() {
               <Text style={styles.metricValue}>{metric.value}</Text>
               <Text style={styles.metricUnit}>{metric.unit}</Text>
             </View>
-            <Text style={[styles.metricChange, metric.change.includes('+') ? styles.positive : styles.negative]}>
+            <Text
+              style={[
+                styles.metricChange,
+                metric.change.includes("+") ? styles.positive : styles.negative,
+              ]}
+            >
               {metric.change} {metric.timeframe}
             </Text>
           </View>
@@ -116,7 +166,9 @@ export default function StatsScreen() {
               <Text style={styles.goalPercentage}>{goal.progress}%</Text>
             </View>
             <View style={styles.progressBarBackground}>
-              <View style={[styles.progressBar, { width: `${goal.progress}%` }]} />
+              <View
+                style={[styles.progressBar, { width: `${goal.progress}%` }]}
+              />
             </View>
           </View>
         ))}
@@ -129,7 +181,9 @@ export default function StatsScreen() {
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Mes Statistiques</Text>
-          <Text style={styles.headerSubtitle}>Vue d'ensemble de vos performances</Text>
+          <Text style={styles.headerSubtitle}>
+            Vue d'ensemble de vos performances
+          </Text>
         </View>
 
         {renderMetrics()}
@@ -172,7 +226,7 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   scrollView: {
     flex: 1,
@@ -185,20 +239,20 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginTop: 5,
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 15,
     margin: 10,
     padding: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -206,12 +260,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 15,
-    color: '#333',
+    color: "#333",
   },
   tabsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 15,
   },
   tab: {
@@ -219,35 +273,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 20,
     marginRight: 10,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   activeTab: {
-    backgroundColor: '#8A2BE2',
+    backgroundColor: "#8A2BE2",
   },
   tabText: {
-    color: '#666',
-    fontWeight: '500',
+    color: "#666",
+    fontWeight: "500",
   },
   activeTabText: {
-    color: '#fff',
+    color: "#fff",
   },
   chart: {
     marginVertical: 8,
     borderRadius: 10,
   },
   metricsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     padding: 10,
   },
   metricCard: {
-    backgroundColor: '#fff',
-    width: '48%',
+    backgroundColor: "#fff",
+    width: "48%",
     borderRadius: 15,
     padding: 15,
     marginBottom: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -255,21 +309,21 @@ const styles = StyleSheet.create({
   },
   metricTitle: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 5,
   },
   metricValueContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
   },
   metricValue: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   metricUnit: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginLeft: 3,
   },
   metricChange: {
@@ -277,17 +331,17 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   positive: {
-    color: '#4CAF50',
+    color: "#4CAF50",
   },
   negative: {
-    color: '#F44336',
+    color: "#F44336",
   },
   goalsContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 15,
     margin: 10,
     padding: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -298,28 +352,28 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   goalTextContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 5,
   },
   goalTitle: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
   },
   goalPercentage: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#8A2BE2',
+    fontWeight: "bold",
+    color: "#8A2BE2",
   },
   progressBarBackground: {
     height: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressBar: {
-    height: '100%',
-    backgroundColor: '#8A2BE2',
+    height: "100%",
+    backgroundColor: "#8A2BE2",
     borderRadius: 4,
-  }
+  },
 });

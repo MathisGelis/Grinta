@@ -1,9 +1,8 @@
-import React from 'react';
+import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 
-interface BottomBarProps {
-}
+interface BottomBarProps {}
 
 const BottomBar: React.FC<BottomBarProps> = () => {
   const router = useRouter();
@@ -13,11 +12,11 @@ const BottomBar: React.FC<BottomBarProps> = () => {
 
   return (
     <View style={styles.bottomNav}>
-      <TouchableOpacity 
-        style={styles.navItem} 
+      <TouchableOpacity
+        style={styles.navItem}
         onPress={() => router.push("/explore")}
       >
-        {isActive('/explore') ? (
+        {isActive("/explore") ? (
           <View style={styles.activeItemContainer}>
             <Text style={styles.navIconActive}>📍</Text>
             <Text style={styles.navTextActive}>Explore</Text>
@@ -30,11 +29,11 @@ const BottomBar: React.FC<BottomBarProps> = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.navItem} 
+      <TouchableOpacity
+        style={styles.navItem}
         onPress={() => router.push("/workouts")}
       >
-        {isActive('/workouts') ? (
+        {isActive("/workouts") ? (
           <View style={styles.activeItemContainer}>
             <Text style={styles.navIconActive}>💪</Text>
             <Text style={styles.navTextActive}>Workouts</Text>
@@ -47,11 +46,11 @@ const BottomBar: React.FC<BottomBarProps> = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.navItem} 
+      <TouchableOpacity
+        style={styles.navItem}
         onPress={() => router.push("/stats")}
       >
-        {isActive('/stats') ? (
+        {isActive("/stats") ? (
           <View style={styles.activeItemContainer}>
             <Text style={styles.navIconActive}>📊</Text>
             <Text style={styles.navTextActive}>Stats</Text>
@@ -64,11 +63,11 @@ const BottomBar: React.FC<BottomBarProps> = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.navItem} 
+      <TouchableOpacity
+        style={styles.navItem}
         onPress={() => router.push("/profile")}
       >
-        {isActive('/profile') ? (
+        {isActive("/profile") ? (
           <View style={styles.activeItemContainer}>
             <Text style={styles.navIconActive}>👤</Text>
             <Text style={styles.navTextActive}>Profile</Text>
@@ -86,24 +85,24 @@ const BottomBar: React.FC<BottomBarProps> = () => {
 
 const styles = StyleSheet.create({
   bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
     paddingVertical: 8,
     borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
+    borderTopColor: "#EEEEEE",
   },
   navItem: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   activeItemContainer: {
-    backgroundColor: '#8A2BE2',
+    backgroundColor: "#8A2BE2",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   navIcon: {
     fontSize: 20,
@@ -111,17 +110,17 @@ const styles = StyleSheet.create({
   },
   navIconActive: {
     fontSize: 20,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     marginBottom: 2,
   },
   navText: {
     fontSize: 12,
-    color: '#333',
+    color: "#333",
   },
   navTextActive: {
     fontSize: 12,
-    color: '#FFFFFF',
-  }
+    color: "#FFFFFF",
+  },
 });
 
 export default BottomBar;

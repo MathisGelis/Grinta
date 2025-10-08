@@ -1,7 +1,15 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from "react-native";
+import React from "react";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
+} from "react-native";
 import { useRouter } from "expo-router";
-import BottomBar from '../(tabs)/bottomBar';
+import BottomBar from "../bottomBar";
 
 const TargetMuscles = ({ muscles }: { muscles: string[] }) => {
   return (
@@ -17,18 +25,20 @@ const TargetMuscles = ({ muscles }: { muscles: string[] }) => {
   );
 };
 
-const Pagination = ({ current, total }: { current: number, total: number }) => {
+const Pagination = ({ current, total }: { current: number; total: number }) => {
   return (
     <View style={styles.paginationContainer}>
-      {Array(total).fill(0).map((_, i) => (
-        <View 
-          key={i} 
-          style={[
-            styles.paginationDot, 
-            i === current ? styles.paginationDotActive : {}
-          ]} 
-        />
-      ))}
+      {Array(total)
+        .fill(0)
+        .map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.paginationDot,
+              i === current ? styles.paginationDotActive : {},
+            ]}
+          />
+        ))}
     </View>
   );
 };
@@ -53,7 +63,10 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
     <TouchableOpacity style={styles.workoutCard}>
       <View style={styles.workoutHeader}>
         <View style={styles.authorContainer}>
-          <Image source={{ uri: workout.authorImage }} style={styles.authorImage} />
+          <Image
+            source={{ uri: workout.authorImage }}
+            style={styles.authorImage}
+          />
           <View style={styles.authorInfo}>
             <Text style={styles.authorName}>{workout.authorName}</Text>
             <Text style={styles.authorLocation}>{workout.authorLocation}</Text>
@@ -66,14 +79,16 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
           </View>
         )}
       </View>
-      
-      <Text style={[
-        styles.workoutName, 
-        workout.color ? { color: workout.color } : {}
-      ]}>
+
+      <Text
+        style={[
+          styles.workoutName,
+          workout.color ? { color: workout.color } : {},
+        ]}
+      >
         {workout.name}
       </Text>
-      
+
       {workout.duration && (
         <View style={styles.workoutStatsContainer}>
           <TargetMuscles muscles={workout.targetMuscles} />
@@ -82,9 +97,9 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
               <Text style={styles.statValue}>{workout.duration}</Text>
               <Text style={styles.statLabel}>Duration</Text>
             </View>
-            
+
             <View style={styles.statDivider} />
-            
+
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{workout.calories} Kcal</Text>
               <Text style={styles.statLabel}>Calories burned</Text>
@@ -92,7 +107,7 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
           </View>
         </View>
       )}
-      
+
       {workout.id === 2 && <Pagination current={0} total={3} />}
     </TouchableOpacity>
   );
@@ -100,7 +115,7 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
 
 export default function ExploreScreen() {
   const router = useRouter();
-  
+
   const workouts = [
     {
       id: 1,
@@ -108,8 +123,9 @@ export default function ExploreScreen() {
       targetMuscles: ["biceps", "triceps"],
       authorName: "Chris Bumstead",
       authorLocation: "Ottawa, Canada",
-      authorImage: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-      streak: 3
+      authorImage:
+        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+      streak: 3,
     },
     {
       id: 2,
@@ -117,10 +133,11 @@ export default function ExploreScreen() {
       targetMuscles: ["chest", "shoulders"],
       authorName: "Thomas Dupuis",
       authorLocation: "Lyon, France",
-      authorImage: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+      authorImage:
+        "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
       duration: "1h 45m",
       calories: 300,
-      color: "#9370DB"
+      color: "#9370DB",
     },
     {
       id: 3,
@@ -128,21 +145,22 @@ export default function ExploreScreen() {
       targetMuscles: ["quads", "hamstrings", "calves"],
       authorName: "Marta Rodriguez",
       authorLocation: "Barcelone, Espagne",
-      authorImage: "https://images.unsplash.com/photo-1594381898411-846e7d193883?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+      authorImage:
+        "https://images.unsplash.com/photo-1594381898411-846e7d193883?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
       streak: 6,
-      color: "#9370DB"
-    }
+      color: "#9370DB",
+    },
   ];
-  
+
   const filterOptions = [
     { id: 1, icon: "👍", count: 5 },
-    { id: 2, icon: "+" }
+    { id: 2, icon: "+" },
   ];
 
   return (
     <View style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconButton}>
           <Text style={styles.headerIcon}>🔍</Text>
@@ -152,22 +170,27 @@ export default function ExploreScreen() {
           <Text style={styles.headerIcon}>💬</Text>
         </TouchableOpacity>
       </View>
-      
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {workouts.map(workout => (
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {workouts.map((workout) => (
           <WorkoutCard key={workout.id} workout={workout} />
         ))}
-        
+
         <View style={styles.filterContainer}>
-          {filterOptions.map(option => (
+          {filterOptions.map((option) => (
             <TouchableOpacity key={option.id} style={styles.filterOption}>
               <Text style={styles.filterIcon}>{option.icon}</Text>
-              {option.count && <Text style={styles.filterCount}>{option.count}</Text>}
+              {option.count && (
+                <Text style={styles.filterCount}>{option.count}</Text>
+              )}
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
-      
+
       <BottomBar />
     </View>
   );
@@ -176,25 +199,25 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: "#F8F8F8",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
   },
   headerIcon: {
     fontSize: 20,
@@ -202,8 +225,8 @@ const styles = StyleSheet.create({
   iconButton: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollView: {
     flex: 1,
@@ -212,27 +235,27 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   workoutCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 15,
     marginHorizontal: 15,
     marginVertical: 8,
     padding: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#EEEEEE',
+    borderColor: "#EEEEEE",
   },
   workoutHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   authorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   authorImage: {
     width: 45,
@@ -241,20 +264,20 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   authorInfo: {
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   authorName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
   },
   authorLocation: {
     fontSize: 14,
-    color: '#777777',
+    color: "#777777",
   },
   streakContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   streakEmoji: {
     fontSize: 18,
@@ -262,42 +285,42 @@ const styles = StyleSheet.create({
   },
   streakCount: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
   },
   workoutName: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
     marginTop: 10,
     marginBottom: 15,
   },
   workoutStatsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F2F2F7',
+    flexDirection: "row",
+    backgroundColor: "#F2F2F7",
     borderRadius: 10,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 15,
   },
   bodyContainer: {
-    flexDirection: 'row',
-    width: '40%',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    width: "40%",
+    justifyContent: "space-around",
+    alignItems: "center",
     padding: 10,
   },
   bodyOutline: {
     height: 120,
     width: 35,
-    borderColor: '#999999',
+    borderColor: "#999999",
     borderWidth: 0.5,
-    position: 'relative',
+    position: "relative",
     marginHorizontal: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   muscleFill: {
-    position: 'absolute',
-    backgroundColor: '#FF6347',
+    position: "absolute",
+    backgroundColor: "#FF6347",
     opacity: 0.7,
   },
   chestMuscle: {
@@ -331,37 +354,37 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
   },
   statLabel: {
     fontSize: 14,
-    color: '#777777',
+    color: "#777777",
   },
   statDivider: {
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
     marginVertical: 15,
   },
   paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 5,
   },
   paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#555555',
+    backgroundColor: "#555555",
     marginHorizontal: 3,
   },
   paginationDotActive: {
-    backgroundColor: '#9370DB',
+    backgroundColor: "#9370DB",
     width: 16,
   },
   filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 10,
     marginBottom: 20,
   },
@@ -369,27 +392,27 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F2F2F7',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F2F2F7",
+    justifyContent: "center",
+    alignItems: "center",
     marginHorizontal: 5,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
   },
   filterIcon: {
     fontSize: 18,
   },
   filterCount: {
-    position: 'absolute',
+    position: "absolute",
     top: -5,
     right: -5,
-    backgroundColor: '#9370DB',
+    backgroundColor: "#9370DB",
     borderRadius: 10,
     width: 20,
     height: 20,
-    textAlign: 'center',
-    color: '#FFFFFF',
+    textAlign: "center",
+    color: "#FFFFFF",
     fontSize: 12,
     lineHeight: 20,
-  }
+  },
 });
