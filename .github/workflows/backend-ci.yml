@@ -1,0 +1,62 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - backend
+      - dev
+      - main
+  pull_request:
+    branches:
+      - backend
+      - dev
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      # 3. Cache Node modules
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 4. Install dependencies
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      # 5. Run linter
+      - name: Run ESLint
+        working-directory: backend
+        run: npm run lint
+
+      # 6. Run format check
+      - name: Check formatting
+        working-directory: backend
+        run: npm run format -- --check
+
+      # 7. Run tests
+      - name: Run tests
+        working-directory: backend
+        run: npm test
+
+      # 8. Build project
+      - name: Build project
+        working-directory: backend
+        run: npm run build

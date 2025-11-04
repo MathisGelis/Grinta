@@ -43,3 +43,6 @@ captures/
 
 # Flutter build outputs
 build/
+
+# Misc
+*.txt
