@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import LandingScreen from "@features/landing/screens/LandingScreen";
-import RegisterScreen from "@features/auth/screens/RegisterScreen";
-import SplashScreen from "@features/welcome/screens/SplashScreen";
-import OnboardingScreen from "@features/welcome/screens/OnboardingScreen";
-import { getItem } from "@core/services/storage";
+import LandingScreen from "../mobile/src/features/landing/screens/LandingScreen";
+import RegisterScreen from "../mobile/src/features/auth/screens/RegisterScreen";
+import SplashScreen from "../mobile/src/features/welcome/screens/SplashScreen";
+import OnboardingScreen from "../mobile/src/features/welcome/screens/OnboardingScreen";
+import { getItem } from "../mobile/src/core/services/storage";
 
 export type RootStackParamList = {
     Splash: undefined;

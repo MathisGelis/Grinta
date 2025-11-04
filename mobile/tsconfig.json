@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
+    "baseUrl": "mobile/src",
     "paths": {
       "@core/*": [
         "core/*"

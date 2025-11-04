@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "@navigation/RootNavigator";
+import type { RootStackParamList } from "../mobile/src/navigation/RootNavigator";
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList, "Splash">;
 

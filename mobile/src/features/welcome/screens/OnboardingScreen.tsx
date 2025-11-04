@@ -3,9 +3,9 @@ import { View, FlatList, StyleSheet, TouchableOpacity, Text, Animated } from "re
 import { useNavigation } from "@react-navigation/native";
 import { slides } from "../data/slides";
 import OnboardingSlide from "../components/OnboardingSlide";
-import { saveItem } from "@core/services/storage";
+import { saveItem } from "../mobile/src/core/services/storage";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "@navigation/RootNavigator";
+import type { RootStackParamList } from "../mobile/src/navigation/RootNavigator";
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList, "Onboarding">;
 

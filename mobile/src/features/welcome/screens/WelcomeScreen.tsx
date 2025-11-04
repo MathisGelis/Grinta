@@ -1,23 +1,26 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { saveItem } from "../mobile/src/core/services/storage";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "@navigation/RootNavigator";
+import type { RootStackParamList } from "../mobile/src/navigation/RootNavigator";
 
-type NavigationProps = NativeStackNavigationProp<RootStackParamList, "Landing">;
+type NavigationProps = NativeStackNavigationProp<RootStackParamList, "Welcome">;
 
-export default function LandingScreen() {
+export default function WelcomeScreen() {
     const navigation = useNavigation<NavigationProps>();
+
+    const handleStart = () => {
+        saveItem("hasSeenWelcome", "true"); // 🔒 on stocke une info locale
+        navigation.replace("Landing"); // 👈 on redirige sans retour possible
+    };
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Welcome to Grinta 💪</Text>
-            <Text style={styles.subtitle}>
-                Track your workouts, connect with others, and push your limits.
-            </Text>
-
-            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Register")}>
-                <Text style={styles.buttonText}>Get Started</Text>
+            <Text style={styles.subtitle}>Let’s get you started.</Text>
+            <TouchableOpacity style={styles.button} onPress={handleStart}>
+                <Text style={styles.buttonText}>Continue</Text>
             </TouchableOpacity>
         </View>
     );
@@ -33,20 +36,18 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 28,
-        fontWeight: "bold",
         color: "#fff",
+        fontWeight: "bold",
         marginBottom: 10,
     },
     subtitle: {
         fontSize: 16,
         color: "#bbb",
-        textAlign: "center",
         marginBottom: 30,
     },
     button: {
         backgroundColor: "#7B61FF",
-        paddingVertical: 12,
-        paddingHorizontal: 30,
+        padding: 14,
         borderRadius: 10,
     },
     buttonText: {
