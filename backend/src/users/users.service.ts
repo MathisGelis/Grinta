@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './users.entity';
@@ -14,11 +18,16 @@ export class UsersService {
   ) {}
 
   async registerUser(userData: CreateUserDto): Promise<User> {
-    const existing = await this.userRepository.findOne({ where: { email: userData.email } });
+    const existing = await this.userRepository.findOne({
+      where: { email: userData.email },
+    });
     if (existing) throw new BadRequestException('Email already in use');
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
-    const newUser = this.userRepository.create({ ...userData, password: hashedPassword });
+    const newUser = this.userRepository.create({
+      ...userData,
+      password: hashedPassword,
+    });
     return await this.userRepository.save(newUser);
   }
 
@@ -33,7 +42,9 @@ export class UsersService {
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
 
     if (updateData.email && updateData.email !== user.email) {
-      const existing = await this.userRepository.findOne({ where: { email: updateData.email } });
+      const existing = await this.userRepository.findOne({
+        where: { email: updateData.email },
+      });
       if (existing) throw new BadRequestException('Email already in use');
     }
 
@@ -47,7 +58,8 @@ export class UsersService {
 
   async deleteUser(id: string): Promise<{ message: string }> {
     const result = await this.userRepository.delete(id);
-    if (result.affected === 0) throw new NotFoundException(`User with ID ${id} not found`);
+    if (result.affected === 0)
+      throw new NotFoundException(`User with ID ${id} not found`);
     return { message: 'User deleted successfully' };
   }
 }
