@@ -1,0 +1,54 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - frontend
+      - dev
+      - main
+  pull_request:
+    branches:
+      - frontend
+      - dev
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      # 3. Cache Pub packages
+      - name: Cache Pub packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            mobile/.pub-cache
+            mobile/.packages
+          key: ${{ runner.os }}-flutter-${{ hashFiles('mobile/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      # 4. Get dependencies
+      - name: Get Flutter packages
+        working-directory: mobile
+        run: flutter pub get
+
+      # 5. Run Flutter analyze (lint)
+      - name: Run Flutter analyze
+        working-directory: mobile
+        run: flutter analyze
+
+      # 6. Run tests
+      - name: Run Flutter tests
+        working-directory: mobile
+        run: flutter test
