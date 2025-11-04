@@ -13,42 +13,45 @@ on:
       - main
 
 jobs:
-  front-build-and-test:
+  react-native-build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
+      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Setup Flutter
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          flutter-version: 'stable'
+          node-version: '22'
 
-      # 3. Cache Pub packages
-      - name: Cache Pub packages
+      # 3. Cache npm modules
+      - name: Cache Node modules
         uses: actions/cache@v3
         with:
-          path: |
-            mobile/.pub-cache
-            mobile/.packages
-          key: ${{ runner.os }}-flutter-${{ hashFiles('mobile/pubspec.lock') }}
+          path: mobile/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('mobile/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-flutter-
+            ${{ runner.os }}-node-
 
-      # 4. Get dependencies
-      - name: Get Flutter packages
+      # 4. Install dependencies
+      - name: Install dependencies
         working-directory: mobile
-        run: flutter pub get
+        run: npm ci
 
-      # 5. Run Flutter analyze (lint)
-      - name: Run Flutter analyze
+      # 5. Run ESLint
+      - name: Run ESLint
         working-directory: mobile
-        run: flutter analyze
+        run: npm run lint
 
-      # 6. Run tests
-      - name: Run Flutter tests
+      # 6. Run Prettier check
+      - name: Run Prettier check
         working-directory: mobile
-        run: flutter test
+        run: npm run format -- --check
+
+      # 7. Run Jest tests
+      - name: Run unit tests
+        working-directory: mobile
+        run: npm test
