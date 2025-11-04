@@ -39,7 +39,7 @@ jobs:
       # 4. Install dependencies
       - name: Install dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install
 
       # 5. Run linter
       - name: Run ESLint
