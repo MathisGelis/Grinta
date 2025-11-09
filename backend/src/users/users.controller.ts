@@ -11,6 +11,7 @@ import { UsersService } from './users.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Auth } from 'src/auth/auth.decorators';
 
 @ApiTags('users')
 @Controller('users')
@@ -25,6 +26,7 @@ export class UsersController {
     return this.usersService.registerUser(user);
   }
 
+  @Auth()
   @Get(':id')
   @ApiOperation({ summary: 'Find a user by ID' })
   @ApiResponse({ status: 200, description: 'User found' })
@@ -33,6 +35,7 @@ export class UsersController {
     return this.usersService.findUserById(id);
   }
 
+  @Auth()
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
@@ -42,6 +45,7 @@ export class UsersController {
     return this.usersService.updateUser(id, updateData);
   }
 
+  @Auth()
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a user by ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
