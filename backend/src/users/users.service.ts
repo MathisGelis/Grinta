@@ -62,4 +62,8 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     return { message: 'User deleted successfully' };
   }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
 }
