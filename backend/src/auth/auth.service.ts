@@ -23,7 +23,8 @@ export class AuthService {
       email: user.email,
       sub: user.id,
     };
+    const token: string = this.jwtService.sign(payload);
 
-    return { access_token: this.jwtService.sign(payload) };
+    return { access_token: token };
   }
 }
