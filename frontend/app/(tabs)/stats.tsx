@@ -7,12 +7,10 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
-import { useRouter } from "expo-router";
 import BottomBar from "../bottomBar";
 import { LineChart, BarChart } from "react-native-chart-kit";
 
 export default function StatsScreen() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState("week");
 
   const caloriesData = {
@@ -182,7 +180,7 @@ export default function StatsScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Mes Statistiques</Text>
           <Text style={styles.headerSubtitle}>
-            Vue d'ensemble de vos performances
+            Vue d&apos;ensemble de vos performances
           </Text>
         </View>
 

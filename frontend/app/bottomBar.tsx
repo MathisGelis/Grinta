@@ -2,9 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 
-interface BottomBarProps {}
-
-const BottomBar: React.FC<BottomBarProps> = () => {
+const BottomBar = () => {
   const router = useRouter();
   const pathname = usePathname();
 

@@ -5,19 +5,13 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
-  Dimensions,
   StatusBar,
   ImageBackground,
 } from "react-native";
-import { useRouter } from "expo-router";
 import BottomBar from "../bottomBar";
 
 export default function ProfileScreen() {
-  const router = useRouter();
-  const { width } = Dimensions.get("window");
-
   const friends = [
     {
       id: 1,
