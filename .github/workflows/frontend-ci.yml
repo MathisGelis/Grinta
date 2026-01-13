@@ -43,15 +43,15 @@ jobs:
 
       # 5. Run ESLint
       - name: Run ESLint
-        working-directory: mobile
+        working-directory: frontend
         run: npm run lint
 
       # 6. Run Prettier check
       # - name: Run Prettier check
-      #   working-directory: mobile
+      #   working-directory: frontend
       #   run: npm run format -- --check
 
       # 7. Run Jest tests
       # - name: Run unit tests
-      #   working-directory: mobile
+      #   working-directory: frontend
       #   run: npm test
