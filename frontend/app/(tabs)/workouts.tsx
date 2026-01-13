@@ -4,13 +4,11 @@ import {
   Text,
   Image,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Dimensions,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import BottomBar from "../bottomBar";
 
 interface Exercise {
@@ -41,7 +39,6 @@ interface Workout {
 
 export default function WorkoutScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
   const [currentExercise, setCurrentExercise] = useState<number | null>(null);
 
   const workout: Workout = {
@@ -254,7 +251,9 @@ export default function WorkoutScreen() {
 
       <View style={styles.startButtonContainer}>
         <TouchableOpacity style={styles.startButton} onPress={startWorkout}>
-          <Text style={styles.startButtonText}>COMMENCER L'ENTRAÎNEMENT</Text>
+          <Text style={styles.startButtonText}>
+            COMMENCER L&apos;ENTRAÎNEMENT
+          </Text>
         </TouchableOpacity>
       </View>
 

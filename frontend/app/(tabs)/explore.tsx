@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   StatusBar,
 } from "react-native";
-import { useRouter } from "expo-router";
 import BottomBar from "../bottomBar";
 
 const TargetMuscles = ({ muscles }: { muscles: string[] }) => {
@@ -114,8 +113,6 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
 };
 
 export default function ExploreScreen() {
-  const router = useRouter();
-
   const workouts = [
     {
       id: 1,
