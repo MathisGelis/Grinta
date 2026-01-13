@@ -1,10 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  Unique,
-  OneToMany,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, Unique, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { EquipmentType } from '../enums/equipment-type.enum';
 import { DetailedMuscleGroup } from '../enums/detailed-muscle.enum';
