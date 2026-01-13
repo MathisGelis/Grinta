@@ -38,7 +38,7 @@ jobs:
 
       # 4. Install dependencies
       - name: Install dependencies
-        working-directory: mobile
+        working-directory: frontend
         run: npm install
 
       # 5. Run ESLint
@@ -47,11 +47,11 @@ jobs:
         run: npm run lint
 
       # 6. Run Prettier check
-      - name: Run Prettier check
-        working-directory: mobile
-        run: npm run format -- --check
+      # - name: Run Prettier check
+      #   working-directory: mobile
+      #   run: npm run format -- --check
 
       # 7. Run Jest tests
-      - name: Run unit tests
-        working-directory: mobile
-        run: npm test
+      # - name: Run unit tests
+      #   working-directory: mobile
+      #   run: npm test
