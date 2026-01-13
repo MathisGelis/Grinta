@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@nestjs/jwt": "^11.0.1",
+    "@nestjs/passport": "^11.0.5",
+    "bcrypt": "^6.0.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/passport-jwt": "^4.0.1"
+  }
+}
