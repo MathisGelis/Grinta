@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MinLength, IsArray } from 'class-validator';
 import { EquipmentType } from '../enums/equipment-type.enum';
 import { DetailedMuscleGroup } from '../enums/detailed-muscle.enum';
 import { ExerciseType } from '../enums/exercise-type.enum';
@@ -18,10 +18,16 @@ export class CreateExerciseDto {
   @IsEnum(DetailedMuscleGroup)
   primary_muscle: DetailedMuscleGroup;
 
-  @ApiProperty({ enum: DetailedMuscleGroup, required: false })
+  @ApiProperty({
+    enum: DetailedMuscleGroup,
+    isArray: true,
+    required: false,
+    example: ['TRICEPS', 'FRONT_DELTS'],
+  })
   @IsOptional()
-  @IsEnum(DetailedMuscleGroup)
-  secondary_muscle?: DetailedMuscleGroup;
+  @IsArray()
+  @IsEnum(DetailedMuscleGroup, { each: true })
+  secondary_muscles?: DetailedMuscleGroup[];
 
   @ApiProperty({ enum: ExerciseType })
   @IsEnum(ExerciseType)

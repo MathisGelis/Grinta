@@ -24,9 +24,18 @@ export class Exercise {
   @ApiProperty({ enum: DetailedMuscleGroup })
   primary_muscle: DetailedMuscleGroup;
 
-  @Column({ type: 'enum', enum: DetailedMuscleGroup, nullable: true })
-  @ApiProperty({ enum: DetailedMuscleGroup, required: false })
-  secondary_muscle?: DetailedMuscleGroup;
+  @Column({
+    type: 'enum',
+    enum: DetailedMuscleGroup,
+    array: true,
+    nullable: true,
+  })
+  @ApiProperty({
+    enum: DetailedMuscleGroup,
+    isArray: true,
+    required: false,
+  })
+  secondary_muscles?: DetailedMuscleGroup[];
 
   @Column({ type: 'enum', enum: ExerciseType })
   @ApiProperty({ enum: ExerciseType })
