@@ -17,6 +17,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         database: config.get<string>('DB_NAME'),
         autoLoadEntities: true,
         synchronize: true, // only for dev, use migrations in prod
+
+        // CLEANER LOGIN
+        logging: ['error'],
+        logger: 'advanced-console',
+        retryAttempts: 0,
       }),
     }),
   ],
