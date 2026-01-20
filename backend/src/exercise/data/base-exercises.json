@@ -1367,5 +1367,269 @@
       "secondary_muscle": [""],
       "exercise_type": "",
       "image_url": ""
+    },
+    {
+      "name": "Hanging Knee Raise",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hanging Leg Raise",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Heel Taps",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hex Press",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "High Knee Skips",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "High Knees",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "HIIT",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Abduction",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Abduction",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Adduction",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Adduction",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Thrust",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Thrust",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Thrust",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Thrust",
+      "equipment_type": "smith_machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hip Thrust",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hollow Rock",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Incline Push Ups",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Inverted Row",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Iso-Lateral High Row",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Iso-Lateral Low Row",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Iso-Lateral Row",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Iso-Lateral Row",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Jump Rope",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Jump Shrug",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Jump Squat",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Jumping Jack",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Jumping Lunge",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Kipping Pull Up",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Knee Raise Parallel Bars",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Kneeling Pulldown",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Kneeling Pulldown",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Kneeling Push Up",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
     }
 ]
