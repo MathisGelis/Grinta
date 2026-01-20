@@ -1,41 +1,1371 @@
 [
     {
-      "name": "Barbell Bench Press",
+      "name": "Ab Scissors",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Ab Wheel",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Alternating Bicep Curl",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Alternating Hammer Curl",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Arnold Press (Seated)",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Arnold Press (Standing)",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Around the world",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Assisted Pistol Squats",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Back Extension",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Back Extension",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Back Extension (Weighted)",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Baesyan Curl",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Baesyan Curl",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Ball Slams",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Battle Ropes",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Belt Squat",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Dip",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press",
+      "equipment_type": "smith_machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press - Close Grip",
       "equipment_type": "barbell",
-      "primary_muscle": "middle_chest",
-      "secondary_muscle": "triceps",
-      "exercise_type": "weight_reps",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
       "image_url": ""
     },
     {
-      "name": "Pull Ups",
-      "equipment_type": "none",
-      "primary_muscle": "upper_back",
-      "secondary_muscle": "biceps",
-      "exercise_type": "bodyweight_reps",
-      "image_url": ""
-    },
-    {
-      "name": "Dumbbell Shoulder Press",
-      "equipment_type": "dumbbell",
-      "primary_muscle": "front_delts",
-      "secondary_muscle": "triceps",
-      "exercise_type": "weight_reps",
-      "image_url": ""
-    },
-    {
-      "name": "Barbell Squat",
+      "name": "Bench Press - Wide Grip",
       "equipment_type": "barbell",
-      "primary_muscle": "quads",
-      "secondary_muscle": "glutes",
-      "exercise_type": "weight_reps",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
       "image_url": ""
     },
     {
-      "name": "Plank",
+      "name": "Bench Press (Decline)",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press (Decline)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press (Decline)",
+      "equipment_type": "smith_machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press (Incline)",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press (Incline)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bench Press (Incline)",
+      "equipment_type": "smith_machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bent Over Row",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bent Over Row",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bent Over Row",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },{
+      "name": "Bicep Curl",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },{
+      "name": "Bicep Curl",
+      "equipment_type": "kettlebell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },{
+      "name": "Bicep Curl",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },{
+      "name": "Bicep Curl",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl (EZ Bar)",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl (EZ Bar)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl (Incline)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl (Incline)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl (Seated)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl (Standing)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicep Curl (Standing)",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicycle Crunch",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bicycle Crunch Raised Legs",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bird Dog",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Box Jump",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Box Squat",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Box Squat",
+      "equipment_type": "smith_machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Boxing",
       "equipment_type": "none",
-      "primary_muscle": "full_body",
-      "exercise_type": "duration",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Bulgarian Split Squat",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Burpee",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Butterfly",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Extension",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Extension",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Press",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Press",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Raise",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Raise",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Raise",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Raise",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Raise",
+      "equipment_type": "smith_machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Raise",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Raise (Seated)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Calf Raise (Seated)",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Dip (Assisted)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Dip (Bodyweight)",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Dip (Weighted)",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Fly",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Fly",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },{
+      "name": "Chest Fly",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },{
+      "name": "Chest Fly",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },{
+      "name": "Chest Fly",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Fly (Decline)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Fly (High to Low)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Fly (Incline)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Fly (Low to High)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Fly (Seated)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Fly (Suspension)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Press",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Press",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Press",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Press (Decline)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Press (Decline)",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Press (Incline)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Press (Incline)",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Supported Incline Row",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Supported Reverse Fly",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chest Supported Y Raise",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chin Up",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chin Up (Assisted)",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Chin Up (Weigthed)",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Clap Push Ups",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Climbing",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Concentration Curl",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Cross Body Hammer Curl",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Crunch",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Crunch",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Crunch",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Crunch",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Crunch (Weighted)",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Cycling",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Cycling",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Cycling - Air Bike",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Dead Bug",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Dead Hang",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Deadlift",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Deadlift",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Deadlift",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Deadlift",
+      "equipment_type": "smith_machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Deadlift (Sumo)",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Deadlift High Pull",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Decline Crunch",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Decline Crunch (Weighted)",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Decline Push Up",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Diamond Push Up",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Dip (Seated)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Dip (Seated)",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Downward Dog",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Drag Curl",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Dragon Flag",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Dragonfly",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Dual Low Bicep Curl",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Elbow to Knee",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Elliptical Trainer",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Face Pull",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Farmers Walk",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Farmers Walk",
+      "equipment_type": "kettlebell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Floor Press",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Floor Press",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Flutter Kicks",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Frog Jumps",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Frog Pumps",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Lever Hold",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Lever Hold",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Lever Raise",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Lever Raise",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Raise",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Raise",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Raise",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Raise",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Raise",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Raise (Suspension)",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Front Squat",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Full Squat",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Glute Bridge",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Glute Ham Raise",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Glute Kickback",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Glute Kickback",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Glute Kickback",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Glute Kickback on Floor",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Goblet Squat",
+      "equipment_type": "kettlebell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Gorilla Row (Kettlebell)",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hack Squat",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hack Squat",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hack Squat",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hack Squat (Reverse)",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hammer Curl",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hammer Curl",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hammer Curl",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hammer Curl",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hammer Curl (Seated Incline)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hammer Curl (Standing)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hamstring Leg Curl (Lying)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hamstring Leg Curl (Lying)",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hamstring Leg Curl (Seated)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hamstring Leg Curl (Seated)",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hamstring Leg Curl (Stading)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Hamstring Leg Curl (Stading)",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Handstand Hold",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Handstand Push Up",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
       "image_url": ""
     }
 ]
