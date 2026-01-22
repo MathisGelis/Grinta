@@ -1,53 +1,41 @@
+import { navigate } from "expo-router/build/global-state/routing";
 import { AuthService } from "@/services/auth.service";
 import { TokenService } from "@/services/token.service";
-import { navigate } from "expo-router/build/global-state/routing";
 import React, { useState } from "react";
 import {
-  StyleSheet,
+  View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  View,
 } from "react-native";
 
-export default function RegisterScreen() {
-  const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
+export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  const handleRegister = async () => {
-    if (password !== confirmPassword) {
-      setError("Mot de passe et confirmation ne correspondent pas");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setInfoMessage("Veuillez remplir tous les champs");
       return;
     }
+
     try {
       setLoading(true);
-      const response = await AuthService.register(email, password, name);
+      const response = await AuthService.login(email, password);
       await TokenService.save(response.access_token);
     } catch (err: any) {
-      setError(err.message);
+      setInfoMessage(err.message);
     } finally {
       setLoading(false);
       navigate("/explore");
     }
-
-    setError("");
-    navigate("/explore");
   };
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create your Grinta account 💪</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        placeholderTextColor="#aaa"
-        value={name}
-        onChangeText={setName}
-      />
+      <Text style={styles.title}>Login to Grinta</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -55,6 +43,7 @@ export default function RegisterScreen() {
         value={email}
         onChangeText={setEmail}
       />
+
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -63,20 +52,15 @@ export default function RegisterScreen() {
         value={password}
         onChangeText={setPassword}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        secureTextEntry
-        placeholderTextColor="#aaa"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
-      {error ? <Text style={styles.title}>{error}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+      {infoMessage && <Text style={styles.buttonText}>{infoMessage}</Text>}
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleLogin}
+        disabled={loading}
+      >
         <Text style={styles.buttonText}>
-          <Text style={styles.buttonText}>
-            {loading ? "Connexion..." : "Register"}
-          </Text>
+          {loading ? "Connexion..." : "Login"}
         </Text>
       </TouchableOpacity>
     </View>

@@ -1,0 +1,41 @@
+[
+    {
+      "name": "Barbell Bench Press",
+      "equipment_type": "barbell",
+      "primary_muscle": "middle_chest",
+      "secondary_muscle": "triceps",
+      "exercise_type": "weight_reps",
+      "image_url": ""
+    },
+    {
+      "name": "Pull Ups",
+      "equipment_type": "none",
+      "primary_muscle": "upper_back",
+      "secondary_muscle": "biceps",
+      "exercise_type": "bodyweight_reps",
+      "image_url": ""
+    },
+    {
+      "name": "Dumbbell Shoulder Press",
+      "equipment_type": "dumbbell",
+      "primary_muscle": "front_delts",
+      "secondary_muscle": "triceps",
+      "exercise_type": "weight_reps",
+      "image_url": ""
+    },
+    {
+      "name": "Barbell Squat",
+      "equipment_type": "barbell",
+      "primary_muscle": "quads",
+      "secondary_muscle": "glutes",
+      "exercise_type": "weight_reps",
+      "image_url": ""
+    },
+    {
+      "name": "Plank",
+      "equipment_type": "none",
+      "primary_muscle": "full_body",
+      "exercise_type": "duration",
+      "image_url": ""
+    }
+]
