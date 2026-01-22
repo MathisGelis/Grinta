@@ -1,13 +1,13 @@
 import React from "react";
 import {
-  View,
-  Text,
   Image,
-  TouchableOpacity,
-  StyleSheet,
+  ImageBackground,
   ScrollView,
   StatusBar,
-  ImageBackground,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import BottomBar from "../bottomBar";
 

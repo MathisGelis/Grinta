@@ -18,6 +18,12 @@ export default function LandingScreen() {
 
       <TouchableOpacity
         style={styles.button}
+        onPress={() => navigation.navigate("Login")}
+      >
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.button}
         onPress={() => navigation.navigate("Register")}
       >
         <Text style={styles.buttonText}>Get Started</Text>
