@@ -1631,5 +1631,349 @@
       "secondary_muscle": [""],
       "exercise_type": "",
       "image_url": ""
+    },
+    {
+      "name": "L-Sit Hold",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Landmine 180",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Landmine Press",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Landmine Row",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Landmine Squat and Press",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pulldown",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pulldown",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pulldown",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pulldown",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pulldown - Close Grip",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pulldown (Narrow V-Handle)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pulldown (Reverse Grip)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pullover",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pullover",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pullover",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pullover (Bar)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lat Pullover (Rope)",
+      "equipment_type": "cable",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Box Jump",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Leg Raises",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Lunge",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Raise",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Raise (Seated)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Raise (Seated)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Raise (Standing)",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Raise (Standing)",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lateral Squat",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Leg Press",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Leg Press",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Leg Press Horizontal",
+      "equipment_type": "machine",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Leg Press Horizontal",
+      "equipment_type": "plate_loaded",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Leg Raise Parallel Bars",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Leg Raise Parallel Bars (Weighted)",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Low Row (Suspension)",
+      "equipment_type": "band",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lunge",
+      "equipment_type": "barbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lunge",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lunge",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lying Bicep Curl",
+      "equipment_type": "dumbell",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lying Knee Raise",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lying Leg Raise",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lying Neck Curls",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lying Neck Curls (Weighted)",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lying Neck Extension",
+      "equipment_type": "none",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
+    },
+    {
+      "name": "Lying Neck Extension (Weighted)",
+      "equipment_type": "",
+      "primary_muscle": "",
+      "secondary_muscle": [""],
+      "exercise_type": "",
+      "image_url": ""
     }
 ]
