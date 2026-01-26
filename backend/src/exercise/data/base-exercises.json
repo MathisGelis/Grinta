@@ -4,7 +4,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["upper_abs", "hip_flexors", "obliques"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -12,39 +12,39 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs", "obliques", "lats"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
       "name": "Alternating Bicep Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Alternating Hammer Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Arnold Press (Seated)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Arnold Press (Standing)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -52,7 +52,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "assisted_bodyweight",
       "image_url": ""
     },
     {
@@ -60,7 +60,7 @@
       "equipment_type": "machine",
       "primary_muscle": "lower_back",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -68,7 +68,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_back",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -76,7 +76,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_back",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -84,15 +84,15 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Baesyan Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -100,7 +100,7 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -108,7 +108,7 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": ["forearms", "front_delts", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -116,7 +116,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "forearms",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -124,7 +124,7 @@
       "equipment_type": "cable",
       "primary_muscle": "forearms",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -132,7 +132,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -140,7 +140,7 @@
       "equipment_type": "none",
       "primary_muscle": "triceps",
       "secondary_muscle": ["front_delts", "lower_chest"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -148,15 +148,15 @@
       "equipment_type": "cable",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Bench Press",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -164,7 +164,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -172,7 +172,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "triceps",
       "secondary_muscle": ["middle_chest", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -180,7 +180,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -188,15 +188,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Bench Press (Decline)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -204,7 +204,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -212,15 +212,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "upper_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Bench Press (Incline)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "upper_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -228,7 +228,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "upper_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -236,7 +236,7 @@
       "equipment_type": "band",
       "primary_muscle": "lats",
       "secondary_muscle": ["rhomboids", "traps", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -244,15 +244,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["rhomboids", "traps", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Bent Over Row",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["rhomboids", "traps", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -260,7 +260,7 @@
       "equipment_type": "band",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -268,35 +268,35 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },{
       "name": "Bicep Curl",
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },{
       "name": "Bicep Curl",
       "equipment_type": "kettlebell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },{
       "name": "Bicep Curl",
       "equipment_type": "machine",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },{
       "name": "Bicep Curl",
       "equipment_type": "plate_loaded",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -304,7 +304,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -312,7 +312,7 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -320,31 +320,31 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Bicep Curl (Incline)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Bicep Curl (Seated)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Bicep Curl (Standing)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -352,7 +352,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -360,7 +360,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["obliques", "lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -368,7 +368,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["upper_abs", "obliques", "hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -376,7 +376,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_back",
       "secondary_muscle": ["glutes", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -384,7 +384,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "calves"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -392,7 +392,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -400,7 +400,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -408,15 +408,15 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": ["full_body"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
       "name": "Bulgarian Split Squat",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -424,7 +424,7 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": ["cardio"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -432,7 +432,7 @@
       "equipment_type": "machine",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -440,7 +440,7 @@
       "equipment_type": "machine",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -448,7 +448,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -456,7 +456,7 @@
       "equipment_type": "machine",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -464,7 +464,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -472,15 +472,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Calf Raise",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -488,7 +488,7 @@
       "equipment_type": "machine",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -496,7 +496,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -504,7 +504,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -512,7 +512,7 @@
       "equipment_type": "none",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -520,7 +520,7 @@
       "equipment_type": "machine",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -528,7 +528,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "calves",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -536,7 +536,7 @@
       "equipment_type": "machine",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "assisted_bodyweight",
       "image_url": ""
     },
     {
@@ -544,7 +544,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -552,7 +552,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -560,7 +560,7 @@
       "equipment_type": "band",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -568,36 +568,36 @@
       "equipment_type": "cable",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },{
       "name": "Chest Fly",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },{
       "name": "Chest Fly",
       "equipment_type": "machine",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },{
       "name": "Chest Fly",
       "equipment_type": "plate_loaded",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Chest Fly (Decline)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -605,15 +605,15 @@
       "equipment_type": "cable",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Chest Fly (Incline)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "upper_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -621,7 +621,7 @@
       "equipment_type": "cable",
       "primary_muscle": "upper_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -629,7 +629,7 @@
       "equipment_type": "cable",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -637,7 +637,7 @@
       "equipment_type": "cable",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -645,7 +645,7 @@
       "equipment_type": "band",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -653,7 +653,7 @@
       "equipment_type": "machine",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -661,7 +661,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -669,7 +669,7 @@
       "equipment_type": "machine",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -677,7 +677,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -685,7 +685,7 @@
       "equipment_type": "machine",
       "primary_muscle": "upper_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -693,31 +693,31 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "upper_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Chest Supported Incline Row",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["rhomboids", "traps", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Chest Supported Reverse Fly",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "rear_delts",
       "secondary_muscle": ["rhomboids", "traps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Chest Supported Y Raise",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "rear_delts",
       "secondary_muscle": ["traps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -725,7 +725,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps", "forearms"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -733,7 +733,7 @@
       "equipment_type": "machine",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps", "forearms"],
-      "exercise_type": "",
+      "exercise_type": "assisted_bodyweight",
       "image_url": ""
     },
     {
@@ -741,7 +741,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps", "forearms"],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -749,7 +749,7 @@
       "equipment_type": "none",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -757,23 +757,23 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": ["forearms", "lats", "cardio"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
       "name": "Concentration Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Cross Body Hammer Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -781,7 +781,7 @@
       "equipment_type": "cable",
       "primary_muscle": "upper_abs",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -789,7 +789,7 @@
       "equipment_type": "machine",
       "primary_muscle": "upper_abs",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -797,7 +797,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "upper_abs",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -805,7 +805,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -813,7 +813,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -821,7 +821,7 @@
       "equipment_type": "machine",
       "primary_muscle": "cardio",
       "secondary_muscle": ["quads", "calves"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -829,7 +829,7 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": ["quads", "calves"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -837,7 +837,7 @@
       "equipment_type": "machine",
       "primary_muscle": "cardio",
       "secondary_muscle": ["full_body"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -845,7 +845,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -853,7 +853,7 @@
       "equipment_type": "none",
       "primary_muscle": "forearms",
       "secondary_muscle": ["lats"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -861,7 +861,7 @@
       "equipment_type": "band",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -869,15 +869,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Deadlift",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -885,7 +885,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -893,7 +893,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["adductors", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -901,7 +901,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "traps",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -909,7 +909,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -917,7 +917,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -925,7 +925,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -933,7 +933,7 @@
       "equipment_type": "none",
       "primary_muscle": "triceps",
       "secondary_muscle": ["middle_chest", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -941,7 +941,7 @@
       "equipment_type": "machine",
       "primary_muscle": "triceps",
       "secondary_muscle": ["front_delts", "lower_chest"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -949,7 +949,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "triceps",
       "secondary_muscle": ["front_delts", "lower_chest"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -957,15 +957,15 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
       "name": "Drag Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -973,7 +973,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["upper_abs", "hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -981,7 +981,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["upper_abs", "hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -989,7 +989,7 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -997,7 +997,7 @@
       "equipment_type": "none",
       "primary_muscle": "obliques",
       "secondary_muscle": ["upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1005,7 +1005,7 @@
       "equipment_type": "machine",
       "primary_muscle": "cardio",
       "secondary_muscle": ["quads", "glutes"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -1013,15 +1013,15 @@
       "equipment_type": "cable",
       "primary_muscle": "rear_delts",
       "secondary_muscle": ["traps", "rhomboids"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Farmers Walk",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "forearms",
       "secondary_muscle": ["traps", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "weight_distance",
       "image_url": ""
     },
     {
@@ -1029,7 +1029,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "forearms",
       "secondary_muscle": ["traps", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "weight_distance",
       "image_url": ""
     },
     {
@@ -1037,15 +1037,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Floor Press",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1053,7 +1053,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1061,15 +1061,15 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "calves"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
       "name": "Frog Pumps",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_distance",
       "image_url": ""
     },
     {
@@ -1077,7 +1077,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["upper_abs", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -1085,7 +1085,7 @@
       "equipment_type": "band",
       "primary_muscle": "lats",
       "secondary_muscle": ["upper_abs", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -1093,7 +1093,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["upper_abs", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1101,7 +1101,7 @@
       "equipment_type": "band",
       "primary_muscle": "lats",
       "secondary_muscle": ["upper_abs", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "assisted_bodyweight",
       "image_url": ""
     },
     {
@@ -1109,7 +1109,7 @@
       "equipment_type": "band",
       "primary_muscle": "front_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1117,7 +1117,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1125,15 +1125,15 @@
       "equipment_type": "cable",
       "primary_muscle": "front_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Front Raise",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1141,7 +1141,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "front_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1149,7 +1149,7 @@
       "equipment_type": "band",
       "primary_muscle": "front_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1157,7 +1157,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1165,7 +1165,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["quads", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1173,7 +1173,7 @@
       "equipment_type": "none",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1181,7 +1181,7 @@
       "equipment_type": "none",
       "primary_muscle": "hamstrings",
       "secondary_muscle": ["glutes", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1189,7 +1189,7 @@
       "equipment_type": "cable",
       "primary_muscle": "glutes",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1197,7 +1197,7 @@
       "equipment_type": "machine",
       "primary_muscle": "glutes",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1205,7 +1205,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "glutes",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1213,7 +1213,7 @@
       "equipment_type": "none",
       "primary_muscle": "glutes",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1221,7 +1221,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1229,7 +1229,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "lats",
       "secondary_muscle": ["rhomboids", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1237,7 +1237,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1245,7 +1245,7 @@
       "equipment_type": "machine",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1253,7 +1253,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1261,7 +1261,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1269,7 +1269,7 @@
       "equipment_type": "band",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1277,7 +1277,7 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1285,7 +1285,7 @@
       "equipment_type": "machine",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1293,23 +1293,23 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Hammer Curl (Seated Incline)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Hammer Curl (Standing)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1317,7 +1317,7 @@
       "equipment_type": "machine",
       "primary_muscle": "hamstrings",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1325,7 +1325,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "hamstrings",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1333,7 +1333,7 @@
       "equipment_type": "machine",
       "primary_muscle": "hamstrings",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1341,7 +1341,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "hamstrings",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1349,7 +1349,7 @@
       "equipment_type": "machine",
       "primary_muscle": "hamstrings",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1357,7 +1357,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "hamstrings",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1365,7 +1365,7 @@
       "equipment_type": "none",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["upper_abs", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -1373,7 +1373,7 @@
       "equipment_type": "none",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["triceps", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1381,7 +1381,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1389,7 +1389,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1397,15 +1397,15 @@
       "equipment_type": "none",
       "primary_muscle": "obliques",
       "secondary_muscle": ["upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
       "name": "Hex Press",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1413,7 +1413,7 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": ["quads", "hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1421,7 +1421,7 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": ["quads", "hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1429,7 +1429,7 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": ["full_body"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -1437,7 +1437,7 @@
       "equipment_type": "machine",
       "primary_muscle": "abductors",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1445,7 +1445,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "abductors",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1453,7 +1453,7 @@
       "equipment_type": "machine",
       "primary_muscle": "adductors",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1461,7 +1461,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "adductors",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1469,7 +1469,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1477,7 +1477,7 @@
       "equipment_type": "machine",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1485,7 +1485,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1493,7 +1493,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1501,7 +1501,7 @@
       "equipment_type": "none",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1509,7 +1509,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs", "hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1517,7 +1517,7 @@
       "equipment_type": "none",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1525,7 +1525,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1533,7 +1533,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1541,7 +1541,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1549,7 +1549,7 @@
       "equipment_type": "machine",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1557,7 +1557,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1565,7 +1565,7 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": ["calves"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -1573,7 +1573,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "traps",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1581,7 +1581,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "calves"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1589,7 +1589,7 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1597,7 +1597,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1605,7 +1605,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1613,7 +1613,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1621,7 +1621,7 @@
       "equipment_type": "band",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1629,7 +1629,7 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1637,7 +1637,7 @@
       "equipment_type": "none",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1645,7 +1645,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["hip_flexors", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -1653,7 +1653,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "obliques",
       "secondary_muscle": ["upper_abs", "side_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1661,7 +1661,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["triceps", "upper_chest"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1669,7 +1669,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1677,7 +1677,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1685,7 +1685,7 @@
       "equipment_type": "band",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1693,7 +1693,7 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1701,7 +1701,7 @@
       "equipment_type": "machine",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1709,7 +1709,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1717,7 +1717,7 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1725,7 +1725,7 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1733,15 +1733,15 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Lat Pullover",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["rear_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1749,7 +1749,7 @@
       "equipment_type": "machine",
       "primary_muscle": "lats",
       "secondary_muscle": ["rear_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1757,7 +1757,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "lats",
       "secondary_muscle": ["rear_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1765,7 +1765,7 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["rear_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1773,7 +1773,7 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["rear_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1781,7 +1781,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "calves"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1789,7 +1789,7 @@
       "equipment_type": "none",
       "primary_muscle": "abductors",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1797,7 +1797,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "adductors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1805,15 +1805,15 @@
       "equipment_type": "band",
       "primary_muscle": "side_delts",
       "secondary_muscle": ["traps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Lateral Raise (Seated)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "side_delts",
       "secondary_muscle": ["traps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1821,15 +1821,15 @@
       "equipment_type": "machine",
       "primary_muscle": "side_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Lateral Raise (Standing)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "side_delts",
       "secondary_muscle": ["traps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1837,7 +1837,7 @@
       "equipment_type": "machine",
       "primary_muscle": "side_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1845,7 +1845,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "adductors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1853,7 +1853,7 @@
       "equipment_type": "machine",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1861,7 +1861,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1869,7 +1869,7 @@
       "equipment_type": "machine",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1877,7 +1877,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1885,7 +1885,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1893,7 +1893,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -1901,7 +1901,7 @@
       "equipment_type": "band",
       "primary_muscle": "lats",
       "secondary_muscle": ["rhomboids", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1909,31 +1909,31 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Lunge",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Lunge",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Lying Bicep Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1941,7 +1941,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1949,7 +1949,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_abs",
       "secondary_muscle": ["hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1957,7 +1957,7 @@
       "equipment_type": "none",
       "primary_muscle": "neck",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1965,7 +1965,7 @@
       "equipment_type": "none",
       "primary_muscle": "neck",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -1973,7 +1973,7 @@
       "equipment_type": "none",
       "primary_muscle": "neck",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -1981,7 +1981,7 @@
       "equipment_type": "none",
       "primary_muscle": "neck",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -1989,7 +1989,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["rhomboids", "rear_delts", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -1997,7 +1997,7 @@
       "equipment_type": "none",
       "primary_muscle": "cardio",
       "secondary_muscle": ["lower_abs", "hip_flexors", "quads"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -2005,7 +2005,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps", "triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2013,7 +2013,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2021,7 +2021,7 @@
       "equipment_type": "none",
       "primary_muscle": "hamstrings",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2029,7 +2029,7 @@
       "equipment_type": "none",
       "primary_muscle": "obliques",
       "secondary_muscle": ["upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2037,15 +2037,15 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Overhead Lunge",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2053,7 +2053,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2061,15 +2061,15 @@
       "equipment_type": "cable",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Overhead Press",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2077,7 +2077,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2085,7 +2085,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2093,7 +2093,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2101,7 +2101,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2109,15 +2109,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Overhead Tricep Extension (Seated)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2125,15 +2125,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Overhead Tricep Extension (Standing)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2141,7 +2141,7 @@
       "equipment_type": "cable",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2149,7 +2149,7 @@
       "equipment_type": "cable",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2157,7 +2157,7 @@
       "equipment_type": "cable",
       "primary_muscle": "obliques",
       "secondary_muscle": ["upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2165,15 +2165,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "forearms",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Palms Up Wrist Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "forearms",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2181,7 +2181,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2189,7 +2189,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["rhomboids", "rear_delts", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2197,7 +2197,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2205,7 +2205,7 @@
       "equipment_type": "none",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["triceps"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2213,15 +2213,15 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
       "name": "Pinwheel Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2229,7 +2229,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2237,7 +2237,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -2245,7 +2245,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["middle_chest", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2253,7 +2253,7 @@
       "equipment_type": "none",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2261,7 +2261,7 @@
       "equipment_type": "none",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["front_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2269,7 +2269,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings", "quads", "traps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2277,7 +2277,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings", "quads", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2285,15 +2285,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Preacher Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2301,7 +2301,7 @@
       "equipment_type": "machine",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2309,7 +2309,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2317,7 +2317,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2325,7 +2325,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2333,7 +2333,7 @@
       "equipment_type": "cable",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2341,7 +2341,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2349,7 +2349,7 @@
       "equipment_type": "band",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "assisted_bodyweight",
       "image_url": ""
     },
     {
@@ -2357,7 +2357,15 @@
       "equipment_type": "machine",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "assisted_bodyweight",
+      "image_url": ""
+    },
+    {
+      "name": "Pull Up (Weighted)",
+      "equipment_type": "none",
+      "primary_muscle": "lats",
+      "secondary_muscle": ["biceps"],
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -2365,7 +2373,7 @@
       "equipment_type": "band",
       "primary_muscle": "rear_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2373,7 +2381,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["triceps", "quads"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2381,7 +2389,7 @@
       "equipment_type": "none",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2389,7 +2397,7 @@
       "equipment_type": "none",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2397,7 +2405,7 @@
       "equipment_type": "none",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2405,7 +2413,7 @@
       "equipment_type": "none",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -2413,7 +2421,7 @@
       "equipment_type": "machine",
       "primary_muscle": "quads",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2421,7 +2429,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "quads",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2429,7 +2437,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "lower_back",
       "secondary_muscle": ["glutes", "hamstrings", "traps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2437,15 +2445,15 @@
       "equipment_type": "cable",
       "primary_muscle": "rear_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Rear Delt Reverse Fly",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "rear_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2453,7 +2461,7 @@
       "equipment_type": "machine",
       "primary_muscle": "rear_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2461,15 +2469,15 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "rear_delts",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Renegade Row",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2477,7 +2485,7 @@
       "equipment_type": "cable",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2485,7 +2493,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2493,7 +2501,7 @@
       "equipment_type": "band",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2501,7 +2509,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2509,15 +2517,15 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Reverse Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2525,7 +2533,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2533,7 +2541,7 @@
       "equipment_type": "machine",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2541,7 +2549,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2549,7 +2557,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2557,23 +2565,23 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Reverse Curl (Seated Incline)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Reverse Curl (Seated)",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2581,7 +2589,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2589,15 +2597,15 @@
       "equipment_type": "cable",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Reverse Grip Concentration Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": ["forearms"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2605,7 +2613,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "glutes",
       "secondary_muscle": ["lower_back", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2613,7 +2621,7 @@
       "equipment_type": "none",
       "primary_muscle": "glutes",
       "secondary_muscle": ["lower_back", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2621,7 +2629,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2629,7 +2637,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2637,7 +2645,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2645,7 +2653,7 @@
       "equipment_type": "none",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -2653,7 +2661,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_chest",
       "secondary_muscle": ["triceps", "side_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2661,23 +2669,23 @@
       "equipment_type": "barbell",
       "primary_muscle": "hamstrings",
       "secondary_muscle": ["glutes", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Romanian Deadlift",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "hamstrings",
       "secondary_muscle": ["glutes", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Row",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2685,7 +2693,7 @@
       "equipment_type": "machine",
       "primary_muscle": "lats",
       "secondary_muscle": ["full_body", "cardio"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2693,7 +2701,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings", "calves"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -2701,7 +2709,7 @@
       "equipment_type": "none",
       "primary_muscle": "obliques",
       "secondary_muscle": ["lower_abs", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2709,7 +2717,7 @@
       "equipment_type": "none",
       "primary_muscle": "obliques",
       "secondary_muscle": ["lower_abs", "upper_abs"],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -2717,7 +2725,7 @@
       "equipment_type": "none",
       "primary_muscle": "rear_delts",
       "secondary_muscle": ["lats"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2725,7 +2733,7 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2733,7 +2741,7 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2741,15 +2749,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Shoulder Press",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2757,7 +2765,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2765,7 +2773,7 @@
       "equipment_type": "machine",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2773,7 +2781,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2781,7 +2789,7 @@
       "equipment_type": "none",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "upper_abs", "lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2789,7 +2797,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "traps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2797,15 +2805,15 @@
       "equipment_type": "cable",
       "primary_muscle": "traps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Shrug",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "traps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2813,7 +2821,7 @@
       "equipment_type": "machine",
       "primary_muscle": "traps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2821,7 +2829,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "traps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2829,15 +2837,15 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "traps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Side Bend",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "obliques",
       "secondary_muscle": ["upper_abs", "lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2845,7 +2853,7 @@
       "equipment_type": "none",
       "primary_muscle": "obliques",
       "secondary_muscle": ["upper_abs", "lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2853,7 +2861,7 @@
       "equipment_type": "none",
       "primary_muscle": "obliques",
       "secondary_muscle": ["side_delts"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -2861,7 +2869,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes"],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -2869,7 +2877,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -2877,15 +2885,15 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs"],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
       "name": "SkiErg",
       "equipment_type": "machine",
-      "primary_muscle": "lats",
-      "secondary_muscle": ["side_delts", "biceps", "forearms"],
-      "exercise_type": "",
+      "primary_muscle": "cardio",
+      "secondary_muscle": ["full_body"],
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -2893,7 +2901,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2901,15 +2909,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Skullcrusher",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2917,7 +2925,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["hamstrings", "glutes", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -2925,7 +2933,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["hamstrings", "glutes", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -2933,7 +2941,7 @@
       "equipment_type": "band",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2941,15 +2949,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Spider Curl",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2957,7 +2965,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2965,7 +2973,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "biceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2973,15 +2981,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "quads", "hamstrings", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Split Squat",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -2989,7 +2997,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings", "calves", "cardio"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -2997,7 +3005,7 @@
       "equipment_type": "band",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3005,15 +3013,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Squat",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3021,7 +3029,7 @@
       "equipment_type": "machine",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3029,7 +3037,7 @@
       "equipment_type": "plate_loaded",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3037,7 +3045,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3045,7 +3053,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3053,15 +3061,15 @@
       "equipment_type": "cable",
       "primary_muscle": "lats",
       "secondary_muscle": ["quads", "glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Squeeze Press",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "middle_chest",
       "secondary_muscle": ["triceps", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3069,7 +3077,7 @@
       "equipment_type": "machine",
       "primary_muscle": "cardio",
       "secondary_muscle": ["quads", "glutes", "hamstrings", "calves"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -3077,7 +3085,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["side_delts", "triceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3085,7 +3093,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3093,7 +3101,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "hamstrings",
       "secondary_muscle": ["glutes", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3101,7 +3109,7 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -3109,15 +3117,15 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings", "adductors"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Sumo Squat",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings", "adductors"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3125,7 +3133,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings", "adductors"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3133,7 +3141,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings", "adductors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3141,7 +3149,7 @@
       "equipment_type": "none",
       "primary_muscle": "lower_back",
       "secondary_muscle": ["glutes", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3149,7 +3157,7 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": ["cardio"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -3157,7 +3165,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "glutes",
       "secondary_muscle": ["hamstrings", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3165,7 +3173,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps", "rear_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3173,7 +3181,7 @@
       "equipment_type": "none",
       "primary_muscle": "hamstrings",
       "secondary_muscle": ["lower_back", "calves"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3181,7 +3189,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs", "hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3189,7 +3197,7 @@
       "equipment_type": "none",
       "primary_muscle": "obliques",
       "secondary_muscle": ["upper_abs", "lower_abs", "lower_back"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3197,7 +3205,7 @@
       "equipment_type": "machine",
       "primary_muscle": "quads",
       "secondary_muscle": ["hamstrings", "glutes", "calves", "cardio"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -3205,7 +3213,7 @@
       "equipment_type": "machine",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings", "calves"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
@@ -3213,7 +3221,7 @@
       "equipment_type": "machine",
       "primary_muscle": "triceps",
       "secondary_muscle": ["lower_chest", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "assisted_bodyweight",
       "image_url": ""
     },
     {
@@ -3221,7 +3229,7 @@
       "equipment_type": "none",
       "primary_muscle": "triceps",
       "secondary_muscle": ["lower_chest", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3229,7 +3237,7 @@
       "equipment_type": "none",
       "primary_muscle": "triceps",
       "secondary_muscle": ["lower_chest", "front_delts"],
-      "exercise_type": "",
+      "exercise_type": "weighted_bodyweight",
       "image_url": ""
     },
     {
@@ -3237,7 +3245,7 @@
       "equipment_type": "machine",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3245,15 +3253,15 @@
       "equipment_type": "cable",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Triceps Kickback",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3261,7 +3269,7 @@
       "equipment_type": "cable",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3269,7 +3277,7 @@
       "equipment_type": "cable",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3277,7 +3285,7 @@
       "equipment_type": "cable",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3285,7 +3293,7 @@
       "equipment_type": "cable",
       "primary_muscle": "triceps",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3293,7 +3301,7 @@
       "equipment_type": "kettlebell",
       "primary_muscle": "full_body",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3301,7 +3309,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["traps", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3309,15 +3317,15 @@
       "equipment_type": "cable",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["traps", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
       "name": "Upright Row",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["traps", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3325,7 +3333,7 @@
       "equipment_type": "smith_machine",
       "primary_muscle": "front_delts",
       "secondary_muscle": ["traps", "biceps"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3333,7 +3341,7 @@
       "equipment_type": "none",
       "primary_muscle": "upper_abs",
       "secondary_muscle": ["lower_abs", "hip_flexors"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3341,15 +3349,15 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings", "calves"],
-      "exercise_type": "",
+      "exercise_type": "distance_duration",
       "image_url": ""
     },
     {
       "name": "Walking Lunge",
-      "equipment_type": "dumbell",
+      "equipment_type": "dumbbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3357,7 +3365,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3365,7 +3373,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "front_delts", "side_delts"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3373,7 +3381,7 @@
       "equipment_type": "none",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -3381,7 +3389,7 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -3389,7 +3397,7 @@
       "equipment_type": "none",
       "primary_muscle": "lats",
       "secondary_muscle": ["biceps", "rear_delts"],
-      "exercise_type": "",
+      "exercise_type": "bodyweight_reps",
       "image_url": ""
     },
     {
@@ -3397,7 +3405,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "forearms",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3405,7 +3413,7 @@
       "equipment_type": "none",
       "primary_muscle": "forearms",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     },
     {
@@ -3413,7 +3421,7 @@
       "equipment_type": "none",
       "primary_muscle": "full_body",
       "secondary_muscle": [],
-      "exercise_type": "",
+      "exercise_type": "duration",
       "image_url": ""
     },
     {
@@ -3421,7 +3429,7 @@
       "equipment_type": "barbell",
       "primary_muscle": "quads",
       "secondary_muscle": ["glutes", "hamstrings"],
-      "exercise_type": "",
+      "exercise_type": "weight_reps",
       "image_url": ""
     }
 ]
