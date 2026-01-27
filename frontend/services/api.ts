@@ -1,4 +1,4 @@
-const BASE_URL = "http://192.168.88.7:3000";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
