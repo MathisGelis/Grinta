@@ -1,10 +1,13 @@
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import RootNavigator from "@/navigation/RootNavigator";
+// app/index.tsx
+import { Redirect } from "expo-router";
+import { TokenService } from "@/services/token.service";
 
 export default function Index() {
-  return (
-    <SafeAreaProvider>
-      <RootNavigator />
-    </SafeAreaProvider>
-  );
+  const token = TokenService.get();
+
+  if (!token) {
+    return <Redirect href="/(auth)/LandingScreen" />;
+  }
+
+  return <Redirect href="/(tabs)/explore" />;
 }

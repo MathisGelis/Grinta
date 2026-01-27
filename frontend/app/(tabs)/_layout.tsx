@@ -8,28 +8,19 @@ export default function Layout() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: {
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: "#fff",
+          backgroundColor: "#ffffffff",
           borderTopWidth: 0,
           elevation: 10,
           height: 60,
+          margin: 10,
+          padding: 10,
+          marginBottom: 20,
+          borderRadius: 20,
         },
         tabBarActiveTintColor: "#000",
         tabBarInactiveTintColor: "#999",
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
-      />
       <Tabs.Screen
         name="explore"
         options={{
