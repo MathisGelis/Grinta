@@ -7,6 +7,8 @@ import { UpdateUserExerciseStatsDto } from './dto/update-user-exercise-stats.dto
 import { User } from '../users/entities/users.entity';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { GetExercisesQueryDto } from './dto/get-exercises.query.dto';
+import { DetailedMuscleGroup } from './enums/detailed-muscle.enum';
 
 @Injectable()
 export class ExerciseService {
@@ -18,14 +20,27 @@ export class ExerciseService {
     private readonly statsRepository: Repository<UserExerciseStats>,
   ) {}
 
-  findAll(): Promise<Exercise[]> {
-    return this.exerciseRepository.find({ order: { name: 'ASC' } });
+  async findAll(query: GetExercisesQueryDto): Promise<Exercise[]> {
+    const qb = this.exerciseRepository.createQueryBuilder('exercise');
+
+    if (query.equipmentType)
+      qb.andWhere('exercise.equipment_type = :equipmentType', { equipmentType: query.equipmentType });
+
+    if (query.primaryMuscles) {
+      const muscles = query.primaryMuscles
+        .split(',')
+        .map((m) => m.trim()) as DetailedMuscleGroup[];
+
+      qb.andWhere('exercise.primary_muscle IN (:...muscles)', { muscles });
+    }
+    return qb.getMany();
   }
 
   async findOne(id: string): Promise<Exercise> {
     const exercise = await this.exerciseRepository.findOne({ where: { id } });
 
-    if (!exercise) throw new NotFoundException('Exercise not found');
+    if (!exercise)
+      throw new NotFoundException('Exercise not found');
     return exercise;
   }
 

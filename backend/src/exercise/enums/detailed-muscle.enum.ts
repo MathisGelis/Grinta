@@ -12,7 +12,7 @@ export enum DetailedMuscleGroup {
   RHOMBOIDS = 'rhomboids',
   TRAPS = 'traps',
   LOWER_BACK = 'lower_back',
-  UPPER_ABS = 'upper_back',
+  UPPER_ABS = 'upper_abs',
   LOWER_ABS = 'lower_abs',
   OBLIQUES = 'obliques',
   GLUTES = 'glutes',
