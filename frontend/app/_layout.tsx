@@ -1,3 +1,5 @@
+import { useColorScheme } from "@/hooks/useColorScheme";
+import "../global.css";
 import {
   DarkTheme,
   DefaultTheme,
@@ -8,8 +10,6 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import "react-native-reanimated";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,10 +36,7 @@ export default function RootLayout() {
       >
         {/* Main app with persistent bottom tabs */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
-        {/* Screens outside tabs */}
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="light" backgroundColor="black" />
