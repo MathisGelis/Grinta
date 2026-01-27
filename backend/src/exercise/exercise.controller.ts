@@ -7,6 +7,7 @@ import {
   Req,
   Post,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ExerciseService } from './exercise.service';
@@ -14,6 +15,8 @@ import { UpdateUserExerciseStatsDto } from './dto/update-user-exercise-stats.dto
 import { Auth } from '../auth/auth.decorators';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
+import { ExerciseListDto } from './dto/exercise-list.dto';
+import { GetExercisesQueryDto } from './dto/get-exercises.query.dto';
 
 @ApiTags('exercises')
 @Controller('exercises')
@@ -22,9 +25,14 @@ export class ExerciseController {
 
   @Get()
   @ApiOperation({ summary: 'Get all exercises' })
-  @ApiResponse({ status: 200, description: 'List of exercises returned' })
-  async findAll() {
-    return this.exerciseService.findAll();
+  @ApiResponse({
+    status: 200,
+    description: 'List of exercises returned',
+    type: ExerciseListDto,
+    isArray: true
+  })
+  async findAll(@Query() query: GetExercisesQueryDto) {
+    return this.exerciseService.findAll(query);
   }
 
   @Get(':id')

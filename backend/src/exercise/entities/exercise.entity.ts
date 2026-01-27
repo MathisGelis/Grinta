@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, Unique, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, Unique, OneToMany, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { EquipmentType } from '../enums/equipment-type.enum';
 import { DetailedMuscleGroup } from '../enums/detailed-muscle.enum';
@@ -7,6 +7,9 @@ import { UserExerciseStats } from './user-exercise-stats.entity';
 
 @Entity('exercises')
 @Unique(['name'])
+@Index(['name'])
+@Index(['equipment_type'])
+@Index(['primary_muscle'])
 export class Exercise {
   @PrimaryGeneratedColumn('uuid')
   @ApiProperty()
@@ -16,28 +19,19 @@ export class Exercise {
   @ApiProperty()
   name: string;
 
-  @Column({ type: 'enum', enum: EquipmentType })
+  @Column({ type: 'enum', enum: EquipmentType, nullable: false })
   @ApiProperty({ enum: EquipmentType })
   equipment_type: EquipmentType;
 
-  @Column({ type: 'enum', enum: DetailedMuscleGroup })
+  @Column({ type: 'enum', enum: DetailedMuscleGroup, nullable: false })
   @ApiProperty({ enum: DetailedMuscleGroup })
   primary_muscle: DetailedMuscleGroup;
 
-  @Column({
-    type: 'enum',
-    enum: DetailedMuscleGroup,
-    array: true,
-    nullable: true,
-  })
-  @ApiProperty({
-    enum: DetailedMuscleGroup,
-    isArray: true,
-    required: false,
-  })
+  @Column({ type: 'enum', enum: DetailedMuscleGroup, array: true, nullable: true })
+  @ApiProperty({ enum: DetailedMuscleGroup, isArray: true, required: false })
   secondary_muscles?: DetailedMuscleGroup[];
 
-  @Column({ type: 'enum', enum: ExerciseType })
+  @Column({ type: 'enum', enum: ExerciseType, nullable: false })
   @ApiProperty({ enum: ExerciseType })
   exercise_type: ExerciseType;
 
