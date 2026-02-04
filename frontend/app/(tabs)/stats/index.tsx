@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { BarChart, LineChart } from "react-native-chart-kit";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function StatsScreen() {
   const [activeTab, setActiveTab] = useState("week");
@@ -174,7 +175,7 @@ export default function StatsScreen() {
   };
 
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Mes Statistiques</Text>
@@ -215,7 +216,7 @@ export default function StatsScreen() {
 
         {renderGoals()}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

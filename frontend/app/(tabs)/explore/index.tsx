@@ -157,16 +157,6 @@ export default function ExploreScreen() {
     <View style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
 
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Text style={styles.headerIcon}>🔍</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Home</Text>
-        <TouchableOpacity style={styles.iconButton}>
-          <Text style={styles.headerIcon}>💬</Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
