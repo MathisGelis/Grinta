@@ -1,29 +1,21 @@
-import { useColorScheme } from "@/hooks/useColorScheme";
+// app/_layout.tsx - VERSION SIMPLIFIÉE SANS FONTS
 import "../global.css";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
-SplashScreen.preventAutoHideAsync();
+// ❌ PAS de SplashScreen.preventAutoHideAsync()
+// ❌ PAS de useFonts
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  });
 
-  useEffect(() => {
-    if (loaded) SplashScreen.hideAsync();
-  }, [loaded]);
-
-  if (!loaded) return null;
+  // Pas de condition "if (!loaded) return null" qui bloque le rendu
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -34,7 +26,7 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: "#F8F8F8" },
         }}
       >
-        {/* Main app with persistent bottom tabs */}
+        <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
