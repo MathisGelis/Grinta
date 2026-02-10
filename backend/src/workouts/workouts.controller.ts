@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, Patch, Param, Get } from '@nestjs/common';
+import { Controller, Post, Body, Req, Patch, Param, Get, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth } from '../auth/auth.decorators';
 import { CreateCompletedWorkoutDto } from './dto/create-completed-workout.dto';
@@ -70,4 +70,19 @@ export class WorkoutsController {
   getCompletedById(@Req() req, @Param('id') id: string) {
     return this.workoutService.getCompletedWorkoutById(req.user, id);
   }
+
+  @Delete('planned/:id')
+  @ApiOperation({ summary: 'Delete a planned workout' })
+  @ApiResponse({ status: 200, description: 'Planned workout deleted' })
+  deletePlanned(@Req() req, @Param('id') id: string) {
+    return this.workoutService.deletePlannedWorkout(req.user, id);
+  }
+
+  @Delete('completed/:id')
+  @ApiOperation({ summary: 'Delete a completed workout' })
+  @ApiResponse({ status: 200, description: 'Completed workout deleted' })
+  deleteCompleted(@Req() req, @Param('id') id: string) {
+    return this.workoutService.deleteCompletedWorkout(req.user, id);
+  }
+
 }

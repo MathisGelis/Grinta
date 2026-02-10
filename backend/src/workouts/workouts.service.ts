@@ -191,4 +191,32 @@ export class WorkoutService {
       totalExercises: workout.exercises.length,
     };
   }
+
+  async deletePlannedWorkout(user: any, workoutId: string) {
+    const workout = await this.plannedRepo.findOne({
+      where: {
+        id: workoutId,
+        user: { id: user.userId },
+      },
+    });
+
+    if (!workout)
+      throw new NotFoundException('Planned workout not found');
+    await this.plannedRepo.remove(workout);
+    return { message: 'Planned workout deleted successfully' };
+  }
+
+  async deleteCompletedWorkout(user: any, workoutId: string) {
+    const workout = await this.completedRepo.findOne({
+      where: {
+        id: workoutId,
+        user: { id: user.userId },
+      },
+    });
+
+    if (!workout)
+      throw new NotFoundException('Completed workout not found');
+    await this.completedRepo.remove(workout);
+    return { message: 'Completed workout deleted successfully' };
+  }
 }
