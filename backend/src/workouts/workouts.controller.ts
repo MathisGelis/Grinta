@@ -1,8 +1,10 @@
-import { Controller, Post, Body, Req, Patch, Param } from '@nestjs/common';
+import { Controller, Post, Body, Req, Patch, Param, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth } from '../auth/auth.decorators';
 import { CreateCompletedWorkoutDto } from './dto/create-completed-workout.dto';
 import { CreatePlannedWorkoutDto } from './dto/create-planned-workout.dto';
+import { CompletedWorkoutListDto } from './dto/list-completed-workout.dto';
+import { PlannedWorkoutListDto } from './dto/list-planned-workout.dto';
 import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { WorkoutService } from './workouts.service';
@@ -39,5 +41,33 @@ export class WorkoutsController {
   @ApiResponse({ status: 200, description: 'Completed workout updated' })
   updateCompleted(@Req() req, @Param('id') id: string, @Body() dto: UpdateCompletedWorkoutDto) {
     return this.workoutService.updateCompletedWorkout(req.user, id, dto);
+  }
+
+  @Get('planned')
+  @ApiOperation({ summary: 'Get all planned workouts for current user' })
+  @ApiResponse({ status: 200, description: 'List returned', type: PlannedWorkoutListDto, isArray: true })
+  getPlanned(@Req() req): Promise<PlannedWorkoutListDto[]> {
+    return this.workoutService.getPlannedWorkouts(req.user);
+  }
+
+  @Get('completed')
+  @ApiOperation({ summary: 'Get all completed workouts for current user' })
+  @ApiResponse({ status: 200, description: 'List returned', type: CompletedWorkoutListDto, isArray: true })
+  getCompleted(@Req() req): Promise<CompletedWorkoutListDto[]> {
+    return this.workoutService.getCompletedWorkouts(req.user);
+  }
+
+  @Get('planned/:id')
+  @ApiOperation({ summary: 'Get a planned workout by ID' })
+  @ApiResponse({ status: 200, description: 'Workout returned', type: PlannedWorkoutListDto })
+  getPlannedById(@Req() req, @Param('id') id: string) {
+    return this.workoutService.getPlannedWorkoutById(req.user, id);
+  }
+
+  @Get('completed/:id')
+  @ApiOperation({ summary: 'Get a completed workout by ID' })
+  @ApiResponse({ status: 200, description: 'Workout returned', type: CompletedWorkoutListDto })
+  getCompletedById(@Req() req, @Param('id') id: string) {
+    return this.workoutService.getCompletedWorkoutById(req.user, id);
   }
 }
