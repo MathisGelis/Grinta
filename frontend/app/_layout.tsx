@@ -1,4 +1,3 @@
-// app/_layout.tsx - VERSION SIMPLIFIÉE SANS FONTS
 import "../global.css";
 import {
   DarkTheme,
@@ -8,16 +7,14 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
-// ❌ PAS de SplashScreen.preventAutoHideAsync()
-// ❌ PAS de useFonts
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-  // Pas de condition "if (!loaded) return null" qui bloque le rendu
-
   return (
+    <LanguageProvider>
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack
         screenOptions={{
@@ -33,5 +30,6 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="light" backgroundColor="black" />
     </ThemeProvider>
+    </LanguageProvider>
   );
 }
