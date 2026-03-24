@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, Unique, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  Unique,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { EquipmentType } from '../enums/equipment-type.enum';
 import { DetailedMuscleGroup } from '../enums/detailed-muscle.enum';
@@ -27,7 +34,12 @@ export class Exercise {
   @ApiProperty({ enum: DetailedMuscleGroup })
   primary_muscle: DetailedMuscleGroup;
 
-  @Column({ type: 'enum', enum: DetailedMuscleGroup, array: true, nullable: true })
+  @Column({
+    type: 'enum',
+    enum: DetailedMuscleGroup,
+    array: true,
+    nullable: true,
+  })
   @ApiProperty({ enum: DetailedMuscleGroup, isArray: true, required: false })
   secondary_muscles?: DetailedMuscleGroup[];
 

@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, MinLength, IsArray } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+  IsArray,
+} from 'class-validator';
 import { EquipmentType } from '../enums/equipment-type.enum';
 import { DetailedMuscleGroup } from '../enums/detailed-muscle.enum';
 import { ExerciseType } from '../enums/exercise-type.enum';

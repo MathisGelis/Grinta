@@ -1,6 +1,6 @@
 export enum LocationType {
-	GYM = 'GYM',
-	HOME = 'HOME',
-	OUTDOORS = 'OUTDOORS',
-	ANY = 'ANY'
+  GYM = 'GYM',
+  HOME = 'HOME',
+  OUTDOORS = 'OUTDOORS',
+  ANY = 'ANY',
 }
