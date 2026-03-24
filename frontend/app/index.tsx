@@ -1,13 +1,17 @@
-// app/index.tsx
-import { Redirect } from "expo-router";
+import { useEffect } from "react";
+import { router } from "expo-router";
 import { TokenService } from "@/services/token.service";
 
 export default function Index() {
-  const token = TokenService.get();
+  useEffect(() => {
+    TokenService.get().then((token) => {
+      if (token) {
+        router.replace("/(tabs)/explore");
+      } else {
+        router.replace("/(auth)/welcome/screens/SplashScreen");
+      }
+    });
+  }, []);
 
-  if (!token) {
-    return <Redirect href="/(auth)/LandingScreen" />;
-  }
-
-  return <Redirect href="/(tabs)/explore" />;
+  return null;
 }
