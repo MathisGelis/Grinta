@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/users.entity';
 import { Exercise } from '../../exercise/entities/exercise.entity';
@@ -31,7 +38,9 @@ export class CompletedWorkout {
   @ApiProperty({ required: false })
   description?: string;
 
-  @OneToMany(() => CompletedWorkoutExercise, (cwe) => cwe.workout, { cascade: true })
+  @OneToMany(() => CompletedWorkoutExercise, (cwe) => cwe.workout, {
+    cascade: true,
+  })
   @ApiProperty({ type: () => [CompletedWorkoutExercise] })
   exercises: CompletedWorkoutExercise[];
 
@@ -45,14 +54,21 @@ export class CompletedWorkoutExercise {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => CompletedWorkout, (workout) => workout.exercises, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CompletedWorkout, (workout) => workout.exercises, {
+    onDelete: 'CASCADE',
+  })
   workout: CompletedWorkout;
 
   @ManyToOne(() => Exercise, { eager: true })
   exercise: Exercise;
 
   @Column({ type: 'jsonb', nullable: true })
-  @ApiProperty({ type: 'array', description: 'Array of sets { reps, weight }', required: false, example: [{ reps: 10, weight: 50 }] })
+  @ApiProperty({
+    type: 'array',
+    description: 'Array of sets { reps, weight }',
+    required: false,
+    example: [{ reps: 10, weight: 50 }],
+  })
   sets?: SetPair[];
 
   @Column({ type: 'int', nullable: true })
