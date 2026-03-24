@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Programme } from './programme.entity';
 import { PlannedWorkout } from 'src/workouts/entities/planned-workout.entity';
@@ -19,7 +25,9 @@ export class ProgrammeDay {
   @ApiProperty()
   id: string;
 
-  @ManyToOne(() => Programme, (programme) => programme.days, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Programme, (programme) => programme.days, {
+    onDelete: 'CASCADE',
+  })
   programme: Programme;
 
   @Column({ type: 'enum', enum: WeekDay })

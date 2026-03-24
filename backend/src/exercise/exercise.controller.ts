@@ -29,7 +29,7 @@ export class ExerciseController {
     status: 200,
     description: 'List of exercises returned',
     type: ExerciseListDto,
-    isArray: true
+    isArray: true,
   })
   async findAll(@Query() query: GetExercisesQueryDto) {
     return this.exerciseService.findAll(query);

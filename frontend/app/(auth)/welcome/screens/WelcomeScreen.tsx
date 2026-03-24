@@ -5,8 +5,8 @@ import { router } from "expo-router";
 
 export default function WelcomeScreen() {
   const handleStart = () => {
-    saveItem("hasSeenWelcome", "true"); // 🔒 on stocke une info locale
-    router.push("/(auth)/LandingScreen"); // 👈 on redirige sans retour possible
+    saveItem("hasSeenWelcome", "true");
+    router.push("/(auth)/LandingScreen");
   };
 
   return (

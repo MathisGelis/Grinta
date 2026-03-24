@@ -5,7 +5,10 @@ import { Programme } from './entities/programme.entity';
 import { ProgrammeDay } from './entities/programme-day.entity';
 import { PlannedWorkout } from 'src/workouts/entities/planned-workout.entity';
 import { User } from 'src/users/entities/users.entity';
-import { CreateProgrammeDto, ProgrammeDayDto } from './dto/create-programme.dto';
+import {
+  CreateProgrammeDto,
+  ProgrammeDayDto,
+} from './dto/create-programme.dto';
 import { UpdateProgrammeDto } from './dto/update-programme.dto';
 
 @Injectable()
@@ -21,7 +24,10 @@ export class ProgrammesService {
     private workoutRepo: Repository<PlannedWorkout>,
   ) {}
 
-  async createProgramme(user: User, dto: CreateProgrammeDto): Promise<Programme> {
+  async createProgramme(
+    user: User,
+    dto: CreateProgrammeDto,
+  ): Promise<Programme> {
     const programme = this.programmeRepo.create({
       user: { id: user.id },
       weekNumber: dto.weekNumber,
@@ -40,7 +46,9 @@ export class ProgrammesService {
             where: { id: dayDto.workoutId, user: { id: user.id } },
           });
           if (!workout)
-            throw new NotFoundException(`Workout ${dayDto.workoutId} not found`);
+            throw new NotFoundException(
+              `Workout ${dayDto.workoutId} not found`,
+            );
         }
         return this.dayRepo.create({
           weekday: dayDto.weekday,
@@ -51,13 +59,16 @@ export class ProgrammesService {
     return this.programmeRepo.save(programme);
   }
 
-  async updateProgramme(user: User, id: string, dto: UpdateProgrammeDto): Promise<Programme> {
+  async updateProgramme(
+    user: User,
+    id: string,
+    dto: UpdateProgrammeDto,
+  ): Promise<Programme> {
     const programme = await this.programmeRepo.findOne({
       where: { id, user: { id: user.id } },
       relations: ['days', 'days.workout'],
     });
-    if (!programme)
-      throw new NotFoundException('Programme not found');
+    if (!programme) throw new NotFoundException('Programme not found');
 
     Object.assign(programme, dto);
     if (dto.days) {
@@ -72,7 +83,9 @@ export class ProgrammesService {
               where: { id: dayDto.workoutId, user: { id: user.id } },
             });
             if (!workout)
-              throw new NotFoundException(`Workout ${dayDto.workoutId} not found`);
+              throw new NotFoundException(
+                `Workout ${dayDto.workoutId} not found`,
+              );
           }
           return this.dayRepo.create({
             weekday: dayDto.weekday,
@@ -91,7 +104,7 @@ export class ProgrammesService {
       order: { weekNumber: 'ASC' },
     });
 
-    return programmes.map(p => ({
+    return programmes.map((p) => ({
       id: p.id,
       title: p.title,
       weekNumber: p.weekNumber,
@@ -105,8 +118,7 @@ export class ProgrammesService {
       relations: ['days', 'days.workout'],
     });
 
-    if (!programme)
-      throw new NotFoundException('Programme not found');
+    if (!programme) throw new NotFoundException('Programme not found');
     const workoutDays = programme.days.filter((d) => d.workout !== null);
 
     return {
@@ -134,8 +146,7 @@ export class ProgrammesService {
       where: { id, user: { id: user.id } },
     });
 
-    if (!programme)
-      throw new NotFoundException('Programme not found');
+    if (!programme) throw new NotFoundException('Programme not found');
     await this.programmeRepo.remove(programme);
     return { message: 'Programme deleted successfully' };
   }

@@ -13,19 +13,19 @@ export async function seedExercises(dataSource: DataSource) {
   let created = 0;
   let updated = 0;
 
-	for (const exercise of exercises) {
-		const exists = await repo.findOne({ where: { name: exercise.name } });
+  for (const exercise of exercises) {
+    const exists = await repo.findOne({ where: { name: exercise.name } });
 
-		if (exists) {
-			repo.merge(exists, exercise);
-			await repo.save(exists);
-			updated++;
-		} else {
-			const entity = repo.create(exercise);
+    if (exists) {
+      repo.merge(exists, exercise);
+      await repo.save(exists);
+      updated++;
+    } else {
+      const entity = repo.create(exercise);
 
-			await repo.save(entity);
-			created++;
-		}
-	}
-	console.log(`Exercise seed completed: ${created} new, ${updated} updated`);
+      await repo.save(entity);
+      created++;
+    }
+  }
+  console.log(`Exercise seed completed: ${created} new, ${updated} updated`);
 }

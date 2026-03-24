@@ -1,41 +1,41 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
-  IsOptional,
   IsString,
+  IsOptional,
   MinLength,
   IsNumber,
   IsDateString,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto {
-  @ApiPropertyOptional({ example: 'newemail@example.com' })
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @ApiPropertyOptional({ example: 'NewStrongPass123!' })
-  @IsOptional()
-  @IsString()
-  @MinLength(8)
-  password?: string;
-
-  @ApiPropertyOptional({ example: 'John Updated' })
+  @ApiProperty({ example: 'John Doe', required: false })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ example: '2000-01-01' })
+  @ApiProperty({ example: 'user@example.com', required: false })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiProperty({ example: 'newpassword123', required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
+  @ApiProperty({ example: '1995-06-15', required: false })
   @IsOptional()
   @IsDateString()
   birthDate?: string;
 
-  @ApiPropertyOptional({ example: 185 })
+  @ApiProperty({ example: 175.5, required: false })
   @IsOptional()
   @IsNumber()
   height?: number;
 
-  @ApiPropertyOptional({ example: 78 })
+  @ApiProperty({ example: 70.0, required: false })
   @IsOptional()
   @IsNumber()
   weight?: number;

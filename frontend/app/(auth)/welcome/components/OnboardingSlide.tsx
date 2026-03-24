@@ -1,5 +1,11 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -7,6 +13,8 @@ export default function OnboardingSlide({ item }: { item: any }) {
   return (
     <View style={[styles.container, { width }]}>
       <Image source={item.image} style={styles.image} resizeMode="cover" />
+      {/* Dark gradient overlay at the bottom */}
+      <View style={styles.overlay} />
       <View style={styles.textContainer}>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.subtitle}>{item.subtitle}</Text>
@@ -17,23 +25,37 @@ export default function OnboardingSlide({ item }: { item: any }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    height: height * 0.75,
     backgroundColor: "#121212",
+    overflow: "hidden",
   },
   image: {
     width: "100%",
-    height: height * 0.65,
+    height: "100%",
+    position: "absolute",
+  },
+  overlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "50%",
+    backgroundColor: "rgba(0,0,0,0.55)",
   },
   textContainer: {
-    alignItems: "center",
-    marginTop: 20,
+    position: "absolute",
+    bottom: 36,
+    left: 24,
+    right: 24,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     color: "#fff",
+    opacity: 0.9,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 20,
+    fontSize: 24,
     color: "#fff",
     fontWeight: "bold",
   },

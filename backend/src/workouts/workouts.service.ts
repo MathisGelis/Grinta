@@ -5,8 +5,14 @@ import { Exercise } from 'src/exercise/entities/exercise.entity';
 import { User } from 'src/users/entities/users.entity';
 import { CreateCompletedWorkoutDto } from './dto/create-completed-workout.dto';
 import { CreatePlannedWorkoutDto } from './dto/create-planned-workout.dto';
-import { CompletedWorkout, CompletedWorkoutExercise } from './entities/completed-workout.entity';
-import { PlannedWorkout, PlannedWorkoutExercise } from './entities/planned-workout.entity';
+import {
+  CompletedWorkout,
+  CompletedWorkoutExercise,
+} from './entities/completed-workout.entity';
+import {
+  PlannedWorkout,
+  PlannedWorkoutExercise,
+} from './entities/planned-workout.entity';
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 
@@ -31,16 +37,22 @@ export class WorkoutService {
     const workout = this.plannedRepo.create({
       user: { id: user.id },
       title: dto.title,
-      description: dto.description
+      description: dto.description,
     });
 
     workout.exercises = await Promise.all(
       dto.exercises.map(async (exDto) => {
-        const exercise = await this.exerciseRepo.findOne({ where: { id: exDto.exerciseId } });
+        const exercise = await this.exerciseRepo.findOne({
+          where: { id: exDto.exerciseId },
+        });
 
         if (!exercise)
           throw new NotFoundException(`Exercise ${exDto.exerciseId} not found`);
-        return this.plannedExRepo.create({ exercise, sets: exDto.sets, plannedRestSeconds: exDto.plannedRestSeconds });
+        return this.plannedExRepo.create({
+          exercise,
+          sets: exDto.sets,
+          plannedRestSeconds: exDto.plannedRestSeconds,
+        });
       }),
     );
     return this.plannedRepo.save(workout);
@@ -48,7 +60,7 @@ export class WorkoutService {
 
   async createCompletedWorkout(user: User, dto: CreateCompletedWorkoutDto) {
     const workout = this.completedRepo.create({
-      user: {id: user.id },
+      user: { id: user.id },
       title: dto.title,
       completionDate: new Date(dto.completionDate),
       totalDurationSeconds: dto.totalDurationSeconds,
@@ -57,23 +69,32 @@ export class WorkoutService {
 
     workout.exercises = await Promise.all(
       dto.exercises.map(async (exDto) => {
-        const exercise = await this.exerciseRepo.findOne({ where: { id: exDto.exerciseId } });
+        const exercise = await this.exerciseRepo.findOne({
+          where: { id: exDto.exerciseId },
+        });
 
         if (!exercise)
           throw new NotFoundException(`Exercise ${exDto.exerciseId} not found`);
-        return this.completedExRepo.create({ exercise, sets: exDto.sets, timerSeconds: exDto.timerSeconds });
+        return this.completedExRepo.create({
+          exercise,
+          sets: exDto.sets,
+          timerSeconds: exDto.timerSeconds,
+        });
       }),
     );
     return this.completedRepo.save(workout);
   }
 
-  async updatePlannedWorkout(user: any, workoutId: string, dto: UpdatePlannedWorkoutDto) {
+  async updatePlannedWorkout(
+    user: any,
+    workoutId: string,
+    dto: UpdatePlannedWorkoutDto,
+  ) {
     const workout = await this.plannedRepo.findOne({
       where: { id: workoutId, user: { id: user.userId } },
       relations: ['exercises', 'exercises.exercise'],
     });
-    if (!workout)
-      throw new NotFoundException('Planned workout not found');
+    if (!workout) throw new NotFoundException('Planned workout not found');
     Object.assign(workout, {
       title: dto.title,
       description: dto.description,
@@ -83,10 +104,14 @@ export class WorkoutService {
       await this.plannedExRepo.remove(workout.exercises);
       workout.exercises = await Promise.all(
         dto.exercises.map(async (exDto) => {
-          const exercise = await this.exerciseRepo.findOne({ where: { id: exDto.exerciseId } });
+          const exercise = await this.exerciseRepo.findOne({
+            where: { id: exDto.exerciseId },
+          });
 
           if (!exercise)
-            throw new NotFoundException(`Exercise ${exDto.exerciseId} not found`);
+            throw new NotFoundException(
+              `Exercise ${exDto.exerciseId} not found`,
+            );
           return this.plannedExRepo.create({
             exercise,
             sets: exDto.sets,
@@ -98,29 +123,39 @@ export class WorkoutService {
     return this.plannedRepo.save(workout);
   }
 
-  async updateCompletedWorkout(user: any, workoutId: string, dto: UpdateCompletedWorkoutDto) {
+  async updateCompletedWorkout(
+    user: any,
+    workoutId: string,
+    dto: UpdateCompletedWorkoutDto,
+  ) {
     const workout = await this.completedRepo.findOne({
       where: { id: workoutId, user: { id: user.userId } },
       relations: ['exercises', 'exercises.exercise'],
     });
 
-    if (!workout)
-      throw new NotFoundException('Completed workout not found');
+    if (!workout) throw new NotFoundException('Completed workout not found');
     Object.assign(workout, {
       title: dto.title,
       description: dto.description,
-      completionDate: dto.completionDate ? new Date(dto.completionDate) : workout.completionDate,
-      totalDurationSeconds: dto.totalDurationSeconds ?? workout.totalDurationSeconds,
+      completionDate: dto.completionDate
+        ? new Date(dto.completionDate)
+        : workout.completionDate,
+      totalDurationSeconds:
+        dto.totalDurationSeconds ?? workout.totalDurationSeconds,
     });
 
     if (dto.exercises) {
       await this.completedExRepo.remove(workout.exercises);
       workout.exercises = await Promise.all(
         dto.exercises.map(async (exDto) => {
-          const exercise = await this.exerciseRepo.findOne({ where: { id: exDto.exerciseId } });
+          const exercise = await this.exerciseRepo.findOne({
+            where: { id: exDto.exerciseId },
+          });
 
           if (!exercise)
-            throw new NotFoundException(`Exercise ${exDto.exerciseId} not found`);
+            throw new NotFoundException(
+              `Exercise ${exDto.exerciseId} not found`,
+            );
           return this.completedExRepo.create({
             exercise,
             sets: exDto.sets,
@@ -139,7 +174,7 @@ export class WorkoutService {
       order: { createdAt: 'DESC' },
     });
 
-    return workouts.map(w => ({
+    return workouts.map((w) => ({
       id: w.id,
       title: w.title,
       description: w.description,
@@ -154,7 +189,7 @@ export class WorkoutService {
       order: { completionDate: 'DESC' },
     });
 
-    return workouts.map(w => ({
+    return workouts.map((w) => ({
       id: w.id,
       title: w.title,
       description: w.description,
@@ -170,8 +205,7 @@ export class WorkoutService {
       relations: ['exercises'],
     });
 
-    if (!workout)
-      throw new NotFoundException('Planned workout not found');
+    if (!workout) throw new NotFoundException('Planned workout not found');
     return {
       workout,
       totalExercises: workout.exercises.length,
@@ -184,8 +218,7 @@ export class WorkoutService {
       relations: ['exercises'],
     });
 
-    if (!workout)
-      throw new NotFoundException('Completed workout not found');
+    if (!workout) throw new NotFoundException('Completed workout not found');
     return {
       workout,
       totalExercises: workout.exercises.length,
@@ -200,8 +233,7 @@ export class WorkoutService {
       },
     });
 
-    if (!workout)
-      throw new NotFoundException('Planned workout not found');
+    if (!workout) throw new NotFoundException('Planned workout not found');
     await this.plannedRepo.remove(workout);
     return { message: 'Planned workout deleted successfully' };
   }
@@ -214,8 +246,7 @@ export class WorkoutService {
       },
     });
 
-    if (!workout)
-      throw new NotFoundException('Completed workout not found');
+    if (!workout) throw new NotFoundException('Completed workout not found');
     await this.completedRepo.remove(workout);
     return { message: 'Completed workout deleted successfully' };
   }

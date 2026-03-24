@@ -5,23 +5,26 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 export default function LandingScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Grinta 💪</Text>
-      <Text style={styles.subtitle}>
-        Track your workouts, connect with others, and push your limits.
-      </Text>
+      {/* Logo */}
+      <Text style={styles.logo}>Grinta</Text>
+      <Text style={styles.tagline}>Your fitness journey starts here.</Text>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push("/LoginScreen")}
-      >
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push("/RegisterScreen")}
-      >
-        <Text style={styles.buttonText}>Register</Text>
-      </TouchableOpacity>
+      {/* Buttons */}
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push("/(auth)/LoginScreen")}
+        >
+          <Text style={styles.primaryButtonText}>Login</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push("/(auth)/RegisterScreen")}
+        >
+          <Text style={styles.secondaryButtonText}>Create account</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -32,29 +35,46 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#121212",
-    padding: 20,
+    paddingHorizontal: 32,
   },
-  title: {
-    fontSize: 28,
+  logo: {
+    fontSize: 48,
     fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 10,
+    color: "#A56BFF",
+    marginBottom: 12,
+    letterSpacing: 1,
   },
-  subtitle: {
+  tagline: {
     fontSize: 16,
-    color: "#bbb",
+    color: "#888",
+    marginBottom: 64,
     textAlign: "center",
-    marginBottom: 30,
   },
-  button: {
-    backgroundColor: "#7B61FF",
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    marginVertical: 10,
+  buttonsContainer: {
+    width: "100%",
+    gap: 14,
   },
-  buttonText: {
+  primaryButton: {
+    backgroundColor: "#A56BFF",
+    paddingVertical: 16,
+    borderRadius: 40,
+    alignItems: "center",
+  },
+  primaryButtonText: {
     color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  secondaryButton: {
+    backgroundColor: "transparent",
+    paddingVertical: 16,
+    borderRadius: 40,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#A56BFF",
+  },
+  secondaryButtonText: {
+    color: "#A56BFF",
     fontSize: 16,
     fontWeight: "bold",
   },
