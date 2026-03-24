@@ -1,6 +1,6 @@
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
 
-type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 async function request<T>(
   endpoint: string,
@@ -20,7 +20,16 @@ async function request<T>(
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Erreur serveur");
+
+    const raw = data.message;
+    const msg = Array.isArray(raw)
+      ? raw[0]
+      : typeof raw === "string"
+      ? raw
+      : typeof raw === "object" && raw !== null
+      ? (typeof raw.message === "string" ? raw.message : raw.error ?? data.error ?? "Erreur serveur")
+      : data.error ?? "Erreur serveur";
+    throw new Error(msg);
   }
 
   return data;
@@ -35,6 +44,9 @@ export const api = {
 
   put: <T>(endpoint: string, body?: any, token?: string) =>
     request<T>(endpoint, "PUT", body, token),
+
+  patch: <T>(endpoint: string, body?: any, token?: string) =>
+    request<T>(endpoint, "PATCH", body, token),
 
   delete: <T>(endpoint: string, token?: string) =>
     request<T>(endpoint, "DELETE", undefined, token),

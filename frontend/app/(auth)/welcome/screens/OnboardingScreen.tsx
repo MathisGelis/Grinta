@@ -6,15 +6,18 @@ import {
   TouchableOpacity,
   Text,
   Animated,
+  Dimensions,
 } from "react-native";
 import { slides } from "../data/slides";
 import OnboardingSlide from "../components/OnboardingSlide";
-import { saveItem } from "@/core/services/storage";
 import { router } from "expo-router";
+
+const { width } = Dimensions.get("window");
 
 export default function OnboardingScreen() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef<FlatList>(null);
 
   const viewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) setCurrentSlide(viewableItems[0].index);
@@ -23,13 +26,21 @@ export default function OnboardingScreen() {
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   const handleStart = () => {
-    saveItem("hasSeenWelcome", "true");
-    router.push("/(auth)/LandingScreen");
+    router.replace("/(auth)/LoginScreen");
   };
+
+  const handleNext = () => {
+    if (currentSlide < slides.length - 1) {
+      flatListRef.current?.scrollToIndex({ index: currentSlide + 1 });
+    }
+  };
+
+  const isLastSlide = currentSlide === slides.length - 1;
 
   return (
     <View style={styles.container}>
       <FlatList
+        ref={flatListRef}
         data={slides}
         renderItem={({ item }) => <OnboardingSlide item={item} />}
         horizontal
@@ -37,60 +48,68 @@ export default function OnboardingScreen() {
         pagingEnabled
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          {
-            useNativeDriver: false,
-          },
+          { useNativeDriver: false }
         )}
         onViewableItemsChanged={viewableItemsChanged}
         viewabilityConfig={viewConfig}
       />
 
-      {/* Dots */}
-      <View style={styles.dotsContainer}>
-        {slides.map((_, index) => (
-          <View
-            key={index}
-            style={[styles.dot, currentSlide === index && styles.activeDot]}
-          />
-        ))}
-      </View>
+      {/* Bottom area */}
+      <View style={styles.bottomContainer}>
+        {/* Dots */}
+        <View style={styles.dotsContainer}>
+          {slides.map((_, index) => (
+            <View
+              key={index}
+              style={[styles.dot, currentSlide === index && styles.activeDot]}
+            />
+          ))}
+        </View>
 
-      {/* Button */}
-      {currentSlide === slides.length - 1 && (
-        <TouchableOpacity style={styles.button} onPress={handleStart}>
-          <Text style={styles.buttonText}>Get Started →</Text>
+        {/* Button */}
+        <TouchableOpacity
+          style={styles.button}
+          onPress={isLastSlide ? handleStart : handleNext}
+        >
+          <Text style={styles.buttonText}>
+            {isLastSlide ? "Start Now  ›" : "Next  ›"}
+          </Text>
         </TouchableOpacity>
-      )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#121212" },
+  bottomContainer: {
+    paddingBottom: 48,
+    paddingTop: 12,
+    alignItems: "center",
+    backgroundColor: "#121212",
+  },
   dotsContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 40,
+    marginBottom: 24,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 5,
+    width: 24,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: "#444",
-    marginHorizontal: 5,
+    marginHorizontal: 4,
   },
   activeDot: {
     backgroundColor: "#A56BFF",
-    width: 16,
   },
   button: {
     backgroundColor: "#A56BFF",
-    alignSelf: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-    position: "absolute",
-    bottom: 60,
+    paddingVertical: 16,
+    paddingHorizontal: 48,
+    borderRadius: 40,
+    width: width * 0.75,
+    alignItems: "center",
   },
   buttonText: {
     color: "#fff",

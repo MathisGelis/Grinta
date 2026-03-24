@@ -29,7 +29,7 @@ export class UsersService {
       ...userData,
       password: hashedPassword,
     });
-    return await this.userRepository.save(newUser);
+    return await this.userRepository.save(newUser) as User;
   }
 
   async findUserById(id: string): Promise<User> {
