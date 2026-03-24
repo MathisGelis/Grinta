@@ -1,15 +1,8 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 
-const { width } = Dimensions.get("window");
 const CIRCLE = 140;
 
 export default function GenderScreen() {
@@ -40,7 +33,9 @@ export default function GenderScreen() {
             size={56}
             color={selected === "male" ? "#fff" : "#888"}
           />
-          <Text style={[styles.label, selected === "male" && styles.labelActive]}>
+          <Text
+            style={[styles.label, selected === "male" && styles.labelActive]}
+          >
             Male
           </Text>
         </TouchableOpacity>
@@ -54,7 +49,9 @@ export default function GenderScreen() {
             size={56}
             color={selected === "female" ? "#fff" : "#888"}
           />
-          <Text style={[styles.label, selected === "female" && styles.labelActive]}>
+          <Text
+            style={[styles.label, selected === "female" && styles.labelActive]}
+          >
             Female
           </Text>
         </TouchableOpacity>
@@ -67,7 +64,7 @@ export default function GenderScreen() {
           onPress={handleNext}
           disabled={!selected}
         >
-          <Text style={styles.nextText}>Next  ›</Text>
+          <Text style={styles.nextText}>Next ›</Text>
         </TouchableOpacity>
       </View>
     </View>

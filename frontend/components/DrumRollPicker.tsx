@@ -32,7 +32,7 @@ export function DrumRollPicker({
         animated: false,
       });
     }, 50);
-  }, []);
+  }, [selectedIndex]);
 
   const handleMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -40,7 +40,7 @@ export function DrumRollPicker({
       const index = Math.round(y / ITEM_HEIGHT);
       onSelect(Math.max(0, Math.min(index, items.length - 1)));
     },
-    [items.length, onSelect]
+    [items.length, onSelect],
   );
 
   const getFontSize = (distance: number) => {
@@ -60,8 +60,14 @@ export function DrumRollPicker({
   return (
     <View style={styles.container}>
       {/* Purple selection lines */}
-      <View style={[styles.line, { top: ITEM_HEIGHT * 3 }]} pointerEvents="none" />
-      <View style={[styles.line, { top: ITEM_HEIGHT * 4 }]} pointerEvents="none" />
+      <View
+        style={[styles.line, { top: ITEM_HEIGHT * 3 }]}
+        pointerEvents="none"
+      />
+      <View
+        style={[styles.line, { top: ITEM_HEIGHT * 4 }]}
+        pointerEvents="none"
+      />
 
       <ScrollView
         ref={scrollRef}

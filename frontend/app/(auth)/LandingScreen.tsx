@@ -1,14 +1,6 @@
 import { router } from "expo-router";
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-} from "react-native";
-
-const { width } = Dimensions.get("window");
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function LandingScreen() {
   return (

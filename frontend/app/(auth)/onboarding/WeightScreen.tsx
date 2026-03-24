@@ -7,8 +7,8 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  TouchableOpacity,
 } from "react-native";
-import { TouchableOpacity } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
 const { width } = Dimensions.get("window");
@@ -19,7 +19,7 @@ const DEFAULT_WEIGHT = 70;
 
 const weights = Array.from(
   { length: MAX_WEIGHT - MIN_WEIGHT + 1 },
-  (_, i) => MIN_WEIGHT + i
+  (_, i) => MIN_WEIGHT + i,
 );
 
 const getTickHeight = (value: number) => {
@@ -40,13 +40,17 @@ export default function WeightScreen() {
       const clamped = Math.max(0, Math.min(index, weights.length - 1));
       setWeight(weights[clamped]);
     },
-    []
+    [],
   );
 
   const handleNext = () => {
     router.push({
       pathname: "/(auth)/onboarding/HeightScreen",
-      params: { gender: params.gender, age: params.age, weight: String(weight) },
+      params: {
+        gender: params.gender,
+        age: params.age,
+        weight: String(weight),
+      },
     });
   };
 
@@ -77,7 +81,10 @@ export default function WeightScreen() {
             alignItems: "flex-end",
             height: 64,
           }}
-          contentOffset={{ x: (DEFAULT_WEIGHT - MIN_WEIGHT) * TICK_SPACING, y: 0 }}
+          contentOffset={{
+            x: (DEFAULT_WEIGHT - MIN_WEIGHT) * TICK_SPACING,
+            y: 0,
+          }}
         >
           {weights.map((w) => {
             const dist = Math.abs(w - weight);
@@ -86,10 +93,10 @@ export default function WeightScreen() {
               dist === 0
                 ? "#A56BFF"
                 : dist <= 5
-                ? "#7B5CF0"
-                : dist <= 12
-                ? "#555"
-                : "#333";
+                  ? "#7B5CF0"
+                  : dist <= 12
+                    ? "#555"
+                    : "#333";
             return (
               <View
                 key={w}
@@ -112,7 +119,7 @@ export default function WeightScreen() {
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-          <Text style={styles.nextText}>Next  ›</Text>
+          <Text style={styles.nextText}>Next ›</Text>
         </TouchableOpacity>
       </View>
     </View>

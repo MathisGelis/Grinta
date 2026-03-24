@@ -1,9 +1,8 @@
 import { getItem } from "@/core/services/storage";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
-  Dimensions,
   Image,
   Modal,
   ScrollView,
@@ -15,11 +14,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
 const FEATURED_WORKOUT = {
   id: "1",
-  title: "Emma's Core Challenge",
+  title: "Emma&#39;s Core Challenge",
   category: "Intermediate",
   image:
     "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80",
@@ -120,12 +117,12 @@ export default function ExploreScreen() {
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const filters = [t.beginner, t.intermediate, t.advance];
+  const filters = useMemo(() => [t.beginner, t.intermediate, t.advance], [t.beginner, t.intermediate, t.advance]);
   const [activeFilter, setActiveFilter] = useState(filters[0]);
 
   React.useEffect(() => {
     setActiveFilter(filters[0]);
-  }, [t.beginner]);
+  }, [filters]);
 
   useEffect(() => {
     getItem("user_name").then((name) => {
@@ -192,7 +189,9 @@ export default function ExploreScreen() {
         {/* ── Header greeting ── */}
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.helloText}>{t.hello} {userName},</Text>
+            <Text style={styles.helloText}>
+              {t.hello} {userName},
+            </Text>
             <Text style={styles.greetingText}>{t[getGreetingKey()]} 👋</Text>
           </View>
         </View>
@@ -216,7 +215,7 @@ export default function ExploreScreen() {
           <View style={styles.featuredOverlay}>
             <Text style={styles.featuredTag}>{t.communityTopPick}</Text>
             <Text style={styles.featuredSubtitle}>
-              | Emma's Core Challenge
+              | Emma&apos;s Core Challenge
             </Text>
           </View>
         </TouchableOpacity>
@@ -339,7 +338,10 @@ export default function ExploreScreen() {
                   <TouchableOpacity style={styles.premiumButton}>
                     <Text style={styles.premiumButtonText}>{t.bePremium}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={closeModal} style={styles.cancelLink}>
+                  <TouchableOpacity
+                    onPress={closeModal}
+                    style={styles.cancelLink}
+                  >
                     <Text style={styles.cancelText}>{t.cancel2}</Text>
                   </TouchableOpacity>
                 </View>
@@ -364,7 +366,10 @@ export default function ExploreScreen() {
                   >
                     <Text style={styles.useButtonText}>{t.useIt}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={closeModal} style={styles.cancelLink}>
+                  <TouchableOpacity
+                    onPress={closeModal}
+                    style={styles.cancelLink}
+                  >
                     <Text style={styles.cancelText}>{t.cancel2}</Text>
                   </TouchableOpacity>
                 </View>
