@@ -24,7 +24,9 @@ export class ExerciseService {
     const qb = this.exerciseRepository.createQueryBuilder('exercise');
 
     if (query.equipmentType)
-      qb.andWhere('exercise.equipment_type = :equipmentType', { equipmentType: query.equipmentType });
+      qb.andWhere('exercise.equipment_type = :equipmentType', {
+        equipmentType: query.equipmentType,
+      });
 
     if (query.primaryMuscles) {
       const muscles = query.primaryMuscles
@@ -39,8 +41,7 @@ export class ExerciseService {
   async findOne(id: string): Promise<Exercise> {
     const exercise = await this.exerciseRepository.findOne({ where: { id } });
 
-    if (!exercise)
-      throw new NotFoundException('Exercise not found');
+    if (!exercise) throw new NotFoundException('Exercise not found');
     return exercise;
   }
 
