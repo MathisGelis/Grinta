@@ -9,6 +9,7 @@ import { User } from './entities/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { UserListDto } from './dto/users-list.dto';
 
 @Injectable()
 export class UsersService {
@@ -118,5 +119,42 @@ export class UsersService {
       username = `${base}${counter}`;
       counter++;
     }
+  }
+
+  async searchUsers(
+    search: string,
+    currentUserId: string,
+  ): Promise<UserListDto[]> {
+    const normalized = search.toLowerCase().trim();
+
+    if (!normalized) return [];
+    return this.userRepository
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.uniqueName', 'user.displayName'])
+      .where('user.id != :currentUserId', { currentUserId })
+      .andWhere(
+        `
+        similarity(LOWER(user.uniqueName), :search) > 0.2
+        OR LOWER(user.uniqueName) LIKE :likeSearch
+        `,
+        {
+          search: normalized,
+          likeSearch: `%${normalized}%`,
+        },
+      )
+      .orderBy(
+        `
+        CASE
+          WHEN LOWER(user.uniqueName) LIKE :prefix THEN 0
+          ELSE 1
+        END
+        `,
+        'ASC',
+      )
+      .addOrderBy(`similarity(LOWER(user.uniqueName), :search)`, 'DESC')
+      .setParameter('prefix', `${normalized}%`)
+      .setParameter('search', normalized)
+      .limit(10)
+      .getMany();
   }
 }
