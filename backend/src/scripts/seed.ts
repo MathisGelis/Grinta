@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import { seedExercises } from '../exercise/seed/exercise.seed';
+import { seedUsernames } from '../users/seed/users.seed';
 import { Exercise } from '../exercise/entities/exercise.entity';
 import { UserExerciseStats } from '../exercise/entities/user-exercise-stats.entity';
 import { User } from '../users/entities/users.entity';
@@ -23,6 +24,7 @@ async function run() {
   console.log('Database connected');
 
   await seedExercises(dataSource);
+  await seedUsernames(dataSource);
 
   await dataSource.destroy();
   process.exit(0);
