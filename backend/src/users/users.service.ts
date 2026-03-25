@@ -27,11 +27,15 @@ export class UsersService {
       where: { uniqueName: userData.uniqueName },
     });
 
-    if (existingUsername)
-      throw new BadRequestException(
-        'Username already in use, recommended: ',
-        await this.generateUniqueUsernameFromDisplayName(userData.displayName),
+    if (existingUsername) {
+      const generatedName = await this.generateUniqueUsernameFromDisplayName(
+        userData.displayName,
       );
+
+      throw new BadRequestException(
+        `Username already in use, recommended: ${generatedName}`,
+      );
+    }
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const newUser = this.userRepository.create({
       ...userData,
@@ -64,11 +68,15 @@ export class UsersService {
         where: { uniqueName: updateData.uniqueName },
       });
 
-      if (existing)
-        throw new BadRequestException(
-          'Username already in use, recommended: ',
-          await this.generateUniqueUsernameFromDisplayName(user.displayName),
+      if (existing) {
+        const generatedName = await this.generateUniqueUsernameFromDisplayName(
+          user.displayName,
         );
+
+        throw new BadRequestException(
+          `Username already in use, recommended: ${generatedName}`,
+        );
+      }
     }
 
     if (updateData.password)
