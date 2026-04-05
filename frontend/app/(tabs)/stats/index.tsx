@@ -29,9 +29,27 @@ function getTodayIndex() {
 }
 
 const finishedWorkouts = [
-  { id: 1, name: "Full Body Blast", duration: "45 min", calories: 320, daysAgo: 2 },
-  { id: 2, name: "Upper Body Push", duration: "38 min", calories: 280, daysAgo: 4 },
-  { id: 3, name: "Core & Cardio", duration: "30 min", calories: 210, daysAgo: 6 },
+  {
+    id: 1,
+    name: "Full Body Blast",
+    duration: "45 min",
+    calories: 320,
+    daysAgo: 2,
+  },
+  {
+    id: 2,
+    name: "Upper Body Push",
+    duration: "38 min",
+    calories: 280,
+    daysAgo: 4,
+  },
+  {
+    id: 3,
+    name: "Core & Cardio",
+    duration: "30 min",
+    calories: 210,
+    daysAgo: 6,
+  },
 ];
 
 export default function StatsScreen() {
@@ -74,8 +92,7 @@ export default function StatsScreen() {
           <View style={styles.daysRow}>
             {t.days.map((day, i) => {
               const date = weekDates[i];
-              const isToday =
-                weekOffset === 0 && i === getTodayIndex();
+              const isToday = weekOffset === 0 && i === getTodayIndex();
               return (
                 <TouchableOpacity
                   key={i}
@@ -86,10 +103,20 @@ export default function StatsScreen() {
                   ]}
                   onPress={() => setSelectedDay(i)}
                 >
-                  <Text style={[styles.dayText, selectedDay === i && styles.dayTextActive]}>
+                  <Text
+                    style={[
+                      styles.dayText,
+                      selectedDay === i && styles.dayTextActive,
+                    ]}
+                  >
                     {day}
                   </Text>
-                  <Text style={[styles.dayNum, selectedDay === i && styles.dayTextActive]}>
+                  <Text
+                    style={[
+                      styles.dayNum,
+                      selectedDay === i && styles.dayTextActive,
+                    ]}
+                  >
                     {date.getDate()}
                   </Text>
                 </TouchableOpacity>
@@ -222,7 +249,12 @@ const styles = StyleSheet.create({
   ringLabel: { color: "#888", fontSize: 12 },
 
   section: { paddingHorizontal: 16 },
-  sectionTitle: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 16 },
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 16,
+  },
   workoutCard: {
     backgroundColor: "#1a1a1a",
     borderRadius: 16,
@@ -240,7 +272,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  workoutName: { color: "#fff", fontSize: 15, fontWeight: "600", marginBottom: 4 },
+  workoutName: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
   workoutMeta: { color: "#666", fontSize: 12 },
   workoutCal: { color: "#7B5CF0", fontSize: 14, fontWeight: "600" },
 });

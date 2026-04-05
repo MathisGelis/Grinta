@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { WorkoutTheme } from "@/constants/Colors";
 
 const FEATURED_WORKOUT = {
   id: "1",
@@ -117,7 +117,10 @@ export default function ExploreScreen() {
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const filters = useMemo(() => [t.beginner, t.intermediate, t.advance], [t.beginner, t.intermediate, t.advance]);
+  const filters = useMemo(
+    () => [t.beginner, t.intermediate, t.advance],
+    [t.beginner, t.intermediate, t.advance],
+  );
   const [activeFilter, setActiveFilter] = useState(filters[0]);
 
   React.useEffect(() => {
@@ -178,8 +181,8 @@ export default function ExploreScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <View style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
 
       <ScrollView
         style={styles.scroll}
@@ -247,6 +250,68 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Category workout cards */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {BEGINNER_WORKOUTS.map((w) => (
+            <TouchableOpacity
+              key={w.id}
+              style={styles.categoryCard}
+              activeOpacity={0.85}
+              onPress={() => openWorkoutModal(w)}
+            >
+              <Image
+                source={{ uri: w.image }}
+                style={styles.categoryCardImage}
+                resizeMode="cover"
+              />
+              <View style={styles.categoryCardOverlay}>
+                <Text style={styles.categoryCardTitle} numberOfLines={2}>
+                  {w.title}
+                </Text>
+                <Text style={styles.categoryCardSub}>
+                  | {t.workoutsLabel2} · {w.category}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* ── New Workouts ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {NEW_WORKOUTS.map((w) => (
+            <TouchableOpacity
+              key={w.id}
+              style={styles.newCard}
+              activeOpacity={0.85}
+              onPress={() => openWorkoutModal(w)}
+            >
+              <Image
+                source={{ uri: w.image }}
+                style={styles.newCardImage}
+                resizeMode="cover"
+              />
+              <View style={styles.newCardOverlay}>
+                <Text style={styles.newCardTitle} numberOfLines={2}>
+                  {w.title}
+                </Text>
+                <Text style={styles.categoryCardSub}>| {w.category}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         {/* Category workout cards */}
         <ScrollView
@@ -378,14 +443,15 @@ export default function ExploreScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#121212",
+    paddingTop: 8,
+    backgroundColor: WorkoutTheme.background,
   },
   scroll: {
     flex: 1,
@@ -402,11 +468,11 @@ const styles = StyleSheet.create({
   helloText: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
   },
   greetingText: {
     fontSize: 15,
-    color: "#aaaaaa",
+    color: WorkoutTheme.text.secondary,
     marginTop: 2,
   },
 
@@ -421,19 +487,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
   },
   dateText: {
     fontSize: 13,
-    color: "#7B5CF0",
+    color: WorkoutTheme.accent.purple,
     fontWeight: "600",
   },
   seeAll: {
     fontSize: 13,
-    color: "#7B5CF0",
+    color: WorkoutTheme.accent.purple,
     fontWeight: "600",
   },
-
   featuredCard: {
     marginHorizontal: 16,
     height: 200,
@@ -455,16 +520,15 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.45)",
   },
   featuredTag: {
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     fontWeight: "bold",
     fontSize: 15,
   },
   featuredSubtitle: {
-    color: "#cccccc",
+    color: WorkoutTheme.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
-
   pillRow: {
     flexDirection: "row",
     paddingHorizontal: 16,
@@ -477,26 +541,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#333333",
+    borderColor: WorkoutTheme.border,
   },
   pillActive: {
-    backgroundColor: "#7B5CF0",
-    borderColor: "#7B5CF0",
+    backgroundColor: WorkoutTheme.accent.purple,
+    borderColor: WorkoutTheme.accent.purple,
   },
   pillText: {
-    color: "#888888",
+    color: WorkoutTheme.text.secondary,
     fontSize: 13,
     fontWeight: "600",
   },
   pillTextActive: {
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
   },
 
   horizontalScroll: {
     paddingHorizontal: 16,
     paddingBottom: 4,
   },
-
   categoryCard: {
     width: 220,
     height: 160,
@@ -517,12 +580,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   categoryCardTitle: {
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     fontWeight: "bold",
     fontSize: 13,
   },
   categoryCardSub: {
-    color: "#aaaaaa",
+    color: WorkoutTheme.text.secondary,
     fontSize: 11,
     marginTop: 2,
   },
@@ -537,6 +600,9 @@ const styles = StyleSheet.create({
   newCardImage: {
     width: "100%",
     height: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+    marginRight: 12,
   },
   newCardOverlay: {
     position: "absolute",
@@ -547,7 +613,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   newCardTitle: {
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     fontWeight: "bold",
     fontSize: 12,
   },
@@ -558,7 +624,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalSheet: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: WorkoutTheme.backgroundSecondary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",
@@ -574,29 +640,29 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     marginBottom: 6,
   },
   modalWorkoutTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     textAlign: "center",
     marginBottom: 6,
   },
   modalCategory: {
     fontSize: 14,
-    color: "#7B5CF0",
+    color: WorkoutTheme.accent.purple,
     marginBottom: 20,
   },
   modalDescription: {
     fontSize: 14,
-    color: "#aaaaaa",
+    color: WorkoutTheme.text.secondary,
     textAlign: "center",
     marginBottom: 20,
   },
   useButton: {
-    backgroundColor: "#7B5CF0",
+    backgroundColor: WorkoutTheme.accent.purple,
     paddingHorizontal: 48,
     paddingVertical: 14,
     borderRadius: 30,
@@ -605,7 +671,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   useButtonText: {
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -619,7 +685,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   premiumButtonText: {
-    color: "#121212",
+    color: WorkoutTheme.background,
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -628,7 +694,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cancelText: {
-    color: "#888888",
+    color: WorkoutTheme.text.secondary,
     fontSize: 14,
   },
 });

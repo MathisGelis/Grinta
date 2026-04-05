@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
   Dimensions,
@@ -60,14 +60,26 @@ export default function WorkoutDetailScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       {/* Hero image */}
       <View style={styles.heroContainer}>
-        <Image source={{ uri: image }} style={styles.heroImage} resizeMode="cover" />
+        <Image
+          source={{ uri: image }}
+          style={styles.heroImage}
+          resizeMode="cover"
+        />
         {/* Back button */}
         <SafeAreaView style={styles.backWrapper} edges={["top"]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
         </SafeAreaView>

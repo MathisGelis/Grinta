@@ -5,155 +5,267 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { WorkoutTheme } from "@/constants/Colors";
+import WorkoutCard, { WorkoutCardData } from "@/components/workout/WorkoutCard";
 
-type FilterKey = "new" | "events" | "all";
+export default function WorkoutScreen() {
+  // Sample data - replace with API call later
+  const [workouts, setWorkouts] = useState<WorkoutCardData[]>([
+    {
+      id: "1",
+      name: "Upper Body Strength",
+      image_url:
+        "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&q=80",
+      exercises: [
+        {
+          id: "e1",
+          name: "Bench Press",
+          sets: 4,
+          reps: 6,
+          weight: 100,
+          unit: "kg",
+        },
+        {
+          id: "e2",
+          name: "Pull-ups",
+          sets: 3,
+          reps: 8,
+          weight: 0,
+          unit: "kg",
+        },
+        {
+          id: "e3",
+          name: "Shoulder Press",
+          sets: 3,
+          reps: 8,
+          weight: 60,
+          unit: "kg",
+        },
+      ],
+      stats: {
+        estimatedTime: 90,
+        totalWeight: 2280,
+        estimatedCalories: 450,
+        muscleGroups: ["Poitrine", "Dos", "Épaules", "Triceps", "Biceps"],
+        totalSets: 10,
+      },
+    },
+    {
+      id: "2",
+      name: "Leg Day Power",
+      image_url:
+        "https://images.unsplash.com/photo-1434608519344-49d77a124f62?w=800&q=80",
+      exercises: [
+        {
+          id: "e4",
+          name: "Squats",
+          sets: 5,
+          reps: 5,
+          weight: 150,
+          unit: "kg",
+        },
+        {
+          id: "e5",
+          name: "leg Press",
+          sets: 4,
+          reps: 8,
+          weight: 200,
+          unit: "kg",
+        },
+        {
+          id: "e6",
+          name: "Leg Curls",
+          sets: 3,
+          reps: 12,
+          weight: 80,
+          unit: "kg",
+        },
+        {
+          id: "e7",
+          name: "Calf Raises",
+          sets: 3,
+          reps: 15,
+          weight: 100,
+          unit: "kg",
+        },
+      ],
+      stats: {
+        estimatedTime: 120,
+        totalWeight: 4800,
+        estimatedCalories: 600,
+        muscleGroups: ["Jambes", "Fessiers", "Quadriceps", "Ischio-jambiers"],
+        totalSets: 15,
+      },
+    },
+  ]);
 
-interface NotifItem {
-  id: number;
-  titleKey: string;
-  bodyKey: string;
-  time: string;
-  read: boolean;
-  icon: keyof typeof Ionicons.glyphMap;
-  isEvent?: boolean;
-}
+  const [refreshing, setRefreshing] = useState(false);
 
-const NOTIF_DATA: NotifItem[] = [
-  { id: 1, titleKey: "notif1Title", bodyKey: "notif1Body", time: "2 min", read: false, icon: "barbell-outline" },
-  { id: 2, titleKey: "notif2Title", bodyKey: "notif2Body", time: "1h", read: false, icon: "trophy-outline" },
-  { id: 3, titleKey: "notif3Title", bodyKey: "notif3Body", time: "3h", read: false, icon: "people-outline", isEvent: true },
-  { id: 4, titleKey: "notif4Title", bodyKey: "notif4Body", time: "Yesterday", read: true, icon: "alarm-outline" },
-  { id: 5, titleKey: "notif5Title", bodyKey: "notif5Body", time: "2d", read: true, icon: "flash-outline" },
-];
+  const goToCreateWorkout = () => {
+    router.push("/workouts/create");
+  };
 
-export default function NotificationsScreen() {
-  const { t } = useTranslation();
-  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-  const [dismissed, setDismissed] = useState<number[]>([]);
+  const handleEditWorkout = (id: string) => {
+    router.push(`/workouts/${id}/edit`);
+  };
 
-  const filters: { key: FilterKey; label: string }[] = [
-    { key: "new", label: t.newFilter },
-    { key: "events", label: t.events },
-    { key: "all", label: t.all },
-  ];
+  const handleDeleteWorkout = (id: string) => {
+    setWorkouts(workouts.filter((w) => w.id !== id));
+  };
 
-  const visible = NOTIF_DATA.filter((n) => {
-    if (dismissed.includes(n.id)) return false;
-    if (activeFilter === "new") return !n.read;
-    if (activeFilter === "events") return !!n.isEvent;
-    return true;
-  });
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  }, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={["top"]} style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t.notifications}</Text>
+        <View>
+          <Text style={styles.headerTitle}>Mes séances</Text>
+          <Text style={styles.headerSubtitle}>
+            {workouts.length} séance{workouts.length !== 1 ? "s" : ""}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={goToCreateWorkout}
+          style={styles.createButton}
+        >
+          <Ionicons name="add" size={24} color={WorkoutTheme.text.primary} />
+        </TouchableOpacity>
       </View>
 
-      {/* Filter tabs */}
-      <View style={styles.filterRow}>
-        {filters.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[styles.filterTab, activeFilter === f.key && styles.filterTabActive]}
-            onPress={() => setActiveFilter(f.key)}
-          >
-            <Text style={[styles.filterText, activeFilter === f.key && styles.filterTextActive]}>
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
+      {/* Workouts List */}
       <ScrollView
+        style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        {visible.length === 0 && (
-          <View style={styles.empty}>
-            <Ionicons name="notifications-off-outline" size={48} color="#444" />
-            <Text style={styles.emptyText}>{t.noNotifications}</Text>
+        {workouts.length > 0 ? (
+          <View style={styles.workoutsContainer}>
+            {workouts.map((workout) => (
+              <WorkoutCard
+                key={workout.id}
+                workout={workout}
+                onEdit={() => handleEditWorkout(workout.id)}
+                onDelete={() => handleDeleteWorkout(workout.id)}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="body"
+              size={60}
+              color={WorkoutTheme.text.tertiary}
+            />
+            <Text style={styles.emptyStateTitle}>Aucune séance</Text>
+            <Text style={styles.emptyStateText}>
+              Créez votre première séance d&apos;entraînement
+            </Text>
+            <TouchableOpacity
+              onPress={goToCreateWorkout}
+              style={styles.emptyStateButton}
+            >
+              <Ionicons
+                name="add-circle"
+                size={24}
+                color={WorkoutTheme.text.primary}
+              />
+              <Text style={styles.emptyStateButtonText}>Créer une séance</Text>
+            </TouchableOpacity>
           </View>
         )}
-        {visible.map((n) => {
-          const title = (t as any)[n.titleKey] as string;
-          const body = (t as any)[n.bodyKey] as string;
-          return (
-            <View key={n.id} style={styles.notifCard}>
-              <View style={styles.iconWrap}>
-                <Ionicons name={n.icon} size={22} color="#7B5CF0" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={styles.notifTitleRow}>
-                  <Text style={styles.notifTitle}>{title}</Text>
-                  {!n.read && <View style={styles.unreadDot} />}
-                </View>
-                <Text style={styles.notifBody}>{body}</Text>
-                <Text style={styles.notifTime}>{n.time}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setDismissed((prev) => [...prev, n.id])}
-                style={styles.dismissBtn}
-              >
-                <Ionicons name="close" size={18} color="#555" />
-              </TouchableOpacity>
-            </View>
-          );
-        })}
+        <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 16 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
-
-  filterRow: {
+  container: {
+    flex: 1,
+    backgroundColor: WorkoutTheme.background,
+  },
+  header: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
-    gap: 8,
-    marginBottom: 16,
+    paddingVertical: 12,
+    backgroundColor: WorkoutTheme.backgroundSecondary,
+    borderBottomWidth: 1,
+    borderBottomColor: WorkoutTheme.border,
   },
-  filterTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: WorkoutTheme.text.primary,
   },
-  filterTabActive: { backgroundColor: "#7B5CF0" },
-  filterText: { color: "#888", fontSize: 14, fontWeight: "500" },
-  filterTextActive: { color: "#fff" },
-
-  notifCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    gap: 12,
+  headerSubtitle: {
+    fontSize: 12,
+    color: WorkoutTheme.text.secondary,
+    marginTop: 2,
   },
-  iconWrap: {
+  createButton: {
+    backgroundColor: WorkoutTheme.accent.purple,
     width: 44,
     height: 44,
-    borderRadius: 14,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
+    borderRadius: 12,
     justifyContent: "center",
+    alignItems: "center",
   },
-  notifTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
-  notifTitle: { color: "#fff", fontSize: 14, fontWeight: "600", flex: 1 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#7B5CF0" },
-  notifBody: { color: "#888", fontSize: 13, lineHeight: 18, marginBottom: 6 },
-  notifTime: { color: "#555", fontSize: 12 },
-  dismissBtn: { padding: 4 },
-
-  empty: { alignItems: "center", marginTop: 80, gap: 12 },
-  emptyText: { color: "#555", fontSize: 16 },
+  statsOverview: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  statsCard: {
+    flex: 1,
+    backgroundColor: WorkoutTheme.backgroundSecondary,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+    paddingTop: 60,
+    marginBottom: 100,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: WorkoutTheme.text.primary,
+    marginTop: 16,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: WorkoutTheme.text.secondary,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  emptyStateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: WorkoutTheme.accent.purple,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  emptyStateButtonText: {
+    color: WorkoutTheme.text.primary,
+    fontWeight: "600",
+    fontSize: 14,
+  },
 });
