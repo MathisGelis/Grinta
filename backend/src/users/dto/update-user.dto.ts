@@ -12,17 +12,23 @@ export class UpdateUserDto {
   @ApiProperty({ example: 'John Doe', required: false })
   @IsOptional()
   @IsString()
-  name?: string;
+  displayName?: string;
+
+  @ApiProperty({ example: 'johnny123', required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  uniqueName?: string;
 
   @ApiProperty({ example: 'user@example.com', required: false })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiProperty({ example: 'newpassword123', required: false })
+  @ApiProperty({ example: 'NewPassword123!', required: false })
   @IsOptional()
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
   password?: string;
 
   @ApiProperty({ example: '1995-06-15', required: false })

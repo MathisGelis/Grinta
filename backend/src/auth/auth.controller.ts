@@ -21,7 +21,10 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Returns JWT token' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() body: UserLoginDto) {
-    const user = await this.authService.validateUser(body.email, body.password);
+    const user = await this.authService.validateUser(
+      body.identifier,
+      body.password,
+    );
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.authService.login(user);
