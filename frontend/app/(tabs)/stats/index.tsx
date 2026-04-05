@@ -2,11 +2,8 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  View,
-  Text,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -144,20 +141,7 @@ export default function StatsScreen() {
           <View style={styles.smallRingItem}>
             <View style={[styles.ringOuter, { borderColor: "#7B5CF0" }]}>
               <Text style={styles.ringValue}>92%</Text>
-          <Text style={styles.bigRingCaption}>{t.dailyCaloriesBurned}</Text>
-        </View>
-
-        {/* 3 stat rings */}
-        <View style={styles.smallRingsRow}>
-          <View style={styles.smallRingItem}>
-            <View style={[styles.ringOuter, { borderColor: "#7B5CF0" }]}>
-              <Text style={styles.ringValue}>92%</Text>
             </View>
-            <Text style={styles.ringLabel}>{t.wcLabel}</Text>
-          </View>
-          <View style={styles.smallRingItem}>
-            <View style={[styles.ringOuter, { borderColor: "#EC4899" }]}>
-              <Text style={styles.ringValue}>105kg</Text>
             <Text style={styles.ringLabel}>{t.wcLabel}</Text>
           </View>
           <View style={styles.smallRingItem}>
@@ -165,13 +149,6 @@ export default function StatsScreen() {
               <Text style={styles.ringValue}>105kg</Text>
             </View>
             <Text style={styles.ringLabel}>{t.benchPrLabel}</Text>
-            <Text style={styles.ringLabel}>{t.benchPrLabel}</Text>
-          </View>
-          <View style={styles.smallRingItem}>
-            <View style={[styles.ringOuter, { borderColor: "#34D399" }]}>
-              <Text style={styles.ringValue}>5/6</Text>
-            </View>
-            <Text style={styles.ringLabel}>{t.completedLabel}</Text>
           </View>
           <View style={styles.smallRingItem}>
             <View style={[styles.ringOuter, { borderColor: "#34D399" }]}>
@@ -181,24 +158,8 @@ export default function StatsScreen() {
           </View>
         </View>
 
-        {/* Finished Workouts */}
         {/* Finished Workouts */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.finishedWorkout}</Text>
-          {finishedWorkouts.map((w) => (
-            <View key={w.id} style={styles.workoutCard}>
-              <View style={styles.checkBox}>
-                <Ionicons name="checkmark" size={16} color="#fff" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.workoutName}>{w.name}</Text>
-                <Text style={styles.workoutMeta}>
-                  {formatWorkoutDate(w.daysAgo)} · {w.duration}
-                </Text>
-              </View>
-              <Text style={styles.workoutCal}>{w.calories} cal</Text>
-            </View>
-          ))}
           <Text style={styles.sectionTitle}>{t.finishedWorkout}</Text>
           {finishedWorkouts.map((w) => (
             <View key={w.id} style={styles.workoutCard}>
@@ -228,27 +189,15 @@ const styles = StyleSheet.create({
   calendarCard: {
     marginHorizontal: 16,
     backgroundColor: "#1a1a1a",
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 16 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
-
-  calendarCard: {
-    marginHorizontal: 16,
-    backgroundColor: "#1a1a1a",
     borderRadius: 20,
     padding: 16,
     marginBottom: 24,
-    padding: 16,
-    marginBottom: 24,
   },
-  monthRow: {
   monthRow: {
     flexDirection: "row",
     alignItems: "center",
-    alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
-    marginBottom: 16,
   },
   monthLabel: { color: "#fff", fontSize: 16, fontWeight: "600" },
   daysRow: { flexDirection: "row", justifyContent: "space-between" },
@@ -275,38 +224,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
-  monthLabel: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  daysRow: { flexDirection: "row", justifyContent: "space-between" },
-  dayPill: {
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 20,
-    minWidth: 36,
   },
-  dayPillActive: { backgroundColor: "#7B5CF0" },
-  dayPillToday: { borderWidth: 1, borderColor: "#7B5CF055" },
-  dayText: { color: "#666", fontSize: 10, marginBottom: 4 },
-  dayNum: { color: "#666", fontSize: 13, fontWeight: "600" },
-  dayTextActive: { color: "#fff" },
-
-  bigRingSection: { alignItems: "center", marginBottom: 32 },
-  bigRingOuter: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 14,
-    borderColor: "#7B5CF0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  bigRingInner: { alignItems: "center" },
-  bigRingValue: { color: "#fff", fontSize: 40, fontWeight: "700" },
-  bigRingLabel: { color: "#888", fontSize: 16 },
-  bigRingCaption: { color: "#555", fontSize: 13 },
-
-  smallRingsRow: {
   bigRingInner: { alignItems: "center" },
   bigRingValue: { color: "#fff", fontSize: 40, fontWeight: "700" },
   bigRingLabel: { color: "#888", fontSize: 16 },

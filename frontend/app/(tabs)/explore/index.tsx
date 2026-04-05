@@ -2,13 +2,8 @@ import { getItem } from "@/core/services/storage";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState, useMemo } from "react";
-import { getItem } from "@/core/services/storage";
-import { useTranslation } from "@/contexts/LanguageContext";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState, useMemo } from "react";
 import {
   Image,
-  Modal,
   Modal,
   ScrollView,
   StatusBar,
@@ -463,7 +458,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
-    paddingBottom: 100,
   },
 
   headerRow: {
@@ -481,8 +475,6 @@ const styles = StyleSheet.create({
     color: WorkoutTheme.text.secondary,
     marginTop: 2,
   },
-
-  sectionHeader: {
 
   sectionHeader: {
     flexDirection: "row",
@@ -507,18 +499,6 @@ const styles = StyleSheet.create({
     color: WorkoutTheme.accent.purple,
     fontWeight: "600",
   },
-
-  featuredCard: {
-    marginHorizontal: 16,
-    height: 200,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 24,
-  },
-  featuredImage: {
-    width: "100%",
-    height: "100%",
-
   featuredCard: {
     marginHorizontal: 16,
     height: 200,
@@ -530,14 +510,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  featuredOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: "rgba(0,0,0,0.45)",
   featuredOverlay: {
     position: "absolute",
     bottom: 0,
@@ -557,14 +529,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-
-  pillRow: {
-
   pillRow: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    marginBottom: 14,
-    gap: 8,
     paddingHorizontal: 16,
     marginBottom: 14,
     gap: 8,
@@ -594,29 +560,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 4,
   },
-
-  categoryCard: {
-    width: 220,
-    height: 160,
-    borderRadius: 16,
-
   categoryCard: {
     width: 220,
     height: 160,
     borderRadius: 16,
     overflow: "hidden",
     marginRight: 12,
-    marginRight: 12,
   },
-  categoryCardImage: {
-    width: "100%",
-    height: "100%",
-  },
-  categoryCardOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
   categoryCardImage: {
     width: "100%",
     height: "100%",
@@ -654,11 +604,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginRight: 12,
   },
-  newCardImage: {
-    width: "100%",
-    height: "100%",
-  },
-  newCardOverlay: {
   newCardOverlay: {
     position: "absolute",
     bottom: 0,
@@ -699,14 +644,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   modalWorkoutTitle: {
-  modalWorkoutTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: WorkoutTheme.text.primary,
     textAlign: "center",
     marginBottom: 6,
   },
-  modalCategory: {
   modalCategory: {
     fontSize: 14,
     color: WorkoutTheme.accent.purple,
