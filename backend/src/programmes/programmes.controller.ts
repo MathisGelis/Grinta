@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Patch, Param, Req, Body, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Param,
+  Req,
+  Body,
+  Delete,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth } from '../auth/auth.decorators';
 import { ProgrammesService } from './programmes.service';
@@ -14,14 +23,22 @@ export class ProgrammesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new programme' })
-  @ApiResponse({ status: 201, description: 'Programme created', type: Programme })
+  @ApiResponse({
+    status: 201,
+    description: 'Programme created',
+    type: Programme,
+  })
   create(@Req() req, @Body() dto: CreateProgrammeDto) {
     return this.programmesService.createProgramme(req.user, dto);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a programme' })
-  @ApiResponse({ status: 200, description: 'Programme updated', type: Programme })
+  @ApiResponse({
+    status: 200,
+    description: 'Programme updated',
+    type: Programme,
+  })
   update(@Req() req, @Param('id') id: string, @Body() dto: UpdateProgrammeDto) {
     return this.programmesService.updateProgramme(req.user, id, dto);
   }
@@ -35,7 +52,11 @@ export class ProgrammesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a programme by ID' })
-  @ApiResponse({ status: 200, description: 'Programme returned', type: Programme })
+  @ApiResponse({
+    status: 200,
+    description: 'Programme returned',
+    type: Programme,
+  })
   getById(@Req() req, @Param('id') id: string) {
     return this.programmesService.getProgrammeById(req.user, id);
   }

@@ -7,28 +7,22 @@ export interface LoginResponse {
 export interface RegisterResponse {
   access_token: string;
   id: string;
-  email: string;
-  password: string;
-  name: string;
-  birthDate: string;
-  height: number;
-  weight: number;
-  createdAt: string;
 }
 
 export const AuthService = {
   login(email: string, password: string) {
-    return api.post<LoginResponse>("/auth/login", {
-      email,
-      password,
-    });
+    return api.post<LoginResponse>("/auth/login", { email, password });
   },
 
-  register(email: string, password: string, name: string) {
-    return api.post<RegisterResponse>("/auth/register", {
+  async register(email: string, password: string, name: string): Promise<RegisterResponse> {
+    const user = await api.post<{ id: string }>("/users/register", {
       email,
       password,
       name,
     });
+
+    const auth = await api.post<LoginResponse>("/auth/login", { email, password });
+
+    return { access_token: auth.access_token, id: user.id };
   },
 };

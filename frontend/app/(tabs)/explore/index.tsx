@@ -1,6 +1,10 @@
-import React from "react";
+import { getItem } from "@/core/services/storage";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Image,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -8,174 +12,375 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { WorkoutTheme } from "@/constants/Colors";
 
-const TargetMuscles = ({ muscles }: { muscles: string[] }) => {
-  return (
-    <View style={styles.bodyContainer}>
-      <View style={styles.bodyOutline}>
-        <View style={[styles.muscleFill, styles.chestMuscle]} />
-        <View style={[styles.muscleFill, styles.shoulderMuscle]} />
-      </View>
-      <View style={styles.bodyOutline}>
-        <View style={[styles.muscleFill, styles.backMuscle]} />
-      </View>
-    </View>
-  );
+const FEATURED_WORKOUT = {
+  id: "1",
+  title: "Emma&#39;s Core Challenge",
+  category: "Intermediate",
+  image:
+    "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80",
+  duration: "60 min",
+  calories: 350,
+  description:
+    "Want your body to be healthy. Join our program with directions according to body's goals.",
+  exercises: [
+    { name: "Simple Warm-Up Exercises", duration: "0:30" },
+    { name: "Stability Training Basics", duration: "1:00" },
+    { name: "Core Plank Series", duration: "0:45" },
+  ],
 };
 
-const Pagination = ({ current, total }: { current: number; total: number }) => {
-  return (
-    <View style={styles.paginationContainer}>
-      {Array(total)
-        .fill(0)
-        .map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.paginationDot,
-              i === current ? styles.paginationDotActive : {},
-            ]}
-          />
-        ))}
-    </View>
-  );
-};
+const BEGINNER_WORKOUTS = [
+  {
+    id: "2",
+    title: "Lea's Cardio Starter",
+    category: "Beginner",
+    image:
+      "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
+    duration: "45 min",
+    calories: 280,
+    isPro: false,
+  },
+  {
+    id: "3",
+    title: "Alex's HIIT Power Series",
+    category: "Beginner",
+    image:
+      "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&q=80",
+    duration: "30 min",
+    calories: 320,
+    isPro: false,
+  },
+  {
+    id: "4",
+    title: "Luca's Leg Day Inferno",
+    category: "Beginner",
+    image:
+      "https://images.unsplash.com/photo-1434608519344-49d77a124f62?w=800&q=80",
+    duration: "50 min",
+    calories: 400,
+    isPro: true,
+  },
+  {
+    id: "5",
+    title: "Maya's Endurance Burn",
+    category: "Beginner",
+    image:
+      "https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=800&q=80",
+    duration: "40 min",
+    calories: 300,
+    isPro: false,
+  },
+];
 
-interface WorkoutCardProps {
-  workout: {
-    id: number;
-    name: string;
-    targetMuscles: string[];
-    authorName: string;
-    authorLocation: string;
-    authorImage: string;
-    duration?: string;
-    calories?: number;
-    color?: string;
-    streak?: number;
-  };
+const NEW_WORKOUTS = [
+  {
+    id: "6",
+    title: "Chris Power Lift",
+    category: "Advance",
+    image:
+      "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&q=80",
+  },
+  {
+    id: "7",
+    title: "Yoga Flow Morning",
+    category: "Beginner",
+    image:
+      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80",
+  },
+];
+
+function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
+  const hour = new Date().getHours();
+  if (hour < 12) return "goodMorning";
+  if (hour < 18) return "goodAfternoon";
+  return "goodEvening";
 }
 
-const WorkoutCard = ({ workout }: WorkoutCardProps) => {
-  return (
-    <TouchableOpacity style={styles.workoutCard}>
-      <View style={styles.workoutHeader}>
-        <View style={styles.authorContainer}>
-          <Image
-            source={{ uri: workout.authorImage }}
-            style={styles.authorImage}
-          />
-          <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{workout.authorName}</Text>
-            <Text style={styles.authorLocation}>{workout.authorLocation}</Text>
-          </View>
-        </View>
-        {workout.streak && (
-          <View style={styles.streakContainer}>
-            <Text style={styles.streakEmoji}>🔥</Text>
-            <Text style={styles.streakCount}>{workout.streak}</Text>
-          </View>
-        )}
-      </View>
-
-      <Text
-        style={[
-          styles.workoutName,
-          workout.color ? { color: workout.color } : {},
-        ]}
-      >
-        {workout.name}
-      </Text>
-
-      {workout.duration && (
-        <View style={styles.workoutStatsContainer}>
-          <TargetMuscles muscles={workout.targetMuscles} />
-          <View style={styles.workoutStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{workout.duration}</Text>
-              <Text style={styles.statLabel}>Duration</Text>
-            </View>
-
-            <View style={styles.statDivider} />
-
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{workout.calories} Kcal</Text>
-              <Text style={styles.statLabel}>Calories burned</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {workout.id === 2 && <Pagination current={0} total={3} />}
-    </TouchableOpacity>
-  );
+type Workout = {
+  id: string;
+  title: string;
+  category: string;
+  image: string;
+  duration?: string;
+  calories?: number;
+  isPro?: boolean;
+  description?: string;
+  exercises?: { name: string; duration: string }[];
 };
 
 export default function ExploreScreen() {
-  const workouts = [
-    {
-      id: 1,
-      name: "Arms",
-      targetMuscles: ["biceps", "triceps"],
-      authorName: "Chris Bumstead",
-      authorLocation: "Ottawa, Canada",
-      authorImage:
-        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-      streak: 3,
-    },
-    {
-      id: 2,
-      name: "Pecs Epaules",
-      targetMuscles: ["chest", "shoulders"],
-      authorName: "Thomas Dupuis",
-      authorLocation: "Lyon, France",
-      authorImage:
-        "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-      duration: "1h 45m",
-      calories: 300,
-      color: "#9370DB",
-    },
-    {
-      id: 3,
-      name: "Legs destroyer",
-      targetMuscles: ["quads", "hamstrings", "calves"],
-      authorName: "Marta Rodriguez",
-      authorLocation: "Barcelone, Espagne",
-      authorImage:
-        "https://images.unsplash.com/photo-1594381898411-846e7d193883?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-      streak: 6,
-      color: "#9370DB",
-    },
-  ];
+  const router = useRouter();
+  const { t } = useTranslation();
+  const [userName, setUserName] = useState("there");
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const filterOptions = [
-    { id: 1, icon: "👍", count: 5 },
-    { id: 2, icon: "+" },
-  ];
+  const filters = useMemo(
+    () => [t.beginner, t.intermediate, t.advance],
+    [t.beginner, t.intermediate, t.advance],
+  );
+  const [activeFilter, setActiveFilter] = useState(filters[0]);
+
+  React.useEffect(() => {
+    setActiveFilter(filters[0]);
+  }, [filters]);
+
+  useEffect(() => {
+    getItem("user_name").then((name) => {
+      if (name) setUserName(name);
+    });
+  }, []);
+
+  function getFormattedDate(): string {
+    const now = new Date();
+    return `${t.days[(now.getDay() + 6) % 7]} ${now.getDate()} ${t.months[now.getMonth()].slice(0, 3)}`;
+  }
+
+  function openWorkoutModal(workout: Workout) {
+    setSelectedWorkout(workout);
+    setModalVisible(true);
+  }
+
+  function closeModal() {
+    setModalVisible(false);
+    setSelectedWorkout(null);
+  }
+
+  function handleUseWorkout() {
+    if (!selectedWorkout) return;
+    closeModal();
+    router.push({
+      pathname: "/(tabs)/explore/workout-detail",
+      params: {
+        id: selectedWorkout.id,
+        title: selectedWorkout.title,
+        category: selectedWorkout.category,
+        image: selectedWorkout.image,
+        duration: selectedWorkout.duration ?? "",
+        calories: selectedWorkout.calories?.toString() ?? "",
+        description: selectedWorkout.description ?? "",
+      },
+    });
+  }
+
+  function handleFeaturedTap() {
+    router.push({
+      pathname: "/(tabs)/explore/workout-detail",
+      params: {
+        id: FEATURED_WORKOUT.id,
+        title: FEATURED_WORKOUT.title,
+        category: FEATURED_WORKOUT.category,
+        image: FEATURED_WORKOUT.image,
+        duration: FEATURED_WORKOUT.duration,
+        calories: FEATURED_WORKOUT.calories.toString(),
+        description: FEATURED_WORKOUT.description,
+      },
+    });
+  }
 
   return (
     <View style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
 
       <ScrollView
-        style={styles.scrollView}
+        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {workouts.map((workout) => (
-          <WorkoutCard key={workout.id} workout={workout} />
-        ))}
+        {/* ── Header greeting ── */}
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.helloText}>
+              {t.hello} {userName},
+            </Text>
+            <Text style={styles.greetingText}>{t[getGreetingKey()]} 👋</Text>
+          </View>
+        </View>
 
-        <View style={styles.filterContainer}>
-          {filterOptions.map((option) => (
-            <TouchableOpacity key={option.id} style={styles.filterOption}>
-              <Text style={styles.filterIcon}>{option.icon}</Text>
-              {option.count && (
-                <Text style={styles.filterCount}>{option.count}</Text>
-              )}
+        {/* ── Today's community favorite ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t.todaysCommunityFavorite}</Text>
+          <Text style={styles.dateText}>{getFormattedDate()}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.featuredCard}
+          activeOpacity={0.9}
+          onPress={handleFeaturedTap}
+        >
+          <Image
+            source={{ uri: FEATURED_WORKOUT.image }}
+            style={styles.featuredImage}
+            resizeMode="cover"
+          />
+          <View style={styles.featuredOverlay}>
+            <Text style={styles.featuredTag}>{t.communityTopPick}</Text>
+            <Text style={styles.featuredSubtitle}>
+              | Emma&apos;s Core Challenge
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* ── Workout Categories ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t.workoutCategories}</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAll}>{t.seeAll}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter pills */}
+        <View style={styles.pillRow}>
+          {filters.map((f) => (
+            <TouchableOpacity
+              key={f}
+              style={[styles.pill, activeFilter === f && styles.pillActive]}
+              onPress={() => setActiveFilter(f)}
+            >
+              <Text
+                style={[
+                  styles.pillText,
+                  activeFilter === f && styles.pillTextActive,
+                ]}
+              >
+                {f}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Category workout cards */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {BEGINNER_WORKOUTS.map((w) => (
+            <TouchableOpacity
+              key={w.id}
+              style={styles.categoryCard}
+              activeOpacity={0.85}
+              onPress={() => openWorkoutModal(w)}
+            >
+              <Image
+                source={{ uri: w.image }}
+                style={styles.categoryCardImage}
+                resizeMode="cover"
+              />
+              <View style={styles.categoryCardOverlay}>
+                <Text style={styles.categoryCardTitle} numberOfLines={2}>
+                  {w.title}
+                </Text>
+                <Text style={styles.categoryCardSub}>
+                  | {t.workoutsLabel2} · {w.category}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* ── New Workouts ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {NEW_WORKOUTS.map((w) => (
+            <TouchableOpacity
+              key={w.id}
+              style={styles.newCard}
+              activeOpacity={0.85}
+              onPress={() => openWorkoutModal(w)}
+            >
+              <Image
+                source={{ uri: w.image }}
+                style={styles.newCardImage}
+                resizeMode="cover"
+              />
+              <View style={styles.newCardOverlay}>
+                <Text style={styles.newCardTitle} numberOfLines={2}>
+                  {w.title}
+                </Text>
+                <Text style={styles.categoryCardSub}>| {w.category}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </ScrollView>
+
+      {/* ── Workout Modal ── */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            {selectedWorkout && selectedWorkout.isPro ? (
+              <>
+                <Image
+                  source={{ uri: selectedWorkout.image }}
+                  style={styles.modalImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.modalBody}>
+                  <Text style={styles.modalTitle}>{t.upgradeToPremium}</Text>
+                  <Text style={styles.modalWorkoutTitle}>
+                    {selectedWorkout.title}
+                  </Text>
+                  <Text style={styles.modalDescription}>
+                    {t.subscribePremium}
+                  </Text>
+                  <TouchableOpacity style={styles.premiumButton}>
+                    <Text style={styles.premiumButtonText}>{t.bePremium}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={closeModal}
+                    style={styles.cancelLink}
+                  >
+                    <Text style={styles.cancelText}>{t.cancel2}</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : selectedWorkout ? (
+              <>
+                <Image
+                  source={{ uri: selectedWorkout.image }}
+                  style={styles.modalImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.modalBody}>
+                  <Text style={styles.modalWorkoutTitle}>
+                    {selectedWorkout.title}
+                  </Text>
+                  <Text style={styles.modalCategory}>
+                    {selectedWorkout.category}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.useButton}
+                    onPress={handleUseWorkout}
+                  >
+                    <Text style={styles.useButtonText}>{t.useIt}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={closeModal}
+                    style={styles.cancelLink}
+                  >
+                    <Text style={styles.cancelText}>{t.cancel2}</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -183,220 +388,251 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8F8F8",
+    paddingTop: 8,
+    backgroundColor: WorkoutTheme.background,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#FFFFFF",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333333",
-  },
-  headerIcon: {
-    fontSize: 20,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scrollView: {
+  scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
-  workoutCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 15,
-    marginHorizontal: 15,
-    marginVertical: 8,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "#EEEEEE",
+
+  headerRow: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
-  workoutHeader: {
+  helloText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: WorkoutTheme.text.primary,
+  },
+  greetingText: {
+    fontSize: 15,
+    color: WorkoutTheme.text.secondary,
+    marginTop: 2,
+  },
+
+  sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    marginTop: 8,
   },
-  authorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  authorImage: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    marginRight: 10,
-  },
-  authorInfo: {
-    justifyContent: "center",
-  },
-  authorName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333333",
-  },
-  authorLocation: {
-    fontSize: 14,
-    color: "#777777",
-  },
-  streakContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  streakEmoji: {
+  sectionTitle: {
     fontSize: 18,
-    marginRight: 5,
-  },
-  streakCount: {
-    fontSize: 16,
     fontWeight: "bold",
-    color: "#333333",
+    color: WorkoutTheme.text.primary,
   },
-  workoutName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333333",
-    marginTop: 10,
-    marginBottom: 15,
+  dateText: {
+    fontSize: 13,
+    color: WorkoutTheme.accent.purple,
+    fontWeight: "600",
   },
-  workoutStatsContainer: {
-    flexDirection: "row",
-    backgroundColor: "#F2F2F7",
-    borderRadius: 10,
+  seeAll: {
+    fontSize: 13,
+    color: WorkoutTheme.accent.purple,
+    fontWeight: "600",
+  },
+
+  featuredCard: {
+    marginHorizontal: 16,
+    height: 200,
+    borderRadius: 16,
     overflow: "hidden",
-    marginBottom: 15,
+    marginBottom: 24,
   },
-  bodyContainer: {
-    flexDirection: "row",
-    width: "40%",
-    justifyContent: "space-around",
-    alignItems: "center",
-    padding: 10,
+  featuredImage: {
+    width: "100%",
+    height: "100%",
   },
-  bodyOutline: {
-    height: 120,
-    width: 35,
-    borderColor: "#999999",
-    borderWidth: 0.5,
-    position: "relative",
-    marginHorizontal: 5,
-    backgroundColor: "#FFFFFF",
-  },
-  muscleFill: {
+  featuredOverlay: {
     position: "absolute",
-    backgroundColor: "#FF6347",
-    opacity: 0.7,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
-  chestMuscle: {
-    top: 20,
-    left: 5,
-    right: 5,
-    height: 20,
-    borderRadius: 10,
+  featuredTag: {
+    color: WorkoutTheme.text.primary,
+    fontWeight: "bold",
+    fontSize: 15,
   },
-  shoulderMuscle: {
-    top: 10,
-    left: 3,
-    right: 3,
-    height: 10,
-    borderRadius: 5,
+  featuredSubtitle: {
+    color: WorkoutTheme.text.secondary,
+    fontSize: 12,
+    marginTop: 2,
   },
-  backMuscle: {
-    top: 20,
-    left: 5,
-    right: 5,
-    height: 25,
-    borderRadius: 10,
+
+  pillRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    marginBottom: 14,
+    gap: 8,
   },
-  workoutStats: {
+  pill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: WorkoutTheme.border,
+  },
+  pillActive: {
+    backgroundColor: WorkoutTheme.accent.purple,
+    borderColor: WorkoutTheme.accent.purple,
+  },
+  pillText: {
+    color: WorkoutTheme.text.secondary,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  pillTextActive: {
+    color: WorkoutTheme.text.primary,
+  },
+
+  horizontalScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+
+  categoryCard: {
+    width: 220,
+    height: 160,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginRight: 12,
+  },
+  categoryCardImage: {
+    width: "100%",
+    height: "100%",
+  },
+  categoryCardOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  categoryCardTitle: {
+    color: WorkoutTheme.text.primary,
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  categoryCardSub: {
+    color: WorkoutTheme.text.secondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  newCard: {
+    width: 160,
+    height: 120,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginRight: 12,
+  },
+  newCardImage: {
+    width: "100%",
+    height: "100%",
+  },
+  newCardOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 8,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  newCardTitle: {
+    color: WorkoutTheme.text.primary,
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+
+  modalBackdrop: {
     flex: 1,
-    paddingVertical: 20,
-    paddingHorizontal: 10,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-end",
   },
-  statItem: {
-    marginBottom: 15,
+  modalSheet: {
+    backgroundColor: WorkoutTheme.backgroundSecondary,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: "hidden",
   },
-  statValue: {
+  modalImage: {
+    width: "100%",
+    height: 200,
+  },
+  modalBody: {
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: WorkoutTheme.text.primary,
+    marginBottom: 6,
+  },
+  modalWorkoutTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333333",
+    color: WorkoutTheme.text.primary,
+    textAlign: "center",
+    marginBottom: 6,
   },
-  statLabel: {
+  modalCategory: {
     fontSize: 14,
-    color: "#777777",
-  },
-  statDivider: {
-    height: 1,
-    backgroundColor: "#E0E0E0",
-    marginVertical: 15,
-  },
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 5,
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#555555",
-    marginHorizontal: 3,
-  },
-  paginationDotActive: {
-    backgroundColor: "#9370DB",
-    width: 16,
-  },
-  filterContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 10,
+    color: WorkoutTheme.accent.purple,
     marginBottom: 20,
   },
-  filterOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F2F2F7",
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-  },
-  filterIcon: {
-    fontSize: 18,
-  },
-  filterCount: {
-    position: "absolute",
-    top: -5,
-    right: -5,
-    backgroundColor: "#9370DB",
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+  modalDescription: {
+    fontSize: 14,
+    color: WorkoutTheme.text.secondary,
     textAlign: "center",
-    color: "#FFFFFF",
-    fontSize: 12,
-    lineHeight: 20,
+    marginBottom: 20,
+  },
+  useButton: {
+    backgroundColor: WorkoutTheme.accent.purple,
+    paddingHorizontal: 48,
+    paddingVertical: 14,
+    borderRadius: 30,
+    marginBottom: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  useButtonText: {
+    color: WorkoutTheme.text.primary,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  premiumButton: {
+    backgroundColor: "#F0B429",
+    paddingHorizontal: 48,
+    paddingVertical: 14,
+    borderRadius: 30,
+    marginBottom: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  premiumButtonText: {
+    color: WorkoutTheme.background,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  cancelLink: {
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  cancelText: {
+    color: WorkoutTheme.text.secondary,
+    fontSize: 14,
   },
 });

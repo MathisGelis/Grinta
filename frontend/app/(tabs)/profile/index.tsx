@@ -1,315 +1,229 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Image,
-  ImageBackground,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
 } from "react-native";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { getItem } from "@/core/services/storage";
+import { TokenService } from "@/services/token.service";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function ProfileScreen() {
-  const friends = [
-    {
-      id: 1,
-      image:
-        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      id: 2,
-      image:
-        "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      id: 3,
-      image:
-        "https://images.unsplash.com/photo-1594381898411-846e7d193883?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      id: 4,
-      image:
-        "https://images.unsplash.com/photo-1548690312-e3b507d8c110?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-    },
+  const { t } = useTranslation();
+  const [userName, setUserName] = useState("Athlete");
+
+  const MENU_ITEMS = [
+    { id: "edit", label: t.editProfile, icon: "person-outline" as const, route: "/(tabs)/profile/edit-profile" },
+    { id: "privacy", label: t.privacyPolicy, icon: "shield-checkmark-outline" as const, route: "/(tabs)/profile/privacy-policy" },
+    { id: "settings", label: t.settings, icon: "settings-outline" as const, route: "/(tabs)/profile/settings" },
   ];
 
-  const gallery = [
-    {
-      id: 1,
-      image:
-        "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-    },
-    {
-      id: 2,
-      image:
-        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-    },
-    {
-      id: 3,
-      image:
-        "https://images.unsplash.com/photo-1593079831268-3381b0db4a77?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-    },
-    {
-      id: 4,
-      image:
-        "https://images.unsplash.com/photo-1576678927484-cc907957088c?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-    },
-  ];
+  useEffect(() => {
+    getItem("user_name").then((name) => {
+      if (name) setUserName(name);
+    });
+  }, []);
+
+  const handleSignOut = () => {
+    Alert.alert(t.signOutConfirmTitle, t.signOutConfirmMsg, [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.signOut,
+        style: "destructive",
+        onPress: async () => {
+          await TokenService.remove();
+          router.replace("/(auth)/LoginScreen");
+        },
+      },
+    ]);
+  };
+
+  const initials = userName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
-    <View style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <ScrollView style={styles.scrollView}>
-        <ImageBackground
-          source={require("@/assets/purplewave.jpg")}
-          style={styles.headerBackground}
-          resizeMode="cover"
-        />
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{t.profile}</Text>
+        </View>
 
-        <View style={styles.profileCardContainer}>
-          <View style={styles.profileCard}>
-            <View style={styles.profileImageContainer}>
-              <Image
-                source={{
-                  uri: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-                }}
-                style={styles.profileImage}
-              />
+        {/* Avatar */}
+        <View style={styles.avatarSection}>
+          <View style={styles.avatarRing}>
+            <View style={styles.avatarInner}>
+              <Text style={styles.avatarInitials}>{initials}</Text>
             </View>
+          </View>
+          <Text style={styles.userName}>{userName}</Text>
+          <Text style={styles.joinedText}>{t.joined} March 2025</Text>
+        </View>
 
-            <Text style={styles.profileName}>John Doe</Text>
-            <Text style={styles.profileBio}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus
-              quis tempor metus. Nunc convallis efficitur blandit. Nulla at
-              sapien sit amet nulla dapibus maximus. Ut bibendum fringilla ex.
-            </Text>
-
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.followButton}>
-                <Text style={styles.followButtonText}>Follow</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.messageButton}>
-                <Text style={styles.messageButtonText}>✈️</Text>
-              </TouchableOpacity>
-            </View>
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNum}>12</Text>
+            <Text style={styles.statLabel}>{t.workoutsLabel}</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNum}>3,450</Text>
+            <Text style={styles.statLabel}>{t.calories}</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNum}>6h 30m</Text>
+            <Text style={styles.statLabel}>{t.active}</Text>
           </View>
         </View>
 
-        <View style={styles.contentContainer}>
-          <View style={styles.statsBarWrapper}>
-            <View style={styles.statsBar}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>456</Text>
-                <Text style={styles.statLabel}>Training</Text>
-              </View>
-
-              <View style={styles.statDivider} />
-
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>67</Text>
-                <Text style={styles.statLabel}>Following</Text>
-              </View>
-
-              <View style={styles.statDivider} />
-
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>70</Text>
-                <Text style={styles.statLabel}>Followers</Text>
-              </View>
-            </View>
+        {/* PRO card */}
+        <TouchableOpacity style={styles.proCard}>
+          <View>
+            <Text style={styles.proTitle}>{t.upgradeToPro}</Text>
+            <Text style={styles.proSub}>{t.unlockAll}</Text>
           </View>
-
-          <View style={styles.mainContent}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Friends</Text>
-              <View style={styles.friendsList}>
-                {friends.map((friend) => (
-                  <TouchableOpacity key={friend.id} style={styles.friendItem}>
-                    <Image
-                      source={{ uri: friend.image }}
-                      style={styles.friendImage}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Gallery</Text>
-              <View style={styles.galleryGrid}>
-                {gallery.map((item) => (
-                  <TouchableOpacity key={item.id} style={styles.galleryItem}>
-                    <Image
-                      source={{ uri: item.image }}
-                      style={styles.galleryImage}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+          <View style={styles.proBadge}>
+            <MaterialCommunityIcons name="crown" size={18} color="#F59E0B" />
           </View>
+        </TouchableOpacity>
+
+        {/* Menu */}
+        <View style={styles.menuSection}>
+          {MENU_ITEMS.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.menuItem}
+              onPress={() => item.route && router.push(item.route as any)}
+            >
+              <View style={styles.menuIconWrap}>
+                <Ionicons name={item.icon} size={20} color="#7B5CF0" />
+              </View>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#555" />
+            </TouchableOpacity>
+          ))}
         </View>
+
+        {/* Sign Out */}
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+          <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
+          <Text style={styles.signOutText}>{t.signOut}</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: { flex: 1, backgroundColor: "#121212" },
+  header: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 8 },
+  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
+
+  avatarSection: { alignItems: "center", paddingVertical: 24 },
+  avatarRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    padding: 3,
+    backgroundColor: "#7B5CF0",
+    marginBottom: 12,
+  },
+  avatarInner: {
     flex: 1,
-    backgroundColor: "#FFF",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  headerBackground: {
-    height: 150,
-    width: "100%",
-  },
-  profileCardContainer: {
-    paddingHorizontal: 16,
-    marginTop: -75,
-  },
-  profileCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 48,
+    backgroundColor: "#2a1f4a",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  profileImageContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    overflow: "hidden",
-    marginTop: -50,
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-  },
-  profileName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginTop: 10,
-  },
-  profileBio: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 20,
-    marginTop: 10,
-    paddingHorizontal: 10,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    marginTop: 20,
-    width: "100%",
-  },
-  followButton: {
-    flex: 1,
-    backgroundColor: "#8A2BE2",
-    paddingVertical: 12,
-    borderRadius: 50,
-    marginRight: 10,
-    alignItems: "center",
-  },
-  followButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  messageButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#E8E2F9",
     justifyContent: "center",
-    alignItems: "center",
   },
-  messageButtonText: {
-    fontSize: 20,
-  },
-  contentContainer: {
+  avatarInitials: { color: "#fff", fontSize: 28, fontWeight: "700" },
+  userName: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 4 },
+  joinedText: { color: "#888", fontSize: 13 },
+
+  statsRow: {
     flexDirection: "row",
-    marginTop: 20,
-    paddingLeft: 15, // Ajout d'un padding à gauche pour éviter que la barre violet soit collée
-    paddingBottom: 20, // Ajout d'un padding en bas pour éviter que le contenu soit caché par la barre de navigation
+    backgroundColor: "#1a1a1a",
+    borderRadius: 20,
+    marginHorizontal: 16,
+    padding: 20,
+    marginBottom: 16,
   },
-  statsBarWrapper: {
-    marginRight: 15, // Ajoute une marge à droite de la barre
-  },
-  statsBar: {
-    width: 80, // Réduit la largeur de 100 à 80
-    backgroundColor: "#8A2BE2",
-    borderRadius: 15, // Coins arrondis sur tous les côtés
-    paddingVertical: 20,
-    alignItems: "center",
-  },
-  statItem: {
-    alignItems: "center",
-    marginVertical: 12, // Réduit légèrement la marge verticale
-  },
-  statNumber: {
-    color: "#FFFFFF",
-    fontSize: 22, // Légèrement plus petit
-    fontWeight: "bold",
-  },
-  statLabel: {
-    color: "#FFFFFF",
-    fontSize: 12, // Légèrement plus petit
-    opacity: 0.8,
-  },
-  statDivider: {
-    width: "60%",
-    height: 1,
-    backgroundColor: "#FFFFFF",
-    opacity: 0.3,
-    marginVertical: 12,
-  },
-  mainContent: {
-    flex: 1,
-    paddingRight: 15,
-  },
-  section: {
-    marginBottom: 25,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
-  friendsList: {
+  statItem: { flex: 1, alignItems: "center" },
+  statNum: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 4 },
+  statLabel: { color: "#888", fontSize: 12 },
+  statDivider: { width: 1, backgroundColor: "#2a2a2a" },
+
+  proCard: {
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1a1a1a",
+    borderRadius: 20,
+    marginHorizontal: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#F59E0B44",
   },
-  friendItem: {
-    marginRight: 10,
+  proTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 4 },
+  proSub: { color: "#888", fontSize: 13 },
+  proBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#F59E0B22",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  friendImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+
+  menuSection: {
+    marginHorizontal: 16,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 20,
+    overflow: "hidden",
+    marginBottom: 24,
   },
-  galleryGrid: {
+  menuItem: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -5,
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2a2a2a",
+    gap: 14,
   },
-  galleryItem: {
-    width: "50%",
-    padding: 5,
-    aspectRatio: 1,
-  },
-  galleryImage: {
-    width: "100%",
-    height: "100%",
+  menuIconWrap: {
+    width: 36,
+    height: 36,
     borderRadius: 10,
+    backgroundColor: "#2a1f4a",
+    alignItems: "center",
+    justifyContent: "center",
   },
+  menuLabel: { flex: 1, color: "#fff", fontSize: 15, fontWeight: "500" },
+
+  signOutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 20,
+  },
+  signOutText: { color: "#FF6B6B", fontSize: 15, fontWeight: "600" },
 });

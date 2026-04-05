@@ -12,7 +12,7 @@ export default function SplashScreen() {
       useNativeDriver: true,
     }).start(() => {
       setTimeout(() => {
-        router.push("/(auth)/welcome/components/OnboardingSlide"); // 👈 transition vers l’onboarding
+        router.replace("/(auth)/welcome/screens/OnboardingScreen");
       }, 1500);
     });
   }, [opacity]);

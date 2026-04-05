@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from 'src/users/entities/users.entity';
 import { Difficulty } from '../enums/difficulty.enum';
@@ -34,7 +40,10 @@ export class Programme {
   @ApiProperty({ required: false })
   description?: string;
 
-  @OneToMany(() => ProgrammeDay, (day) => day.programme, { cascade: true, eager: true })
+  @OneToMany(() => ProgrammeDay, (day) => day.programme, {
+    cascade: true,
+    eager: true,
+  })
   @ApiProperty({ type: () => [ProgrammeDay] })
   days: ProgrammeDay[];
 }

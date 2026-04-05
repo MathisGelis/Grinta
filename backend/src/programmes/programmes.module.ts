@@ -8,13 +8,9 @@ import { ProgrammesService } from './programmes.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Programme,
-      ProgrammeDay,
-      PlannedWorkout,
-    ]),
+    TypeOrmModule.forFeature([Programme, ProgrammeDay, PlannedWorkout]),
   ],
   controllers: [ProgrammesController],
-  providers: [ProgrammesService]
+  providers: [ProgrammesService],
 })
 export class ProgrammesModule {}

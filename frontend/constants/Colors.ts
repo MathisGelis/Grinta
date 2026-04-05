@@ -24,3 +24,36 @@ export const Colors = {
     tabIconSelected: tintColorDark,
   },
 };
+
+// Workout theme with dark grays and purple accents
+export const WorkoutTheme = {
+  // Dark backgrounds
+  background: '#0F0F0F',
+  backgroundSecondary: '#1A1A1A',
+  backgroundTertiary: '#252525',
+  
+  // Text colors
+  text: {
+    primary: '#FFFFFF',
+    secondary: '#B8B8B8',
+    tertiary: '#808080',
+  },
+  
+  // Accent colors
+  accent: {
+    purple: '#7C5DB7',
+    purpleLight: '#9B79D8',
+    purpleDark: '#5A3F8F',
+  },
+  
+  // Status colors
+  status: {
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#EF4444',
+    info: '#3B82F6',
+  },
+  
+  // Border colors
+  border: '#333333',
+};
