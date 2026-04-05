@@ -2,8 +2,13 @@ import { getItem } from "@/core/services/storage";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState, useMemo } from "react";
+import { getItem } from "@/core/services/storage";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Image,
+  Modal,
   Modal,
   ScrollView,
   StatusBar,
@@ -312,6 +317,68 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Category workout cards */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {BEGINNER_WORKOUTS.map((w) => (
+            <TouchableOpacity
+              key={w.id}
+              style={styles.categoryCard}
+              activeOpacity={0.85}
+              onPress={() => openWorkoutModal(w)}
+            >
+              <Image
+                source={{ uri: w.image }}
+                style={styles.categoryCardImage}
+                resizeMode="cover"
+              />
+              <View style={styles.categoryCardOverlay}>
+                <Text style={styles.categoryCardTitle} numberOfLines={2}>
+                  {w.title}
+                </Text>
+                <Text style={styles.categoryCardSub}>
+                  | {t.workoutsLabel2} · {w.category}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* ── New Workouts ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {NEW_WORKOUTS.map((w) => (
+            <TouchableOpacity
+              key={w.id}
+              style={styles.newCard}
+              activeOpacity={0.85}
+              onPress={() => openWorkoutModal(w)}
+            >
+              <Image
+                source={{ uri: w.image }}
+                style={styles.newCardImage}
+                resizeMode="cover"
+              />
+              <View style={styles.newCardOverlay}>
+                <Text style={styles.newCardTitle} numberOfLines={2}>
+                  {w.title}
+                </Text>
+                <Text style={styles.categoryCardSub}>| {w.category}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </ScrollView>
 
       {/* ── Workout Modal ── */}
@@ -396,6 +463,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
+    paddingBottom: 100,
   },
 
   headerRow: {
@@ -413,6 +481,8 @@ const styles = StyleSheet.create({
     color: WorkoutTheme.text.secondary,
     marginTop: 2,
   },
+
+  sectionHeader: {
 
   sectionHeader: {
     flexDirection: "row",
@@ -448,7 +518,26 @@ const styles = StyleSheet.create({
   featuredImage: {
     width: "100%",
     height: "100%",
+
+  featuredCard: {
+    marginHorizontal: 16,
+    height: 200,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 24,
   },
+  featuredImage: {
+    width: "100%",
+    height: "100%",
+  },
+  featuredOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: "rgba(0,0,0,0.45)",
   featuredOverlay: {
     position: "absolute",
     bottom: 0,
@@ -470,7 +559,12 @@ const styles = StyleSheet.create({
   },
 
   pillRow: {
+
+  pillRow: {
     flexDirection: "row",
+    paddingHorizontal: 16,
+    marginBottom: 14,
+    gap: 8,
     paddingHorizontal: 16,
     marginBottom: 14,
     gap: 8,
@@ -505,9 +599,24 @@ const styles = StyleSheet.create({
     width: 220,
     height: 160,
     borderRadius: 16,
+
+  categoryCard: {
+    width: 220,
+    height: 160,
+    borderRadius: 16,
     overflow: "hidden",
     marginRight: 12,
+    marginRight: 12,
   },
+  categoryCardImage: {
+    width: "100%",
+    height: "100%",
+  },
+  categoryCardOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   categoryCardImage: {
     width: "100%",
     height: "100%",
@@ -541,7 +650,15 @@ const styles = StyleSheet.create({
   newCardImage: {
     width: "100%",
     height: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+    marginRight: 12,
   },
+  newCardImage: {
+    width: "100%",
+    height: "100%",
+  },
+  newCardOverlay: {
   newCardOverlay: {
     position: "absolute",
     bottom: 0,
@@ -582,12 +699,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   modalWorkoutTitle: {
+  modalWorkoutTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: WorkoutTheme.text.primary,
     textAlign: "center",
     marginBottom: 6,
   },
+  modalCategory: {
   modalCategory: {
     fontSize: 14,
     color: WorkoutTheme.accent.purple,

@@ -39,6 +39,12 @@ export default function Layout() {
               size={24}
               color={color}
             />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
@@ -82,6 +88,12 @@ export default function Layout() {
       <Tabs.Screen
         name="profile"
         options={{
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "person-circle" : "person-circle-outline"}
+              size={28}
+              color={color}
+            />
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "person-circle" : "person-circle-outline"}
