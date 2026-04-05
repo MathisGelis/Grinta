@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 
 export interface FilterOptions {
@@ -62,7 +61,7 @@ export default function WorkoutFilter({
       difficulty: selectedDifficulty || undefined,
       duration: selectedDuration,
     });
-  }, [selectedMuscles, selectedDifficulty, selectedDuration]);
+  }, [selectedMuscles, selectedDifficulty, selectedDuration, onFilterChange]);
 
   const toggleMuscle = (muscle: string) => {
     if (selectedMuscles.includes(muscle)) {

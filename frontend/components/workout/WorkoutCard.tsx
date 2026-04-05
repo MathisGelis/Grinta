@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ImageBackground,
   StyleSheet,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";

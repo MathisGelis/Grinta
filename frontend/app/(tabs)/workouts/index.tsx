@@ -11,11 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
-import WorkoutCard, {
-  WorkoutCardData,
-  WorkoutExercise,
-  WorkoutStats,
-} from "@/components/workout/WorkoutCard";
+import WorkoutCard, { WorkoutCardData } from "@/components/workout/WorkoutCard";
 
 export default function WorkoutScreen() {
   // Sample data - replace with API call later

@@ -36,49 +36,49 @@ export default function EditWorkoutScreen() {
 
   // Charge les données du workout au montage
   useEffect(() => {
+    const loadWorkoutData = async () => {
+      try {
+        setLoading(true);
+        // TODO: Remplacer par un appel API
+        // const workout = await api.get(`/workouts/${id}`);
+
+        // Données temporaires pour la démo
+        if (id === "1") {
+          setName("Upper Body Strength");
+          setDescription("Entraînement complet du haut du corps");
+          setImage(
+            "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&q=80",
+          );
+          setEstimatedTime("90");
+          setSelectedExercises([
+            { id: "e1", name: "Bench Press", sets: 4, reps: 6, weight: 100 },
+            { id: "e2", name: "Pull-ups", sets: 3, reps: 8, weight: 0 },
+            { id: "e3", name: "Shoulder Press", sets: 3, reps: 8, weight: 60 },
+          ]);
+        } else if (id === "2") {
+          setName("Leg Day Power");
+          setDescription("Jambes explosives");
+          setImage(
+            "https://images.unsplash.com/photo-1434608519344-49d77a124f62?w=800&q=80",
+          );
+          setEstimatedTime("120");
+          setSelectedExercises([
+            { id: "e4", name: "Squats", sets: 5, reps: 5, weight: 150 },
+            { id: "e5", name: "leg Press", sets: 4, reps: 8, weight: 200 },
+            { id: "e6", name: "Leg Curls", sets: 3, reps: 12, weight: 80 },
+            { id: "e7", name: "Calf Raises", sets: 3, reps: 15, weight: 100 },
+          ]);
+        }
+      } catch (error) {
+        console.error("Erreur loading workout:", error);
+        Alert.alert("Erreur", "Impossible de charger la séance");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadWorkoutData();
   }, [id]);
-
-  const loadWorkoutData = async () => {
-    try {
-      setLoading(true);
-      // TODO: Remplacer par un appel API
-      // const workout = await api.get(`/workouts/${id}`);
-
-      // Données temporaires pour la démo
-      if (id === "1") {
-        setName("Upper Body Strength");
-        setDescription("Entraînement complet du haut du corps");
-        setImage(
-          "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&q=80",
-        );
-        setEstimatedTime("90");
-        setSelectedExercises([
-          { id: "e1", name: "Bench Press", sets: 4, reps: 6, weight: 100 },
-          { id: "e2", name: "Pull-ups", sets: 3, reps: 8, weight: 0 },
-          { id: "e3", name: "Shoulder Press", sets: 3, reps: 8, weight: 60 },
-        ]);
-      } else if (id === "2") {
-        setName("Leg Day Power");
-        setDescription("Jambes explosives");
-        setImage(
-          "https://images.unsplash.com/photo-1434608519344-49d77a124f62?w=800&q=80",
-        );
-        setEstimatedTime("120");
-        setSelectedExercises([
-          { id: "e4", name: "Squats", sets: 5, reps: 5, weight: 150 },
-          { id: "e5", name: "leg Press", sets: 4, reps: 8, weight: 200 },
-          { id: "e6", name: "Leg Curls", sets: 3, reps: 12, weight: 80 },
-          { id: "e7", name: "Calf Raises", sets: 3, reps: 15, weight: 100 },
-        ]);
-      }
-    } catch (error) {
-      console.error("Erreur loading workout:", error);
-      Alert.alert("Erreur", "Impossible de charger la séance");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
