@@ -132,6 +132,13 @@ export default function StatsScreen() {
               <Text style={styles.bigRingValue}>745</Text>
               <Text style={styles.bigRingLabel}>Cal</Text>
             </View>
+            <Text style={styles.ringLabel}>{t.benchPrLabel}</Text>
+          </View>
+          <View style={styles.smallRingItem}>
+            <View style={[styles.ringOuter, { borderColor: "#34D399" }]}>
+              <Text style={styles.ringValue}>5/6</Text>
+            </View>
+            <Text style={styles.ringLabel}>{t.completedLabel}</Text>
           </View>
           <Text style={styles.bigRingCaption}>{t.dailyCaloriesBurned}</Text>
         </View>

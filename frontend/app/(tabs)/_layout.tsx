@@ -43,7 +43,7 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
-        name="workouts"
+        name="stats"
         options={{
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
@@ -68,7 +68,7 @@ export default function Layout() {
         })}
       />
       <Tabs.Screen
-        name="stats"
+        name="workouts"
         options={{
           tabBarIcon: ({ color, focused }) => (
             <Ionicons

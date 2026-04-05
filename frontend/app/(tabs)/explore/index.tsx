@@ -180,9 +180,8 @@ export default function ExploreScreen() {
     });
   }
 
-  return (
-    <View style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
+  const filters = useMemo(() => [t.beginner, t.intermediate, t.advance], [t.beginner, t.intermediate, t.advance]);
+  const [activeFilter, setActiveFilter] = useState(filters[0]);
 
       <ScrollView
         style={styles.scroll}
