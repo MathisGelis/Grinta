@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { LinearGradient } from "expo-linear-gradient";
 
 function getWeekDates(weekOffset: number) {
   const today = new Date();
@@ -100,12 +101,17 @@ export default function StatsScreen() {
 
         {/* Calorie ring */}
         <View style={styles.bigRingSection}>
-          <View style={styles.bigRingOuter}>
+          <LinearGradient
+            colors={["#7B5CF0", "#EC4899"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.bigRingGradient}
+          >
             <View style={styles.bigRingInner}>
               <Text style={styles.bigRingValue}>745</Text>
               <Text style={styles.bigRingLabel}>Cal</Text>
             </View>
-          </View>
+          </LinearGradient>
           <Text style={styles.bigRingCaption}>{t.dailyCaloriesBurned}</Text>
         </View>
 
@@ -188,17 +194,23 @@ const styles = StyleSheet.create({
   dayTextActive: { color: "#fff" },
 
   bigRingSection: { alignItems: "center", marginBottom: 32 },
-  bigRingOuter: {
+  bigRingGradient: {
     width: 180,
     height: 180,
     borderRadius: 90,
-    borderWidth: 14,
-    borderColor: "#7B5CF0",
+    padding: 14,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
   },
-  bigRingInner: { alignItems: "center" },
+  bigRingInner: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 90,
+    backgroundColor: "#121212",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   bigRingValue: { color: "#fff", fontSize: 40, fontWeight: "700" },
   bigRingLabel: { color: "#888", fontSize: 16 },
   bigRingCaption: { color: "#555", fontSize: 13 },
