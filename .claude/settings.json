@@ -1,0 +1,15 @@
+{
+  "disabledMcpjsonServers": ["Claude_Preview"],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"continue\": true}'"
+          }
+        ]
+      }
+    ]
+  }
+}
