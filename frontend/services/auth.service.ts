@@ -10,18 +10,27 @@ export interface RegisterResponse {
 }
 
 export const AuthService = {
-  login(email: string, password: string) {
-    return api.post<LoginResponse>("/auth/login", { email, password });
+  login(identifier: string, password: string) {
+    return api.post<LoginResponse>("/auth/login", { identifier, password });
   },
 
-  async register(email: string, password: string, name: string): Promise<RegisterResponse> {
+  async register(
+    email: string,
+    password: string,
+    displayName: string,
+    uniqueName: string
+  ): Promise<RegisterResponse> {
     const user = await api.post<{ id: string }>("/users/register", {
       email,
       password,
-      name,
+      displayName,
+      uniqueName,
     });
 
-    const auth = await api.post<LoginResponse>("/auth/login", { email, password });
+    const auth = await api.post<LoginResponse>("/auth/login", {
+      identifier: email,
+      password,
+    });
 
     return { access_token: auth.access_token, id: user.id };
   },
