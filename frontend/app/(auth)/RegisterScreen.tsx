@@ -18,20 +18,38 @@ import { FontAwesome, Ionicons } from "@expo/vector-icons";
 const { height } = Dimensions.get("window");
 const HERO_HEIGHT = height * 0.38;
 
+function parseUniqueNameError(message: string): {
+  isUniqueName: boolean;
+  suggested?: string;
+} {
+  if (message.startsWith("Username already in use, recommended:")) {
+    const suggested = message.split("recommended:")[1]?.trim();
+    return { isUniqueName: true, suggested };
+  }
+  return { isUniqueName: false };
+}
+
 export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [uniqueName, setUniqueName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
+  const [suggestedName, setSuggestedName] = useState<string | null>(null);
 
   const handleRegister = async () => {
     setError("");
-    if (!name || !email || !password) {
+    setSuggestedName(null);
+    if (!displayName || !uniqueName || !email || !password) {
       setError("Veuillez remplir tous les champs");
+      return;
+    }
+    if (uniqueName.length < 3) {
+      setError("Le nom d'utilisateur doit faire au moins 3 caractères");
       return;
     }
     if (password !== confirmPassword) {
@@ -40,13 +58,26 @@ export default function RegisterScreen() {
     }
     try {
       setLoading(true);
-      const response = await AuthService.register(email, password, name);
+      const response = await AuthService.register(
+        email,
+        password,
+        displayName,
+        uniqueName
+      );
       await TokenService.save(response.access_token);
       await saveItem("user_id", response.id);
-      await saveItem("user_name", name);
+      await saveItem("user_name", displayName);
+      await saveItem("user_unique_name", uniqueName);
       router.replace("/(auth)/onboarding/GenderScreen");
     } catch (err: any) {
-      setError(err.message || "Une erreur est survenue");
+      const message = err.message || "Une erreur est survenue";
+      const parsed = parseUniqueNameError(message);
+      if (parsed.isUniqueName) {
+        setError("Ce nom d'utilisateur est déjà pris.");
+        if (parsed.suggested) setSuggestedName(parsed.suggested);
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -97,15 +128,48 @@ export default function RegisterScreen() {
         {/* Form */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Name</Text>
+            <Text style={styles.label}>Display Name</Text>
             <TextInput
               style={styles.input}
-              placeholder="Your name"
+              placeholder="Your full name"
               placeholderTextColor="#555"
-              value={name}
-              onChangeText={setName}
+              value={displayName}
+              onChangeText={setDisplayName}
             />
             <View style={styles.underline} />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Username</Text>
+            <View style={styles.inputRow}>
+              <Text style={styles.atSign}>@</Text>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="yourhandle"
+                placeholderTextColor="#555"
+                value={uniqueName}
+                onChangeText={(v) => {
+                  setSuggestedName(null);
+                  setUniqueName(v.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+                }}
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.underline} />
+            {suggestedName && (
+              <TouchableOpacity
+                style={styles.suggestionBtn}
+                onPress={() => {
+                  setUniqueName(suggestedName);
+                  setSuggestedName(null);
+                  setError("");
+                }}
+              >
+                <Text style={styles.suggestionText}>
+                  Suggestion: <Text style={styles.suggestionHandle}>@{suggestedName}</Text> — Tap to use
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
@@ -249,12 +313,23 @@ const styles = StyleSheet.create({
   inputGroup: { marginBottom: 24 },
   label: { color: "#7B5CF0", fontSize: 12, marginBottom: 8 },
   inputRow: { flexDirection: "row", alignItems: "center" },
+  atSign: { color: "#7B5CF0", fontSize: 16, marginRight: 4, paddingVertical: 6 },
   input: {
     color: "#fff",
     fontSize: 16,
     paddingVertical: 6,
   },
   underline: { height: 1, backgroundColor: "#2a2a2a", marginTop: 6 },
+  suggestionBtn: {
+    marginTop: 8,
+    padding: 10,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#7B5CF055",
+  },
+  suggestionText: { color: "#aaa", fontSize: 12 },
+  suggestionHandle: { color: "#7B5CF0", fontWeight: "600" },
   error: {
     color: "#ff6b6b",
     fontSize: 13,
