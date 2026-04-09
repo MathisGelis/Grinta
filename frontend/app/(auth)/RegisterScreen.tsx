@@ -68,6 +68,7 @@ export default function RegisterScreen() {
       await saveItem("user_id", response.id);
       await saveItem("user_name", displayName);
       await saveItem("user_unique_name", uniqueName);
+      await saveItem("user_email", email);
       router.replace("/(auth)/onboarding/GenderScreen");
     } catch (err: any) {
       const message = err.message || "Une erreur est survenue";

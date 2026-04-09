@@ -204,9 +204,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   bigRingInner: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 90,
+    width: 152,
+    height: 152,
+    borderRadius: 76,
     backgroundColor: "#121212",
     alignItems: "center",
     justifyContent: "center",
