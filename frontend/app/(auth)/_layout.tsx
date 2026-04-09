@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 
 export default function AuthNavigator() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, animation: "none" }}>
       <Stack.Screen name="welcome/screens/SplashScreen" />
       <Stack.Screen name="welcome/screens/OnboardingScreen" />
       <Stack.Screen name="LandingScreen" />

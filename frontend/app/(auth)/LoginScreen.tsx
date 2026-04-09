@@ -18,7 +18,7 @@ const { height } = Dimensions.get("window");
 const HERO_HEIGHT = height * 0.38;
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,13 +26,13 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setError(null);
-    if (!email || !password) {
+    if (!identifier || !password) {
       setError("Veuillez remplir tous les champs");
       return;
     }
     try {
       setLoading(true);
-      const response = await AuthService.login(email, password);
+      const response = await AuthService.login(identifier, password);
       await TokenService.save(response.access_token);
       router.replace("/(tabs)/explore");
     } catch (err: any) {
@@ -82,18 +82,18 @@ export default function LoginScreen() {
         {/* Form */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>Email or @username</Text>
             <View style={styles.inputRow}>
               <TextInput
                 style={[styles.input, { flex: 1 }]}
-                placeholder="your@email.com"
+                placeholder="your@email.com or @username"
                 placeholderTextColor="#555"
-                value={email}
-                onChangeText={setEmail}
+                value={identifier}
+                onChangeText={setIdentifier}
                 autoCapitalize="none"
-                keyboardType="email-address"
+                keyboardType="default"
               />
-              {email.length > 0 && (
+              {identifier.length > 0 && (
                 <View style={styles.checkmark}>
                   <Ionicons name="checkmark" size={14} color="#fff" />
                 </View>
