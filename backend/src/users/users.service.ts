@@ -9,6 +9,7 @@ import { User } from './entities/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { UserListDto } from './dto/users-list.dto';
 
 @Injectable()
 export class UsersService {
@@ -23,12 +24,25 @@ export class UsersService {
     });
 
     if (existing) throw new BadRequestException('Email already in use');
+    const existingUsername = await this.userRepository.findOne({
+      where: { uniqueName: userData.uniqueName },
+    });
 
+    if (existingUsername) {
+      const generatedName = await this.generateUniqueUsernameFromDisplayName(
+        userData.displayName,
+      );
+
+      throw new BadRequestException(
+        `Username already in use, recommended: ${generatedName}`,
+      );
+    }
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const newUser = this.userRepository.create({
       ...userData,
       password: hashedPassword,
     });
+
     return await this.userRepository.save(newUser);
   }
 
@@ -47,7 +61,23 @@ export class UsersService {
       const existing = await this.userRepository.findOne({
         where: { email: updateData.email },
       });
+
       if (existing) throw new BadRequestException('Email already in use');
+    }
+    if (updateData.uniqueName && updateData.uniqueName !== user.uniqueName) {
+      const existing = await this.userRepository.findOne({
+        where: { uniqueName: updateData.uniqueName },
+      });
+
+      if (existing) {
+        const generatedName = await this.generateUniqueUsernameFromDisplayName(
+          user.displayName,
+        );
+
+        throw new BadRequestException(
+          `Username already in use, recommended: ${generatedName}`,
+        );
+      }
     }
 
     if (updateData.password)
@@ -64,7 +94,67 @@ export class UsersService {
     return { message: 'User deleted successfully' };
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+  async findByIdentifier(identifier: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: [{ email: identifier }, { uniqueName: identifier }],
+    });
+  }
+
+  async generateUniqueUsernameFromDisplayName(
+    displayName: string,
+  ): Promise<string> {
+    const base = displayName
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9]/g, '');
+    let username = base;
+    let counter = 1;
+
+    while (true) {
+      const existing = await this.userRepository.findOne({
+        where: { uniqueName: username },
+      });
+
+      if (!existing) return username;
+      username = `${base}${counter}`;
+      counter++;
+    }
+  }
+
+  async searchUsers(
+    search: string,
+    currentUserId: string,
+  ): Promise<UserListDto[]> {
+    const normalized = search.toLowerCase().trim();
+
+    if (!normalized) return [];
+    return this.userRepository
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.uniqueName', 'user.displayName'])
+      .where('user.id != :currentUserId', { currentUserId })
+      .andWhere(
+        `
+        similarity(LOWER(user.uniqueName), :search) > 0.2
+        OR LOWER(user.uniqueName) LIKE :likeSearch
+        `,
+        {
+          search: normalized,
+          likeSearch: `%${normalized}%`,
+        },
+      )
+      .orderBy(
+        `
+        CASE
+          WHEN LOWER(user.uniqueName) LIKE :prefix THEN 0
+          ELSE 1
+        END
+        `,
+        'ASC',
+      )
+      .addOrderBy(`similarity(LOWER(user.uniqueName), :search)`, 'DESC')
+      .setParameter('prefix', `${normalized}%`)
+      .setParameter('search', normalized)
+      .limit(10)
+      .getMany();
   }
 }

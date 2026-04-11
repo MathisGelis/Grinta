@@ -11,17 +11,23 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.usersService.findByEmail(email);
+  async validateUser(
+    identifier: string,
+    password: string,
+  ): Promise<User | null> {
+    const user = await this.usersService.findByIdentifier(
+      identifier.toLowerCase().trim(),
+    );
 
     if (user && (await bcrypt.compare(password, user.password))) return user;
     return null;
   }
 
   login(user: User): { access_token: string } {
-    const payload: { email: string; sub: string } = {
-      email: user.email,
+    const payload: { sub: string; email: string; uniqueName: string } = {
       sub: user.id,
+      email: user.email,
+      uniqueName: user.uniqueName,
     };
     const token: string = this.jwtService.sign(payload);
 
