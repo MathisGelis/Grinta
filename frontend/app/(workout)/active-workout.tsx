@@ -1,352 +1,626 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
-  TouchableOpacity,
   ScrollView,
   StatusBar,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  AsyncStorage,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
+import { WorkoutTheme } from "@/constants/Colors";
+import { TokenService } from "@/services/token.service";
+import { getWorkoutById, WorkoutExercise } from "@/services/workouts.service";
+import {
+  createCompletedWorkout,
+  CompletedExercise,
+} from "@/services/completed-workouts.service";
+import WorkoutSessionHeader from "@/components/workout/WorkoutSessionHeader";
+import CurrentExerciseSection, {
+  CompletedSet as CompletedSetType,
+} from "@/components/workout/CurrentExerciseSection";
+import OtherExercisesSection from "@/components/workout/OtherExercisesSection";
 
-interface Exercise {
-  id: string;
-  name: string;
-  sets?: number;
-  reps?: number;
-  weight?: number;
+interface ExerciseState {
+  exerciseData: WorkoutExercise;
+  completedSetIndices: number[];
+  completedSets: CompletedSetType[];
+  restTimeSeconds: number;
 }
 
 export default function ActiveWorkoutScreen() {
   const params = useLocalSearchParams();
+  const workoutId = params.workoutId as string;
   const workoutName = params.workoutName as string;
 
-  // Mock exercises data - should come from backend
-  const mockExercises: Exercise[] = [
-    {
-      id: "e1",
-      name: "Bench Press",
-      sets: 4,
-      reps: 8,
-      weight: 100,
-    },
-    {
-      id: "e2",
-      name: "Pull-ups",
-      sets: 4,
-      reps: 10,
-    },
-    {
-      id: "e3",
-      name: "Rows",
-      sets: 3,
-      reps: 12,
-      weight: 80,
-    },
-  ];
-
+  const [exercisesState, setExercisesState] = useState<ExerciseState[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [currentSet, setCurrentSet] = useState(1);
-  const [timer, setTimer] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
+  const [currentSetIndex, setCurrentSetIndex] = useState(0);
+  const [totalWorkoutTime, setTotalWorkoutTime] = useState(0);
   const [showRestScreen, setShowRestScreen] = useState(false);
-  const [completedExercises, setCompletedExercises] = useState<boolean[]>(
-    new Array(mockExercises.length).fill(false),
-  );
+  const [restTimeRemaining, setRestTimeRemaining] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionTitle, setCompletionTitle] = useState("");
+  const [completionDescription, setCompletionDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedExercises, setCompletedExercises] = useState<number[]>([]);
 
-  const currentExercise = mockExercises[currentExerciseIndex];
-  const isLastExercise = currentExerciseIndex === mockExercises.length - 1;
-  const isLastSet = currentSet === (currentExercise.sets || 1);
+  const loadWorkout = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = await TokenService.get();
+      const data = await getWorkoutById(workoutId, token || undefined);
 
-  // Timer effect
+      // Initialize exercises state
+      const initialState: ExerciseState[] = data.exercises.map((ex) => ({
+        exerciseData: ex,
+        completedSetIndices: [],
+        completedSets: [],
+        restTimeSeconds: ex.plannedRestSeconds || 90,
+      }));
+      setExercisesState(initialState);
+    } catch (error) {
+      console.error("Erreur:", error);
+      Alert.alert("Erreur", "Impossible de charger la séance");
+      router.back();
+    } finally {
+      setLoading(false);
+    }
+  }, [workoutId]);
+
+  // Load workout data
+  useEffect(() => {
+    loadWorkout();
+  }, [loadWorkout]);
+
+  // Main timer
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
-    if (isRunning) {
+    if (!showRestScreen) {
       interval = setInterval(() => {
-        setTimer((prev) => prev + 1);
+        setTotalWorkoutTime((prev) => prev + 1);
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning]);
+  }, [showRestScreen]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
+  // Rest timer
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (showRestScreen && restTimeRemaining > 0) {
+      interval = setInterval(() => {
+        setRestTimeRemaining((prev) => {
+          if (prev <= 1) {
+            setShowRestScreen(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showRestScreen, restTimeRemaining]);
 
-  const toggleTimer = () => {
-    setIsRunning(!isRunning);
-  };
+  const currentExerciseState = exercisesState[currentExerciseIndex];
+  const currentExercise = currentExerciseState?.exerciseData;
+  const isLastExercise = currentExerciseIndex === exercisesState.length - 1;
+  const isLastSet = currentSetIndex === (currentExercise?.sets.length || 1) - 1;
 
-  const finishSet = () => {
-    const updatedCompleted = [...completedExercises];
-    updatedCompleted[currentExerciseIndex] = true;
-    setCompletedExercises(updatedCompleted);
+  const handleCompleteSet = (reps: number, weight: number) => {
+    const newState = [...exercisesState];
+    const exState = newState[currentExerciseIndex];
+
+    // Track completed set
+    exState.completedSetIndices.push(currentSetIndex);
+    exState.completedSets.push({ reps, weight });
+
+    // Set rest time
+    const restTime = exState.restTimeSeconds || 90;
+    setRestTimeRemaining(restTime);
+    setShowRestScreen(true);
 
     if (isLastSet) {
+      // Mark exercise as completed
+      setCompletedExercises([...completedExercises, currentExerciseIndex]);
+
       if (isLastExercise) {
-        router.push({
-          pathname: "/(workout)/workout-summary",
-          params: {
-            workoutName,
-            totalTime: timer,
+        // Finish workout
+        setTimeout(
+          () => {
+            setShowCompletionModal(true);
           },
-        });
+          restTime * 1000 + 500,
+        );
       } else {
-        setShowRestScreen(true);
-        setIsRunning(false);
-        setTimeout(() => {
-          setShowRestScreen(false);
-          setCurrentExerciseIndex(currentExerciseIndex + 1);
-          setCurrentSet(1);
-          setTimer(0);
-        }, 5000);
+        // Move to next exercise
+        setTimeout(
+          () => {
+            setExercisesState(newState);
+            setCurrentExerciseIndex(currentExerciseIndex + 1);
+            setCurrentSetIndex(0);
+          },
+          restTime * 1000 + 500,
+        );
       }
     } else {
-      setCurrentSet(currentSet + 1);
-      setShowRestScreen(true);
-      setIsRunning(false);
-      setTimeout(() => {
-        setShowRestScreen(false);
-      }, 5000);
-    }
-  };
-
-  const skipExercise = () => {
-    if (isLastExercise) {
-      router.push({
-        pathname: "/(workout)/workout-summary",
-        params: {
-          workoutName,
-          totalTime: timer,
+      // Move to next set
+      setTimeout(
+        () => {
+          setExercisesState(newState);
+          setCurrentSetIndex(currentSetIndex + 1);
         },
-      });
-    } else {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-      setCurrentSet(1);
-      const updatedCompleted = [...completedExercises];
-      updatedCompleted[currentExerciseIndex] = true;
-      setCompletedExercises(updatedCompleted);
+        restTime * 1000 + 500,
+      );
+    }
+
+    setExercisesState(newState);
+  };
+
+  const handleAddSet = () => {
+    const newState = [...exercisesState];
+    const exState = newState[currentExerciseIndex];
+    const lastSet =
+      exState.exerciseData.sets[exState.exerciseData.sets.length - 1];
+    exState.exerciseData.sets.push({ ...lastSet });
+    setExercisesState(newState);
+  };
+
+  const handleRemoveSet = () => {
+    const newState = [...exercisesState];
+    const exState = newState[currentExerciseIndex];
+    if (exState.exerciseData.sets.length > 1) {
+      exState.exerciseData.sets.pop();
+      if (currentSetIndex >= exState.exerciseData.sets.length) {
+        setCurrentSetIndex(exState.exerciseData.sets.length - 1);
+      }
+      setExercisesState(newState);
     }
   };
 
-  const endWorkout = () => {
-    router.push({
-      pathname: "/(workout)/workout-summary",
-      params: {
-        workoutName,
-        totalTime: timer,
-      },
-    });
+  const handleSkipExercise = () => {
+    if (isLastExercise) {
+      setShowCompletionModal(true);
+    } else {
+      setCompletedExercises([...completedExercises, currentExerciseIndex]);
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setCurrentSetIndex(0);
+    }
   };
+
+  const handleSelectExercise = (index: number) => {
+    setCurrentExerciseIndex(index);
+    setCurrentSetIndex(0);
+  };
+
+  const handleAddExercise = (exercise: WorkoutExercise) => {
+    const newState = [...exercisesState];
+    newState.push({
+      exerciseData: exercise,
+      completedSetIndices: [],
+      completedSets: [],
+      restTimeSeconds: exercise.plannedRestSeconds || 90,
+    });
+    setExercisesState(newState);
+  };
+
+  const handleEndWorkout = () => {
+    Alert.alert(
+      "Terminer la séance",
+      "Êtes-vous sûr de vouloir terminer cette séance maintenant?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Terminer",
+          onPress: () => setShowCompletionModal(true),
+          style: "destructive",
+        },
+      ],
+    );
+  };
+
+  const handleMinimize = () => {
+    router.push("/(tabs)/workout-trigger");
+  };
+
+  const handleSubmitCompletion = async () => {
+    if (!completionTitle.trim()) {
+      Alert.alert("Erreur", "Veuillez entrer un titre");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const token = await TokenService.get();
+
+      // Build completed exercises (only those that were actually done)
+      const completedData: CompletedExercise[] = exercisesState
+        .map((state, index) => {
+          if (state.completedSets.length === 0) return null;
+          return {
+            exerciseId: state.exerciseData.exerciseId,
+            sets: state.completedSets,
+            timerSeconds: state.restTimeSeconds * state.completedSets.length,
+          };
+        })
+        .filter((ex): ex is CompletedExercise => ex !== null);
+
+      const request = {
+        title: completionTitle,
+        completionDate: new Date().toISOString(),
+        totalDurationSeconds: totalWorkoutTime,
+        description: completionDescription,
+        exercises: completedData,
+      };
+
+      await createCompletedWorkout(request, token || undefined);
+      Alert.alert("Succès", "Séance enregistrée avec succès!", [
+        {
+          text: "OK",
+          onPress: () => router.push("/(tabs)/stats"),
+        },
+      ]);
+    } catch (error) {
+      console.error("Erreur:", error);
+      Alert.alert("Erreur", "Impossible d'enregistrer la séance");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (showRestScreen) {
     return (
-      <SafeAreaView className="flex-1 bg-neutral-950 justify-center items-center px-4">
-        <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
-        <Ionicons name="checkmark-circle" size={80} color="#7B61FF" />
-        <Text className="text-white text-2xl font-bold mt-6">Great Work!</Text>
-        <Text className="text-neutral-400 text-base mt-2">
-          Rest for a moment
-        </Text>
-        <Text className="text-white text-lg font-semibold mt-4 text-center">
-          Next:{" "}
-          {isLastSet && !isLastExercise
-            ? mockExercises[currentExerciseIndex + 1]?.name
-            : `Set ${currentSet + 1}`}
-        </Text>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
+      >
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={WorkoutTheme.backgroundSecondary}
+        />
+        <Modal
+          visible={showRestScreen}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => {}}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.7)",
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 16,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: WorkoutTheme.backgroundSecondary,
+                borderRadius: 20,
+                padding: 32,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: WorkoutTheme.border,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: WorkoutTheme.text.secondary,
+                  marginBottom: 16,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
+                Temps de repos
+              </Text>
+              <Text
+                style={{
+                  fontSize: 72,
+                  fontWeight: "700",
+                  color: WorkoutTheme.accent.purple,
+                  textAlign: "center",
+                }}
+              >
+                {restTimeRemaining}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: WorkoutTheme.text.secondary,
+                  marginTop: 8,
+                  marginBottom: 24,
+                }}
+              >
+                secondes
+              </Text>
+
+              {/* Skip rest button */}
+              <TouchableOpacity
+                onPress={() => setShowRestScreen(false)}
+                style={{
+                  backgroundColor: WorkoutTheme.accent.purple,
+                  paddingHorizontal: 24,
+                  paddingVertical: 12,
+                  borderRadius: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Ionicons name="play-forward" size={16} color="white" />
+                <Text style={{ color: "white", fontWeight: "700" }}>
+                  Passer le repos
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-neutral-950">
-      <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
+    <SafeAreaView
+      edges={["top"]}
+      style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
+    >
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={WorkoutTheme.backgroundSecondary}
+      />
 
-      {/* Header with progress */}
-      <View className="bg-neutral-900 border-b border-neutral-800 px-4 py-3">
-        <View className="flex-row justify-between items-center mb-3">
-          <TouchableOpacity onPress={() => endWorkout()}>
-            <Ionicons name="chevron-down" size={28} color="white" />
-          </TouchableOpacity>
-          <Text className="text-lg font-bold text-white">{workoutName}</Text>
-          <View className="w-7" />
-        </View>
+      {/* Header */}
+      <WorkoutSessionHeader
+        workoutTitle={workoutName}
+        totalTime={totalWorkoutTime}
+        onMinimize={handleMinimize}
+        onEndWorkout={handleEndWorkout}
+      />
 
-        {/* Progress bar */}
-        <View className="bg-neutral-800 rounded-full h-2">
-          <View
-            className="bg-purple-600 rounded-full h-2"
-            style={{
-              width: `${((currentExerciseIndex + 1) / mockExercises.length) * 100}%`,
-              backgroundColor: "#7B61FF",
-            }}
-          />
-        </View>
-        <Text className="text-xs text-neutral-400 mt-2">
-          {currentExerciseIndex + 1} of {mockExercises.length} exercises
-        </Text>
-      </View>
-
-      {/* Main content */}
+      {/* Main Content */}
       <ScrollView
-        className="flex-1 px-4 py-6"
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingVertical: 16 }}
       >
-        {/* Exercise Card */}
-        <View className="bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-800 mb-6">
-          {/* Large exercise number background */}
-          <View className="bg-purple-600/10 p-6 border-b border-neutral-800">
-            <Text className="text-4xl font-black text-white/10 text-center mb-2">
-              {currentExerciseIndex + 1}
-            </Text>
-            <Text className="text-2xl font-bold text-white text-center">
-              {currentExercise.name}
-            </Text>
-          </View>
+        {currentExercise && (
+          <>
+            {/* Current Exercise Section */}
+            <CurrentExerciseSection
+              exerciseName={currentExercise.exerciseName || "Exercice"}
+              currentSetIndex={currentSetIndex}
+              totalSets={currentExercise.sets.length}
+              plannedSetData={currentExercise.sets}
+              completedSets={currentExerciseState.completedSets}
+              onCompleteSet={handleCompleteSet}
+              onAddSet={handleAddSet}
+              onRemoveSet={handleRemoveSet}
+              onSkipExercise={handleSkipExercise}
+              isLastExercise={isLastExercise}
+              isLastSet={isLastSet}
+            />
 
-          {/* Exercise details */}
-          <View className="p-6">
-            <View className="flex-row justify-around mb-6">
-              {currentExercise.weight && (
-                <View className="items-center">
-                  <Ionicons name="barbell" size={24} color="#7B61FF" />
-                  <Text className="text-sm text-neutral-400 mt-1">Weight</Text>
-                  <Text className="text-xl font-bold text-white">
-                    {currentExercise.weight}
-                    <Text className="text-sm">kg</Text>
-                  </Text>
-                </View>
-              )}
-              <View className="items-center">
-                <Ionicons name="repeat" size={24} color="#7B61FF" />
-                <Text className="text-sm text-neutral-400 mt-1">Reps</Text>
-                <Text className="text-xl font-bold text-white">
-                  {currentExercise.reps}
-                </Text>
-              </View>
-              <View className="items-center">
-                <Ionicons name="layers" size={24} color="#7B61FF" />
-                <Text className="text-sm text-neutral-400 mt-1">Sets</Text>
-                <Text className="text-xl font-bold text-white">
-                  {currentSet}/{currentExercise.sets}
-                </Text>
-              </View>
-            </View>
+            {/* Other Exercises Section */}
+            <OtherExercisesSection
+              exercises={exercisesState.map((s) => s.exerciseData)}
+              currentExerciseIndex={currentExerciseIndex}
+              onSelectExercise={handleSelectExercise}
+              onAddExercise={handleAddExercise}
+              completedExercises={completedExercises}
+            />
+          </>
+        )}
 
-            {/* Timer section */}
-            <View className="bg-neutral-800 rounded-xl p-6 items-center mb-4">
-              <Text className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-                Time
-              </Text>
-              <Text className="text-5xl font-bold text-white font-mono">
-                {formatTime(timer)}
-              </Text>
-            </View>
-
-            {/* Timer controls */}
-            <View className="flex-row gap-2 justify-center mb-4">
-              <TouchableOpacity
-                onPress={toggleTimer}
-                className={`flex-1 rounded-lg py-3 flex-row items-center justify-center gap-2 ${
-                  isRunning ? "bg-red-600" : "bg-green-600"
-                }`}
-              >
-                <Ionicons
-                  name={isRunning ? "pause" : "play"}
-                  size={20}
-                  color="white"
-                />
-                <Text className="text-white font-semibold">
-                  {isRunning ? "PAUSE" : "START"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setTimer(0)}
-                className="bg-neutral-800 rounded-lg py-3 px-6 items-center justify-center"
-              >
-                <Ionicons name="refresh" size={20} color="#7B61FF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Exercise list */}
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-            Exercises
-          </Text>
-          <View className="bg-neutral-900 rounded-lg overflow-hidden border border-neutral-800">
-            {mockExercises.map((exercise, index) => (
-              <View
-                key={exercise.id}
-                className={`px-4 py-3 flex-row items-center justify-between ${
-                  index !== mockExercises.length - 1
-                    ? "border-b border-neutral-800"
-                    : ""
-                } ${index === currentExerciseIndex ? "bg-purple-600/10" : ""}`}
-              >
-                <View className="flex-1">
-                  <Text
-                    className={`font-semibold ${
-                      index === currentExerciseIndex
-                        ? "text-white"
-                        : "text-neutral-300"
-                    }`}
-                  >
-                    {exercise.name}
-                  </Text>
-                  <Text className="text-xs text-neutral-500 mt-1">
-                    {exercise.sets}×{exercise.reps}
-                    {exercise.weight && ` @ ${exercise.weight}kg`}
-                  </Text>
-                </View>
-                {completedExercises[index] ? (
-                  <Ionicons name="checkmark-circle" size={24} color="#7B61FF" />
-                ) : index === currentExerciseIndex ? (
-                  <View
-                    className="w-6 h-6 rounded-full border-2 border-purple-600"
-                    style={{ borderColor: "#7B61FF" }}
-                  />
-                ) : (
-                  <Ionicons name="ellipse-outline" size={24} color="#525252" />
-                )}
-              </View>
-            ))}
-          </View>
-        </View>
+        <View style={{ height: 32 }} />
       </ScrollView>
 
-      {/* Action buttons */}
-      <View className="bg-neutral-900 border-t border-neutral-800 px-4 py-4 gap-2">
-        <TouchableOpacity
-          onPress={finishSet}
-          className="rounded-lg py-4 items-center justify-center"
+      {/* Completion Modal */}
+      <Modal
+        visible={showCompletionModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCompletionModal(false)}
+      >
+        <View
           style={{
-            backgroundColor: "#7B61FF",
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "flex-end",
           }}
         >
-          <Text className="text-white font-bold text-lg">
-            {isLastSet && isLastExercise
-              ? "Finish Workout"
-              : isLastSet
-                ? "Next Exercise"
-                : "Finish Set"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={skipExercise}
-          className="bg-neutral-800 rounded-lg py-3 items-center justify-center"
-        >
-          <Text className="text-white font-semibold">
-            {isLastExercise ? "Finish Workout" : "Skip Exercise"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <View
+            style={{
+              backgroundColor: WorkoutTheme.backgroundSecondary,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              maxHeight: "90%",
+              paddingHorizontal: 16,
+              paddingVertical: 20,
+            }}
+          >
+            {/* Header */}
+            <View
+              style={{
+                alignItems: "center",
+                marginBottom: 24,
+              }}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={64}
+                color={WorkoutTheme.status.success}
+              />
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: WorkoutTheme.text.primary,
+                  marginTop: 16,
+                }}
+              >
+                Séance complétée!
+              </Text>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Title Input */}
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: WorkoutTheme.text.secondary,
+                    marginBottom: 8,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Titre
+                </Text>
+                <TextInput
+                  style={{
+                    backgroundColor: WorkoutTheme.backgroundTertiary,
+                    borderWidth: 1,
+                    borderColor: WorkoutTheme.border,
+                    borderRadius: 10,
+                    paddingHorizontal: 12,
+                    paddingVertical: 12,
+                    fontSize: 14,
+                    color: WorkoutTheme.text.primary,
+                  }}
+                  placeholder="Nom de la séance"
+                  placeholderTextColor={WorkoutTheme.text.tertiary}
+                  value={completionTitle}
+                  onChangeText={setCompletionTitle}
+                  editable={!isSubmitting}
+                />
+              </View>
+
+              {/* Description Input */}
+              <View style={{ marginBottom: 24 }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: WorkoutTheme.text.secondary,
+                    marginBottom: 8,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Description (optionnel)
+                </Text>
+                <TextInput
+                  style={{
+                    backgroundColor: WorkoutTheme.backgroundTertiary,
+                    borderWidth: 1,
+                    borderColor: WorkoutTheme.border,
+                    borderRadius: 10,
+                    paddingHorizontal: 12,
+                    paddingVertical: 12,
+                    fontSize: 14,
+                    color: WorkoutTheme.text.primary,
+                    minHeight: 80,
+                    textAlignVertical: "top",
+                  }}
+                  placeholder="Ajouter une description..."
+                  placeholderTextColor={WorkoutTheme.text.tertiary}
+                  value={completionDescription}
+                  onChangeText={setCompletionDescription}
+                  multiline
+                  editable={!isSubmitting}
+                />
+              </View>
+
+              {/* Buttons */}
+              <View style={{ gap: 12, marginBottom: 16 }}>
+                <TouchableOpacity
+                  onPress={handleSubmitCompletion}
+                  disabled={isSubmitting}
+                  style={{
+                    backgroundColor: WorkoutTheme.accent.purple,
+                    borderRadius: 10,
+                    paddingVertical: 14,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark" size={18} color="white" />
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: "700",
+                          color: "white",
+                        }}
+                      >
+                        Enregistrer
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setShowCompletionModal(false)}
+                  disabled={isSubmitting}
+                  style={{
+                    backgroundColor: WorkoutTheme.backgroundTertiary,
+                    borderRadius: 10,
+                    paddingVertical: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: WorkoutTheme.border,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: WorkoutTheme.text.secondary,
+                    }}
+                  >
+                    Retour
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

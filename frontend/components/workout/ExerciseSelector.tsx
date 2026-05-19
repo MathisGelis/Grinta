@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
-
-export interface Exercise {
-  id: string;
-  name: string;
-  muscleGroups: string[];
-  equipmentType: "machine" | "cable" | "freeweight" | "bodyweight" | "barbell";
-  description?: string;
-}
+import { Exercise, getAllExercises } from "@/services/exercises.service";
 
 export interface SelectedExercise extends Exercise {
   sets: number;
@@ -31,87 +24,25 @@ interface ExerciseSelectorProps {
   onClose: () => void;
 }
 
-// Sample exercises database
-const SAMPLE_EXERCISES: Exercise[] = [
-  {
-    id: "e1",
-    name: "Bench Press",
-    muscleGroups: ["Poitrine", "Triceps", "Épaules"],
-    equipmentType: "barbell",
-  },
-  {
-    id: "e2",
-    name: "Squats",
-    muscleGroups: ["Jambes", "Fessiers", "Dos"],
-    equipmentType: "barbell",
-  },
-  {
-    id: "e3",
-    name: "Pull-ups",
-    muscleGroups: ["Dos", "Biceps"],
-    equipmentType: "bodyweight",
-  },
-  {
-    id: "e4",
-    name: "Lat Pulldown",
-    muscleGroups: ["Dos", "Biceps"],
-    equipmentType: "machine",
-  },
-  {
-    id: "e5",
-    name: "Dumbbell Curls",
-    muscleGroups: ["Biceps"],
-    equipmentType: "freeweight",
-  },
-  {
-    id: "e6",
-    name: "Cable Crosses",
-    muscleGroups: ["Poitrine"],
-    equipmentType: "cable",
-  },
-  {
-    id: "e7",
-    name: "Leg Press",
-    muscleGroups: ["Jambes", "Fessiers"],
-    equipmentType: "machine",
-  },
-  {
-    id: "e8",
-    name: "Shoulder Press",
-    muscleGroups: ["Épaules", "Triceps"],
-    equipmentType: "barbell",
-  },
-  {
-    id: "e9",
-    name: "Rows",
-    muscleGroups: ["Dos", "Biceps"],
-    equipmentType: "barbell",
-  },
-  {
-    id: "e10",
-    name: "Planks",
-    muscleGroups: ["Abdominaux", "Dos"],
-    equipmentType: "bodyweight",
-  },
-];
-
 const MUSCLE_GROUPS = [
-  "Poitrine",
-  "Dos",
-  "Jambes",
-  "Épaules",
   "Biceps",
   "Triceps",
-  "Abdominaux",
-  "Fessiers",
+  "Abs",
+  "Forearms",
+  "Chest",
+  "Back",
+  "Shoulders",
+  "Legs",
 ];
 
 const EQUIPMENT_TYPES = [
-  { id: "machine", label: "Machine", icon: "checkbox-outline" },
-  { id: "cable", label: "Poulie", icon: "swap-horizontal" },
-  { id: "freeweight", label: "Poids libre", icon: "water" },
-  { id: "bodyweight", label: "Poids du corps", icon: "person" },
-  { id: "barbell", label: "Barre", icon: "barbell-outline" },
+  { id: "none", label: "Poids du corps" },
+  { id: "dumbbell", label: "Haltères" },
+  { id: "barbell", label: "Barre" },
+  { id: "machine", label: "Machine" },
+  { id: "cable", label: "Poulie" },
+  { id: "kettlebell", label: "Kettlebell" },
+  { id: "resistance_band", label: "Bande élastique" },
 ];
 
 export default function ExerciseSelector({
@@ -123,6 +54,30 @@ export default function ExerciseSelector({
   const [searchText, setSearchText] = useState("");
   const [selectedMuscles, setSelectedMuscles] = useState<string[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Charger les exercices quand le modal devient visible
+  useEffect(() => {
+    if (isVisible) {
+      loadExercises();
+    }
+  }, [isVisible]);
+
+  const loadExercises = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await getAllExercises();
+      setExercises(data);
+    } catch (err) {
+      console.error("Erreur lors du chargement des exercices:", err);
+      setError("Impossible de charger les exercices");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleMuscle = (muscle: string) => {
     if (selectedMuscles.includes(muscle)) {
@@ -141,27 +96,25 @@ export default function ExerciseSelector({
   };
 
   const filteredExercises = useMemo(() => {
-    return SAMPLE_EXERCISES.filter((exercise) => {
+    return exercises.filter((exercise) => {
       // Search filter
       const matchesSearch = exercise.name
         .toLowerCase()
         .includes(searchText.toLowerCase());
 
-      // Muscle filter
+      // Muscle filter - filtre sur primary_muscle
       const matchesMuscle =
         selectedMuscles.length === 0 ||
-        selectedMuscles.some((muscle) =>
-          exercise.muscleGroups.includes(muscle),
-        );
+        selectedMuscles.includes(exercise.primary_muscle);
 
-      // Equipment filter
+      // Equipment filter - filtre sur equipment_type
       const matchesEquipment =
         selectedEquipment.length === 0 ||
-        selectedEquipment.includes(exercise.equipmentType);
+        selectedEquipment.includes(exercise.equipment_type);
 
       return matchesSearch && matchesMuscle && matchesEquipment;
     });
-  }, [searchText, selectedMuscles, selectedEquipment]);
+  }, [searchText, selectedMuscles, selectedEquipment, exercises]);
 
   if (!isVisible) return null;
 
@@ -209,122 +162,148 @@ export default function ExerciseSelector({
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
         >
-          {/* Muscle Groups Filter */}
-          <View style={styles.filterSection}>
-            <Text style={styles.filterTitle}>Muscles</Text>
-            <View style={styles.filterWrap}>
-              {MUSCLE_GROUPS.map((muscle) => (
-                <TouchableOpacity
-                  key={muscle}
-                  style={[
-                    styles.filterPill,
-                    selectedMuscles.includes(muscle) && styles.filterPillActive,
-                  ]}
-                  onPress={() => toggleMuscle(muscle)}
-                >
-                  <Text
-                    style={[
-                      styles.filterPillText,
-                      selectedMuscles.includes(muscle) &&
-                        styles.filterPillTextActive,
-                    ]}
-                  >
-                    {muscle}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>
+                Chargement des exercices...
+              </Text>
             </View>
-          </View>
-
-          {/* Equipment Type Filter */}
-          <View style={styles.filterSection}>
-            <Text style={styles.filterTitle}>Équipement</Text>
-            <View style={styles.filterWrap}>
-              {EQUIPMENT_TYPES.map((equipment) => (
-                <TouchableOpacity
-                  key={equipment.id}
-                  style={[
-                    styles.filterPill,
-                    selectedEquipment.includes(equipment.id) &&
-                      styles.filterPillActive,
-                  ]}
-                  onPress={() => toggleEquipment(equipment.id)}
-                >
-                  <Ionicons
-                    name={equipment.icon as any}
-                    size={14}
-                    color={
-                      selectedEquipment.includes(equipment.id)
-                        ? WorkoutTheme.text.primary
-                        : WorkoutTheme.text.secondary
-                    }
-                  />
-                  <Text
-                    style={[
-                      styles.filterPillText,
-                      selectedEquipment.includes(equipment.id) &&
-                        styles.filterPillTextActive,
-                    ]}
-                  >
-                    {equipment.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Ionicons
+                name="alert-circle"
+                size={24}
+                color={WorkoutTheme.text.secondary}
+              />
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={loadExercises}
+              >
+                <Text style={styles.retryButtonText}>Réessayer</Text>
+              </TouchableOpacity>
             </View>
-          </View>
+          ) : (
+            <>
+              {/* Muscle Groups Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterTitle}>Muscles</Text>
+                <View style={styles.filterWrap}>
+                  {MUSCLE_GROUPS.map((muscle) => (
+                    <TouchableOpacity
+                      key={muscle}
+                      style={[
+                        styles.filterPill,
+                        selectedMuscles.includes(muscle) &&
+                          styles.filterPillActive,
+                      ]}
+                      onPress={() => toggleMuscle(muscle)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterPillText,
+                          selectedMuscles.includes(muscle) &&
+                            styles.filterPillTextActive,
+                        ]}
+                      >
+                        {muscle}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
 
-          {/* Exercises List */}
-          <View style={styles.exercisesSection}>
-            <Text style={styles.filterTitle}>
-              Exercices ({filteredExercises.length})
-            </Text>
-            {filteredExercises.length > 0 ? (
-              filteredExercises.map((exercise, index) => (
-                <TouchableOpacity
-                  key={exercise.id}
-                  style={[
-                    styles.exerciseItem,
-                    index !== filteredExercises.length - 1 &&
-                      styles.exerciseItemBorder,
-                  ]}
-                  onPress={() => {
-                    onSelectExercise(exercise);
-                    setSearchText("");
-                    setSelectedMuscles([]);
-                    setSelectedEquipment([]);
-                  }}
-                >
-                  <View style={styles.exerciseContent}>
-                    <Text style={styles.exerciseName}>{exercise.name}</Text>
-                    <View style={styles.muscleTagsContainer}>
-                      {exercise.muscleGroups.map((muscle) => (
-                        <View key={muscle} style={styles.muscleTag}>
-                          <Text style={styles.muscleTagText}>{muscle}</Text>
+              {/* Equipment Type Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterTitle}>Équipement</Text>
+                <View style={styles.filterWrap}>
+                  {EQUIPMENT_TYPES.map((equipment) => (
+                    <TouchableOpacity
+                      key={equipment.id}
+                      style={[
+                        styles.filterPill,
+                        selectedEquipment.includes(equipment.id) &&
+                          styles.filterPillActive,
+                      ]}
+                      onPress={() => toggleEquipment(equipment.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterPillText,
+                          selectedEquipment.includes(equipment.id) &&
+                            styles.filterPillTextActive,
+                        ]}
+                      >
+                        {equipment.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Exercises List */}
+              <View style={styles.exercisesSection}>
+                <Text style={styles.filterTitle}>
+                  Exercices ({filteredExercises.length})
+                </Text>
+                {filteredExercises.length > 0 ? (
+                  filteredExercises.map((exercise, index) => (
+                    <TouchableOpacity
+                      key={exercise.id}
+                      style={[
+                        styles.exerciseItem,
+                        index !== filteredExercises.length - 1 &&
+                          styles.exerciseItemBorder,
+                      ]}
+                      onPress={() => {
+                        onSelectExercise(exercise);
+                        setSearchText("");
+                        setSelectedMuscles([]);
+                        setSelectedEquipment([]);
+                      }}
+                    >
+                      <View style={styles.exerciseContent}>
+                        <Text style={styles.exerciseName}>{exercise.name}</Text>
+                        <View style={styles.muscleTagsContainer}>
+                          <View style={styles.muscleTag}>
+                            <Text style={styles.muscleTagText}>
+                              {exercise.primary_muscle}
+                            </Text>
+                          </View>
+                          {exercise.secondary_muscles &&
+                            exercise.secondary_muscles.length > 0 &&
+                            exercise.secondary_muscles.map((muscle) => (
+                              <View key={muscle} style={styles.muscleTag}>
+                                <Text style={styles.muscleTagText}>
+                                  {muscle}
+                                </Text>
+                              </View>
+                            ))}
                         </View>
-                      ))}
-                    </View>
-                    <View style={styles.equipmentBadge}>
+                        <View style={styles.equipmentBadge}>
+                          <Ionicons
+                            name="settings"
+                            size={12}
+                            color={WorkoutTheme.accent.purple}
+                          />
+                          <Text style={styles.equipmentText}>
+                            {exercise.equipment_type}
+                          </Text>
+                        </View>
+                      </View>
                       <Ionicons
-                        name="settings"
-                        size={12}
+                        name="add-circle"
+                        size={24}
                         color={WorkoutTheme.accent.purple}
                       />
-                      <Text style={styles.equipmentText}>
-                        {exercise.equipmentType}
-                      </Text>
-                    </View>
-                  </View>
-                  <Ionicons
-                    name="add-circle"
-                    size={24}
-                    color={WorkoutTheme.accent.purple}
-                  />
-                </TouchableOpacity>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>Aucun exercice trouvé</Text>
-            )}
-          </View>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text style={styles.emptyText}>Aucun exercice trouvé</Text>
+                )}
+              </View>
+            </>
+          )}
         </ScrollView>
       </View>
     </View>
@@ -482,5 +461,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     paddingVertical: 24,
+  },
+  loadingContainer: {
+    paddingVertical: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    color: WorkoutTheme.text.secondary,
+    fontSize: 14,
+  },
+  errorContainer: {
+    paddingVertical: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  errorText: {
+    color: WorkoutTheme.text.secondary,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  retryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: WorkoutTheme.accent.purple,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: WorkoutTheme.text.primary,
+    fontSize: 12,
+    fontWeight: "600",
   },
 });

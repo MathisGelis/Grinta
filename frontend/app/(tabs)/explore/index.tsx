@@ -192,9 +192,7 @@ export default function ExploreScreen() {
         {/* ── Header greeting ── */}
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.helloText}>
-              {t.hello} {userName},
-            </Text>
+            <Text style={styles.helloText}>{t.hello} Mathis,</Text>
             <Text style={styles.greetingText}>{t[getGreetingKey()]} 👋</Text>
           </View>
         </View>

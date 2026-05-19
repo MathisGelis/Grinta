@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 function ExploreHeader() {
   return (
-    <SafeAreaView edges={["top"]} className="bg-[#1a1a1a] pt-2 pb-3">
+    <SafeAreaView edges={["top"]} className="bg-[#1a1a1a] pb-3">
       <Text className="text-xl font-bold text-white text-center mb-3">
         Home
       </Text>

@@ -7,17 +7,24 @@ import {
   ScrollView,
   Image,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
-import ExerciseSelector, {
-  Exercise,
-} from "@/components/workout/ExerciseSelector";
+import ExerciseSelector from "@/components/workout/ExerciseSelector";
+import { Exercise } from "@/services/exercises.service";
 import ExerciseSetupItem, {
   ExerciseSetupData,
 } from "@/components/workout/ExerciseSetupItem";
+import {
+  createPlannedWorkout,
+  CreateWorkoutRequest,
+} from "@/services/workouts.service";
+import { TokenService } from "@/services/token.service";
 
 export default function CreateWorkoutScreen() {
   const [name, setName] = useState("");
@@ -28,6 +35,7 @@ export default function CreateWorkoutScreen() {
   >([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [estimatedTime, setEstimatedTime] = useState("45");
+  const [loading, setLoading] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -44,9 +52,12 @@ export default function CreateWorkoutScreen() {
     const newExercise: ExerciseSetupData = {
       id: exercise.id,
       name: exercise.name,
-      sets: 3,
-      reps: 10,
-      weight: 0,
+      sets: [
+        {
+          reps: 10,
+          weight: 0,
+        },
+      ],
     };
     setSelectedExercises([...selectedExercises, newExercise]);
     setShowExerciseSelector(false);
@@ -64,34 +75,63 @@ export default function CreateWorkoutScreen() {
 
   const calculateTotalWeight = () => {
     return selectedExercises.reduce((total, ex) => {
-      return total + ex.weight * ex.sets * ex.reps;
+      const exerciseWeight = ex.sets.reduce((sum, set) => {
+        return sum + set.weight * set.reps;
+      }, 0);
+      return total + exerciseWeight;
     }, 0);
   };
 
-  const createWorkout = () => {
+  /**
+   * Transforme les ExerciseSetupData en format API (CreateWorkoutRequest)
+   */
+  const transformExercisesToAPI = (): CreateWorkoutRequest => {
+    return {
+      title: name.trim(),
+      description: description.trim(),
+      exercises: selectedExercises.map((exercise) => ({
+        exerciseId: exercise.id,
+        sets: exercise.sets,
+        plannedRestSeconds: 60, // Temps de repos par défaut entre les séries
+      })),
+    };
+  };
+
+  const createWorkout = async () => {
     if (!name.trim()) {
-      alert("Veuillez entrer un nom de séance");
+      Alert.alert("Erreur", "Veuillez entrer un nom de séance");
       return;
     }
 
     if (selectedExercises.length === 0) {
-      alert("Veuillez ajouter au moins un exercice");
+      Alert.alert("Erreur", "Veuillez ajouter au moins un exercice");
       return;
     }
 
-    const workout = {
-      name,
-      description,
-      image,
-      exercises: selectedExercises,
-      estimatedTime: parseInt(estimatedTime) || 45,
-      createdAt: new Date().toISOString(),
-    };
+    setLoading(true);
 
-    console.log("Workout created:", workout);
-    // ➜ appel API / store global plus tard
-    alert("Séance créée avec succès!");
-    // router.back();
+    try {
+      const token = await TokenService.get();
+      const workoutData = transformExercisesToAPI();
+
+      await createPlannedWorkout(workoutData, token || undefined);
+
+      Alert.alert("Succès", "Séance créée avec succès!", [
+        {
+          text: "OK",
+          onPress: () => {
+            router.back();
+          },
+        },
+      ]);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Erreur lors de la création";
+      Alert.alert("Erreur", message);
+      console.error("Erreur de création:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -238,7 +278,10 @@ export default function CreateWorkoutScreen() {
                   color={WorkoutTheme.accent.purple}
                 />
                 <Text style={styles.statValue}>
-                  {selectedExercises.reduce((sum, ex) => sum + ex.sets, 0)}
+                  {selectedExercises.reduce(
+                    (sum, ex) => sum + ex.sets.length,
+                    0,
+                  )}
                 </Text>
                 <Text style={styles.statLabel}>Séries</Text>
               </View>
@@ -256,13 +299,23 @@ export default function CreateWorkoutScreen() {
         )}
 
         {/* Create Button */}
-        <TouchableOpacity onPress={createWorkout} style={styles.createButton}>
-          <Ionicons
-            name="checkmark-done"
-            size={20}
-            color={WorkoutTheme.text.primary}
-          />
-          <Text style={styles.createButtonText}>Créer la séance</Text>
+        <TouchableOpacity
+          onPress={createWorkout}
+          disabled={loading}
+          style={[styles.createButton, loading && styles.createButtonDisabled]}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={WorkoutTheme.text.primary} />
+          ) : (
+            <>
+              <Ionicons
+                name="checkmark-done"
+                size={20}
+                color={WorkoutTheme.text.primary}
+              />
+              <Text style={styles.createButtonText}>Créer la séance</Text>
+            </>
+          )}
         </TouchableOpacity>
 
         <View style={{ height: 20 }} />
@@ -283,6 +336,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: WorkoutTheme.background,
+    paddingBottom: 20,
   },
   header: {
     paddingHorizontal: 16,
@@ -431,6 +485,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
+  },
+  createButtonDisabled: {
+    opacity: 0.6,
   },
   createButtonText: {
     color: WorkoutTheme.text.primary,
