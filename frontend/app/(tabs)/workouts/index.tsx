@@ -17,7 +17,6 @@ import WorkoutCard from "@/components/workout/WorkoutCard";
 import {
   getPlannedWorkouts,
   PlannedWorkout,
-  deletePlannedWorkout,
   fullPlannedWorkout,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
@@ -127,32 +126,20 @@ export default function WorkoutScreen() {
               <WorkoutCard
                 key={workout.id}
                 workout={workout}
-                onDelete={async () => {
-                  try {
-                    const token = await TokenService.get();
-                    await deletePlannedWorkout(workout.id, token || undefined);
-                    // Supprimer du state local
-                    setWorkouts(workouts.filter((w) => w.id !== workout.id));
-                  } catch (err) {
-                    const message =
-                      err instanceof Error
-                        ? err.message
-                        : "Erreur lors de la suppression";
-                    Alert.alert("Erreur", message);
-                    console.error("Erreur de suppression:", err);
-                  }
+                onDelete={() => {
+                  setWorkouts((prev) =>
+                    prev.filter((w) => w.id !== workout.id),
+                  );
                 }}
                 onUpdate={(updatedWorkout: fullPlannedWorkout) => {
-                  // Mettre à jour le state local avec la séance modifiée
-                  // On convertit fullPlannedWorkout en PlannedWorkout
                   const updatedPlanned: PlannedWorkout = {
                     id: updatedWorkout.id,
                     title: updatedWorkout.title,
                     description: updatedWorkout.description,
                     totalExercises: updatedWorkout.totalExercises,
                   };
-                  setWorkouts(
-                    workouts.map((w) =>
+                  setWorkouts((prev) =>
+                    prev.map((w) =>
                       w.id === updatedWorkout.id ? updatedPlanned : w,
                     ),
                   );

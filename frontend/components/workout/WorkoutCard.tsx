@@ -92,10 +92,6 @@ export default function WorkoutCard({
       }
 
       setFullWorkout(data);
-      console.log(
-        "Détails du workout chargés: \n",
-        JSON.stringify(data, null, 2),
-      );
 
       if (data.title) {
         setEditedTitle(data.title);

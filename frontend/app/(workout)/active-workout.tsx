@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   ScrollView,
@@ -9,11 +9,10 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  AsyncStorage,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { TokenService } from "@/services/token.service";
 import { getWorkoutById, WorkoutExercise } from "@/services/workouts.service";
@@ -51,6 +50,7 @@ export default function ActiveWorkoutScreen() {
   const [completionDescription, setCompletionDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedExercises, setCompletedExercises] = useState<number[]>([]);
+  const setTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadWorkout = useCallback(async () => {
     try {
@@ -78,6 +78,13 @@ export default function ActiveWorkoutScreen() {
   // Load workout data
   useEffect(() => {
     loadWorkout();
+
+    // Cleanup timeouts on unmount
+    return () => {
+      if (setTimeoutRef.current) {
+        clearTimeout(setTimeoutRef.current);
+      }
+    };
   }, [loadWorkout]);
 
   // Main timer
@@ -129,42 +136,43 @@ export default function ActiveWorkoutScreen() {
     const restTime = exState.restTimeSeconds || 90;
     setRestTimeRemaining(restTime);
     setShowRestScreen(true);
+    setExercisesState(newState);
 
+    // Clear any existing timeout
+    if (setTimeoutRef.current) {
+      clearTimeout(setTimeoutRef.current);
+    }
+
+    // Schedule transition after rest time
+    setTimeoutRef.current = setTimeout(
+      () => {
+        executeSetTransition(isLastSet, isLastExercise, newState);
+      },
+      restTime * 1000 + 500,
+    );
+  };
+
+  const executeSetTransition = (
+    isLastSet: boolean,
+    isLastExercise: boolean,
+    newState: ExerciseState[],
+  ) => {
     if (isLastSet) {
       // Mark exercise as completed
       setCompletedExercises([...completedExercises, currentExerciseIndex]);
 
       if (isLastExercise) {
         // Finish workout
-        setTimeout(
-          () => {
-            setShowCompletionModal(true);
-          },
-          restTime * 1000 + 500,
-        );
+        setShowCompletionModal(true);
       } else {
         // Move to next exercise
-        setTimeout(
-          () => {
-            setExercisesState(newState);
-            setCurrentExerciseIndex(currentExerciseIndex + 1);
-            setCurrentSetIndex(0);
-          },
-          restTime * 1000 + 500,
-        );
+        setCurrentExerciseIndex(currentExerciseIndex + 1);
+        setCurrentSetIndex(0);
       }
     } else {
       // Move to next set
-      setTimeout(
-        () => {
-          setExercisesState(newState);
-          setCurrentSetIndex(currentSetIndex + 1);
-        },
-        restTime * 1000 + 500,
-      );
+      setCurrentSetIndex(currentSetIndex + 1);
     }
-
-    setExercisesState(newState);
   };
 
   const handleAddSet = () => {
@@ -189,11 +197,31 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleSkipExercise = () => {
-    if (isLastExercise) {
+    // Mark current exercise as completed
+    const newCompletedExercises = Array.isArray(completedExercises)
+      ? [...completedExercises]
+      : [];
+    if (!newCompletedExercises.includes(currentExerciseIndex)) {
+      newCompletedExercises.push(currentExerciseIndex);
+    }
+
+    // Find next uncompleted exercise
+    let nextExerciseIndex = -1;
+    for (let i = currentExerciseIndex + 1; i < exercisesState.length; i++) {
+      if (!newCompletedExercises.includes(i)) {
+        nextExerciseIndex = i;
+        break;
+      }
+    }
+
+    if (nextExerciseIndex === -1) {
+      // No more uncompleted exercises, finish workout
+      setCompletedExercises(newCompletedExercises);
       setShowCompletionModal(true);
     } else {
-      setCompletedExercises([...completedExercises, currentExerciseIndex]);
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      // Move to next uncompleted exercise
+      setCompletedExercises(newCompletedExercises);
+      setCurrentExerciseIndex(nextExerciseIndex);
       setCurrentSetIndex(0);
     }
   };
@@ -204,6 +232,19 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleAddExercise = (exercise: WorkoutExercise) => {
+    // Check if exercise already exists
+    const exerciseExists = exercisesState.some(
+      (state) => state.exerciseData.exerciseId === exercise.exerciseId,
+    );
+
+    if (exerciseExists) {
+      Alert.alert(
+        "Exercice en doublon",
+        `"${exercise.exerciseName}" est déjà ajouté à la séance.`,
+      );
+      return;
+    }
+
     const newState = [...exercisesState];
     newState.push({
       exerciseData: exercise,
@@ -212,6 +253,65 @@ export default function ActiveWorkoutScreen() {
       restTimeSeconds: exercise.plannedRestSeconds || 90,
     });
     setExercisesState(newState);
+  };
+
+  const handleDeleteExercise = () => {
+    Alert.alert(
+      "Supprimer l'exercice",
+      "Êtes-vous sûr de vouloir supprimer cet exercice de la séance?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          onPress: () => {
+            const newState = exercisesState.filter(
+              (_, index) => index !== currentExerciseIndex,
+            );
+
+            if (newState.length === 0) {
+              // No more exercises, go back
+              Alert.alert(
+                "Dernière exercice",
+                "Impossible de supprimer le dernier exercice.",
+              );
+              return;
+            }
+
+            // Update completed exercises indices
+            const newCompletedExercises = completedExercises
+              .filter((index) => index !== currentExerciseIndex)
+              .map((index) =>
+                index > currentExerciseIndex ? index - 1 : index,
+              );
+
+            setExercisesState(newState);
+            setCompletedExercises(newCompletedExercises);
+
+            // Move to next exercise or previous if was last
+            let newCurrentIndex = currentExerciseIndex;
+            if (currentExerciseIndex >= newState.length) {
+              newCurrentIndex = newState.length - 1;
+            }
+
+            setCurrentExerciseIndex(newCurrentIndex);
+            setCurrentSetIndex(0);
+          },
+          style: "destructive",
+        },
+      ],
+    );
+  };
+
+  const handleSkipRest = () => {
+    // Clear the scheduled timeout
+    if (setTimeoutRef.current) {
+      clearTimeout(setTimeoutRef.current);
+    }
+
+    setShowRestScreen(false);
+
+    // Execute transition immediately
+    executeSetTransition(isLastSet, isLastExercise, exercisesState);
   };
 
   const handleEndWorkout = () => {
@@ -365,7 +465,7 @@ export default function ActiveWorkoutScreen() {
 
               {/* Skip rest button */}
               <TouchableOpacity
-                onPress={() => setShowRestScreen(false)}
+                onPress={handleSkipRest}
                 style={{
                   backgroundColor: WorkoutTheme.accent.purple,
                   paddingHorizontal: 24,
@@ -425,6 +525,7 @@ export default function ActiveWorkoutScreen() {
               onAddSet={handleAddSet}
               onRemoveSet={handleRemoveSet}
               onSkipExercise={handleSkipExercise}
+              onDeleteExercise={handleDeleteExercise}
               isLastExercise={isLastExercise}
               isLastSet={isLastSet}
             />
@@ -491,7 +592,10 @@ export default function ActiveWorkoutScreen() {
               </Text>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               {/* Title Input */}
               <View style={{ marginBottom: 16 }}>
                 <Text

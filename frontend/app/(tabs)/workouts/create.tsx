@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
-import ExerciseSelector from "@/components/workout/ExerciseSelector";
+import SimpleExerciseSelector from "@/components/workout/SimpleExerciseSelector";
 import { Exercise } from "@/services/exercises.service";
 import ExerciseSetupItem, {
   ExerciseSetupData,
@@ -49,6 +49,19 @@ export default function CreateWorkoutScreen() {
   };
 
   const handleSelectExercise = (exercise: Exercise) => {
+    // Check if exercise already exists
+    const exerciseExists = selectedExercises.some(
+      (ex) => ex.id === exercise.id,
+    );
+
+    if (exerciseExists) {
+      Alert.alert(
+        "Exercice en doublon",
+        `"${exercise.name}" est déjà ajouté à la séance.`,
+      );
+      return;
+    }
+
     const newExercise: ExerciseSetupData = {
       id: exercise.id,
       name: exercise.name,
@@ -322,11 +335,11 @@ export default function CreateWorkoutScreen() {
       </ScrollView>
 
       {/* Exercise Selector Modal */}
-      <ExerciseSelector
-        isVisible={showExerciseSelector}
+      <SimpleExerciseSelector
+        visible={showExerciseSelector}
         onClose={() => setShowExerciseSelector(false)}
         onSelectExercise={handleSelectExercise}
-        selectedExercises={selectedExercises.map((ex) => ex.id)}
+        existingExerciseIds={selectedExercises.map((ex) => ex.id)}
       />
     </SafeAreaView>
   );

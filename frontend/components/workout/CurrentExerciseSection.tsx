@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 
@@ -18,6 +18,7 @@ interface CurrentExerciseSectionProps {
   onAddSet: () => void;
   onRemoveSet: () => void;
   onSkipExercise: () => void;
+  onDeleteExercise?: () => void;
   isLastExercise: boolean;
   isLastSet: boolean;
 }
@@ -32,6 +33,7 @@ export default function CurrentExerciseSection({
   onAddSet,
   onRemoveSet,
   onSkipExercise,
+  onDeleteExercise,
   isLastExercise,
   isLastSet,
 }: CurrentExerciseSectionProps) {
@@ -42,16 +44,31 @@ export default function CurrentExerciseSection({
     plannedSetData[currentSetIndex]?.reps.toString() || "0",
   );
 
+  // Update weight and reps when currentSetIndex changes
+  useEffect(() => {
+    setWeight(plannedSetData[currentSetIndex]?.weight.toString() || "0");
+    setReps(plannedSetData[currentSetIndex]?.reps.toString() || "0");
+  }, [currentSetIndex, plannedSetData]);
+
   const handleCompleteSet = () => {
     const w = parseFloat(weight) || 0;
     const r = parseInt(reps) || 0;
     onCompleteSet(r, w);
+  };
 
-    // Reset to next set if available
-    if (currentSetIndex + 1 < totalSets) {
-      setWeight(plannedSetData[currentSetIndex + 1]?.weight.toString() || "0");
-      setReps(plannedSetData[currentSetIndex + 1]?.reps.toString() || "0");
-    }
+  const handleDeleteExercise = () => {
+    Alert.alert(
+      "Supprimer l'exercice",
+      `Êtes-vous sûr de vouloir supprimer "${exerciseName}" de la séance?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          onPress: () => onDeleteExercise?.(),
+          style: "destructive",
+        },
+      ],
+    );
   };
 
   return (
@@ -366,6 +383,39 @@ export default function CurrentExerciseSection({
             Passer l&apos;exercice
           </Text>
         </TouchableOpacity>
+
+        {/* Delete Exercise Button */}
+        {onDeleteExercise && (
+          <TouchableOpacity
+            onPress={handleDeleteExercise}
+            style={{
+              backgroundColor: WorkoutTheme.status.danger + "20",
+              borderRadius: 10,
+              paddingVertical: 12,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              borderWidth: 1,
+              borderColor: WorkoutTheme.status.danger,
+            }}
+          >
+            <Ionicons
+              name="trash"
+              size={16}
+              color={WorkoutTheme.status.danger}
+            />
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: WorkoutTheme.status.danger,
+              }}
+            >
+              Supprimer l&apos;exercice
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
