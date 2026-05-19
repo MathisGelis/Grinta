@@ -1,5 +1,4 @@
 import { AuthService } from "@/services/auth.service";
-import { TokenService } from "@/services/token.service";
 import { saveItem } from "@/core/services/storage";
 import React, { useState } from "react";
 import {
@@ -64,11 +63,10 @@ export default function RegisterScreen() {
         displayName,
         uniqueName
       );
-      await TokenService.save(response.access_token);
-      await saveItem("user_id", response.id);
       await saveItem("user_name", displayName);
       await saveItem("user_unique_name", uniqueName);
       await saveItem("user_email", email);
+      await saveItem("user_id", response.id);
       router.replace("/(auth)/onboarding/GenderScreen");
     } catch (err: any) {
       const message = err.message || "Une erreur est survenue";

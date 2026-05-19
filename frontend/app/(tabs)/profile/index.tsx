@@ -10,7 +10,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { getItem } from "@/core/services/storage";
-import { TokenService } from "@/services/token.service";
+import { AuthService } from "@/services/auth.service";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function ProfileScreen() {
@@ -36,7 +36,7 @@ export default function ProfileScreen() {
         text: t.signOut,
         style: "destructive",
         onPress: async () => {
-          await TokenService.remove();
+          await AuthService.logout();
           router.replace("/(auth)/LoginScreen");
         },
       },
@@ -72,23 +72,6 @@ export default function ProfileScreen() {
           <Text style={styles.joinedText}>{t.joined} March 2025</Text>
         </View>
 
-        {/* Stats row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNum}>12</Text>
-            <Text style={styles.statLabel}>{t.workoutsLabel}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNum}>3,450</Text>
-            <Text style={styles.statLabel}>{t.calories}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNum}>6h 30m</Text>
-            <Text style={styles.statLabel}>{t.active}</Text>
-          </View>
-        </View>
 
         {/* PRO card */}
         <TouchableOpacity style={styles.proCard}>
@@ -152,19 +135,6 @@ const styles = StyleSheet.create({
   avatarInitials: { color: "#fff", fontSize: 28, fontWeight: "700" },
   userName: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 4 },
   joinedText: { color: "#888", fontSize: 13 },
-
-  statsRow: {
-    flexDirection: "row",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    marginHorizontal: 16,
-    padding: 20,
-    marginBottom: 16,
-  },
-  statItem: { flex: 1, alignItems: "center" },
-  statNum: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 4 },
-  statLabel: { color: "#888", fontSize: 12 },
-  statDivider: { width: 1, backgroundColor: "#2a2a2a" },
 
   proCard: {
     flexDirection: "row",

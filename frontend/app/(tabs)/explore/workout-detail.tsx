@@ -1,8 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
-  Image,
+  ActivityIndicator,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,113 +10,121 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-const EXERCISES = [
-  {
-    name: "Simple Warm-Up Exercises",
-    duration: "0:30",
-    image:
-      "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80",
-  },
-  {
-    name: "Stability Training Basics",
-    duration: "1:00",
-    image:
-      "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=80",
-  },
-  {
-    name: "Core Plank Series",
-    duration: "0:45",
-    image:
-      "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&q=80",
-  },
-];
+import { Ionicons } from "@expo/vector-icons";
+import {
+  WorkoutService,
+  PlannedWorkoutDetail,
+  WorkoutExercise,
+} from "@/services/workout.service";
 
 export default function WorkoutDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{
     id: string;
     title: string;
-    category: string;
-    image: string;
-    duration: string;
-    calories: string;
     description: string;
   }>();
 
-  const title = params.title || "Emma's Core Challenge";
-  const category = params.category || "Intermediate";
-  const image =
-    params.image ||
-    "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80";
-  const duration = params.duration || "60 min";
-  const calories = params.calories || "350";
-  const description =
-    params.description ||
-    "Want your body to be healthy. Join our program with directions according to body's goals.";
+  const [detail, setDetail] = useState<PlannedWorkoutDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!params.id) return;
+    WorkoutService.getPlannedDetail(params.id)
+      .then(setDetail)
+      .catch(() => setDetail(null))
+      .finally(() => setLoading(false));
+  }, [params.id]);
+
+  const title = detail?.workout.title ?? params.title ?? "Workout";
+  const description = detail?.workout.description ?? params.description ?? "";
+  const exercises: WorkoutExercise[] = detail?.workout.exercises ?? [];
+
+  const formatSets = (ex: WorkoutExercise): string => {
+    if (!ex.sets || ex.sets.length === 0) return "";
+    return ex.sets.map((s) => `${s.reps}×${s.weight}kg`).join(" · ");
+  };
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
 
-      {/* Hero image */}
-      <View style={styles.heroContainer}>
-        <Image source={{ uri: image }} style={styles.heroImage} resizeMode="cover" />
-        {/* Back button */}
-        <SafeAreaView style={styles.backWrapper} edges={["top"]}>
+      {/* Header */}
+      <SafeAreaView style={styles.headerSafe} edges={["top"]}>
+        <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backArrow}>←</Text>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
-        </SafeAreaView>
-      </View>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          <View style={{ width: 40 }} />
+        </View>
+      </SafeAreaView>
 
-      {/* Content sheet */}
       <ScrollView
-        style={styles.sheet}
-        contentContainerStyle={styles.sheetContent}
+        style={styles.content}
+        contentContainerStyle={styles.contentInner}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title & category */}
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.category}>Workouts · {category}</Text>
-
-        {/* Stats pills */}
-        <View style={styles.statsRow}>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillText}>▶ {duration}</Text>
+        {/* Info card */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoIcon}>
+            <Ionicons name="barbell" size={32} color="#7B5CF0" />
           </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillText}>🔥 {calories} Cal</Text>
+          <Text style={styles.title}>{title}</Text>
+          {description ? (
+            <Text style={styles.description}>{description}</Text>
+          ) : null}
+          <View style={styles.statsRow}>
+            <View style={styles.statPill}>
+              <Text style={styles.statPillText}>
+                {exercises.length} exercices
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Description */}
-        <Text style={styles.description}>{description}</Text>
-
         {/* Exercise list */}
         <Text style={styles.exercisesTitle}>Exercises</Text>
-        {EXERCISES.map((ex, idx) => (
-          <View key={idx} style={styles.exerciseCard}>
-            <Image
-              source={{ uri: ex.image }}
-              style={styles.exerciseThumbnail}
-              resizeMode="cover"
-            />
-            <View style={styles.exerciseInfo}>
-              <Text style={styles.exerciseName}>{ex.name}</Text>
-              <Text style={styles.exerciseDuration}>{ex.duration}</Text>
+
+        {loading && (
+          <ActivityIndicator color="#7B5CF0" style={{ marginTop: 24 }} />
+        )}
+
+        {!loading && exercises.length === 0 && (
+          <View style={styles.empty}>
+            <Ionicons name="fitness-outline" size={40} color="#333" />
+            <Text style={styles.emptyText}>No exercises</Text>
+          </View>
+        )}
+
+        {exercises.map((ex, idx) => (
+          <View key={ex.id || idx} style={styles.exerciseCard}>
+            <View style={styles.exerciseIndex}>
+              <Text style={styles.exerciseIndexText}>{idx + 1}</Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <View style={styles.exerciseInfo}>
+              <Text style={styles.exerciseName}>{ex.exercise.name}</Text>
+              {ex.sets && ex.sets.length > 0 && (
+                <Text style={styles.exerciseMeta}>
+                  {ex.sets.length} sets · {formatSets(ex)}
+                </Text>
+              )}
+              {ex.exercise.equipment_type && ex.exercise.equipment_type !== "none" && (
+                <Text style={styles.exerciseEquip}>
+                  {ex.exercise.equipment_type.replace(/_/g, " ")}
+                </Text>
+              )}
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#555" />
           </View>
         ))}
 
-        {/* Spacer so content clears the fixed button */}
         <View style={{ height: 90 }} />
       </ScrollView>
 
-      {/* Start Workout button — fixed at bottom */}
+      {/* Start Workout button */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.startButton}>
           <Text style={styles.startButtonText}>Start Workout</Text>
@@ -128,89 +135,62 @@ export default function WorkoutDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
+  root: { flex: 1, backgroundColor: "#121212" },
 
-  heroContainer: {
-    height: SCREEN_HEIGHT * 0.45,
-    position: "relative",
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  backWrapper: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
+  headerSafe: { backgroundColor: "#121212" },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
   },
   backButton: {
-    margin: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "#1a1a1a",
     justifyContent: "center",
     alignItems: "center",
   },
-  backArrow: {
-    fontSize: 20,
-    color: "#121212",
-    fontWeight: "bold",
-    lineHeight: 22,
-  },
-
-  sheet: {
+  headerTitle: {
     flex: 1,
-    backgroundColor: "#1a1a1a",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24,
-  },
-  sheetContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-  },
-
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#ffffff",
-    marginBottom: 6,
-  },
-  category: {
-    fontSize: 14,
-    color: "#7B5CF0",
+    fontSize: 17,
     fontWeight: "600",
-    marginBottom: 16,
+    color: "#fff",
+    textAlign: "center",
   },
 
-  statsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 16,
+  content: { flex: 1 },
+  contentInner: { paddingHorizontal: 16, paddingTop: 8 },
+
+  infoCard: {
+    backgroundColor: "#1a1a1a",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    marginBottom: 24,
+    gap: 8,
   },
+  infoIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "#2a1f4a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  title: { fontSize: 22, fontWeight: "bold", color: "#ffffff", textAlign: "center" },
+  description: { fontSize: 14, color: "#aaaaaa", textAlign: "center", lineHeight: 22 },
+  statsRow: { flexDirection: "row", gap: 10, marginTop: 8 },
   statPill: {
     backgroundColor: "#2a2a2a",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  statPillText: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  description: {
-    fontSize: 14,
-    color: "#aaaaaa",
-    lineHeight: 22,
-    marginBottom: 24,
-  },
+  statPillText: { color: "#ffffff", fontSize: 13, fontWeight: "600" },
 
   exercisesTitle: {
     fontSize: 18,
@@ -222,43 +202,40 @@ const styles = StyleSheet.create({
   exerciseCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2a2a2a",
+    backgroundColor: "#1a1a1a",
     borderRadius: 14,
-    padding: 10,
+    padding: 14,
     marginBottom: 10,
+    gap: 12,
   },
-  exerciseThumbnail: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-    marginRight: 12,
+  exerciseIndex: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#2a1f4a",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  exerciseInfo: {
-    flex: 1,
-  },
+  exerciseIndexText: { color: "#7B5CF0", fontSize: 14, fontWeight: "700" },
+  exerciseInfo: { flex: 1 },
   exerciseName: {
     color: "#ffffff",
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  exerciseDuration: {
-    color: "#7B5CF0",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  chevron: {
-    color: "#888888",
-    fontSize: 22,
-    paddingLeft: 8,
-  },
+  exerciseMeta: { color: "#7B5CF0", fontSize: 12, fontWeight: "500" },
+  exerciseEquip: { color: "#666", fontSize: 11, marginTop: 2, textTransform: "capitalize" },
+
+  empty: { alignItems: "center", marginTop: 40, gap: 12 },
+  emptyText: { color: "#555", fontSize: 15 },
 
   bottomBar: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#121212",
     paddingHorizontal: 20,
     paddingVertical: 16,
     paddingBottom: 32,
@@ -269,9 +246,5 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
   },
-  startButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  startButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "bold" },
 });

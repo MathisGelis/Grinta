@@ -1,9 +1,10 @@
 import { getItem } from "@/core/services/storage";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
-  Image,
+  ActivityIndicator,
   Modal,
   ScrollView,
   StatusBar,
@@ -13,83 +14,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const FEATURED_WORKOUT = {
-  id: "1",
-  title: "Emma&#39;s Core Challenge",
-  category: "Intermediate",
-  image:
-    "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80",
-  duration: "60 min",
-  calories: 350,
-  description:
-    "Want your body to be healthy. Join our program with directions according to body's goals.",
-  exercises: [
-    { name: "Simple Warm-Up Exercises", duration: "0:30" },
-    { name: "Stability Training Basics", duration: "1:00" },
-    { name: "Core Plank Series", duration: "0:45" },
-  ],
-};
-
-const BEGINNER_WORKOUTS = [
-  {
-    id: "2",
-    title: "Lea's Cardio Starter",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
-    duration: "45 min",
-    calories: 280,
-    isPro: false,
-  },
-  {
-    id: "3",
-    title: "Alex's HIIT Power Series",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&q=80",
-    duration: "30 min",
-    calories: 320,
-    isPro: false,
-  },
-  {
-    id: "4",
-    title: "Luca's Leg Day Inferno",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1434608519344-49d77a124f62?w=800&q=80",
-    duration: "50 min",
-    calories: 400,
-    isPro: true,
-  },
-  {
-    id: "5",
-    title: "Maya's Endurance Burn",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=800&q=80",
-    duration: "40 min",
-    calories: 300,
-    isPro: false,
-  },
-];
-
-const NEW_WORKOUTS = [
-  {
-    id: "6",
-    title: "Chris Power Lift",
-    category: "Advance",
-    image:
-      "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&q=80",
-  },
-  {
-    id: "7",
-    title: "Yoga Flow Morning",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80",
-  },
-];
+import { Ionicons } from "@expo/vector-icons";
+import {
+  WorkoutService,
+  PlannedWorkout,
+  Programme,
+} from "@/services/workout.service";
 
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
@@ -98,31 +28,32 @@ function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   return "goodEvening";
 }
 
-type Workout = {
-  id: string;
-  title: string;
-  category: string;
-  image: string;
-  duration?: string;
-  calories?: number;
-  isPro?: boolean;
-  description?: string;
-  exercises?: { name: string; duration: string }[];
-};
-
 export default function ExploreScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [userName, setUserName] = useState("there");
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [plannedWorkouts, setPlannedWorkouts] = useState<PlannedWorkout[]>([]);
+  const [programmes, setProgrammes] = useState<Programme[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const filters = useMemo(() => [t.beginner, t.intermediate, t.advance], [t.beginner, t.intermediate, t.advance]);
-  const [activeFilter, setActiveFilter] = useState(filters[0]);
-
-  React.useEffect(() => {
-    setActiveFilter(filters[0]);
-  }, [filters]);
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [workouts, progs] = await Promise.all([
+        WorkoutService.getPlanned(),
+        WorkoutService.getProgrammes(),
+      ]);
+      setPlannedWorkouts(workouts);
+      setProgrammes(progs);
+    } catch {
+      setPlannedWorkouts([]);
+      setProgrammes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     getItem("user_name").then((name) => {
@@ -130,12 +61,18 @@ export default function ExploreScreen() {
     });
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
   function getFormattedDate(): string {
     const now = new Date();
     return `${t.days[(now.getDay() + 6) % 7]} ${now.getDate()} ${t.months[now.getMonth()].slice(0, 3)}`;
   }
 
-  function openWorkoutModal(workout: Workout) {
+  function openWorkoutModal(workout: PlannedWorkout) {
     setSelectedWorkout(workout);
     setModalVisible(true);
   }
@@ -153,29 +90,16 @@ export default function ExploreScreen() {
       params: {
         id: selectedWorkout.id,
         title: selectedWorkout.title,
-        category: selectedWorkout.category,
-        image: selectedWorkout.image,
-        duration: selectedWorkout.duration ?? "",
-        calories: selectedWorkout.calories?.toString() ?? "",
         description: selectedWorkout.description ?? "",
       },
     });
   }
 
-  function handleFeaturedTap() {
-    router.push({
-      pathname: "/(tabs)/explore/workout-detail",
-      params: {
-        id: FEATURED_WORKOUT.id,
-        title: FEATURED_WORKOUT.title,
-        category: FEATURED_WORKOUT.category,
-        image: FEATURED_WORKOUT.image,
-        duration: FEATURED_WORKOUT.duration,
-        calories: FEATURED_WORKOUT.calories.toString(),
-        description: FEATURED_WORKOUT.description,
-      },
-    });
-  }
+  const difficultyLabel = (d: string) => {
+    if (d === "BEGINNER") return t.beginner;
+    if (d === "INTERMEDIATE") return t.intermediate;
+    return t.advance;
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -186,132 +110,100 @@ export default function ExploreScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header greeting ── */}
+        {/* Header greeting */}
         <View style={styles.headerRow}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.helloText}>
               {t.hello} {userName},
             </Text>
             <Text style={styles.greetingText}>{t[getGreetingKey()]} 👋</Text>
           </View>
-        </View>
-
-        {/* ── Today's community favorite ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.todaysCommunityFavorite}</Text>
-          <Text style={styles.dateText}>{getFormattedDate()}</Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.featuredCard}
-          activeOpacity={0.9}
-          onPress={handleFeaturedTap}
-        >
-          <Image
-            source={{ uri: FEATURED_WORKOUT.image }}
-            style={styles.featuredImage}
-            resizeMode="cover"
-          />
-          <View style={styles.featuredOverlay}>
-            <Text style={styles.featuredTag}>{t.communityTopPick}</Text>
-            <Text style={styles.featuredSubtitle}>
-              | Emma&apos;s Core Challenge
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* ── Workout Categories ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.workoutCategories}</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>{t.seeAll}</Text>
+          <TouchableOpacity
+            style={styles.createBtn}
+            onPress={() => router.push("/(tabs)/explore/create-workout")}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Filter pills */}
-        <View style={styles.pillRow}>
-          {filters.map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.pill, activeFilter === f && styles.pillActive]}
-              onPress={() => setActiveFilter(f)}
-            >
-              <Text
-                style={[
-                  styles.pillText,
-                  activeFilter === f && styles.pillTextActive,
-                ]}
+        {loading && (
+          <ActivityIndicator color="#7B5CF0" size="large" style={{ marginTop: 60 }} />
+        )}
+
+        {!loading && (
+          <>
+            {/* My Workouts */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t.workoutCategories}</Text>
+              <Text style={styles.dateText}>{getFormattedDate()}</Text>
+            </View>
+
+            {plannedWorkouts.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Ionicons name="barbell-outline" size={40} color="#333" />
+                <Text style={styles.emptyText}>{t.noWorkoutsYet}</Text>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScroll}
               >
-                {f}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+                {plannedWorkouts.map((w) => (
+                  <TouchableOpacity
+                    key={w.id}
+                    style={styles.workoutCard}
+                    activeOpacity={0.85}
+                    onPress={() => openWorkoutModal(w)}
+                  >
+                    <View style={styles.workoutCardIcon}>
+                      <Ionicons name="barbell" size={28} color="#7B5CF0" />
+                    </View>
+                    <Text style={styles.workoutCardTitle} numberOfLines={2}>
+                      {w.title}
+                    </Text>
+                    <Text style={styles.workoutCardSub}>
+                      {w.totalExercises} exercices
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
 
-        {/* Category workout cards */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScroll}
-        >
-          {BEGINNER_WORKOUTS.map((w) => (
-            <TouchableOpacity
-              key={w.id}
-              style={styles.categoryCard}
-              activeOpacity={0.85}
-              onPress={() => openWorkoutModal(w)}
-            >
-              <Image
-                source={{ uri: w.image }}
-                style={styles.categoryCardImage}
-                resizeMode="cover"
-              />
-              <View style={styles.categoryCardOverlay}>
-                <Text style={styles.categoryCardTitle} numberOfLines={2}>
-                  {w.title}
-                </Text>
-                <Text style={styles.categoryCardSub}>
-                  | {t.workoutsLabel2} · {w.category}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* ── New Workouts ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScroll}
-        >
-          {NEW_WORKOUTS.map((w) => (
-            <TouchableOpacity
-              key={w.id}
-              style={styles.newCard}
-              activeOpacity={0.85}
-              onPress={() => openWorkoutModal(w)}
-            >
-              <Image
-                source={{ uri: w.image }}
-                style={styles.newCardImage}
-                resizeMode="cover"
-              />
-              <View style={styles.newCardOverlay}>
-                <Text style={styles.newCardTitle} numberOfLines={2}>
-                  {w.title}
-                </Text>
-                <Text style={styles.categoryCardSub}>| {w.category}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+            {/* Programmes */}
+            {programmes.length > 0 && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalScroll}
+                >
+                  {programmes.map((p) => (
+                    <View key={p.id} style={styles.programmeCard}>
+                      <View style={styles.programmeBadge}>
+                        <Text style={styles.programmeBadgeText}>
+                          {difficultyLabel(p.difficulty)}
+                        </Text>
+                      </View>
+                      <Text style={styles.programmeTitle} numberOfLines={2}>
+                        {p.title}
+                      </Text>
+                      <Text style={styles.programmeSub}>
+                        Week {p.weekNumber}
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
 
-      {/* ── Workout Modal ── */}
+      {/* Workout Modal */}
       <Modal
         visible={modalVisible}
         transparent
@@ -320,61 +212,36 @@ export default function ExploreScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalSheet}>
-            {selectedWorkout && selectedWorkout.isPro ? (
-              <>
-                <Image
-                  source={{ uri: selectedWorkout.image }}
-                  style={styles.modalImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.modalBody}>
-                  <Text style={styles.modalTitle}>{t.upgradeToPremium}</Text>
-                  <Text style={styles.modalWorkoutTitle}>
-                    {selectedWorkout.title}
-                  </Text>
+            {selectedWorkout && (
+              <View style={styles.modalBody}>
+                <View style={styles.modalIcon}>
+                  <Ionicons name="barbell" size={36} color="#7B5CF0" />
+                </View>
+                <Text style={styles.modalWorkoutTitle}>
+                  {selectedWorkout.title}
+                </Text>
+                {selectedWorkout.description ? (
                   <Text style={styles.modalDescription}>
-                    {t.subscribePremium}
+                    {selectedWorkout.description}
                   </Text>
-                  <TouchableOpacity style={styles.premiumButton}>
-                    <Text style={styles.premiumButtonText}>{t.bePremium}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={closeModal}
-                    style={styles.cancelLink}
-                  >
-                    <Text style={styles.cancelText}>{t.cancel2}</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : selectedWorkout ? (
-              <>
-                <Image
-                  source={{ uri: selectedWorkout.image }}
-                  style={styles.modalImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.modalBody}>
-                  <Text style={styles.modalWorkoutTitle}>
-                    {selectedWorkout.title}
-                  </Text>
-                  <Text style={styles.modalCategory}>
-                    {selectedWorkout.category}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.useButton}
-                    onPress={handleUseWorkout}
-                  >
-                    <Text style={styles.useButtonText}>{t.useIt}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={closeModal}
-                    style={styles.cancelLink}
-                  >
-                    <Text style={styles.cancelText}>{t.cancel2}</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : null}
+                ) : null}
+                <Text style={styles.modalMeta}>
+                  {selectedWorkout.totalExercises} exercices
+                </Text>
+                <TouchableOpacity
+                  style={styles.useButton}
+                  onPress={handleUseWorkout}
+                >
+                  <Text style={styles.useButtonText}>{t.useIt}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={closeModal}
+                  style={styles.cancelLink}
+                >
+                  <Text style={styles.cancelText}>{t.cancel2}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       </Modal>
@@ -383,32 +250,27 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
+  safeArea: { flex: 1, backgroundColor: "#121212" },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 100 },
 
   headerRow: {
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
   },
-  helloText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#ffffff",
+  createBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#7B5CF0",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  greetingText: {
-    fontSize: 15,
-    color: "#aaaaaa",
-    marginTop: 2,
-  },
+  helloText: { fontSize: 22, fontWeight: "bold", color: "#ffffff" },
+  greetingText: { fontSize: 15, color: "#aaaaaa", marginTop: 2 },
 
   sectionHeader: {
     flexDirection: "row",
@@ -418,139 +280,60 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 8,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ffffff",
-  },
-  dateText: {
-    fontSize: 13,
-    color: "#7B5CF0",
-    fontWeight: "600",
-  },
-  seeAll: {
-    fontSize: 13,
-    color: "#7B5CF0",
-    fontWeight: "600",
-  },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#ffffff" },
+  dateText: { fontSize: 13, color: "#7B5CF0", fontWeight: "600" },
 
-  featuredCard: {
+  horizontalScroll: { paddingHorizontal: 16, paddingBottom: 4 },
+
+  emptyCard: {
     marginHorizontal: 16,
-    height: 200,
-    borderRadius: 16,
-    overflow: "hidden",
+    backgroundColor: "#1a1a1a",
+    borderRadius: 20,
+    padding: 40,
+    alignItems: "center",
+    gap: 12,
     marginBottom: 24,
   },
-  featuredImage: {
-    width: "100%",
-    height: "100%",
-  },
-  featuredOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  featuredTag: {
-    color: "#ffffff",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-  featuredSubtitle: {
-    color: "#cccccc",
-    fontSize: 12,
-    marginTop: 2,
-  },
+  emptyText: { color: "#555", fontSize: 15 },
 
-  pillRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    marginBottom: 14,
+  workoutCard: {
+    width: 180,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    padding: 16,
+    marginRight: 12,
     gap: 8,
   },
-  pill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#333333",
-  },
-  pillActive: {
-    backgroundColor: "#7B5CF0",
-    borderColor: "#7B5CF0",
-  },
-  pillText: {
-    color: "#888888",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  pillTextActive: {
-    color: "#ffffff",
-  },
-
-  horizontalScroll: {
-    paddingHorizontal: 16,
-    paddingBottom: 4,
-  },
-
-  categoryCard: {
-    width: 220,
-    height: 160,
+  workoutCardIcon: {
+    width: 52,
+    height: 52,
     borderRadius: 16,
-    overflow: "hidden",
-    marginRight: 12,
+    backgroundColor: "#2a1f4a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
   },
-  categoryCardImage: {
-    width: "100%",
-    height: "100%",
-  },
-  categoryCardOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 10,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  categoryCardTitle: {
-    color: "#ffffff",
-    fontWeight: "bold",
-    fontSize: 13,
-  },
-  categoryCardSub: {
-    color: "#aaaaaa",
-    fontSize: 11,
-    marginTop: 2,
-  },
+  workoutCardTitle: { color: "#ffffff", fontWeight: "bold", fontSize: 14 },
+  workoutCardSub: { color: "#888", fontSize: 12 },
 
-  newCard: {
+  programmeCard: {
     width: 160,
-    height: 120,
+    backgroundColor: "#1a1a1a",
     borderRadius: 16,
-    overflow: "hidden",
+    padding: 16,
     marginRight: 12,
+    gap: 8,
   },
-  newCardImage: {
-    width: "100%",
-    height: "100%",
+  programmeBadge: {
+    backgroundColor: "#7B5CF022",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignSelf: "flex-start",
   },
-  newCardOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 8,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  newCardTitle: {
-    color: "#ffffff",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
+  programmeBadgeText: { color: "#7B5CF0", fontSize: 11, fontWeight: "600" },
+  programmeTitle: { color: "#ffffff", fontWeight: "bold", fontSize: 14 },
+  programmeSub: { color: "#888", fontSize: 12 },
 
   modalBackdrop: {
     flex: 1,
@@ -563,19 +346,15 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     overflow: "hidden",
   },
-  modalImage: {
-    width: "100%",
-    height: 200,
-  },
-  modalBody: {
-    padding: 20,
+  modalBody: { padding: 24, alignItems: "center" },
+  modalIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: "#2a1f4a",
     alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#ffffff",
-    marginBottom: 6,
+    justifyContent: "center",
+    marginBottom: 16,
   },
   modalWorkoutTitle: {
     fontSize: 18,
@@ -584,17 +363,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 6,
   },
-  modalCategory: {
-    fontSize: 14,
-    color: "#7B5CF0",
-    marginBottom: 20,
-  },
   modalDescription: {
     fontSize: 14,
     color: "#aaaaaa",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 12,
   },
+  modalMeta: { fontSize: 13, color: "#7B5CF0", marginBottom: 20 },
   useButton: {
     backgroundColor: "#7B5CF0",
     paddingHorizontal: 48,
@@ -604,31 +379,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
-  useButtonText: {
-    color: "#ffffff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  premiumButton: {
-    backgroundColor: "#F0B429",
-    paddingHorizontal: 48,
-    paddingVertical: 14,
-    borderRadius: 30,
-    marginBottom: 12,
-    width: "100%",
-    alignItems: "center",
-  },
-  premiumButtonText: {
-    color: "#121212",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  cancelLink: {
-    paddingVertical: 8,
-    marginBottom: 8,
-  },
-  cancelText: {
-    color: "#888888",
-    fontSize: 14,
-  },
+  useButtonText: { color: "#ffffff", fontWeight: "bold", fontSize: 16 },
+  cancelLink: { paddingVertical: 8, marginBottom: 8 },
+  cancelText: { color: "#888888", fontSize: 14 },
 });

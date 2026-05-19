@@ -5,6 +5,7 @@ export default function ExploreStack() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="workout-detail" />
+      <Stack.Screen name="create-workout" options={{ presentation: "modal" }} />
     </Stack>
   );
 }

@@ -35,6 +35,7 @@ export interface Strings {
   events: string;
   all: string;
   noNotifications: string;
+  noWorkoutsYet: string;
   // Notification items
   notif1Title: string;
   notif1Body: string;
@@ -86,6 +87,8 @@ export interface Strings {
   // Common
   search: string;
   ok: string;
+  delete: string;
+  deleteWorkoutConfirm: string;
 }
 
 const en: Strings = {
@@ -120,6 +123,7 @@ const en: Strings = {
   events: "Events",
   all: "All",
   noNotifications: "No notifications",
+  noWorkoutsYet: "No workouts yet",
   notif1Title: "New workout available",
   notif1Body: '"Full Body Blast" has been added to your plan',
   notif2Title: "Weekly goal reached!",
@@ -165,6 +169,8 @@ const en: Strings = {
   privacyIntro: "At Grinta, we are committed to protecting your privacy and ensuring the security of your personal information. This policy explains how we collect, use, and safeguard your data when you use our app.",
   search: "Search",
   ok: "OK",
+  delete: "Delete",
+  deleteWorkoutConfirm: "Delete this workout?",
 };
 
 const fr: Strings = {
@@ -199,6 +205,7 @@ const fr: Strings = {
   events: "Événements",
   all: "Tout",
   noNotifications: "Aucune notification",
+  noWorkoutsYet: "Aucune séance pour le moment",
   notif1Title: "Nouveau entraînement",
   notif1Body: '"Full Body Blast" a été ajouté à votre plan',
   notif2Title: "Objectif hebdo atteint !",
@@ -244,6 +251,8 @@ const fr: Strings = {
   privacyIntro: "Chez Grinta, nous nous engageons à protéger votre vie privée et la sécurité de vos informations personnelles. Cette politique explique comment nous collectons, utilisons et protégeons vos données.",
   search: "Rechercher",
   ok: "OK",
+  delete: "Eliminar",
+  deleteWorkoutConfirm: "¿Eliminar este entrenamiento?",
 };
 
 const es: Strings = {
@@ -278,6 +287,7 @@ const es: Strings = {
   events: "Eventos",
   all: "Todos",
   noNotifications: "Sin notificaciones",
+  noWorkoutsYet: "Aún no hay entrenamientos",
   notif1Title: "Nuevo entrenamiento",
   notif1Body: '"Full Body Blast" ha sido añadido a tu plan',
   notif2Title: "¡Meta semanal alcanzada!",
@@ -323,6 +333,8 @@ const es: Strings = {
   privacyIntro: "En Grinta, nos comprometemos a proteger tu privacidad y la seguridad de tu información personal.",
   search: "Buscar",
   ok: "OK",
+  delete: "Supprimer",
+  deleteWorkoutConfirm: "Supprimer cette séance ?",
 };
 
 const de: Strings = {
@@ -357,6 +369,7 @@ const de: Strings = {
   events: "Events",
   all: "Alle",
   noNotifications: "Keine Benachrichtigungen",
+  noWorkoutsYet: "Noch keine Workouts",
   notif1Title: "Neues Training verfügbar",
   notif1Body: '"Full Body Blast" wurde deinem Plan hinzugefügt',
   notif2Title: "Wochenziel erreicht!",
@@ -402,6 +415,8 @@ const de: Strings = {
   privacyIntro: "Bei Grinta verpflichten wir uns, deine Privatsphäre und die Sicherheit deiner persönlichen Daten zu schützen.",
   search: "Suchen",
   ok: "OK",
+  delete: "Löschen",
+  deleteWorkoutConfirm: "Dieses Workout löschen?",
 };
 
 const it: Strings = {
@@ -436,6 +451,7 @@ const it: Strings = {
   events: "Eventi",
   all: "Tutti",
   noNotifications: "Nessuna notifica",
+  noWorkoutsYet: "Nessun allenamento ancora",
   notif1Title: "Nuovo allenamento",
   notif1Body: '"Full Body Blast" è stato aggiunto al tuo piano',
   notif2Title: "Obiettivo settimanale raggiunto!",
@@ -481,6 +497,8 @@ const it: Strings = {
   privacyIntro: "In Grinta, ci impegniamo a proteggere la tua privacy e la sicurezza delle tue informazioni personali.",
   search: "Cerca",
   ok: "OK",
+  delete: "Elimina",
+  deleteWorkoutConfirm: "Eliminare questo allenamento?",
 };
 
 const pt: Strings = {
@@ -515,6 +533,7 @@ const pt: Strings = {
   events: "Eventos",
   all: "Todos",
   noNotifications: "Sem notificações",
+  noWorkoutsYet: "Nenhum treino ainda",
   notif1Title: "Novo treino disponível",
   notif1Body: '"Full Body Blast" foi adicionado ao seu plano',
   notif2Title: "Meta semanal atingida!",
@@ -560,6 +579,8 @@ const pt: Strings = {
   privacyIntro: "Na Grinta, estamos comprometidos em proteger sua privacidade e a segurança de suas informações pessoais.",
   search: "Buscar",
   ok: "OK",
+  delete: "Excluir",
+  deleteWorkoutConfirm: "Excluir este treino?",
 };
 
 const ru: Strings = {
@@ -594,6 +615,7 @@ const ru: Strings = {
   events: "События",
   all: "Все",
   noNotifications: "Нет уведомлений",
+  noWorkoutsYet: "Пока нет тренировок",
   notif1Title: "Новая тренировка",
   notif1Body: '"Full Body Blast" добавлена в ваш план',
   notif2Title: "Недельная цель достигнута!",
@@ -639,6 +661,8 @@ const ru: Strings = {
   privacyIntro: "В Grinta мы стремимся защитить вашу конфиденциальность и безопасность ваших персональных данных.",
   search: "Поиск",
   ok: "ОК",
+  delete: "Удалить",
+  deleteWorkoutConfirm: "Удалить эту тренировку?",
 };
 
 const zh: Strings = {
@@ -673,6 +697,7 @@ const zh: Strings = {
   events: "活动",
   all: "全部",
   noNotifications: "暂无通知",
+  noWorkoutsYet: "暂无训练记录",
   notif1Title: "新训练已上线",
   notif1Body: '"Full Body Blast" 已添加到您的计划',
   notif2Title: "周目标达成！",
@@ -718,6 +743,8 @@ const zh: Strings = {
   privacyIntro: "在Grinta，我们致力于保护您的隐私和个人信息的安全。",
   search: "搜索",
   ok: "确定",
+  delete: "删除",
+  deleteWorkoutConfirm: "删除此训练？",
 };
 
 const ja: Strings = {
@@ -752,6 +779,7 @@ const ja: Strings = {
   events: "イベント",
   all: "すべて",
   noNotifications: "通知はありません",
+  noWorkoutsYet: "まだワークアウトがありません",
   notif1Title: "新しいワークアウト",
   notif1Body: '「Full Body Blast」がプランに追加されました',
   notif2Title: "週間目標達成！",
@@ -797,6 +825,8 @@ const ja: Strings = {
   privacyIntro: "Grinta では、お客様のプライバシーと個人情報の安全を守ることに尽力しています。",
   search: "検索",
   ok: "OK",
+  delete: "削除",
+  deleteWorkoutConfirm: "このワークアウトを削除しますか？",
 };
 
 const ko: Strings = {
@@ -831,6 +861,7 @@ const ko: Strings = {
   events: "이벤트",
   all: "전체",
   noNotifications: "알림이 없습니다",
+  noWorkoutsYet: "아직 운동 기록이 없습니다",
   notif1Title: "새 운동 추가",
   notif1Body: '"Full Body Blast"가 플랜에 추가되었습니다',
   notif2Title: "주간 목표 달성!",
@@ -876,6 +907,8 @@ const ko: Strings = {
   privacyIntro: "Grinta는 귀하의 개인정보 보호와 보안을 위해 최선을 다하고 있습니다.",
   search: "검색",
   ok: "확인",
+  delete: "삭제",
+  deleteWorkoutConfirm: "이 운동을 삭제하시겠습니까?",
 };
 
 export const translations: Record<Lang, Strings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };

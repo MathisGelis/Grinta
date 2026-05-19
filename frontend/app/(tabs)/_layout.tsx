@@ -61,6 +61,10 @@ export default function Layout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="workout-trigger"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LinearGradient } from "expo-linear-gradient";
+import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
 
 function getWeekDates(weekOffset: number) {
   const today = new Date();
@@ -29,24 +32,68 @@ function getTodayIndex() {
   return day === 0 ? 6 : day - 1;
 }
 
-const finishedWorkouts = [
-  { id: 1, name: "Full Body Blast", duration: "45 min", calories: 320, daysAgo: 2 },
-  { id: 2, name: "Upper Body Push", duration: "38 min", calories: 280, daysAgo: 4 },
-  { id: 3, name: "Core & Cardio", duration: "30 min", calories: 210, daysAgo: 6 },
-];
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m} min`;
+}
 
 export default function StatsScreen() {
   const { t } = useTranslation();
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState(getTodayIndex());
+  const [workouts, setWorkouts] = useState<CompletedWorkout[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const weekDates = getWeekDates(weekOffset);
   const displayMonth = weekDates[0];
   const monthLabel = `${t.months[displayMonth.getMonth()]} ${displayMonth.getFullYear()}`;
 
-  const formatWorkoutDate = (daysAgo: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() - daysAgo);
+  const loadWorkouts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await WorkoutService.getCompleted();
+      setWorkouts(data);
+    } catch {
+      setWorkouts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadWorkouts();
+    }, [loadWorkouts])
+  );
+
+  const handleDeleteWorkout = (workout: CompletedWorkout) => {
+    Alert.alert(
+      t.delete || "Delete",
+      `${t.deleteWorkoutConfirm || "Delete"} "${workout.title}" ?`,
+      [
+        { text: t.cancel, style: "cancel" },
+        {
+          text: t.delete || "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await WorkoutService.deleteCompleted(workout.id);
+              setWorkouts((prev) => prev.filter((w) => w.id !== workout.id));
+            } catch {}
+          },
+        },
+      ]
+    );
+  };
+
+  const totalWorkouts = workouts.length;
+  const totalDurationSec = workouts.reduce((s, w) => s + (w.totalDurationSeconds || 0), 0);
+  const totalDurationLabel = totalDurationSec > 0 ? formatDuration(totalDurationSec) : "0 min";
+
+  const formatWorkoutDate = (dateStr: string) => {
+    const d = new Date(dateStr);
     return `${t.days[(d.getDay() + 6) % 7]}, ${t.months[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
   };
 
@@ -56,7 +103,6 @@ export default function StatsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t.statistics}</Text>
         </View>
@@ -75,8 +121,7 @@ export default function StatsScreen() {
           <View style={styles.daysRow}>
             {t.days.map((day, i) => {
               const date = weekDates[i];
-              const isToday =
-                weekOffset === 0 && i === getTodayIndex();
+              const isToday = weekOffset === 0 && i === getTodayIndex();
               return (
                 <TouchableOpacity
                   key={i}
@@ -99,61 +144,56 @@ export default function StatsScreen() {
           </View>
         </View>
 
-        {/* Calorie ring */}
-        <View style={styles.bigRingSection}>
-          <LinearGradient
-            colors={["#7B5CF0", "#EC4899"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.bigRingGradient}
-          >
-            <View style={styles.bigRingInner}>
-              <Text style={styles.bigRingValue}>745</Text>
-              <Text style={styles.bigRingLabel}>Cal</Text>
-            </View>
-          </LinearGradient>
-          <Text style={styles.bigRingCaption}>{t.dailyCaloriesBurned}</Text>
-        </View>
-
-        {/* 3 stat rings */}
+        {/* Summary stats */}
         <View style={styles.smallRingsRow}>
           <View style={styles.smallRingItem}>
             <View style={[styles.ringOuter, { borderColor: "#7B5CF0" }]}>
-              <Text style={styles.ringValue}>92%</Text>
+              <Text style={styles.ringValue}>{totalWorkouts}</Text>
             </View>
-            <Text style={styles.ringLabel}>{t.wcLabel}</Text>
-          </View>
-          <View style={styles.smallRingItem}>
-            <View style={[styles.ringOuter, { borderColor: "#EC4899" }]}>
-              <Text style={styles.ringValue}>105kg</Text>
-            </View>
-            <Text style={styles.ringLabel}>{t.benchPrLabel}</Text>
+            <Text style={styles.ringLabel}>{t.workoutsLabel}</Text>
           </View>
           <View style={styles.smallRingItem}>
             <View style={[styles.ringOuter, { borderColor: "#34D399" }]}>
-              <Text style={styles.ringValue}>5/6</Text>
+              <Text style={styles.ringValue}>{totalDurationLabel}</Text>
             </View>
-            <Text style={styles.ringLabel}>{t.completedLabel}</Text>
+            <Text style={styles.ringLabel}>{t.active}</Text>
           </View>
         </View>
 
-        {/* Finished Workouts */}
+        {/* Completed Workouts */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t.finishedWorkout}</Text>
-          {finishedWorkouts.map((w) => (
-            <View key={w.id} style={styles.workoutCard}>
-              <View style={styles.checkBox}>
-                <Ionicons name="checkmark" size={16} color="#fff" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.workoutName}>{w.name}</Text>
-                <Text style={styles.workoutMeta}>
-                  {formatWorkoutDate(w.daysAgo)} · {w.duration}
-                </Text>
-              </View>
-              <Text style={styles.workoutCal}>{w.calories} cal</Text>
+          {loading && (
+            <ActivityIndicator color="#7B5CF0" style={{ marginTop: 24 }} />
+          )}
+          {!loading && workouts.length === 0 && (
+            <View style={styles.empty}>
+              <Ionicons name="barbell-outline" size={48} color="#333" />
+              <Text style={styles.emptyText}>{t.noWorkoutsYet || "No workouts yet"}</Text>
             </View>
-          ))}
+          )}
+          {!loading &&
+            workouts.map((w) => (
+              <TouchableOpacity
+                key={w.id}
+                style={styles.workoutCard}
+                activeOpacity={0.7}
+                onLongPress={() => handleDeleteWorkout(w)}
+              >
+                <View style={styles.checkBox}>
+                  <Ionicons name="checkmark" size={16} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.workoutName}>{w.title}</Text>
+                  <Text style={styles.workoutMeta}>
+                    {formatWorkoutDate(w.completionDate)} · {formatDuration(w.totalDurationSeconds)}
+                  </Text>
+                </View>
+                <Text style={styles.workoutExercises}>
+                  {w.totalExercises} ex.
+                </Text>
+              </TouchableOpacity>
+            ))}
         </View>
       </ScrollView>
     </View>
@@ -192,28 +232,6 @@ const styles = StyleSheet.create({
   dayText: { color: "#666", fontSize: 10, marginBottom: 4 },
   dayNum: { color: "#666", fontSize: 13, fontWeight: "600" },
   dayTextActive: { color: "#fff" },
-
-  bigRingSection: { alignItems: "center", marginBottom: 32 },
-  bigRingGradient: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    padding: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  bigRingInner: {
-    width: 152,
-    height: 152,
-    borderRadius: 76,
-    backgroundColor: "#121212",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bigRingValue: { color: "#fff", fontSize: 40, fontWeight: "700" },
-  bigRingLabel: { color: "#888", fontSize: 16 },
-  bigRingCaption: { color: "#555", fontSize: 13 },
 
   smallRingsRow: {
     flexDirection: "row",
@@ -254,5 +272,8 @@ const styles = StyleSheet.create({
   },
   workoutName: { color: "#fff", fontSize: 15, fontWeight: "600", marginBottom: 4 },
   workoutMeta: { color: "#666", fontSize: 12 },
-  workoutCal: { color: "#7B5CF0", fontSize: 14, fontWeight: "600" },
+  workoutExercises: { color: "#7B5CF0", fontSize: 14, fontWeight: "600" },
+
+  empty: { alignItems: "center", marginTop: 40, gap: 12 },
+  emptyText: { color: "#555", fontSize: 16 },
 });

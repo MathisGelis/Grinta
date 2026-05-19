@@ -1,5 +1,4 @@
 import { AuthService } from "@/services/auth.service";
-import { TokenService } from "@/services/token.service";
 import React, { useState } from "react";
 import {
   View,
@@ -32,8 +31,7 @@ export default function LoginScreen() {
     }
     try {
       setLoading(true);
-      const response = await AuthService.login(identifier, password);
-      await TokenService.save(response.access_token);
+      await AuthService.login(identifier, password);
       router.replace("/(tabs)/explore");
     } catch (err: any) {
       setError(err.message || "Identifiants incorrects");
