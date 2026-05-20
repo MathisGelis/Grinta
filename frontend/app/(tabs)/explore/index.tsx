@@ -113,7 +113,7 @@ type Workout = {
 export default function ExploreScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [userName, setUserName] = useState("there");
+  const [, setUserName] = useState("there");
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
