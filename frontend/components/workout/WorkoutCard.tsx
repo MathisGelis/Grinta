@@ -153,6 +153,11 @@ export default function WorkoutCard({
     setHasChanges(true);
   };
 
+  const handleAddExercise = (exercise: ExerciseSetupData) => {
+    setEditedExercises((prev) => [...prev, exercise]);
+    setHasChanges(true);
+  };
+
   const handleRemoveExercise = (index: number) => {
     const newExercises = editedExercises.filter((_, i) => i !== index);
     setEditedExercises(newExercises);
@@ -307,6 +312,7 @@ export default function WorkoutCard({
                     }}
                     onExerciseUpdate={handleExerciseUpdate}
                     onRemoveExercise={handleRemoveExercise}
+                    onAddExercise={handleAddExercise}
                   />
                 )}
 

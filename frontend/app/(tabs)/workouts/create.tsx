@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
-import SimpleExerciseSelector from "@/components/workout/SimpleExerciseSelector";
+import ExerciseSearch from "@/components/workout/ExerciseSearch";
 import { Exercise } from "@/services/exercises.service";
 import ExerciseSetupItem, {
   ExerciseSetupData,
@@ -335,7 +335,7 @@ export default function CreateWorkoutScreen() {
       </ScrollView>
 
       {/* Exercise Selector Modal */}
-      <SimpleExerciseSelector
+      <ExerciseSearch
         visible={showExerciseSelector}
         onClose={() => setShowExerciseSelector(false)}
         onSelectExercise={handleSelectExercise}
@@ -435,7 +435,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   addButton: {
-    padding: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginLeft: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyState: {
     backgroundColor: WorkoutTheme.backgroundSecondary,

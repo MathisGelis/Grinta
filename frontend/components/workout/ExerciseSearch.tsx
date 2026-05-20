@@ -13,19 +13,19 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { getAllExercises, Exercise } from "@/services/exercises.service";
 
-interface SimpleExerciseSelectorProps {
+interface ExerciseSearchProps {
   visible: boolean;
   onClose: () => void;
   onSelectExercise: (exercise: Exercise) => void;
   existingExerciseIds?: string[];
 }
 
-export default function SimpleExerciseSelector({
+export default function ExerciseSearch({
   visible,
   onClose,
   onSelectExercise,
   existingExerciseIds = [],
-}: SimpleExerciseSelectorProps) {
+}: ExerciseSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
@@ -59,7 +59,7 @@ export default function SimpleExerciseSelector({
     setFilteredExercises(filtered);
   };
 
-  const handleSelectExercise = (exercise: Exercise) => {
+  const handleSelect = (exercise: Exercise) => {
     onSelectExercise(exercise);
     setSearchQuery("");
     onClose();
@@ -84,11 +84,12 @@ export default function SimpleExerciseSelector({
             backgroundColor: WorkoutTheme.backgroundSecondary,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
+            height: "80%",
             maxHeight: "90%",
+            minHeight: "50%",
             paddingTop: 16,
           }}
         >
-          {/* Header */}
           <View
             style={{
               flexDirection: "row",
@@ -118,7 +119,6 @@ export default function SimpleExerciseSelector({
             </TouchableOpacity>
           </View>
 
-          {/* Search */}
           <View
             style={{
               paddingHorizontal: 16,
@@ -168,7 +168,6 @@ export default function SimpleExerciseSelector({
             </View>
           </View>
 
-          {/* Exercises List */}
           {loadingExercises ? (
             <View
               style={{
@@ -187,9 +186,11 @@ export default function SimpleExerciseSelector({
             <FlatList
               data={filteredExercises}
               keyExtractor={(item) => item.id}
+              style={{ flex: 1 }}
               contentContainerStyle={{
                 paddingHorizontal: 16,
                 paddingVertical: 12,
+                flexGrow: 1,
               }}
               renderItem={({ item }) => {
                 const isDuplicate = existingExerciseIds.includes(item.id);
@@ -202,7 +203,7 @@ export default function SimpleExerciseSelector({
                             "Exercice en doublon",
                             `"${item.name}" est déjà ajouté à la séance.`,
                           )
-                        : handleSelectExercise(item)
+                        : handleSelect(item)
                     }
                     disabled={isDuplicate}
                     style={{
@@ -256,7 +257,13 @@ export default function SimpleExerciseSelector({
                 );
               }}
               ListEmptyComponent={
-                <View style={{ alignItems: "center", paddingVertical: 40 }}>
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
                   <Ionicons
                     name="search"
                     size={40}

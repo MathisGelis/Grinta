@@ -1,9 +1,17 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import ExerciseSetupItem, { ExerciseSetupData } from "./ExerciseSetupItem";
 import WorkoutActionButtons from "./WorkoutActionButtons";
+import ExerciseSearch from "@/components/workout/ExerciseSearch";
 
 interface WorkoutInfosTabProps {
   isEditing: boolean;
@@ -20,6 +28,7 @@ interface WorkoutInfosTabProps {
   onDescriptionChange: (text: string) => void;
   onExerciseUpdate: (index: number, updated: ExerciseSetupData) => void;
   onRemoveExercise: (index: number) => void;
+  onAddExercise?: (exercise: ExerciseSetupData) => void;
 }
 
 export default function WorkoutInfosTab({
@@ -37,7 +46,9 @@ export default function WorkoutInfosTab({
   onDescriptionChange,
   onExerciseUpdate,
   onRemoveExercise,
+  onAddExercise,
 }: WorkoutInfosTabProps) {
+  const [showAddModal, setShowAddModal] = React.useState(false);
   return (
     <ScrollView
       style={styles.tabContent}
@@ -99,6 +110,34 @@ export default function WorkoutInfosTab({
             <Text style={styles.sectionTitle}>
               Exercices ({editedExercises.length})
             </Text>
+            {isEditing && (
+              <TouchableOpacity
+                onPress={() => setShowAddModal(true)}
+                style={{
+                  backgroundColor: WorkoutTheme.accent.purple,
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginLeft: 8,
+                }}
+              >
+                <Ionicons name="add" size={16} color="white" />
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 12,
+                    fontWeight: "600",
+                    textAlign: "center",
+                    marginLeft: 6,
+                  }}
+                >
+                  Ajouter
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {editedExercises.length > 0 ? (
@@ -179,6 +218,20 @@ export default function WorkoutInfosTab({
           )}
         </View>
       </View>
+      <ExerciseSearch
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSelectExercise={(exercise) => {
+          const newExercise: ExerciseSetupData = {
+            id: exercise.id,
+            name: exercise.name,
+            sets: [{ reps: 10, weight: 0 }],
+          };
+          if (onAddExercise) onAddExercise(newExercise);
+          setShowAddModal(false);
+        }}
+        existingExerciseIds={editedExercises.map((ex) => ex.id)}
+      />
     </ScrollView>
   );
 }
@@ -228,6 +281,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
+    paddingBottom: 10,
     fontSize: 14,
     fontWeight: "700",
     color: WorkoutTheme.text.primary,
