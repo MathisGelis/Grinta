@@ -10,12 +10,27 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { UserListDto } from './dto/users-list.dto';
+import { Connection } from 'src/connections/entities/connections.entity';
+import { CompletedWorkout } from 'src/workouts/entities/completed-workout.entity';
+import { Post } from 'src/posts/entities/post.entity';
+import { ConnectionsService } from 'src/connections/connections.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    @InjectRepository(Connection)
+    private readonly connectionRepository: Repository<Connection>,
+
+    @InjectRepository(CompletedWorkout)
+    private readonly completedWorkoutRepository: Repository<CompletedWorkout>,
+
+    @InjectRepository(Post)
+    private readonly postRepository: Repository<Post>,
+
+    private readonly connectionsService: ConnectionsService,
   ) {}
 
   async registerUser(userData: CreateUserDto): Promise<User> {
@@ -98,6 +113,83 @@ export class UsersService {
     return this.userRepository.findOne({
       where: [{ email: identifier }, { uniqueName: identifier }],
     });
+  }
+
+  async toggleProfileVisibility(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) throw new NotFoundException('User not found');
+    user.isPublic = !user.isPublic;
+    await this.userRepository.save(user);
+    return { isPublic: user.isPublic };
+  }
+
+  async getUserProfile(currentUserId: string, targetUserId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: targetUserId },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+    const isOwner = currentUserId === targetUserId;
+    const [isFollowing, followStatus] = await Promise.all([
+      this.connectionRepository.exist({
+        where: {
+          follower: { id: currentUserId },
+          following: { id: targetUserId },
+        },
+      }),
+      this.connectionsService.getFollowStatus(currentUserId, targetUserId),
+    ]);
+    const canSeePosts = user.isPublic || isOwner || isFollowing;
+    const [followersCount, followingCount, workoutsCount, postsCount] =
+      await Promise.all([
+        this.connectionRepository.count({
+          where: { following: { id: targetUserId } },
+        }),
+        this.connectionRepository.count({
+          where: { follower: { id: targetUserId } },
+        }),
+        this.completedWorkoutRepository.count({
+          where: { user: { id: targetUserId } },
+        }),
+        this.postRepository.count({
+          where: { user: { id: targetUserId } },
+        }),
+      ]);
+    let posts = [];
+
+    if (canSeePosts) {
+      posts = await this.postRepository
+        .createQueryBuilder('post')
+        .where('post."userId" = :targetUserId', { targetUserId })
+        .select([
+          'post.id AS id',
+          'post."createdAt" AS "createdAt"',
+          `(SELECT COUNT(*) FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
+          `(SELECT COUNT(*) FROM post_comments c WHERE c."postId" = post.id) AS "commentsCount"`,
+          `EXISTS (
+            SELECT 1 FROM post_likes ml
+            WHERE ml."postId" = post.id
+            AND ml."userId" = :currentUserId
+          ) AS "isLiked"`,
+        ])
+        .orderBy('post."createdAt"', 'DESC')
+        .setParameter('currentUserId', currentUserId)
+        .getRawMany();
+    }
+
+    return {
+      id: user.id,
+      displayName: user.displayName,
+      uniqueName: user.uniqueName,
+      followersCount,
+      followingCount,
+      workoutsCount,
+      postsCount,
+      followStatus,
+      posts: canSeePosts ? posts : undefined,
+      isPrivate: !user.isPublic && !isOwner && !isFollowing,
+    };
   }
 
   async generateUniqueUsernameFromDisplayName(

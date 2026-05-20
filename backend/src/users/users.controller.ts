@@ -71,4 +71,25 @@ export class UsersController {
   async deleteUser(@Param('id') id: string) {
     return this.usersService.deleteUser(id);
   }
+
+  @Auth()
+  @Get(':id/profile')
+  @ApiOperation({ summary: 'Get user profile' })
+  @ApiResponse({ status: 200, description: 'User profile returned' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUserProfile(@Req() req, @Param('id') id: string) {
+    return this.usersService.getUserProfile(req.user.id, id);
+  }
+
+  @Auth()
+  @Patch('me/toggle-visibility')
+  @ApiOperation({ summary: 'Toggle profile visibility' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile visibility updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async toggleVisibility(@Req() req) {
+    return this.usersService.toggleProfileVisibility(req.user.id);
+  }
 }

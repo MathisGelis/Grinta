@@ -24,6 +24,10 @@ export class User {
   @ApiProperty()
   uniqueName: string;
 
+  @Column({ default: true })
+  @ApiProperty()
+  isPublic: boolean;
+
   @Column({ type: 'date', nullable: true })
   @ApiProperty({ required: false })
   birthDate?: string;
