@@ -1,327 +1,325 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ImageBackground,
-  StyleSheet,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useEffect, useCallback } from "react";
+import { View, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { WorkoutTheme } from "@/constants/Colors";
-
-export interface WorkoutExercise {
-  id: string;
-  name: string;
-  weight?: number;
-  reps?: number;
-  sets?: number;
-  unit?: string;
-}
-
-export interface WorkoutStats {
-  estimatedTime: number; // in minutes
-  totalWeight: number; // in kg
-  estimatedCalories: number;
-  muscleGroups: string[];
-  totalSets: number;
-}
-
-export interface WorkoutCardData {
-  id: string;
-  name: string;
-  image_url?: string;
-  exercises: WorkoutExercise[];
-  stats: WorkoutStats;
-}
+import { TokenService } from "@/services/token.service";
+import {
+  getWorkoutById,
+  updatePlannedWorkout,
+  UpdateWorkoutRequest,
+  fullPlannedWorkout,
+  deletePlannedWorkout,
+} from "@/services/workouts.service";
+import { getAllExercises, Exercise } from "@/services/exercises.service";
+import { ExerciseSetupData } from "./ExerciseSetupItem";
+import WorkoutCardHeader from "./WorkoutCardHeader";
+import WorkoutTabs from "./WorkoutTabs";
+import WorkoutInfosTab from "./WorkoutInfosTab";
+import WorkoutStatsTab from "./WorkoutStatsTab";
 
 interface WorkoutCardProps {
-  workout: WorkoutCardData;
-  onEdit?: () => void;
+  workout: {
+    id: string;
+    title: string;
+    description?: string;
+    totalExercises?: number;
+  };
   onDelete?: () => void;
+  onUpdate?: (updatedWorkout: fullPlannedWorkout) => void;
   onPress?: () => void;
 }
 
 export default function WorkoutCard({
   workout,
-  onEdit,
   onDelete,
+  onUpdate,
   onPress,
 }: WorkoutCardProps) {
-  const [expandedMenu, setExpandedMenu] = useState<
-    "exercises" | "stats" | null
-  >(null);
-  const [showOptions, setShowOptions] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<"infos" | "stats">("infos");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const handleMenuPress = (menu: "exercises" | "stats") => {
-    if (expandedMenu === menu) {
-      setExpandedMenu(null);
-    } else {
-      setExpandedMenu(menu);
+  // Workout data
+  const [fullWorkout, setFullWorkout] = useState<fullPlannedWorkout | null>(
+    null,
+  );
+  const [editedExercises, setEditedExercises] = useState<ExerciseSetupData[]>(
+    [],
+  );
+  const [editedTitle, setEditedTitle] = useState(workout.title);
+  const [editedDescription, setEditedDescription] = useState(
+    workout.description || "",
+  );
+  const [exercisesMap, setExercisesMap] = useState<Map<string, Exercise>>(
+    new Map(),
+  );
+
+  useEffect(() => {
+    loadExercisesMap();
+  }, []);
+
+  useEffect(() => {
+    if (!isEditing && !isLoading) {
+      setEditedTitle(workout.title);
+      setEditedDescription(workout.description || "");
+    }
+  }, [workout.title, workout.description, isEditing, isLoading]);
+
+  const loadExercisesMap = async () => {
+    try {
+      const exercises = await getAllExercises();
+      const map = new Map<string, Exercise>();
+      exercises.forEach((ex) => {
+        map.set(ex.id, ex);
+      });
+      setExercisesMap(map);
+    } catch (error) {
+      console.error("Erreur lors du chargement des exercices:", error);
     }
   };
+
+  const loadWorkoutData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const token = await TokenService.get();
+      const data = await getWorkoutById(workout.id, token || undefined);
+
+      // Ensure exercises array exists
+      if (!data.exercises) {
+        data.exercises = [];
+      }
+
+      setFullWorkout(data);
+
+      if (data.title) {
+        setEditedTitle(data.title);
+      }
+      if (data.description !== undefined) {
+        setEditedDescription(data.description);
+      }
+
+      const enrichedExercises = data.exercises.map((ex) => ({
+        id: ex.exerciseId,
+        name:
+          ex.exerciseName ||
+          exercisesMap.get(ex.exerciseId)?.name ||
+          ex.exerciseId,
+        sets: ex.sets,
+      }));
+      setEditedExercises(enrichedExercises);
+
+      return data;
+    } catch (error) {
+      console.error("Erreur lors du chargement du workout:", error);
+      Alert.alert("Erreur", "Impossible de charger les détails de la séance");
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [workout.id, exercisesMap]);
+
+  useEffect(() => {
+    if (isExpanded && !fullWorkout) {
+      loadWorkoutData();
+    }
+  }, [isExpanded, fullWorkout, loadWorkoutData]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setHasChanges(false);
+  };
+
+  const handleCancel = () => {
+    if (fullWorkout && fullWorkout.exercises) {
+      const enrichedExercises = fullWorkout.exercises.map((ex) => ({
+        id: ex.exerciseId,
+        name: exercisesMap.get(ex.exerciseId)?.name || ex.exerciseId,
+        sets: ex.sets,
+      }));
+      setEditedExercises(enrichedExercises);
+    }
+    setEditedTitle(workout.title);
+    setEditedDescription(workout.description || "");
+    setIsEditing(false);
+    setHasChanges(false);
+  };
+
+  const handleExerciseUpdate = (index: number, updated: ExerciseSetupData) => {
+    const newExercises = [...editedExercises];
+    newExercises[index] = updated;
+    setEditedExercises(newExercises);
+    setHasChanges(true);
+  };
+
+  const handleAddExercise = (exercise: ExerciseSetupData) => {
+    setEditedExercises((prev) => [...prev, exercise]);
+    setHasChanges(true);
+  };
+
+  const handleRemoveExercise = (index: number) => {
+    const newExercises = editedExercises.filter((_, i) => i !== index);
+    setEditedExercises(newExercises);
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const token = await TokenService.get();
+
+      // Prepare update request
+      const updateData: UpdateWorkoutRequest = {
+        title: editedTitle !== workout.title ? editedTitle : undefined,
+        description:
+          editedDescription !== (workout.description || "")
+            ? editedDescription
+            : undefined,
+        exercises: editedExercises.map((ex) => ({
+          exerciseId: ex.id,
+          sets: ex.sets,
+          plannedRestSeconds: 90,
+        })),
+      };
+
+      // Remove undefined values
+      Object.keys(updateData).forEach(
+        (key) =>
+          updateData[key as keyof UpdateWorkoutRequest] === undefined &&
+          delete updateData[key as keyof UpdateWorkoutRequest],
+      );
+
+      await updatePlannedWorkout(workout.id, updateData, token || undefined);
+
+      const updatedWorkout = await loadWorkoutData();
+      setIsEditing(false);
+      setHasChanges(false);
+
+      if (onUpdate && updatedWorkout) {
+        onUpdate(updatedWorkout);
+      }
+
+      Alert.alert("Succès", "La séance a été mise à jour avec succès.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Erreur lors de la sauvegarde";
+      Alert.alert("Erreur", message);
+      console.error("Erreur de sauvegarde:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Supprimer la séance",
+      `Êtes-vous sûr de vouloir supprimer "${workout.title}" ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          onPress: async () => {
+            try {
+              const token = await TokenService.get();
+              await deletePlannedWorkout(workout.id, token || undefined);
+              if (onDelete) onDelete();
+              Alert.alert("Succès", "La séance a été supprimée.");
+            } catch {
+              Alert.alert("Erreur", "Impossible de supprimer la séance.");
+            }
+          },
+          style: "destructive",
+        },
+      ],
+    );
+  };
+
+  const calculateStats = () => {
+    if (!fullWorkout || !fullWorkout.exercises)
+      return { totalSets: 0, totalReps: 0, totalWeight: 0 };
+
+    let totalSets = 0;
+    let totalReps = 0;
+    let totalWeight = 0;
+
+    fullWorkout.exercises.forEach((ex) => {
+      totalSets += ex.sets.length;
+      ex.sets.forEach((set) => {
+        totalReps += set.reps || 0;
+        totalWeight += (set.weight || 0) * (set.reps || 1);
+      });
+    });
+
+    return { totalSets, totalReps, totalWeight: Math.round(totalWeight) };
+  };
+
+  const stats = calculateStats();
 
   return (
     <View style={[styles.container, { marginBottom: 16 }]}>
       <View style={styles.card}>
-        {/* Image Background */}
-        <ImageBackground
-          source={
-            workout.image_url
-              ? { uri: workout.image_url }
-              : require("@/assets/onboarding1.jpg")
+        {/* Header */}
+        <WorkoutCardHeader
+          title={editedTitle}
+          isExpanded={isExpanded}
+          onToggleExpand={() => setIsExpanded(!isExpanded)}
+          totalExercises={
+            fullWorkout?.exercises?.length ?? workout.totalExercises ?? 0
           }
-          style={styles.imageBackground}
-          resizeMode="cover"
-        >
-          {/* Dark overlay */}
-          <View style={styles.darkOverlay} />
+          stats={{
+            totalSets: stats.totalSets,
+            totalWeight: stats.totalWeight,
+          }}
+          hasWorkout={!!fullWorkout}
+        />
 
-          {/* Header info */}
-          <View style={styles.headerContent}>
-            <Text style={styles.workoutName}>{workout.name}</Text>
-          </View>
-
-          {/* Bottom bar with stats */}
-          <View style={styles.bottomBar}>
-            <View style={styles.statsContainer}>
-              <View style={styles.statBadge}>
-                <Ionicons
-                  name="flame"
-                  size={14}
-                  color={WorkoutTheme.status.danger}
-                />
-                <Text style={styles.statBadgeText}>
-                  {workout.stats.estimatedCalories} kcal
-                </Text>
-              </View>
-              <View style={styles.statBadge}>
-                <Ionicons
-                  name="time"
-                  size={14}
-                  color={WorkoutTheme.status.info}
-                />
-                <Text style={styles.statBadgeText}>
-                  {workout.stats.estimatedTime}m
-                </Text>
-              </View>
-            </View>
-
-            {/* Menu toggle button */}
-            <TouchableOpacity
-              onPress={() => setShowOptions(!showOptions)}
-              style={styles.menuButton}
-            >
-              <Ionicons
-                name={showOptions ? "close" : "ellipsis-vertical"}
-                size={18}
-                color={WorkoutTheme.accent.purple}
-              />
-            </TouchableOpacity>
-          </View>
-        </ImageBackground>
-
-        {/* Options menu */}
-        {showOptions && (
-          <View style={styles.optionsMenu}>
-            <TouchableOpacity
-              style={styles.optionItem}
-              onPress={() => {
-                handleMenuPress("exercises");
-                setShowOptions(false);
-              }}
-            >
-              <Ionicons
-                name="barbell"
-                size={16}
-                color={WorkoutTheme.accent.purple}
-              />
-              <Text style={styles.optionText}>Exercices</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.optionItem}
-              onPress={() => {
-                handleMenuPress("stats");
-                setShowOptions(false);
-              }}
-            >
-              <Ionicons
-                name="stats-chart"
-                size={16}
-                color={WorkoutTheme.accent.purple}
-              />
-              <Text style={styles.optionText}>Statistiques</Text>
-            </TouchableOpacity>
-            {onEdit && (
-              <TouchableOpacity
-                style={styles.optionItem}
-                onPress={() => {
-                  onEdit();
-                  setShowOptions(false);
-                }}
-              >
-                <Ionicons
-                  name="pencil"
-                  size={16}
-                  color={WorkoutTheme.status.info}
-                />
-                <Text style={styles.optionText}>Modifier</Text>
-              </TouchableOpacity>
-            )}
-            {onDelete && (
-              <TouchableOpacity
-                style={styles.optionItem}
-                onPress={() => {
-                  onDelete();
-                  setShowOptions(false);
-                }}
-              >
-                <Ionicons
-                  name="trash"
-                  size={16}
-                  color={WorkoutTheme.status.danger}
-                />
-                <Text
-                  style={[
-                    styles.optionText,
-                    { color: WorkoutTheme.status.danger },
-                  ]}
-                >
-                  Supprimer
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-        {/* Expanded menu - Exercises */}
-        {expandedMenu === "exercises" && (
-          <View style={styles.expandedMenu}>
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>Exercices</Text>
-              <TouchableOpacity onPress={() => setExpandedMenu(null)}>
-                <Ionicons
-                  name="close"
-                  size={20}
-                  color={WorkoutTheme.text.secondary}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {workout.exercises.length > 0 ? (
-              <View>
-                {workout.exercises.map((exercise, index) => (
-                  <View
-                    key={exercise.id}
-                    style={[
-                      styles.exerciseItem,
-                      index !== workout.exercises.length - 1 &&
-                        styles.exerciseItemBorder,
-                    ]}
-                  >
-                    <View style={styles.exerciseInfo}>
-                      <Text style={styles.exerciseName}>{exercise.name}</Text>
-                      <View style={styles.exerciseDetails}>
-                        {exercise.sets && (
-                          <Text style={styles.exerciseDetail}>
-                            {exercise.sets} séries
-                          </Text>
-                        )}
-                        {exercise.reps && (
-                          <Text style={styles.exerciseDetail}>
-                            {exercise.reps} reps
-                          </Text>
-                        )}
-                        {exercise.weight && (
-                          <Text style={styles.exerciseDetail}>
-                            {exercise.weight} {exercise.unit || "kg"}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={18}
-                      color={WorkoutTheme.text.tertiary}
-                    />
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.emptyText}>Aucun exercice</Text>
-            )}
-          </View>
-        )}
-
-        {/* Expanded menu - Stats */}
-        {expandedMenu === "stats" && (
-          <View style={styles.expandedMenu}>
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>Statistiques</Text>
-              <TouchableOpacity onPress={() => setExpandedMenu(null)}>
-                <Ionicons
-                  name="close"
-                  size={20}
-                  color={WorkoutTheme.text.secondary}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.statsGrid}>
-              <View style={styles.statBox}>
-                <Ionicons
-                  name="time"
-                  size={24}
+        {/* Expanded Content */}
+        {isExpanded && (
+          <View style={styles.expandedContent}>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator
+                  size="large"
                   color={WorkoutTheme.accent.purple}
                 />
-                <Text style={styles.statValue}>
-                  {workout.stats.estimatedTime}m
-                </Text>
-                <Text style={styles.statLabel}>Durée</Text>
               </View>
-              <View style={styles.statBox}>
-                <Ionicons
-                  name="flame"
-                  size={24}
-                  color={WorkoutTheme.status.danger}
-                />
-                <Text style={styles.statValue}>
-                  {workout.stats.estimatedCalories}
-                </Text>
-                <Text style={styles.statLabel}>kcal</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Ionicons
-                  name="barbell"
-                  size={24}
-                  color={WorkoutTheme.status.success}
-                />
-                <Text style={styles.statValue}>
-                  {workout.stats.totalWeight}kg
-                </Text>
-                <Text style={styles.statLabel}>Poids</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Ionicons
-                  name="repeat"
-                  size={24}
-                  color={WorkoutTheme.status.info}
-                />
-                <Text style={styles.statValue}>{workout.stats.totalSets}</Text>
-                <Text style={styles.statLabel}>Séries</Text>
-              </View>
-            </View>
+            ) : (
+              <>
+                {/* Tabs */}
+                <WorkoutTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-            {workout.stats.muscleGroups.length > 0 && (
-              <View style={styles.muscleGroupsContainer}>
-                <Text style={styles.muscleGroupsTitle}>Muscles travaillés</Text>
-                <View style={styles.muscleGroupsWrap}>
-                  {workout.stats.muscleGroups.map((muscle, index) => (
-                    <View key={index} style={styles.muscleGroup}>
-                      <Text style={styles.muscleGroupText}>{muscle}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
+                {/* Tab Content */}
+                {activeTab === "infos" && (
+                  <WorkoutInfosTab
+                    isEditing={isEditing}
+                    hasChanges={hasChanges}
+                    isSaving={isSaving}
+                    editedTitle={editedTitle}
+                    editedDescription={editedDescription}
+                    editedExercises={editedExercises}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onSave={handleSave}
+                    onCancel={handleCancel}
+                    onTitleChange={(text) => {
+                      setEditedTitle(text);
+                      setHasChanges(true);
+                    }}
+                    onDescriptionChange={(text) => {
+                      setEditedDescription(text);
+                      setHasChanges(true);
+                    }}
+                    onExerciseUpdate={handleExerciseUpdate}
+                    onRemoveExercise={handleRemoveExercise}
+                    onAddExercise={handleAddExercise}
+                  />
+                )}
+
+                {activeTab === "stats" && fullWorkout && (
+                  <WorkoutStatsTab workout={fullWorkout} stats={stats} />
+                )}
+              </>
             )}
           </View>
         )}
@@ -339,173 +337,14 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: WorkoutTheme.backgroundTertiary,
   },
-  imageBackground: {
-    height: 200,
-    justifyContent: "space-between",
-  },
-  darkOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-  },
-  headerContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  workoutName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: WorkoutTheme.text.primary,
-  },
-  bottomBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statBadgeText: {
-    color: WorkoutTheme.text.primary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  menuButton: {
-    padding: 8,
-  },
-  optionsMenu: {
+  expandedContent: {
     backgroundColor: WorkoutTheme.backgroundSecondary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: WorkoutTheme.border,
   },
-  optionItem: {
-    flexDirection: "row",
+  loadingContainer: {
+    height: 300,
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 10,
-  },
-  optionText: {
-    color: WorkoutTheme.text.primary,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  expandedMenu: {
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: WorkoutTheme.border,
-  },
-  menuHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  menuTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: WorkoutTheme.text.primary,
-  },
-  exerciseItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  exerciseItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: WorkoutTheme.border,
-  },
-  exerciseInfo: {
-    flex: 1,
-  },
-  exerciseName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: WorkoutTheme.text.primary,
-    marginBottom: 4,
-  },
-  exerciseDetails: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  exerciseDetail: {
-    fontSize: 12,
-    color: WorkoutTheme.text.secondary,
-  },
-  emptyText: {
-    color: WorkoutTheme.text.tertiary,
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 12,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
-  },
-  statBox: {
-    flex: 1,
-    minWidth: "45%",
-    backgroundColor: WorkoutTheme.backgroundTertiary,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: WorkoutTheme.border,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: WorkoutTheme.accent.purple,
-    marginTop: 6,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: WorkoutTheme.text.secondary,
-    marginTop: 4,
-  },
-  muscleGroupsContainer: {
-    marginTop: 12,
-  },
-  muscleGroupsTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: WorkoutTheme.text.secondary,
-    marginBottom: 8,
-  },
-  muscleGroupsWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  muscleGroup: {
-    backgroundColor: WorkoutTheme.accent.purpleDark,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  muscleGroupText: {
-    fontSize: 11,
-    color: WorkoutTheme.accent.purpleLight,
-    fontWeight: "500",
   },
 });

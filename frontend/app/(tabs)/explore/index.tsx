@@ -113,7 +113,7 @@ type Workout = {
 export default function ExploreScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [userName, setUserName] = useState("there");
+  const [, setUserName] = useState("there");
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -192,9 +192,7 @@ export default function ExploreScreen() {
         {/* ── Header greeting ── */}
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.helloText}>
-              {t.hello} {userName},
-            </Text>
+            <Text style={styles.helloText}>{t.hello} Mathis,</Text>
             <Text style={styles.greetingText}>{t[getGreetingKey()]} 👋</Text>
           </View>
         </View>

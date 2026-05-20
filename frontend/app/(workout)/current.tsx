@@ -1,286 +1,690 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
   ActivityIndicator,
+  TextInput,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-
-interface Exercise {
-  id: string;
-  name: string;
-  sets?: number;
-  reps?: number;
-  weight?: number;
-}
-
-interface Workout {
-  id: string;
-  name: string;
-  image_url?: string;
-  description?: string;
-  exercises: Exercise[];
-  estimatedDuration?: number;
-  calories?: number;
-}
+import { WorkoutTheme } from "@/constants/Colors";
+import {
+  getPlannedWorkouts,
+  getWorkoutById,
+  PlannedWorkout,
+  fullPlannedWorkout,
+} from "@/services/workouts.service";
+import { TokenService } from "@/services/token.service";
 
 export default function CurrentWorkoutScreen() {
-  const [workouts] = useState<Workout[]>([
-    {
-      id: "1",
-      name: "Upper Body",
-      image_url:
-        "https://images.pexels.com/photos/841130/pexels-photo-841130.jpeg?cs=srgb&dl=pexels-victorfreitas-841130.jpg&fm=jpg",
-      description: "Full upper body workout",
-      exercises: [
-        { id: "e1", name: "Bench Press", sets: 4, reps: 8, weight: 100 },
-        { id: "e2", name: "Pull-ups", sets: 4, reps: 10 },
-        { id: "e3", name: "Rows", sets: 3, reps: 12, weight: 80 },
-      ],
-      estimatedDuration: 90,
-      calories: 530,
-    },
-    {
-      id: "2",
-      name: "Lower Body",
-      image_url:
-        "https://images.pexels.com/photos/392988/pexels-photo-392988.jpeg?cs=srgb&dl=pexels-victorfreitas-392988.jpg&fm=jpg",
-      description: "Leg strength training",
-      exercises: [
-        { id: "e4", name: "Squats", sets: 4, reps: 8, weight: 120 },
-        { id: "e5", name: "Deadlifts", sets: 3, reps: 5, weight: 140 },
-        { id: "e6", name: "Leg Press", sets: 3, reps: 10, weight: 180 },
-      ],
-      estimatedDuration: 75,
-      calories: 600,
-    },
-  ]);
-
+  const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
+  const [selectedWorkout, setSelectedWorkout] =
+    useState<fullPlannedWorkout | null>(null);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(
-    workouts.length > 0 ? workouts[0].id : null,
+    null,
   );
-  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
-  const selectedWorkout = workouts.find((w) => w.id === selectedWorkoutId);
+  const loadWorkoutDetail = useCallback(
+    async (workoutId: string, token?: string) => {
+      try {
+        setLoadingDetail(true);
+        const detail = await getWorkoutById(workoutId, token || undefined);
+        setSelectedWorkout(detail);
+      } catch (error) {
+        console.error("Erreur lors du chargement des détails:", error);
+        Alert.alert("Erreur", "Impossible de charger les détails de la séance");
+      } finally {
+        setLoadingDetail(false);
+      }
+    },
+    [],
+  );
 
-  const startWorkout = (workout: Workout) => {
-    setLoading(true);
-    setTimeout(() => {
-      router.push({
-        pathname: "/(workout)/active-workout",
-        params: {
-          workoutId: workout.id,
-          workoutName: workout.name,
-          exerciseCount: workout.exercises.length,
-        },
-      });
+  const loadWorkouts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = await TokenService.get();
+      const plannedWorkouts = await getPlannedWorkouts(token || undefined);
+      setWorkouts(plannedWorkouts);
+
+      // Select first workout by default
+      if (plannedWorkouts.length > 0) {
+        setSelectedWorkoutId(plannedWorkouts[0].id);
+        loadWorkoutDetail(plannedWorkouts[0].id, token || undefined);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des workouts:", error);
+      Alert.alert("Erreur", "Impossible de charger les séances");
+    } finally {
       setLoading(false);
-    }, 300);
+    }
+  }, [loadWorkoutDetail]);
+
+  // Load all workouts
+  useEffect(() => {
+    loadWorkouts();
+  }, [loadWorkouts]);
+
+  const handleSelectWorkout = async (workoutId: string) => {
+    setSelectedWorkoutId(workoutId);
+    const token = await TokenService.get();
+    loadWorkoutDetail(workoutId, token || undefined);
   };
+
+  const startWorkout = () => {
+    if (!selectedWorkout) return;
+    router.push({
+      pathname: "/(workout)/active-workout",
+      params: {
+        workoutId: selectedWorkout.id,
+        workoutName: selectedWorkout.title,
+        exerciseCount: selectedWorkout.exercises.length,
+      },
+    });
+  };
+
+  const closeScreen = () => {
+    router.back();
+  };
+
+  // Filter workouts based on search query
+  const filteredWorkouts = workouts.filter((workout) =>
+    workout.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-neutral-950 justify-center items-center">
-        <ActivityIndicator size="large" color="#7B61FF" />
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-neutral-950">
+    <SafeAreaView
+      edges={["top"]}
+      style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
+    >
       {/* Header */}
-      <View className="px-4 py-4 border-b border-neutral-800">
-        <Text className="text-2xl font-bold text-white">Start Workout</Text>
-        <Text className="text-neutral-400 text-sm mt-1">
-          Choose and begin your session
-        </Text>
+      <View
+        style={{
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: WorkoutTheme.border,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "700",
+              color: WorkoutTheme.text.primary,
+            }}
+          >
+            Sélectionner une séance
+          </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              color: WorkoutTheme.text.secondary,
+              marginTop: 2,
+            }}
+          >
+            Choisissez une séance pour commencer
+          </Text>
+        </View>
+        <TouchableOpacity onPress={closeScreen} style={{ padding: 8 }}>
+          <Ionicons name="close" size={24} color={WorkoutTheme.text.primary} />
+        </TouchableOpacity>
       </View>
 
-      {/* Main Content */}
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingVertical: 16 }}
+      >
         {workouts.length === 0 ? (
-          <View className="flex-1 justify-center items-center py-16">
-            <Ionicons name="barbell-outline" size={64} color="#4B5563" />
-            <Text className="text-lg text-neutral-300 mt-4 text-center">
-              No workouts created yet
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              paddingVertical: 60,
+            }}
+          >
+            <Ionicons
+              name="barbell-outline"
+              size={64}
+              color={WorkoutTheme.text.tertiary}
+            />
+            <Text
+              style={{
+                fontSize: 16,
+                color: WorkoutTheme.text.secondary,
+                marginTop: 16,
+                textAlign: "center",
+              }}
+            >
+              Aucune séance créée
             </Text>
-            <Text className="text-sm text-neutral-500 mt-2 text-center">
-              Create a workout in the Workouts tab to get started
+            <Text
+              style={{
+                fontSize: 14,
+                color: WorkoutTheme.text.tertiary,
+                marginTop: 8,
+                textAlign: "center",
+                paddingHorizontal: 32,
+              }}
+            >
+              Créez une séance dans l&apos;onglet Workouts pour commencer
             </Text>
           </View>
         ) : (
-          <View className="px-4 py-6 gap-6">
-            {/* Selected Workout Preview */}
+          <>
+            {/* Section 1: Selected Workout Details */}
             {selectedWorkout && (
-              <View>
-                <Text className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-                  Selected Workout
+              <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: WorkoutTheme.text.secondary,
+                    textTransform: "uppercase",
+                    marginBottom: 12,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Séance sélectionnée
                 </Text>
-                <View className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl overflow-hidden">
-                  <ImageBackground
-                    source={
-                      selectedWorkout.image_url
-                        ? { uri: selectedWorkout.image_url }
-                        : require("@/assets/onboarding1.jpg")
-                    }
-                    className="h-56 w-full justify-between"
-                    imageStyle={{ opacity: 0.5 }}
+
+                <View
+                  style={{
+                    backgroundColor: WorkoutTheme.backgroundTertiary,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: WorkoutTheme.border,
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Header */}
+                  <View
+                    style={{
+                      backgroundColor: WorkoutTheme.accent.purple,
+                      paddingHorizontal: 16,
+                      paddingVertical: 16,
+                    }}
                   >
-                    <View className="bg-black/40 flex-1 justify-between p-4">
-                      {/* Title */}
-                      <View>
-                        <Text className="text-3xl font-bold text-white">
-                          {selectedWorkout.name}
-                        </Text>
-                        {selectedWorkout.description && (
-                          <Text className="text-white/70 text-sm mt-2">
-                            {selectedWorkout.description}
-                          </Text>
-                        )}
-                      </View>
-
-                      {/* Stats with purple accent */}
-                      <View className="flex-row gap-2">
-                        <View className="bg-red-500/80 rounded-full px-3 py-1.5 flex-row items-center gap-1">
-                          <Ionicons name="flame" size={14} color="white" />
-                          <Text className="text-white text-xs font-semibold">
-                            {selectedWorkout.calories || 0} kcal
-                          </Text>
-                        </View>
-                        <View className="bg-blue-500/80 rounded-full px-3 py-1.5 flex-row items-center gap-1">
-                          <Ionicons name="time" size={14} color="white" />
-                          <Text className="text-white text-xs font-semibold">
-                            {selectedWorkout.estimatedDuration || 0}min
-                          </Text>
-                        </View>
-                        <View className="bg-purple-400/80 rounded-full px-3 py-1.5 flex-row items-center gap-1">
-                          <Ionicons name="barbell" size={14} color="white" />
-                          <Text className="text-white text-xs font-semibold">
-                            {selectedWorkout.exercises.length} ex
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </ImageBackground>
-
-                  {/* Exercises Preview */}
-                  <View className="bg-neutral-900/50 p-4 border-t border-neutral-700">
-                    <Text className="text-xs font-semibold text-neutral-400 uppercase mb-3">
-                      Exercises ({selectedWorkout.exercises.length})
+                    <Text
+                      style={{
+                        fontSize: 20,
+                        fontWeight: "700",
+                        color: "white",
+                      }}
+                    >
+                      {selectedWorkout.title}
                     </Text>
-                    <View className="gap-2">
-                      {selectedWorkout.exercises.slice(0, 3).map((exercise) => (
+                    {selectedWorkout.description && (
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: "rgba(255,255,255,0.7)",
+                          marginTop: 6,
+                        }}
+                      >
+                        {selectedWorkout.description}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Exercises List */}
+                  <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: WorkoutTheme.text.secondary,
+                        textTransform: "uppercase",
+                        marginBottom: 12,
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      Exercices ({selectedWorkout.exercises.length})
+                    </Text>
+
+                    <View style={{ gap: 12 }}>
+                      {loadingDetail ? (
                         <View
-                          key={exercise.id}
-                          className="flex-row items-center"
+                          style={{
+                            justifyContent: "center",
+                            alignItems: "center",
+                            paddingVertical: 20,
+                          }}
                         >
-                          <View className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2" />
-                          <Text className="text-sm text-neutral-200 flex-1">
-                            {exercise.name}
-                          </Text>
-                          {(exercise.sets ||
-                            exercise.reps ||
-                            exercise.weight) && (
-                            <Text className="text-xs text-neutral-400">
-                              {exercise.weight && `${exercise.weight}kg `}
-                              {exercise.sets &&
-                                `${exercise.sets}×${exercise.reps}`}
-                            </Text>
-                          )}
+                          <ActivityIndicator
+                            size="small"
+                            color={WorkoutTheme.accent.purple}
+                          />
                         </View>
-                      ))}
-                      {selectedWorkout.exercises.length > 3 && (
-                        <Text className="text-xs text-neutral-500 mt-2">
-                          +{selectedWorkout.exercises.length - 3} more exercises
-                        </Text>
+                      ) : (
+                        selectedWorkout.exercises.map((exercise, index) => (
+                          <View
+                            key={exercise.exerciseId}
+                            style={{
+                              backgroundColor: WorkoutTheme.background,
+                              borderRadius: 8,
+                              padding: 12,
+                              borderWidth: 1,
+                              borderColor: WorkoutTheme.border,
+                            }}
+                          >
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginBottom: 10,
+                              }}
+                            >
+                              <Ionicons
+                                name="barbell"
+                                size={16}
+                                color={WorkoutTheme.accent.purple}
+                              />
+                              <Text
+                                style={{
+                                  fontSize: 14,
+                                  fontWeight: "600",
+                                  color: WorkoutTheme.text.primary,
+                                  marginLeft: 8,
+                                  flex: 1,
+                                }}
+                              >
+                                {exercise.exerciseName}
+                              </Text>
+                              <View
+                                style={{
+                                  backgroundColor: WorkoutTheme.accent.purple,
+                                  borderRadius: 6,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 4,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: "700",
+                                    color: "white",
+                                  }}
+                                >
+                                  {exercise.sets.length} séries
+                                </Text>
+                              </View>
+                            </View>
+
+                            {/* Sets Details */}
+                            <View style={{ gap: 8 }}>
+                              {exercise.sets.map((set, setIndex) => (
+                                <View
+                                  key={setIndex}
+                                  style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 6,
+                                    backgroundColor:
+                                      WorkoutTheme.backgroundSecondary,
+                                    borderRadius: 6,
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: "600",
+                                      color: WorkoutTheme.text.secondary,
+                                      minWidth: 40,
+                                    }}
+                                  >
+                                    Série {setIndex + 1}
+                                  </Text>
+                                  <View
+                                    style={{
+                                      flex: 1,
+                                      flexDirection: "row",
+                                      gap: 12,
+                                      marginLeft: 12,
+                                    }}
+                                  >
+                                    <View
+                                      style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        gap: 4,
+                                      }}
+                                    >
+                                      <Ionicons
+                                        name="fitness"
+                                        size={12}
+                                        color={WorkoutTheme.accent.purple}
+                                      />
+                                      <Text
+                                        style={{
+                                          fontSize: 11,
+                                          fontWeight: "600",
+                                          color: WorkoutTheme.text.primary,
+                                        }}
+                                      >
+                                        {set.reps} reps
+                                      </Text>
+                                    </View>
+                                    <View
+                                      style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        gap: 4,
+                                      }}
+                                    >
+                                      <Ionicons
+                                        name="barbell"
+                                        size={12}
+                                        color={WorkoutTheme.status.success}
+                                      />
+                                      <Text
+                                        style={{
+                                          fontSize: 11,
+                                          fontWeight: "600",
+                                          color: WorkoutTheme.text.primary,
+                                        }}
+                                      >
+                                        {set.weight} kg
+                                      </Text>
+                                    </View>
+                                  </View>
+                                </View>
+                              ))}
+                            </View>
+
+                            {/* Rest Time */}
+                            {exercise.plannedRestSeconds && (
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  marginTop: 8,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 6,
+                                  backgroundColor:
+                                    WorkoutTheme.backgroundSecondary,
+                                  borderRadius: 6,
+                                }}
+                              >
+                                <Ionicons
+                                  name="timer"
+                                  size={12}
+                                  color={WorkoutTheme.status.info}
+                                />
+                                <Text
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: "600",
+                                    color: WorkoutTheme.text.secondary,
+                                    marginLeft: 6,
+                                  }}
+                                >
+                                  Repos: {exercise.plannedRestSeconds}s
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        ))
                       )}
                     </View>
                   </View>
-                </View>
 
-                {/* Start Button */}
-                <TouchableOpacity
-                  onPress={() => startWorkout(selectedWorkout)}
-                  className="bg-purple-600 rounded-lg py-4 flex-row items-center justify-center gap-2 mt-4 shadow-lg"
-                  style={{
-                    backgroundColor: "#7B61FF",
-                  }}
-                >
-                  <Ionicons name="play" size={20} color="white" />
-                  <Text className="text-white font-bold text-base">
-                    Start Workout
-                  </Text>
-                </TouchableOpacity>
+                  {/* Start Button */}
+                  <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+                    <TouchableOpacity
+                      onPress={startWorkout}
+                      style={{
+                        backgroundColor: WorkoutTheme.accent.purple,
+                        borderRadius: 10,
+                        paddingVertical: 14,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <Ionicons name="play" size={18} color="white" />
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: "700",
+                          color: "white",
+                        }}
+                      >
+                        Commencer la séance
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
             )}
 
             {/* Separator */}
             {workouts.length > 1 && (
-              <View className="border-t border-neutral-800 pt-6">
-                <Text className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-                  Other Workouts
-                </Text>
-              </View>
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: WorkoutTheme.border,
+                  marginVertical: 8,
+                  marginHorizontal: 16,
+                }}
+              />
             )}
 
-            {/* Other Workouts List */}
+            {/* Section 2: Workouts List with Search */}
             {workouts.length > 1 && (
-              <View className="gap-3 pb-6">
-                {workouts.map((workout) => {
-                  if (workout.id === selectedWorkoutId) return null;
-                  return (
-                    <TouchableOpacity
-                      key={workout.id}
-                      onPress={() => setSelectedWorkoutId(workout.id)}
-                      className="bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 active:border-purple-500"
-                      activeOpacity={0.7}
-                    >
-                      <ImageBackground
-                        source={
-                          workout.image_url
-                            ? { uri: workout.image_url }
-                            : require("@/assets/onboarding1.jpg")
-                        }
-                        className="h-32 w-full justify-between"
-                        imageStyle={{ opacity: 0.4 }}
+              <View style={{ paddingHorizontal: 16 }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: WorkoutTheme.text.secondary,
+                    textTransform: "uppercase",
+                    marginBottom: 12,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Autres séances
+                </Text>
+
+                {/* Search Bar */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: WorkoutTheme.backgroundTertiary,
+                    borderRadius: 10,
+                    paddingHorizontal: 12,
+                    marginBottom: 16,
+                    borderWidth: 1,
+                    borderColor: WorkoutTheme.border,
+                  }}
+                >
+                  <Ionicons
+                    name="search"
+                    size={18}
+                    color={WorkoutTheme.text.secondary}
+                  />
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      paddingVertical: 12,
+                      paddingHorizontal: 10,
+                      fontSize: 14,
+                      color: WorkoutTheme.text.primary,
+                    }}
+                    placeholder="Rechercher une séance..."
+                    placeholderTextColor={WorkoutTheme.text.tertiary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery("")}>
+                      <Ionicons
+                        name="close-circle"
+                        size={18}
+                        color={WorkoutTheme.text.secondary}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Workouts List */}
+                <View style={{ gap: 10, marginBottom: 16 }}>
+                  {filteredWorkouts.length > 0 ? (
+                    filteredWorkouts.map((workout) => (
+                      <TouchableOpacity
+                        key={workout.id}
+                        onPress={() => handleSelectWorkout(workout.id)}
+                        style={{
+                          backgroundColor:
+                            selectedWorkoutId === workout.id
+                              ? WorkoutTheme.accent.purple + "20"
+                              : WorkoutTheme.backgroundTertiary,
+                          borderRadius: 10,
+                          padding: 12,
+                          borderWidth: 2,
+                          borderColor:
+                            selectedWorkoutId === workout.id
+                              ? WorkoutTheme.accent.purple
+                              : WorkoutTheme.border,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
                       >
-                        <View className="bg-black/40 flex-1 justify-between p-3">
-                          <View>
-                            <Text className="text-lg font-bold text-white">
-                              {workout.name}
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              fontWeight: "600",
+                              color: WorkoutTheme.text.primary,
+                            }}
+                          >
+                            {workout.title}
+                          </Text>
+                          {workout.description && (
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                color: WorkoutTheme.text.secondary,
+                                marginTop: 4,
+                              }}
+                              numberOfLines={1}
+                            >
+                              {workout.description}
+                            </Text>
+                          )}
+                        </View>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            gap: 8,
+                            alignItems: "center",
+                            marginLeft: 12,
+                          }}
+                        >
+                          <View
+                            style={{
+                              backgroundColor: WorkoutTheme.backgroundSecondary,
+                              borderRadius: 6,
+                              paddingHorizontal: 8,
+                              paddingVertical: 4,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <Ionicons
+                              name="barbell"
+                              size={12}
+                              color={WorkoutTheme.accent.purple}
+                            />
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                fontWeight: "600",
+                                color: WorkoutTheme.text.secondary,
+                              }}
+                            >
+                              {workout.totalExercises}
                             </Text>
                           </View>
-                          <View className="flex-row gap-2">
-                            <View className="bg-neutral-700 rounded-full px-2 py-1 flex-row items-center gap-1">
-                              <Ionicons name="time" size={12} color="white" />
-                              <Text className="text-white text-xs font-semibold">
-                                {workout.estimatedDuration}min
-                              </Text>
-                            </View>
-                            <View className="bg-neutral-700 rounded-full px-2 py-1 flex-row items-center gap-1">
-                              <Ionicons
-                                name="barbell"
-                                size={12}
-                                color="white"
-                              />
-                              <Text className="text-white text-xs font-semibold">
-                                {workout.exercises.length} ex
-                              </Text>
-                            </View>
-                          </View>
+                          <Ionicons
+                            name={
+                              selectedWorkoutId === workout.id
+                                ? "checkmark-circle"
+                                : "chevron-forward"
+                            }
+                            size={20}
+                            color={
+                              selectedWorkoutId === workout.id
+                                ? WorkoutTheme.accent.purple
+                                : WorkoutTheme.text.secondary
+                            }
+                          />
                         </View>
-                      </ImageBackground>
-                    </TouchableOpacity>
-                  );
-                })}
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <View
+                      style={{
+                        alignItems: "center",
+                        paddingVertical: 24,
+                      }}
+                    >
+                      <Ionicons
+                        name="search"
+                        size={40}
+                        color={WorkoutTheme.text.tertiary}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: WorkoutTheme.text.secondary,
+                          marginTop: 12,
+                        }}
+                      >
+                        Aucune séance trouvée
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
             )}
-          </View>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
