@@ -54,8 +54,7 @@ export class ModerationService {
   }
 
   private async checkRemote(text: string): Promise<ModerationResult | null> {
-    if (!this.remoteApiKey)
-      return null;
+    if (!this.remoteApiKey) return null;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.remoteTimeoutMs);
 

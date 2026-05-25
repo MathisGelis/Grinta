@@ -157,8 +157,7 @@ export class PostsService {
       relations: ['user'],
     });
 
-    if (!comment)
-      throw new NotFoundException('Comment not found');
+    if (!comment) throw new NotFoundException('Comment not found');
     if (comment.user.id === userId)
       throw new BadRequestException('You cannot report your own comment');
     const alreadyReported = await this.reportRepository.findOne({

@@ -111,11 +111,7 @@ export class PostsController {
     @Param('commentId') commentId: string,
     @Body() dto: ReportCommentDto,
   ) {
-    return this.postsService.reportComment(
-      req.user.id,
-      commentId,
-      dto.reason,
-    );
+    return this.postsService.reportComment(req.user.id, commentId, dto.reason);
   }
 
   @Auth()

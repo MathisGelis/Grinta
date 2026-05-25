@@ -28,8 +28,6 @@ import { ModerationModule } from './moderation/moderation.module';
     StatsModule,
     ModerationModule,
   ],
-  providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
