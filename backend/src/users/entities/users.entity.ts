@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('users')
 @Unique(['email'])
+@Unique(['uniqueName'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -17,7 +18,15 @@ export class User {
 
   @Column()
   @ApiProperty()
-  name: string;
+  displayName: string;
+
+  @Column()
+  @ApiProperty()
+  uniqueName: string;
+
+  @Column({ default: true })
+  @ApiProperty()
+  isPublic: boolean;
 
   @Column({ type: 'date', nullable: true })
   @ApiProperty({ required: false })

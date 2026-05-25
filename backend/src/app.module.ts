@@ -6,6 +6,9 @@ import { AuthModule } from './auth/auth.module';
 import { ExerciseModule } from './exercise/exercise.module';
 import { WorkoutsModule } from './workouts/workouts.module';
 import { ProgrammesModule } from './programmes/programmes.module';
+import { ConnectionsModule } from './connections/connections.module';
+import { PostsModule } from './posts/posts.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -16,6 +19,9 @@ import { ProgrammesModule } from './programmes/programmes.module';
     ExerciseModule,
     WorkoutsModule,
     ProgrammesModule,
+    ConnectionsModule,
+    PostsModule,
+    StatsModule,
   ],
 })
 export class AppModule {}
