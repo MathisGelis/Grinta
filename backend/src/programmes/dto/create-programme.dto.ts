@@ -1,31 +1,40 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsEnum,
-  IsOptional,
-  IsNumber,
-  ValidateNested,
-  IsArray,
-} from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Difficulty } from '../enums/difficulty.enum';
 import { LocationType } from '../enums/location-type.enum';
-import { WeekDay } from '../entities/programme-day.entity';
 
 export class ProgrammeDayDto {
-  @ApiProperty({ enum: WeekDay })
-  @IsEnum(WeekDay)
-  weekday: WeekDay;
+  @ApiProperty({
+    example: 1,
+    description: 'Position of the day in the programme (>= 1)',
+  })
+  @IsInt()
+  @Min(1)
+  dayNumber: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Planned workout for this day. Omit for a rest day.',
+  })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   workoutId?: string;
 }
 
 export class CreateProgrammeDto {
   @ApiProperty()
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   weekNumber: number;
 
   @ApiProperty({ enum: Difficulty })
@@ -45,8 +54,9 @@ export class CreateProgrammeDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ type: [ProgrammeDayDto] })
+  @ApiProperty({ type: () => [ProgrammeDayDto] })
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => ProgrammeDayDto)
   days: ProgrammeDayDto[];
