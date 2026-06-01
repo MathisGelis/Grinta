@@ -1,25 +1,17 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Programme } from './programme.entity';
 import { PlannedWorkout } from 'src/workouts/entities/planned-workout.entity';
-
-export enum WeekDay {
-  MONDAY = 'MONDAY',
-  TUESDAY = 'TUESDAY',
-  WEDNESDAY = 'WEDNESDAY',
-  THURSDAY = 'THURSDAY',
-  FRIDAY = 'FRIDAY',
-  SATURDAY = 'SATURDAY',
-  SUNDAY = 'SUNDAY',
-}
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Programme } from './programme.entity';
 
 @Entity('programme_days')
+@Index(['programme', 'dayNumber'], { unique: true })
 export class ProgrammeDay {
   @PrimaryGeneratedColumn('uuid')
   @ApiProperty()
@@ -30,12 +22,15 @@ export class ProgrammeDay {
   })
   programme: Programme;
 
-  @Column({ type: 'enum', enum: WeekDay })
-  @ApiProperty({ enum: WeekDay })
-  weekday: WeekDay;
+  @Column({ type: 'int' })
+  @ApiProperty({
+    example: 1,
+    description: 'Position of this day in the programme (1, 2, 3, ...)',
+  })
+  dayNumber: number;
 
-  @ManyToOne(() => PlannedWorkout, { nullable: true })
+  @ManyToOne(() => PlannedWorkout, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, nullable: true })
   workout?: PlannedWorkout | null; // null = rest day
 }
