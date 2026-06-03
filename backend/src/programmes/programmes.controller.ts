@@ -45,7 +45,7 @@ export class ProgrammesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all programmes for current user' })
-  @ApiResponse({ status: 200, description: 'List returned', type: [Programme] })
+  @ApiResponse({ status: 200, description: 'List returned', type: Programme })
   getAll(@Req() req) {
     return this.programmesService.getProgrammesByUser(req.user);
   }

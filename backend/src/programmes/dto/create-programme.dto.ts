@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -13,19 +12,16 @@ import {
 } from 'class-validator';
 import { Difficulty } from '../enums/difficulty.enum';
 import { LocationType } from '../enums/location-type.enum';
+import { Transform, Type } from 'class-transformer';
 
 export class ProgrammeDayDto {
-  @ApiProperty({
-    example: 1,
-    description: 'Position of the day in the programme (>= 1)',
-  })
+  @ApiProperty({ example: 1, description: 'Position of the day in the programme (>= 1)' })
   @IsInt()
   @Min(1)
   dayNumber: number;
 
-  @ApiPropertyOptional({
-    description: 'Planned workout for this day. Omit for a rest day.',
-  })
+  @ApiPropertyOptional({ description: 'Planned workout for this day. Omit for a rest day.' })
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsOptional()
   @IsUUID()
   workoutId?: string;

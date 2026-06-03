@@ -10,6 +10,7 @@ async function bootstrap() {
   // CONFIG
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({ whitelist: true, transform: true }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
 
