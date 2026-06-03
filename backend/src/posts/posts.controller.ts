@@ -1,20 +1,22 @@
 import {
+  Body,
   Controller,
-  Post,
   Delete,
   Get,
   Param,
-  Body,
   Patch,
+  Post,
   Query,
   Req,
 } from '@nestjs/common';
-import { PostsService } from './posts.service';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Auth } from 'src/auth/auth.decorators';
-import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreatePostDto } from './dto/create-post.dto';
+import { ReportCommentDto } from './dto/report-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { PostsService } from './posts.service';
 
 @ApiTags('posts')
 @Controller('posts')
@@ -23,6 +25,7 @@ export class PostsController {
 
   @Auth()
   @Post()
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({ summary: 'Create a new post from a workout' })
   @ApiResponse({ status: 201, description: 'Post created successfully' })
   async createPost(@Req() req, @Body() dto: CreatePostDto) {
@@ -57,8 +60,10 @@ export class PostsController {
 
   @Auth()
   @Post(':postId/comments')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'Comment on a post' })
   @ApiResponse({ status: 201, description: 'Comment added' })
+  @ApiResponse({ status: 400, description: 'Comment rejected by moderation' })
   async commentPost(
     @Req() req,
     @Param('postId') postId: string,
@@ -71,6 +76,7 @@ export class PostsController {
   @Patch('comments/:commentId')
   @ApiOperation({ summary: 'Edit your own comment' })
   @ApiResponse({ status: 200, description: 'Comment updated' })
+  @ApiResponse({ status: 400, description: 'Comment rejected by moderation' })
   @ApiResponse({ status: 403, description: 'Not allowed' })
   async editComment(
     @Req() req,
@@ -88,6 +94,24 @@ export class PostsController {
   @ApiResponse({ status: 404, description: 'Comment not found' })
   async deleteComment(@Req() req, @Param('commentId') commentId: string) {
     return this.postsService.deleteComment(req.user.id, commentId);
+  }
+
+  @Auth()
+  @Post('comments/:commentId/report')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Report a comment' })
+  @ApiResponse({ status: 201, description: 'Comment reported' })
+  @ApiResponse({
+    status: 400,
+    description: 'Own comment, or already reported by this user',
+  })
+  @ApiResponse({ status: 404, description: 'Comment not found' })
+  async reportComment(
+    @Req() req,
+    @Param('commentId') commentId: string,
+    @Body() dto: ReportCommentDto,
+  ) {
+    return this.postsService.reportComment(req.user.id, commentId, dto.reason);
   }
 
   @Auth()

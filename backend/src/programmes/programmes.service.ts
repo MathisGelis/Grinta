@@ -38,23 +38,7 @@ export class ProgrammesService {
     });
 
     programme.days = await Promise.all(
-      dto.days.map(async (dayDto: ProgrammeDayDto) => {
-        let workout: PlannedWorkout | null = null;
-
-        if (dayDto.workoutId) {
-          workout = await this.workoutRepo.findOne({
-            where: { id: dayDto.workoutId, user: { id: user.id } },
-          });
-          if (!workout)
-            throw new NotFoundException(
-              `Workout ${dayDto.workoutId} not found`,
-            );
-        }
-        return this.dayRepo.create({
-          weekday: dayDto.weekday,
-          workout,
-        });
-      }),
+      dto.days.map((dayDto) => this.buildDay(user, dayDto)),
     );
     return this.programmeRepo.save(programme);
   }
@@ -73,34 +57,17 @@ export class ProgrammesService {
     Object.assign(programme, dto);
     if (dto.days) {
       await this.dayRepo.delete({ programme: { id: programme.id } });
-
       programme.days = await Promise.all(
-        dto.days.map(async (dayDto: ProgrammeDayDto) => {
-          let workout: PlannedWorkout | null = null;
-
-          if (dayDto.workoutId) {
-            workout = await this.workoutRepo.findOne({
-              where: { id: dayDto.workoutId, user: { id: user.id } },
-            });
-            if (!workout)
-              throw new NotFoundException(
-                `Workout ${dayDto.workoutId} not found`,
-              );
-          }
-          return this.dayRepo.create({
-            weekday: dayDto.weekday,
-            workout,
-          });
-        }),
+        dto.days.map((dayDto) => this.buildDay(user, dayDto)),
       );
     }
     return this.programmeRepo.save(programme);
   }
 
   async getProgrammesByUser(user: User) {
+    // No relations loaded — the list view only needs the programme header.
     const programmes = await this.programmeRepo.find({
       where: { user: { id: user.id } },
-      relations: ['days', 'days.workout'],
       order: { weekNumber: 'ASC' },
     });
 
@@ -119,7 +86,10 @@ export class ProgrammesService {
     });
 
     if (!programme) throw new NotFoundException('Programme not found');
-    const workoutDays = programme.days.filter((d) => d.workout !== null);
+
+    // Eager-loaded relations come unordered — sort by dayNumber for the client.
+    const days = [...programme.days].sort((a, b) => a.dayNumber - b.dayNumber);
+    const workoutDays = days.filter((d) => d.workout !== null);
 
     return {
       id: programme.id,
@@ -129,12 +99,13 @@ export class ProgrammesService {
       title: programme.title,
       description: programme.description,
       totalWorkoutDays: workoutDays.length,
-      days: programme.days.map((day) => ({
-        weekday: day.weekday,
+      days: days.map((day) => ({
+        dayNumber: day.dayNumber,
         workout: day.workout
           ? {
               id: day.workout.id,
               title: day.workout.title,
+              description: day.workout.description,
             }
           : null,
       })),
@@ -149,5 +120,21 @@ export class ProgrammesService {
     if (!programme) throw new NotFoundException('Programme not found');
     await this.programmeRepo.remove(programme);
     return { message: 'Programme deleted successfully' };
+  }
+
+  private async buildDay(
+    user: User,
+    dayDto: ProgrammeDayDto,
+  ): Promise<ProgrammeDay> {
+    let workout: PlannedWorkout | null = null;
+
+    if (dayDto.workoutId) {
+      workout = await this.workoutRepo.findOne({
+        where: { id: dayDto.workoutId, user: { id: user.id } },
+      });
+      if (!workout)
+        throw new NotFoundException(`Workout ${dayDto.workoutId} not found`);
+    }
+    return this.dayRepo.create({ dayNumber: dayDto.dayNumber, workout });
   }
 }
