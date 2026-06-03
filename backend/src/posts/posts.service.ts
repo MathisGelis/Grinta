@@ -1,13 +1,19 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ModerationService } from '../moderation/moderation.service';
+import { CommentReport } from './entities/comment-report.entity';
 import { PostComment } from './entities/comment.entity';
 import { PostLike } from './entities/like.entity';
 import { Post } from './entities/post.entity';
+import { ReportReason } from './enums/report-reason.enum';
+
+const AUTO_HIDE_THRESHOLD = 5;
 
 @Injectable()
 export class PostsService {
@@ -20,6 +26,11 @@ export class PostsService {
 
     @InjectRepository(PostComment)
     private readonly commentRepository: Repository<PostComment>,
+
+    @InjectRepository(CommentReport)
+    private readonly reportRepository: Repository<CommentReport>,
+
+    private readonly moderation: ModerationService,
   ) {}
 
   async createPost(userId: string, workoutId: string) {
@@ -84,6 +95,7 @@ export class PostsService {
   }
 
   async commentPost(userId: string, postId: string, content: string) {
+    await this.assertCleanText(content);
     return this.commentRepository.save({
       user: { id: userId },
       post: { id: postId },
@@ -100,6 +112,8 @@ export class PostsService {
     if (!comment) throw new NotFoundException('Comment not found');
     if (comment.user.id !== userId)
       throw new ForbiddenException('You can only edit your own comments');
+
+    await this.assertCleanText(content);
     comment.content = content;
     return this.commentRepository.save(comment);
   }
@@ -125,6 +139,7 @@ export class PostsService {
       .innerJoin('comment.user', 'user')
       .innerJoin('comment.post', 'post')
       .where('post.id = :postId', { postId })
+      .andWhere('comment.isHidden = false')
       .select([
         'comment.id AS id',
         'comment.content AS content',
@@ -134,6 +149,42 @@ export class PostsService {
       ])
       .orderBy('comment.createdAt', 'DESC')
       .getRawMany();
+  }
+
+  async reportComment(userId: string, commentId: string, reason: ReportReason) {
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId },
+      relations: ['user'],
+    });
+
+    if (!comment) throw new NotFoundException('Comment not found');
+    if (comment.user.id === userId)
+      throw new BadRequestException('You cannot report your own comment');
+    const alreadyReported = await this.reportRepository.findOne({
+      where: { reporter: { id: userId }, comment: { id: commentId } },
+    });
+
+    if (alreadyReported)
+      throw new BadRequestException('You have already reported this comment');
+    await this.reportRepository.save({
+      reporter: { id: userId },
+      comment: { id: commentId },
+      reason,
+    });
+    await this.commentRepository.increment({ id: commentId }, 'reportCount', 1);
+
+    const updated = await this.commentRepository.findOneBy({ id: commentId });
+    let hidden = updated?.isHidden ?? false;
+
+    if (updated && !hidden && updated.reportCount >= AUTO_HIDE_THRESHOLD) {
+      await this.commentRepository.update(commentId, { isHidden: true });
+      hidden = true;
+    }
+    return {
+      message: 'Comment reported',
+      reportCount: updated?.reportCount ?? 0,
+      hidden,
+    };
   }
 
   async getFollowingFeed(userId: string, limit = 20) {
@@ -210,5 +261,15 @@ export class PostsService {
       .limit(limit)
       .setParameter('userId', userId)
       .getRawMany();
+  }
+
+  /** Reject text that fails moderation. Does not reveal the matched words. */
+  private async assertCleanText(content: string) {
+    const result = await this.moderation.check(content);
+    if (!result.ok) {
+      throw new BadRequestException(
+        'Votre commentaire contient un langage non autorisé. Merci de le reformuler.',
+      );
+    }
   }
 }
