@@ -65,7 +65,6 @@ export class ProgrammesService {
   }
 
   async getProgrammesByUser(user: User) {
-    // No relations loaded — the list view only needs the programme header.
     const programmes = await this.programmeRepo.find({
       where: { user: { id: user.id } },
       order: { weekNumber: 'ASC' },
@@ -87,7 +86,6 @@ export class ProgrammesService {
 
     if (!programme) throw new NotFoundException('Programme not found');
 
-    // Eager-loaded relations come unordered — sort by dayNumber for the client.
     const days = [...programme.days].sort((a, b) => a.dayNumber - b.dayNumber);
     const workoutDays = days.filter((d) => d.workout !== null);
 
