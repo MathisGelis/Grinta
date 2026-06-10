@@ -81,7 +81,6 @@ export async function getPlannedWorkouts(
     console.log("Erreur lors de la récupération des workouts planifiés:", error);
     const cachedData = await getItem(PLANNED_WORKOUTS_CACHE_KEY);
     if (cachedData) {
-      console.log("Utilisation des données en cache");
       const parsed = JSON.parse(cachedData) as PlannedWorkout[];
       return parsed.map((item) => ({
         id: item.workout?.id ?? item.id,

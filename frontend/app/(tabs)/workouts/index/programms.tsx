@@ -1,24 +1,24 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, Animated } from "react-native";
+import { View, Text, Animated, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import GlassSearchBar from "@/components/GlassSearchBar";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { useFocusEffect, router } from "expo-router";
-import { getProgramms, Programm } from "@/services/programms.service";
-import { TokenService } from "@/services/token.service";
-import ProgrammCard from "@/components/workout/ProgrammCard";
+import { getProgramms, SmallProgramm } from "@/services/programms.service";
+import ProgrammCard from "@/components/workoutCreation/ProgrammCard";
 
 export default function ProgramsScreen() {
   const { keyboardY, bottomOffset } = useKeyboardOffset();
-  const [programms, setProgramms] = useState<Programm[]>([]);
-  const [filteredProgramms, setFilteredProgramms] = useState<Programm[]>([]);
+  const [programms, setProgramms] = useState<SmallProgramm[]>([]);
+  const [filteredProgramms, setFilteredProgramms] = useState<SmallProgramm[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadProgramms = useCallback(async () => {
     try {
       setError(null);
-      const token = await TokenService.get();
-      const programms = await getProgramms(token || undefined);
+      const programms = await getProgramms();
       setProgramms(programms);
       setFilteredProgramms(programms);
     } catch (err) {
@@ -61,7 +61,11 @@ export default function ProgramsScreen() {
           <Text className="text-gray-500">Aucun programme trouvé.</Text>
         </View>
       ) : (
-        <View className="px-4 pb-24 pt-4">
+        <ScrollView
+          className="px-4 pb-24 pt-4"
+          contentContainerStyle={{ paddingBottom: bottomOffset + 20 }}
+          showsVerticalScrollIndicator={false}
+        >
           {filteredProgramms.map((programm) => (
             <ProgrammCard
               key={programm.id}
@@ -76,7 +80,7 @@ export default function ProgramsScreen() {
               }}
             />
           ))}
-        </View>
+        </ScrollView>
       )}
       <Animated.View
         className="absolute left-0 right-0 px-4"

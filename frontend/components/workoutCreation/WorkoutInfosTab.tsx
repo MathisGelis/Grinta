@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import ExerciseSetupItem, { ExerciseSetupData } from "./ExerciseSetupItem";
 import WorkoutActionButtons from "./WorkoutActionButtons";
-import ExerciseSearch from "@/components/workout/ExerciseSearch";
+import ExerciseSearch from "@/components/workoutCreation/ExerciseSearch";
 
 interface WorkoutInfosTabProps {
   isEditing: boolean;

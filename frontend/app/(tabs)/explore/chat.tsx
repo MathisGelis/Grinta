@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -8,67 +8,43 @@ import { WorkoutTheme } from "@/constants/Colors";
 export default function ChatScreen() {
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: WorkoutTheme.background }]}
       edges={["top", "left", "right"]}
+      style={{ backgroundColor: WorkoutTheme.background }}
+      className="flex-1"
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View
+        className="flex-row items-center justify-between px-4 py-3 border-b"
+        style={{
+          borderBottomColor: WorkoutTheme.backgroundSecondary,
+        }}
+      >
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Messages</Text>
-        <View style={{ width: 28 }} />
+
+        <Text className="text-lg font-semibold text-white">Messages</Text>
+
+        <View className="w-7" />
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View className="flex-1 items-center justify-center pb-40">
         <Ionicons
           name="paper-plane-outline"
           size={64}
           color={WorkoutTheme.accent.purple}
         />
-        <Text style={styles.title}>Page à venir</Text>
-        <Text style={styles.subtitle}>
+
+        <Text className="mt-4 text-2xl font-bold text-white">Page à venir</Text>
+
+        <Text
+          className="mt-2 text-sm text-center"
+          style={{ color: WorkoutTheme.text.secondary }}
+        >
           Cette fonctionnalité sera bientôt disponible
         </Text>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: WorkoutTheme.backgroundSecondary,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#fff",
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#fff",
-    marginTop: 16,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: WorkoutTheme.text.secondary,
-    marginTop: 8,
-  },
-});

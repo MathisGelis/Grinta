@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
-import WorkoutCard from "@/components/workout/WorkoutCard";
+import WorkoutCard from "@/components/workoutCreation/WorkoutCard";
 import {
   getPlannedWorkouts,
   PlannedWorkout,

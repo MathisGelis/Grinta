@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
+import { WorkoutsNavBar } from "@/components/workoutCreation/WorkoutsNavBar";
 
 export default function TabsLayout() {
   return (

@@ -299,7 +299,7 @@ export default function ExercisesScreen() {
         <FlatList
           data={sections}
           keyExtractor={(item) => item.title}
-          contentContainerStyle={{ paddingBottom: bottomOffset + 80 }}
+          contentContainerStyle={{ paddingBottom: bottomOffset + 20 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <View className="pb-3">

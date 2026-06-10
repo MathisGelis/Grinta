@@ -158,7 +158,7 @@ export default function ProgrammeDayEditor({
           <View className="items-center py-6">
             <Ionicons name="calendar-outline" size={36} color="#A3A3A3" />
             <Text className="mt-2 text-sm text-[#C7C7C7]">
-              Aucun jour ajouté pour l’instant.
+              Aucun jour ajouté pour l&apos;instant.
             </Text>
           </View>
         ) : (

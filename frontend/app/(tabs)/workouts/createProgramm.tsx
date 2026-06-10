@@ -9,17 +9,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { SelectList } from "react-native-dropdown-select-list";
-import ProgrammeDayEditor from "@/components/workout/ProgrammeDayEditor";
-import { TokenService } from "@/services/token.service";
+import ProgrammeDayEditor from "@/components/workoutCreation/ProgrammeDayEditor";
 import { createProgramme } from "@/services/programms.service";
 import {
   getPlannedWorkouts,
   getWorkoutById,
   PlannedWorkout,
 } from "@/services/workouts.service";
+import { TokenService } from "@/services/token.service";
 
 interface ProgrammeDayItem {
   id: string;
@@ -100,21 +99,17 @@ export default function CreateProgrammScreen() {
     setLoading(true);
 
     try {
-      const token = await TokenService.get();
-      await createProgramme(
-        {
-          weekNumber: 1,
-          difficulty,
-          locationType,
-          title: title.trim(),
-          description: description.trim() || undefined,
-          days: days.map((day, index) => ({
-            dayNumber: index + 1,
-            workoutId: day.workoutId ?? "",
-          })),
-        },
-        token || undefined,
-      );
+      await createProgramme({
+        weekNumber: 1,
+        difficulty,
+        locationType,
+        title: title.trim(),
+        description: description.trim() || undefined,
+        days: days.map((day, index) => ({
+          dayNumber: index + 1,
+          workoutId: day.workoutId ?? "",
+        })),
+      });
 
       Alert.alert("Succès", "Programme créé avec succès", [
         { text: "OK", onPress: () => router.back() },
