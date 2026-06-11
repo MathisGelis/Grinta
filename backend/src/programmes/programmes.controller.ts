@@ -14,6 +14,7 @@ import { ProgrammesService } from './programmes.service';
 import { CreateProgrammeDto } from './dto/create-programme.dto';
 import { UpdateProgrammeDto } from './dto/update-programme.dto';
 import { Programme } from './entities/programme.entity';
+import { ProgrammeListDto } from './dto/programme-list.dto';
 
 @ApiTags('programmes')
 @Auth()
@@ -45,7 +46,12 @@ export class ProgrammesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all programmes for current user' })
-  @ApiResponse({ status: 200, description: 'List returned', type: Programme })
+  @ApiResponse({
+    status: 200,
+    description: 'List returned',
+    type: ProgrammeListDto,
+    isArray: true,
+  })
   getAll(@Req() req) {
     return this.programmesService.getProgrammesByUser(req.user);
   }
