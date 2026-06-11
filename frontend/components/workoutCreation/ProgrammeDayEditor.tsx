@@ -5,17 +5,11 @@ import DraggableFlatList, {
   RenderItemParams,
 } from "react-native-draggable-flatlist";
 import { PlannedWorkout } from "@/services/workouts.service";
-
-export interface ProgrammeDayEditorItem {
-  id: string;
-  dayNumber: number;
-  workoutId?: string;
-  title?: string;
-}
+import { ProgrammeDay } from "@/services/programms.service";
 
 interface ProgrammeDayEditorProps {
-  days: ProgrammeDayEditorItem[];
-  onChangeDays: (days: ProgrammeDayEditorItem[]) => void;
+  days: ProgrammeDay[];
+  onChangeDays: (days: ProgrammeDay[]) => void;
   availableWorkouts: PlannedWorkout[];
 }
 
@@ -31,10 +25,12 @@ export default function ProgrammeDayEditor({
       onChangeDays([
         ...days,
         {
-          id: `${workout.id}-${Date.now()}`,
           dayNumber: days.length + 1,
-          workoutId: workout.id,
-          title: workout.title,
+          workout: {
+            id: workout.id,
+            title: workout.title,
+            description: workout.description,
+          },
         },
       ]);
       setShowWorkoutPicker(false);
@@ -46,19 +42,17 @@ export default function ProgrammeDayEditor({
     onChangeDays([
       ...days,
       {
-        id: `rest-${Date.now()}`,
         dayNumber: days.length + 1,
-        workoutId: "",
-        title: "Jour de repos",
+        workout: null,
       },
     ]);
   }, [days, onChangeDays]);
 
   const removeDay = useCallback(
-    (id: string) => {
+    (dayNumber: number) => {
       onChangeDays(
         days
-          .filter((item) => item.id !== id)
+          .filter((item) => item.dayNumber !== dayNumber)
           .map((item, index) => ({ ...item, dayNumber: index + 1 })),
       );
     },
@@ -69,7 +63,7 @@ export default function ProgrammeDayEditor({
     item,
     drag,
     isActive,
-  }: RenderItemParams<ProgrammeDayEditorItem>) => (
+  }: RenderItemParams<ProgrammeDay>) => (
     <TouchableOpacity
       activeOpacity={0.9}
       onLongPress={drag}
@@ -113,15 +107,15 @@ export default function ProgrammeDayEditor({
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: "#F5F5F5", fontSize: 16, fontWeight: "700" }}>
-              Jour {item.dayNumber} · {item.title || "Jour de repos"}
+              Jour {item.dayNumber} · {item.workout?.title ?? "Jour de repos"}
             </Text>
             <Text style={{ color: "#A3A3A3", fontSize: 12, marginTop: 2 }}>
-              {item.workoutId ? "Séance programmée" : "Jour de repos"}
+              {item.workout ? "Séance programmée" : "Jour de repos"}
             </Text>
           </View>
         </View>
         <TouchableOpacity
-          onPress={() => removeDay(item.id)}
+          onPress={() => removeDay(item.dayNumber)}
           style={{ padding: 8, alignItems: "center", justifyContent: "center" }}
           hitSlop={8}
         >
@@ -164,7 +158,7 @@ export default function ProgrammeDayEditor({
         ) : (
           <DraggableFlatList
             data={days}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => String(item.dayNumber)}
             onDragEnd={({ data }) =>
               onChangeDays(
                 data.map((item, index) => ({ ...item, dayNumber: index + 1 })),
@@ -203,7 +197,7 @@ export default function ProgrammeDayEditor({
                     Aucune séance disponible.
                   </Text>
                   <Text className="mt-1 text-xs text-[#A3A3A3]">
-                    Créez d’abord une séance dans l’onglet séances.
+                    Créez d&apos;abord une séance dans l&apos;onglet séances.
                   </Text>
                 </View>
               ) : (

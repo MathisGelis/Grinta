@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
-import { ExerciseSetupData } from "./ExerciseSetupItem";
+import { ExerciseSetupData } from "@/components/workoutCreation/ExerciseSetupItem";
 
 interface WorkoutStatsProps {
   exercises: ExerciseSetupData[];
@@ -25,7 +25,10 @@ function StatItem({ icon, value, label }: StatItemProps) {
       }}
     >
       <Ionicons name={icon} size={20} color={WorkoutTheme.accent.purple} />
-      <Text className="text-base font-bold" style={{ color: WorkoutTheme.accent.purple }}>
+      <Text
+        className="text-base font-bold"
+        style={{ color: WorkoutTheme.accent.purple }}
+      >
         {value}
       </Text>
       <Text className="text-xs" style={{ color: WorkoutTheme.text.secondary }}>
@@ -35,19 +38,22 @@ function StatItem({ icon, value, label }: StatItemProps) {
   );
 }
 
-export default function WorkoutStats({ exercises, estimatedTime }: WorkoutStatsProps) {
+export default function WorkoutStats({
+  exercises,
+  estimatedTime,
+}: WorkoutStatsProps) {
   const totalWeight = exercises.reduce((total, ex) => {
-    return (
-      total +
-      ex.sets.reduce((sum, set) => sum + set.weight * set.reps, 0)
-    );
+    return total + ex.sets.reduce((sum, set) => sum + set.weight * set.reps, 0);
   }, 0);
 
   const totalSets = exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
 
   return (
     <View className="mt-6 mb-5">
-      <Text className="text-sm font-bold mb-3" style={{ color: WorkoutTheme.text.primary }}>
+      <Text
+        className="text-sm font-bold mb-3"
+        style={{ color: WorkoutTheme.text.primary }}
+      >
         Statistiques estimées
       </Text>
       <View className="flex-row gap-2">
@@ -56,16 +62,8 @@ export default function WorkoutStats({ exercises, estimatedTime }: WorkoutStatsP
           value={`${totalWeight.toFixed(0)}kg`}
           label="Poids total"
         />
-        <StatItem
-          icon="repeat"
-          value={String(totalSets)}
-          label="Séries"
-        />
-        <StatItem
-          icon="timer"
-          value={`${estimatedTime}m`}
-          label="Durée"
-        />
+        <StatItem icon="repeat" value={String(totalSets)} label="Séries" />
+        <StatItem icon="timer" value={`${estimatedTime}m`} label="Durée" />
       </View>
     </View>
   );

@@ -17,89 +17,17 @@ import {
   deleteExercise,
   getAllExercises,
   getUserCreatedExerciseIds,
+  EQUIPMENT_LABELS,
+  MUSCLE_LABELS,
+  EXERCISE_TYPE_LABELS,
 } from "@/services/exercises.service";
 import { TokenService } from "@/services/token.service";
 import { useFocusEffect, router } from "expo-router";
 import Modal from "react-native-modal";
 
-const EQUIPMENT_LABELS: Record<string, string> = {
-  barbell: "Barbell",
-  dumbbell: "Haltères",
-  machine: "Machine",
-  plate_loaded: "Charge plate",
-  smith_machine: "Smith machine",
-  cable: "Câble",
-  kettlebell: "Kettlebell",
-  band: "Bande élastique",
-  none: "Sans équipement",
-};
-
-const MUSCLE_LABELS: Record<string, string> = {
-  biceps: "Biceps",
-  triceps: "Triceps",
-  forearms: "Avant-bras",
-  front_delts: "Deltoïdes antérieurs",
-  side_delts: "Deltoïdes latéraux",
-  rear_delts: "Deltoïdes postérieurs",
-  upper_chest: "Haut des pectoraux",
-  middle_chest: "Pectoraux moyens",
-  lower_chest: "Bas des pectoraux",
-  lats: "Grand dorsal",
-  rhomboids: "Rhomboïdes",
-  traps: "Trapèzes",
-  lower_back: "Bas du dos",
-  upper_abs: "Abdominaux supérieurs",
-  lower_abs: "Abdominaux inférieurs",
-  obliques: "Obliques",
-  glutes: "Fessiers",
-  hip_flexors: "Fléchisseurs de hanche",
-  abductors: "Abducteurs",
-  adductors: "Adducteurs",
-  quads: "Quadriceps",
-  hamstrings: "Ischio-jambiers",
-  calves: "Mollets",
-  neck: "Cou",
-  full_body: "Corps entier",
-  cardio: "Cardio",
-};
-
-const EXERCISE_TYPE_LABELS: Record<string, string> = {
-  weight_reps: "Poids libres",
-  bodyweight_reps: "Poids du corps",
-  weighted_bodyweight: "Poids du corps lesté",
-  assisted_bodyweight: "Poids du corps assisté",
-  duration: "Durée",
-  duration_weight: "Durée + poids",
-  distance_duration: "Distance / durée",
-  weight_distance: "Poids / distance",
-};
-
-const EQUIPMENT_FILTER_OPTIONS = [
-  { key: "barbell", label: "Barbell" },
-  { key: "dumbbell", label: "Haltères" },
-  { key: "machine", label: "Machine" },
-  { key: "plate_loaded", label: "Charge plate" },
-  { key: "smith_machine", label: "Smith machine" },
-  { key: "cable", label: "Câble" },
-  { key: "kettlebell", label: "Kettlebell" },
-  { key: "band", label: "Bande" },
-  { key: "none", label: "Sans équipement" },
-];
-
 const MUSCLE_FILTER_OPTIONS = Object.entries(MUSCLE_LABELS).map(
   ([key, label]) => ({ key, label }),
 );
-
-const EXERCISE_TYPE_FILTER_OPTIONS = [
-  { key: "weight_reps", label: "Poids + répétitions" },
-  { key: "bodyweight_reps", label: "Poids du corps" },
-  { key: "weighted_bodyweight", label: "Poids du corps lesté" },
-  { key: "assisted_bodyweight", label: "Poids du corps assisté" },
-  { key: "duration", label: "Durée" },
-  { key: "duration_weight", label: "Durée + poids" },
-  { key: "distance_duration", label: "Distance / durée" },
-  { key: "weight_distance", label: "Poids / distance" },
-];
 
 export default function ExercisesScreen() {
   const { keyboardY, bottomOffset } = useKeyboardOffset();
@@ -346,20 +274,18 @@ export default function ExercisesScreen() {
               Équipement
             </Text>
             <View className="mb-4 flex-row flex-wrap gap-2">
-              {EQUIPMENT_FILTER_OPTIONS.map((item) => {
-                const active = selectedEquipment === item.key;
+              {Object.entries(EQUIPMENT_LABELS).map(([key, label]) => {
+                const active = selectedEquipment === key;
                 return (
                   <TouchableOpacity
-                    key={item.key}
-                    onPress={() =>
-                      setSelectedEquipment(active ? null : item.key)
-                    }
+                    key={key}
+                    onPress={() => setSelectedEquipment(active ? null : key)}
                     className={`rounded-full border px-3 py-2 ${active ? "border-[#7C5DB7] bg-[#241A36]" : "border-[#2F2F2F] bg-[#1A1A1A]"}`}
                   >
                     <Text
                       className={`text-sm ${active ? "text-[#E9E0FF]" : "text-[#B8B8B8]"}`}
                     >
-                      {item.label}
+                      {label}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -392,24 +318,25 @@ export default function ExercisesScreen() {
               Type d&apos;exercice
             </Text>
             <View className="mb-4 flex-row flex-wrap gap-2">
-              {EXERCISE_TYPE_FILTER_OPTIONS.map((item) => {
-                const active = selectedExerciseType === item.key;
-                return (
-                  <TouchableOpacity
-                    key={item.key}
-                    onPress={() =>
-                      setSelectedExerciseType(active ? null : item.key)
-                    }
-                    className={`rounded-full border px-3 py-2 ${active ? "border-[#7C5DB7] bg-[#241A36]" : "border-[#2F2F2F] bg-[#1A1A1A]"}`}
-                  >
-                    <Text
-                      className={`text-sm ${active ? "text-[#E9E0FF]" : "text-[#B8B8B8]"}`}
+              {EXERCISE_TYPE_LABELS &&
+                Object.entries(EXERCISE_TYPE_LABELS).map(([key, label]) => {
+                  const active = selectedExerciseType === key;
+                  return (
+                    <TouchableOpacity
+                      key={key}
+                      onPress={() =>
+                        setSelectedExerciseType(active ? null : key)
+                      }
+                      className={`rounded-full border px-3 py-2 ${active ? "border-[#7C5DB7] bg-[#241A36]" : "border-[#2F2F2F] bg-[#1A1A1A]"}`}
                     >
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+                      <Text
+                        className={`text-sm ${active ? "text-[#E9E0FF]" : "text-[#B8B8B8]"}`}
+                      >
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
             </View>
           </ScrollView>
           <View className="mt-3 flex-row gap-3">

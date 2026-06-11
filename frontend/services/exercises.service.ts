@@ -1,6 +1,58 @@
 import { api } from "./api";
 import { getItem, saveItem, removeItem } from "@/core/services/storage";
 
+export const EQUIPMENT_LABELS: Record<string, string> = {
+  barbell: "Barre",
+  dumbbell: "Haltères",
+  machine: "Machine",
+  plate_loaded: "Disque de poids",
+  smith_machine: "Smith machine",
+  cable: "Câble",
+  kettlebell: "Kettlebell",
+  band: "Bande élastique",
+  none: "Sans équipement",
+};
+
+export const MUSCLE_LABELS: Record<string, string> = {
+  biceps: "Biceps",
+  triceps: "Triceps",
+  forearms: "Avant-bras",
+  front_delts: "Deltoïdes antérieurs",
+  side_delts: "Deltoïdes latéraux",
+  rear_delts: "Deltoïdes postérieurs",
+  upper_chest: "Haut des pectoraux",
+  middle_chest: "Pectoraux moyens",
+  lower_chest: "Bas des pectoraux",
+  lats: "Grand dorsal",
+  rhomboids: "Rhomboïdes",
+  traps: "Trapèzes",
+  lower_back: "Bas du dos",
+  upper_abs: "Abdominaux supérieurs",
+  lower_abs: "Abdominaux inférieurs",
+  obliques: "Obliques",
+  glutes: "Fessiers",
+  hip_flexors: "Fléchisseurs de hanche",
+  abductors: "Abducteurs",
+  adductors: "Adducteurs",
+  quads: "Quadriceps",
+  hamstrings: "Ischio-jambiers",
+  calves: "Mollets",
+  neck: "Cou",
+  full_body: "Corps entier",
+  cardio: "Cardio",
+};
+
+export const EXERCISE_TYPE_LABELS: Record<string, string> = {
+  weight_reps: "Poids libres",
+  bodyweight_reps: "Poids du corps",
+  weighted_bodyweight: "Poids du corps lesté",
+  assisted_bodyweight: "Poids du corps assisté",
+  duration: "Durée",
+  duration_weight: "Durée + poids",
+  distance_duration: "Distance / durée",
+  weight_distance: "Poids / distance",
+};
+
 export interface Exercise {
   id: string;
   name: string;

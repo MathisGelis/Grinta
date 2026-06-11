@@ -78,6 +78,12 @@ export default function ProgramsScreen() {
                   prev.map((item) => (item.id === updated.id ? updated : item)),
                 );
               }}
+              onDelete={(id) => {
+                setProgramms((prev) => prev.filter((item) => item.id !== id));
+                setFilteredProgramms((prev) =>
+                  prev.filter((item) => item.id !== id),
+                );
+              }}
             />
           ))}
         </ScrollView>

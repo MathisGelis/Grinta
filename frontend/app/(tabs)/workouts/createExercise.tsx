@@ -9,65 +9,18 @@ import {
   Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { createExercise } from "@/services/exercises.service";
+import {
+  createExercise,
+  EQUIPMENT_LABELS,
+  MUSCLE_LABELS,
+  EXERCISE_TYPE_LABELS,
+} from "@/services/exercises.service";
 import { TokenService } from "@/services/token.service";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   SelectList,
   MultipleSelectList,
 } from "react-native-dropdown-select-list";
-
-const EQUIPMENT_OPTIONS = [
-  { key: "barbell", value: "Barbell" },
-  { key: "dumbbell", value: "Dumbbell" },
-  { key: "machine", value: "Machine" },
-  { key: "plate_loaded", value: "Plate Loaded" },
-  { key: "smith_machine", value: "Smith Machine" },
-  { key: "cable", value: "Cable" },
-  { key: "kettlebell", value: "Kettlebell" },
-  { key: "band", value: "Band" },
-  { key: "none", value: "None" },
-];
-
-const MUSCLE_OPTIONS = [
-  { key: "biceps", value: "Biceps" },
-  { key: "triceps", value: "Triceps" },
-  { key: "forearms", value: "Forearms" },
-  { key: "front_delts", value: "Front Delts" },
-  { key: "side_delts", value: "Side Delts" },
-  { key: "rear_delts", value: "Rear Delts" },
-  { key: "upper_chest", value: "Upper Chest" },
-  { key: "middle_chest", value: "Middle Chest" },
-  { key: "lower_chest", value: "Lower Chest" },
-  { key: "lats", value: "Lats" },
-  { key: "rhomboids", value: "Rhomboids" },
-  { key: "traps", value: "Traps" },
-  { key: "lower_back", value: "Lower Back" },
-  { key: "upper_abs", value: "Upper Abs" },
-  { key: "lower_abs", value: "Lower Abs" },
-  { key: "obliques", value: "Obliques" },
-  { key: "glutes", value: "Glutes" },
-  { key: "hip_flexors", value: "Hip Flexors" },
-  { key: "abductors", value: "Abductors" },
-  { key: "adductors", value: "Adductors" },
-  { key: "quads", value: "Quads" },
-  { key: "hamstrings", value: "Hamstrings" },
-  { key: "calves", value: "Calves" },
-  { key: "neck", value: "Neck" },
-  { key: "full_body", value: "Full Body" },
-  { key: "cardio", value: "Cardio" },
-];
-
-const EXERCISE_TYPE_OPTIONS = [
-  { key: "weight_reps", value: "Poids Libres" },
-  { key: "bodyweight_reps", value: "Poids du corps" },
-  { key: "weighted_bodyweight", value: "Poids du corps lesté" },
-  { key: "assisted_bodyweight", value: "Poids du corps assisté" },
-  { key: "duration", value: "Durée" },
-  { key: "duration_weight", value: "Durée + Poids" },
-  { key: "distance_duration", value: "Distance / Durée" },
-  { key: "weight_distance", value: "Poids / Distance" },
-];
 
 const sharedBoxStyles = {
   backgroundColor: "#1A1A1A",
@@ -176,7 +129,10 @@ export default function CreateExerciseScreen() {
             </Text>
             <SelectList
               setSelected={(val: string) => setEquipmentType(val)}
-              data={EQUIPMENT_OPTIONS}
+              data={Object.entries(EQUIPMENT_LABELS).map(([key, label]) => ({
+                key,
+                value: label,
+              }))}
               save="key"
               search={false}
               placeholder="Sélectionnez un équipement"
@@ -194,7 +150,10 @@ export default function CreateExerciseScreen() {
             </Text>
             <SelectList
               setSelected={(val: string) => setPrimaryMuscle(val)}
-              data={MUSCLE_OPTIONS}
+              data={Object.entries(MUSCLE_LABELS).map(([key, label]) => ({
+                key,
+                value: label,
+              }))}
               save="key"
               search={false}
               placeholder="Sélectionnez un muscle"
@@ -212,7 +171,10 @@ export default function CreateExerciseScreen() {
             </Text>
             <MultipleSelectList
               setSelected={setSecondaryMuscles}
-              data={MUSCLE_OPTIONS}
+              data={Object.entries(MUSCLE_LABELS).map(([key, label]) => ({
+                key,
+                value: label,
+              }))}
               save="key"
               search={false}
               placeholder="Sélectionnez des muscles"
@@ -235,7 +197,9 @@ export default function CreateExerciseScreen() {
             </Text>
             <SelectList
               setSelected={(val: string) => setExerciseType(val)}
-              data={EXERCISE_TYPE_OPTIONS}
+              data={Object.entries(EXERCISE_TYPE_LABELS).map(
+                ([key, label]) => ({ key, value: label }),
+              )}
               save="key"
               search={false}
               placeholder="Sélectionnez un type"

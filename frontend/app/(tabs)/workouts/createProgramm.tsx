@@ -12,20 +12,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { SelectList } from "react-native-dropdown-select-list";
 import ProgrammeDayEditor from "@/components/workoutCreation/ProgrammeDayEditor";
-import { createProgramme } from "@/services/programms.service";
+import { createProgramme, ProgrammeDay } from "@/services/programms.service";
 import {
   getPlannedWorkouts,
   getWorkoutById,
   PlannedWorkout,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
-
-interface ProgrammeDayItem {
-  id: string;
-  dayNumber: number;
-  workoutId: string;
-  title: string;
-}
 
 const DIFFICULTY_OPTIONS = [
   { key: "BEGINNER", value: "Débutant" },
@@ -45,7 +38,7 @@ export default function CreateProgrammScreen() {
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("BEGINNER");
   const [locationType, setLocationType] = useState("GYM");
-  const [days, setDays] = useState<ProgrammeDayItem[]>([]);
+  const [days, setDays] = useState<ProgrammeDay[]>([]);
   const [availableWorkouts, setAvailableWorkouts] = useState<PlannedWorkout[]>(
     [],
   );
@@ -107,7 +100,7 @@ export default function CreateProgrammScreen() {
         description: description.trim() || undefined,
         days: days.map((day, index) => ({
           dayNumber: index + 1,
-          workoutId: day.workoutId ?? "",
+          workoutId: day.workout?.id ?? "",
         })),
       });
 

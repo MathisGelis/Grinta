@@ -4,22 +4,60 @@ import { TokenService } from "./token.service";
 export interface SmallProgramm {
   id: string;
   title: string;
-  weekNumber: number;
+  totalDays: number,
+  workoutDays: number,
   difficulty: string;
+}
+
+export interface SmallProgrammDay {
+  dayNumber: number;
+  workoutId: string | null;
 }
 
 export interface ProgrammeDay {
   dayNumber: number;
-  workoutId?: string;
+  workout: SmallWorkout | null;
+}
+
+export interface SmallWorkout {
+  id: string;
+  title: string;
+  description?: string;
 }
 
 export interface Programm {
+  id: string;
   weekNumber: number;
   difficulty: string;
   locationType: string;
   title: string;
   description?: string;
+  totalWorkoutDays: number;
   days: ProgrammeDay[];
+}
+
+export interface createProgramm {
+  weekNumber: number;
+  difficulty: string;
+  locationType: string;
+  title: string;
+  description?: string;
+  days: {
+    dayNumber: number;
+    workoutId: string | null;
+  }[];
+}
+
+export interface editProgramm {
+  weekNumber: number;
+  difficulty: string;
+  locationType: string;
+  title: string;
+  description?: string;
+  days: {
+    dayNumber: number;
+    workoutId: string | null;
+  }[];
 }
 
 export async function getProgramms(): Promise<SmallProgramm[]> {
@@ -47,11 +85,12 @@ export async function getProgrammeById(
 }
 
 export async function createProgramme(
-  programmeData: Programm,
-): Promise<Programm> {
+  programmeData: createProgramm,
+): Promise<createProgramm> {
   try {
     const token = await TokenService.get() || undefined;
-    return await api.post<Programm>("/programmes", programmeData, token);
+    console.log("Création du programme avec les données:", JSON.stringify(programmeData, null, 2));
+    return await api.post<createProgramm>("/programmes", programmeData, token);
   } catch (error) {
     console.error("Error lors de la création du programme:", error);
     throw error;
@@ -60,13 +99,25 @@ export async function createProgramme(
 
 export async function updateProgramme(
   id: string,
-  programmeData: Programm,
-): Promise<Programm> {
+  programmeData: editProgramm,
+): Promise<editProgramm> {
   try {
     const token = await TokenService.get() || undefined;
-    return await api.patch<Programm>(`/programmes/${id}`, programmeData, token);
+    console.log(`Mise à jour du programme ${id} avec les données:`, JSON.stringify(programmeData, null, 2));
+    return await api.patch<editProgramm>(`/programmes/${id}`, programmeData, token);
   } catch (error) {
     console.error("Error lors de la mise à jour du programme:", error);
+    throw error;
+  }
+}
+
+
+export async function deleteProgramme(id: string): Promise<void> {
+  try {
+    const token = await TokenService.get() || undefined;
+    await api.delete(`/programmes/${id}`, token);
+  } catch (error) {
+    console.error("Error lors de la suppression du programme:", error);
     throw error;
   }
 }

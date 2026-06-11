@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  ImageBackground,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 
@@ -30,11 +24,7 @@ export default function WorkoutCardHeader({
   hasWorkout,
 }: WorkoutCardHeaderProps) {
   return (
-    <ImageBackground
-      source={require("@/assets/onboarding1.jpg")}
-      style={styles.imageBackground}
-      resizeMode="cover"
-    >
+    <View className="h-200 justify-between w-full">
       {/* Dark overlay */}
       <View style={styles.darkOverlay} />
 
@@ -89,7 +79,7 @@ export default function WorkoutCardHeader({
           />
         </TouchableOpacity>
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 
