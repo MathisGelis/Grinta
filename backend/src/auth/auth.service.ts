@@ -19,8 +19,14 @@ export class AuthService {
       identifier.toLowerCase().trim(),
     );
 
-    if (user && (await bcrypt.compare(password, user.password))) return user;
-    return null;
+    if (!user) {
+      await bcrypt.compare(
+        password,
+        '$2b$10$invalidsaltinvalidsaltinvalidsaltinvalidsaltinvalidsa',
+      );
+      return null;
+    }
+    return (await bcrypt.compare(password, user.password)) ? user : null;
   }
 
   login(user: User): { access_token: string } {
