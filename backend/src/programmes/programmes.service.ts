@@ -67,13 +67,15 @@ export class ProgrammesService {
   async getProgrammesByUser(user: User) {
     const programmes = await this.programmeRepo.find({
       where: { user: { id: user.id } },
+      relations: ['days'],
       order: { weekNumber: 'ASC' },
     });
 
     return programmes.map((p) => ({
       id: p.id,
       title: p.title,
-      weekNumber: p.weekNumber,
+      totalDays: p.days.length,
+      workoutDays: p.days.filter((d) => d.workout !== null).length,
       difficulty: p.difficulty,
     }));
   }
