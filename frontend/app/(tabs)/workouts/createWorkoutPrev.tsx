@@ -15,11 +15,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
-import ExerciseSearch from "@/components/workout/ExerciseSearch";
+import ExerciseSearch from "@/components/workoutCreation/ExerciseSearch";
 import { Exercise } from "@/services/exercises.service";
 import ExerciseSetupItem, {
   ExerciseSetupData,
-} from "@/components/workout/ExerciseSetupItem";
+} from "@/components/workoutCreation/ExerciseSetupItem";
 import {
   createPlannedWorkout,
   CreateWorkoutRequest,
