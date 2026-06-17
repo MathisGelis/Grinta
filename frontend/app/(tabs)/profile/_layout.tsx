@@ -11,6 +11,8 @@ export default function ProfileStack() {
       <Stack.Screen name="settings-notifications" />
       <Stack.Screen name="settings-language" />
       <Stack.Screen name="settings-contact" />
+      <Stack.Screen name="followers" />
+      <Stack.Screen name="user-profile" />
     </Stack>
   );
 }

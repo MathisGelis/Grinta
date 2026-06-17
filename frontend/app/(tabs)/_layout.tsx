@@ -50,6 +50,24 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
+        name="social"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "people" : "people-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="workout-trigger"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           tabBarIcon: ({ color, focused }) => (
