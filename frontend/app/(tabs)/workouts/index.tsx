@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
+import { useTranslation } from "@/contexts/LanguageContext";
 import WorkoutCard from "@/components/workout/WorkoutCard";
 import {
   getPlannedWorkouts,
@@ -21,6 +21,7 @@ import {
 import { TokenService } from "@/services/token.service";
 
 export default function WorkoutScreen() {
+  const { t } = useTranslation();
   const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -59,58 +60,83 @@ export default function WorkoutScreen() {
   }, [loadWorkouts]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Mes séances</Text>
+          <Text style={styles.headerTitle}>{t.myWorkouts}</Text>
           <Text style={styles.headerSubtitle}>
-            {workouts.length} séance{workouts.length !== 1 ? "s" : ""}
+            {workouts.length} {t.sessionCount}{workouts.length !== 1 ? "s" : ""}
           </Text>
         </View>
         <TouchableOpacity
           onPress={goToCreateWorkout}
           style={styles.createButton}
         >
-          <Ionicons name="add" size={24} color={WorkoutTheme.text.primary} />
+          <Ionicons name="add" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
+
+      {/* Quick stats */}
+      {!loading && !error && workouts.length > 0 && (
+        <View style={styles.quickStats}>
+          <View style={styles.quickStatItem}>
+            <View style={[styles.quickStatIcon, { backgroundColor: "#2a1f4a" }]}>
+              <Ionicons name="barbell" size={16} color="#7B5CF0" />
+            </View>
+            <Text style={styles.quickStatValue}>{workouts.length}</Text>
+            <Text style={styles.quickStatLabel}>{t.sessions}</Text>
+          </View>
+          <View style={styles.quickStatDivider} />
+          <View style={styles.quickStatItem}>
+            <View style={[styles.quickStatIcon, { backgroundColor: "#1a2f1a" }]}>
+              <Ionicons name="fitness" size={16} color="#34D399" />
+            </View>
+            <Text style={styles.quickStatValue}>
+              {workouts.reduce((sum, w) => sum + (w.totalExercises ?? 0), 0)}
+            </Text>
+            <Text style={styles.quickStatLabel}>{t.exercises}</Text>
+          </View>
+        </View>
+      )}
 
       {/* Workouts List */}
       <ScrollView
         style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#7B5CF0"
+            colors={["#7B5CF0"]}
+          />
         }
       >
         {loading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={WorkoutTheme.text.primary} />
-            <Text style={styles.loadingText}>Chargement des séances...</Text>
+            <View style={styles.loadingRing}>
+              <ActivityIndicator size="large" color="#7B5CF0" />
+            </View>
+            <Text style={styles.loadingText}>{t.loadingWorkouts}</Text>
           </View>
         ) : error ? (
           <View style={styles.centerContainer}>
-            <Ionicons
-              name="alert-circle"
-              size={60}
-              color={WorkoutTheme.text.tertiary}
-            />
-            <Text style={styles.errorTitle}>Erreur</Text>
+            <View style={styles.errorIconWrap}>
+              <Ionicons name="alert-circle" size={48} color="#EF4444" />
+            </View>
+            <Text style={styles.errorTitle}>{t.oops}</Text>
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity
               onPress={() => {
                 setLoading(true);
                 loadWorkouts();
               }}
-              style={styles.emptyStateButton}
+              style={styles.retryButton}
             >
-              <Ionicons
-                name="refresh"
-                size={24}
-                color={WorkoutTheme.text.primary}
-              />
-              <Text style={styles.emptyStateButtonText}>Réessayer</Text>
+              <Ionicons name="refresh" size={20} color="#fff" />
+              <Text style={styles.retryButtonText}>{t.retryBtn}</Text>
             </TouchableOpacity>
           </View>
         ) : workouts.length > 0 ? (
@@ -142,130 +168,216 @@ export default function WorkoutScreen() {
           </View>
         ) : (
           <View style={styles.emptyState}>
-            <Ionicons
-              name="body"
-              size={60}
-              color={WorkoutTheme.text.tertiary}
-            />
-            <Text style={styles.emptyStateTitle}>Aucune séance</Text>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="barbell-outline" size={48} color="#7B5CF0" />
+            </View>
+            <Text style={styles.emptyStateTitle}>{t.noWorkouts}</Text>
             <Text style={styles.emptyStateText}>
-              Créez votre première séance d&apos;entraînement
+              {t.createFirstWorkout}
             </Text>
             <TouchableOpacity
               onPress={goToCreateWorkout}
               style={styles.emptyStateButton}
             >
-              <Ionicons
-                name="add-circle"
-                size={24}
-                color={WorkoutTheme.text.primary}
-              />
-              <Text style={styles.emptyStateButtonText}>Créer une séance</Text>
+              <Ionicons name="add-circle" size={22} color="#fff" />
+              <Text style={styles.emptyStateButtonText}>{t.createWorkout}</Text>
             </TouchableOpacity>
           </View>
         )}
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: WorkoutTheme.backgroundSecondary,
+    backgroundColor: "#121212",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    borderBottomWidth: 1,
-    borderBottomColor: WorkoutTheme.border,
+    paddingHorizontal: 20,
+    paddingTop: 64,
+    paddingBottom: 16,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "700",
-    color: WorkoutTheme.text.primary,
+    color: "#fff",
   },
   headerSubtitle: {
-    fontSize: 12,
-    color: WorkoutTheme.text.secondary,
+    fontSize: 13,
+    color: "#888",
     marginTop: 2,
   },
   createButton: {
-    backgroundColor: WorkoutTheme.accent.purple,
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    backgroundColor: "#7B5CF0",
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#7B5CF0",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
+
+  quickStats: {
+    flexDirection: "row",
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+  },
+  quickStatItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 6,
+  },
+  quickStatIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickStatValue: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  quickStatLabel: {
+    color: "#888",
+    fontSize: 11,
+  },
+  quickStatDivider: {
+    width: 1,
+    backgroundColor: "#2a2a2a",
+    marginVertical: 4,
+  },
+
   scroll: {
     flex: 1,
-    backgroundColor: WorkoutTheme.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 40,
+    paddingHorizontal: 32,
+    paddingVertical: 60,
+  },
+  loadingRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
   loadingText: {
-    marginTop: 16,
     fontSize: 14,
-    color: WorkoutTheme.text.secondary,
+    color: "#888",
+  },
+
+  errorIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#2a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
   errorTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: WorkoutTheme.text.primary,
-    marginTop: 16,
+    color: "#fff",
+    marginBottom: 8,
   },
   errorText: {
     fontSize: 14,
-    color: WorkoutTheme.text.secondary,
-    marginTop: 8,
+    color: "#888",
     textAlign: "center",
+    lineHeight: 20,
   },
-  workoutsContainer: {
-    paddingHorizontal: 16,
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#7B5CF0",
+    paddingHorizontal: 20,
     paddingVertical: 12,
+    borderRadius: 14,
+    marginTop: 24,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+
+  workoutsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
     gap: 12,
   },
+
   emptyState: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
     paddingVertical: 60,
-    paddingHorizontal: 20,
+  },
+  emptyIconWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#1a1a2e",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
   },
   emptyStateTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: WorkoutTheme.text.primary,
-    marginTop: 16,
+    color: "#fff",
+    marginBottom: 8,
   },
   emptyStateText: {
     fontSize: 14,
-    color: WorkoutTheme.text.secondary,
-    marginTop: 8,
+    color: "#888",
     textAlign: "center",
+    lineHeight: 20,
   },
   emptyStateButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: WorkoutTheme.accent.purple,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 20,
+    backgroundColor: "#7B5CF0",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginTop: 28,
+    shadowColor: "#7B5CF0",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   emptyStateButtonText: {
-    color: WorkoutTheme.text.primary,
+    color: "#fff",
     fontWeight: "600",
-    fontSize: 14,
+    fontSize: 15,
   },
 });

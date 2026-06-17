@@ -25,4 +25,9 @@ export const WorkoutService = {
     const token = await TokenService.get();
     return api.get<PlannedWorkout[]>("/workouts/planned", token ?? undefined);
   },
+
+  async deleteCompleted(id: string): Promise<void> {
+    const token = await TokenService.get();
+    return api.delete(`/workouts/completed/${id}`, token ?? undefined);
+  },
 };

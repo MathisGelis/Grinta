@@ -120,7 +120,11 @@ export default function SocialScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="#fff" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Social</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       {/* Search */}
@@ -153,7 +157,7 @@ export default function SocialScreen() {
               <View key={req.request_id} style={styles.userCard}>
                 <TouchableOpacity
                   style={styles.userInfo}
-                  onPress={() => router.push({ pathname: "/(tabs)/profile/user-profile", params: { userId: req.user_id } } as any)}
+                  onPress={() => router.push({ pathname: "/(tabs)/social/user-profile", params: { userId: req.user_id } } as any)}
                 >
                   <View style={styles.avatar}>
                     <Text style={styles.avatarText}>
@@ -202,7 +206,7 @@ export default function SocialScreen() {
             <View key={u.id} style={styles.userCard}>
               <TouchableOpacity
                 style={styles.userInfo}
-                onPress={() => router.push({ pathname: "/(tabs)/profile/user-profile", params: { userId: u.id } } as any)}
+                onPress={() => router.push({ pathname: "/(tabs)/social/user-profile", params: { userId: u.id } } as any)}
               >
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
@@ -239,8 +243,23 @@ export default function SocialScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 12 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 64,
+    paddingBottom: 12,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
 
   searchWrap: {
     flexDirection: "row",

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -77,6 +78,28 @@ export default function StatsScreen() {
   const completedCount = summary?.current?.workouts ?? 0;
 
   const recentWorkouts = completedWorkouts.slice(0, 5);
+
+  const handleDeleteWorkout = (workout: CompletedWorkout) => {
+    Alert.alert(
+      "Supprimer",
+      `Supprimer "${workout.title}" ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await WorkoutService.deleteCompleted(workout.id);
+              setCompletedWorkouts((prev) => prev.filter((w) => w.id !== workout.id));
+            } catch {
+              Alert.alert("Erreur", "Impossible de supprimer");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const formatWorkoutDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -197,6 +220,12 @@ export default function StatsScreen() {
                       {formatWorkoutDate(w.completionDate)} · {formatDuration(w.totalDurationSeconds)}
                     </Text>
                   </View>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteWorkout(w)}
+                    style={styles.deleteBtn}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
+                  </TouchableOpacity>
                 </View>
               ))}
             </View>
@@ -312,4 +341,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: { color: "#555", fontSize: 14 },
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#2a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

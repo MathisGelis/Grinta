@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
+import { useTranslation } from "@/contexts/LanguageContext";
 import ExerciseSearch from "@/components/workout/ExerciseSearch";
 import { Exercise } from "@/services/exercises.service";
 import ExerciseSetupItem, {
@@ -27,6 +28,7 @@ import {
 import { TokenService } from "@/services/token.service";
 
 export default function CreateWorkoutScreen() {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState<string | null>(null);
@@ -56,8 +58,8 @@ export default function CreateWorkoutScreen() {
 
     if (exerciseExists) {
       Alert.alert(
-        "Exercice en doublon",
-        `"${exercise.name}" est déjà ajouté à la séance.`,
+        t.duplicateExercise,
+        `"${exercise.name}" ${t.alreadyAdded}`,
       );
       return;
     }
@@ -112,12 +114,12 @@ export default function CreateWorkoutScreen() {
 
   const createWorkout = async () => {
     if (!name.trim()) {
-      Alert.alert("Erreur", "Veuillez entrer un nom de séance");
+      Alert.alert(t.error, t.errorWorkoutName);
       return;
     }
 
     if (selectedExercises.length === 0) {
-      Alert.alert("Erreur", "Veuillez ajouter au moins un exercice");
+      Alert.alert(t.error, t.errorNoExercises);
       return;
     }
 
@@ -129,7 +131,7 @@ export default function CreateWorkoutScreen() {
 
       await createPlannedWorkout(workoutData, token || undefined);
 
-      Alert.alert("Succès", "Séance créée avec succès!", [
+      Alert.alert(t.success, t.workoutCreated, [
         {
           text: "OK",
           onPress: () => {
@@ -139,8 +141,8 @@ export default function CreateWorkoutScreen() {
       ]);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Erreur lors de la création";
-      Alert.alert("Erreur", message);
+        err instanceof Error ? err.message : t.creationError;
+      Alert.alert(t.error, message);
       console.error("Erreur de création:", err);
     } finally {
       setLoading(false);
@@ -152,7 +154,7 @@ export default function CreateWorkoutScreen() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Name */}
         <View style={styles.section}>
-          <Text style={styles.label}>Nom de la séance</Text>
+          <Text style={styles.label}>{t.workoutNameLabel}</Text>
           <View style={styles.inputBox}>
             <Ionicons
               name="barbell"
@@ -160,7 +162,7 @@ export default function CreateWorkoutScreen() {
               color={WorkoutTheme.accent.purple}
             />
             <TextInput
-              placeholder="Ex: Push Day"
+              placeholder={t.workoutNamePlaceholder}
               placeholderTextColor={WorkoutTheme.text.tertiary}
               style={styles.input}
               value={name}
@@ -171,9 +173,9 @@ export default function CreateWorkoutScreen() {
 
         {/* Description */}
         <View style={styles.section}>
-          <Text style={styles.label}>Description</Text>
+          <Text style={styles.label}>{t.descriptionLabel}</Text>
           <TextInput
-            placeholder="Objectif, sensations, notes..."
+            placeholder={t.descriptionPlaceholder}
             placeholderTextColor={WorkoutTheme.text.tertiary}
             multiline
             numberOfLines={4}
@@ -185,7 +187,7 @@ export default function CreateWorkoutScreen() {
 
         {/* Image */}
         <View style={styles.section}>
-          <Text style={styles.label}>Photo</Text>
+          <Text style={styles.label}>{t.photoLabel}</Text>
           <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
             {image ? (
               <Image source={{ uri: image }} style={styles.imagePreview} />
@@ -196,7 +198,7 @@ export default function CreateWorkoutScreen() {
                   size={40}
                   color={WorkoutTheme.accent.purple}
                 />
-                <Text style={styles.imagePickerText}>Ajouter une photo</Text>
+                <Text style={styles.imagePickerText}>{t.addPhoto}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -204,7 +206,7 @@ export default function CreateWorkoutScreen() {
 
         {/* Estimated Time */}
         <View style={styles.section}>
-          <Text style={styles.label}>Durée estimée (minutes)</Text>
+          <Text style={styles.label}>{t.estimatedDuration}</Text>
           <View style={styles.inputBox}>
             <Ionicons
               name="time"
@@ -260,9 +262,9 @@ export default function CreateWorkoutScreen() {
                 size={40}
                 color={WorkoutTheme.text.tertiary}
               />
-              <Text style={styles.emptyStateText}>Aucun exercice ajouté</Text>
+              <Text style={styles.emptyStateText}>{t.noExercisesAdded}</Text>
               <Text style={styles.emptyStateSubtext}>
-                Appuyez sur le bouton + pour ajouter un exercice
+                {t.tapToAddExercise}
               </Text>
             </View>
           )}
@@ -271,7 +273,7 @@ export default function CreateWorkoutScreen() {
         {/* Summary Stats */}
         {selectedExercises.length > 0 && (
           <View style={styles.statsSection}>
-            <Text style={styles.statsTitle}>Statistiques estimées</Text>
+            <Text style={styles.statsTitle}>{t.estimatedStats}</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <Ionicons
@@ -282,7 +284,7 @@ export default function CreateWorkoutScreen() {
                 <Text style={styles.statValue}>
                   {calculateTotalWeight().toFixed(0)}kg
                 </Text>
-                <Text style={styles.statLabel}>Poids total</Text>
+                <Text style={styles.statLabel}>{t.totalWeight}</Text>
               </View>
               <View style={styles.statItem}>
                 <Ionicons
@@ -296,7 +298,7 @@ export default function CreateWorkoutScreen() {
                     0,
                   )}
                 </Text>
-                <Text style={styles.statLabel}>Séries</Text>
+                <Text style={styles.statLabel}>{t.sets}</Text>
               </View>
               <View style={styles.statItem}>
                 <Ionicons
@@ -305,7 +307,7 @@ export default function CreateWorkoutScreen() {
                   color={WorkoutTheme.accent.purple}
                 />
                 <Text style={styles.statValue}>{estimatedTime}m</Text>
-                <Text style={styles.statLabel}>Durée</Text>
+                <Text style={styles.statLabel}>{t.duration}</Text>
               </View>
             </View>
           </View>
@@ -326,7 +328,7 @@ export default function CreateWorkoutScreen() {
                 size={20}
                 color={WorkoutTheme.text.primary}
               />
-              <Text style={styles.createButtonText}>Créer la séance</Text>
+              <Text style={styles.createButtonText}>{t.createWorkoutBtn}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -348,7 +350,7 @@ export default function CreateWorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: WorkoutTheme.background,
+    backgroundColor: "#121212",
     paddingBottom: 20,
   },
   header: {
