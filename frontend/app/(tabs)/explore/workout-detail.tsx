@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -60,7 +60,12 @@ export default function WorkoutDetailScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       {/* Hero section */}
       <View style={styles.heroContainer}>
@@ -68,7 +73,10 @@ export default function WorkoutDetailScreen() {
           <Ionicons name="barbell" size={64} color="#7B5CF033" />
         </View>
         <SafeAreaView style={styles.backWrapper} edges={["top"]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
         </SafeAreaView>

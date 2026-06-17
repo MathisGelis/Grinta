@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ProgrammeService } from "@/services/programme.service";
 import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
 import { Ionicons } from "@expo/vector-icons";
+import { WorkoutTheme } from "@/constants/Colors";
 
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
@@ -83,8 +84,8 @@ export default function ExploreScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <View style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
 
       <ScrollView
         style={styles.scroll}
@@ -216,14 +217,15 @@ export default function ExploreScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#121212",
+    paddingTop: 8,
+    backgroundColor: WorkoutTheme.background,
   },
   scroll: {
     flex: 1,
@@ -240,11 +242,11 @@ const styles = StyleSheet.create({
   helloText: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
   },
   greetingText: {
     fontSize: 15,
-    color: "#aaaaaa",
+    color: WorkoutTheme.text.secondary,
     marginTop: 2,
   },
 
@@ -259,11 +261,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
   },
   dateText: {
     fontSize: 13,
-    color: "#7B5CF0",
+    color: WorkoutTheme.accent.purple,
     fontWeight: "600",
   },
 
@@ -337,7 +339,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalSheet: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: WorkoutTheme.backgroundSecondary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",
@@ -349,23 +351,23 @@ const styles = StyleSheet.create({
   modalWorkoutTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     textAlign: "center",
     marginBottom: 6,
   },
   modalCategory: {
     fontSize: 14,
-    color: "#7B5CF0",
+    color: WorkoutTheme.accent.purple,
     marginBottom: 20,
   },
   modalDescription: {
     fontSize: 14,
-    color: "#aaaaaa",
+    color: WorkoutTheme.text.secondary,
     textAlign: "center",
     marginBottom: 12,
   },
   useButton: {
-    backgroundColor: "#7B5CF0",
+    backgroundColor: WorkoutTheme.accent.purple,
     paddingHorizontal: 48,
     paddingVertical: 14,
     borderRadius: 30,
@@ -374,7 +376,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   useButtonText: {
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -383,7 +385,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cancelText: {
-    color: "#888888",
+    color: WorkoutTheme.text.secondary,
     fontSize: 14,
   },
 });

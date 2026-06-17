@@ -10,8 +10,8 @@ export interface RegisterResponse {
 }
 
 export const AuthService = {
-  login(email: string, password: string) {
-    return api.post<LoginResponse>("/auth/login", { identifier: email, password });
+  login(identifier: string, password: string) {
+    return api.post<LoginResponse>("/auth/login", { identifier, password });
   },
 
   async register(email: string, password: string, name: string): Promise<RegisterResponse> {

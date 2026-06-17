@@ -1,82 +1,271 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect, router } from "expo-router";
+import { WorkoutTheme } from "@/constants/Colors";
+import WorkoutCard from "@/components/workout/WorkoutCard";
+import {
+  getPlannedWorkouts,
+  PlannedWorkout,
+  fullPlannedWorkout,
+} from "@/services/workouts.service";
+import { TokenService } from "@/services/token.service";
 
-type FilterKey = "new" | "events" | "all";
+export default function WorkoutScreen() {
+  const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default function NotificationsScreen() {
-  const { t } = useTranslation();
-  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
+  const loadWorkouts = useCallback(async () => {
+    try {
+      setError(null);
+      const token = await TokenService.get();
+      const plannedWorkouts = await getPlannedWorkouts(token || undefined);
+      setWorkouts(plannedWorkouts);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Erreur lors du chargement";
+      setError(message);
+      console.error("Erreur:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const filters: { key: FilterKey; label: string }[] = [
-    { key: "new", label: t.newFilter },
-    { key: "events", label: t.events },
-    { key: "all", label: t.all },
-  ];
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      loadWorkouts();
+    }, [loadWorkouts]),
+  );
+
+  const goToCreateWorkout = () => {
+    router.push("/workouts/create");
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadWorkouts().finally(() => setRefreshing(false));
+  }, [loadWorkouts]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t.notifications}</Text>
-      </View>
-
-      {/* Filter tabs */}
-      <View style={styles.filterRow}>
-        {filters.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[styles.filterTab, activeFilter === f.key && styles.filterTabActive]}
-            onPress={() => setActiveFilter(f.key)}
-          >
-            <Text style={[styles.filterText, activeFilter === f.key && styles.filterTextActive]}>
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16 }}
-      >
-        <View style={styles.empty}>
-          <Ionicons name="notifications-off-outline" size={48} color="#444" />
-          <Text style={styles.emptyText}>{t.noNotifications}</Text>
+        <View>
+          <Text style={styles.headerTitle}>Mes séances</Text>
+          <Text style={styles.headerSubtitle}>
+            {workouts.length} séance{workouts.length !== 1 ? "s" : ""}
+          </Text>
         </View>
+        <TouchableOpacity
+          onPress={goToCreateWorkout}
+          style={styles.createButton}
+        >
+          <Ionicons name="add" size={24} color={WorkoutTheme.text.primary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Workouts List */}
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {loading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={WorkoutTheme.text.primary} />
+            <Text style={styles.loadingText}>Chargement des séances...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.centerContainer}>
+            <Ionicons
+              name="alert-circle"
+              size={60}
+              color={WorkoutTheme.text.tertiary}
+            />
+            <Text style={styles.errorTitle}>Erreur</Text>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setLoading(true);
+                loadWorkouts();
+              }}
+              style={styles.emptyStateButton}
+            >
+              <Ionicons
+                name="refresh"
+                size={24}
+                color={WorkoutTheme.text.primary}
+              />
+              <Text style={styles.emptyStateButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+          </View>
+        ) : workouts.length > 0 ? (
+          <View style={styles.workoutsContainer}>
+            {workouts.map((workout) => (
+              <WorkoutCard
+                key={workout.id}
+                workout={workout}
+                onDelete={() => {
+                  setWorkouts((prev) =>
+                    prev.filter((w) => w.id !== workout.id),
+                  );
+                }}
+                onUpdate={(updatedWorkout: fullPlannedWorkout) => {
+                  const updatedPlanned: PlannedWorkout = {
+                    id: updatedWorkout.id,
+                    title: updatedWorkout.title,
+                    description: updatedWorkout.description,
+                    totalExercises: updatedWorkout.totalExercises,
+                  };
+                  setWorkouts((prev) =>
+                    prev.map((w) =>
+                      w.id === updatedWorkout.id ? updatedPlanned : w,
+                    ),
+                  );
+                }}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="body"
+              size={60}
+              color={WorkoutTheme.text.tertiary}
+            />
+            <Text style={styles.emptyStateTitle}>Aucune séance</Text>
+            <Text style={styles.emptyStateText}>
+              Créez votre première séance d&apos;entraînement
+            </Text>
+            <TouchableOpacity
+              onPress={goToCreateWorkout}
+              style={styles.emptyStateButton}
+            >
+              <Ionicons
+                name="add-circle"
+                size={24}
+                color={WorkoutTheme.text.primary}
+              />
+              <Text style={styles.emptyStateButtonText}>Créer une séance</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 16 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
-
-  filterRow: {
+  container: {
+    flex: 1,
+    backgroundColor: WorkoutTheme.backgroundSecondary,
+  },
+  header: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
-    gap: 8,
-    marginBottom: 16,
+    paddingVertical: 12,
+    backgroundColor: WorkoutTheme.backgroundSecondary,
+    borderBottomWidth: 1,
+    borderBottomColor: WorkoutTheme.border,
   },
-  filterTab: {
-    paddingVertical: 8,
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: WorkoutTheme.text.primary,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: WorkoutTheme.text.secondary,
+    marginTop: 2,
+  },
+  createButton: {
+    backgroundColor: WorkoutTheme.accent.purple,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: WorkoutTheme.background,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: WorkoutTheme.text.secondary,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: WorkoutTheme.text.primary,
+    marginTop: 16,
+  },
+  errorText: {
+    fontSize: 14,
+    color: WorkoutTheme.text.secondary,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  workoutsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 60,
     paddingHorizontal: 20,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
   },
-  filterTabActive: { backgroundColor: "#7B5CF0" },
-  filterText: { color: "#888", fontSize: 14, fontWeight: "500" },
-  filterTextActive: { color: "#fff" },
-
-  empty: { alignItems: "center", marginTop: 80, gap: 12 },
-  emptyText: { color: "#555", fontSize: 16 },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: WorkoutTheme.text.primary,
+    marginTop: 16,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: WorkoutTheme.text.secondary,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  emptyStateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: WorkoutTheme.accent.purple,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  emptyStateButtonText: {
+    color: WorkoutTheme.text.primary,
+    fontWeight: "600",
+    fontSize: 14,
+  },
 });
