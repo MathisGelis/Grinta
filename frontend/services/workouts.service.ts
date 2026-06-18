@@ -1,12 +1,16 @@
 import { api } from "./api";
 import { saveItem, getItem } from "@/core/services/storage";
-import { Exercise } from "./exercises.service";
 
 export interface PlannedWorkout {
   id: string;
   title: string;
   description: string;
   totalExercises: number;
+  workout?: {
+    id?: string;
+    title?: string;
+    description?: string;
+  };
 }
 
 export interface fullPlannedWorkout extends PlannedWorkout {
@@ -64,14 +68,27 @@ export async function getPlannedWorkouts(
       "/workouts/planned",
       token
     );
-    await saveItem(PLANNED_WORKOUTS_CACHE_KEY, JSON.stringify(response));
-    return response;
+    const normalized = response.map((item) => ({
+      id: item.workout?.id ?? item.id,
+      title: item.title ?? item.workout?.title ?? "",
+      description: item.description ?? item.workout?.description ?? "",
+      totalExercises: item.totalExercises,
+      workout: item.workout,
+    }));
+    await saveItem(PLANNED_WORKOUTS_CACHE_KEY, JSON.stringify(normalized));
+    return normalized;
   } catch (error) {
     console.log("Erreur lors de la récupération des workouts planifiés:", error);
     const cachedData = await getItem(PLANNED_WORKOUTS_CACHE_KEY);
     if (cachedData) {
-      console.log("Utilisation des données en cache");
-      return JSON.parse(cachedData);
+      const parsed = JSON.parse(cachedData) as PlannedWorkout[];
+      return parsed.map((item) => ({
+        id: item.workout?.id ?? item.id,
+        title: item.title ?? item.workout?.title ?? "",
+        description: item.description ?? item.workout?.description ?? "",
+        totalExercises: item.totalExercises,
+        workout: item.workout,
+      }));
     }
 
     return [];

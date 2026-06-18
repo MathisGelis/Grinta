@@ -7,6 +7,7 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, router } from "expo-router";
@@ -19,13 +20,20 @@ import {
   fullPlannedWorkout,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
+import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
+import GlassSearchBar from "@/components/GlassSearchBar";
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
   const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
+  const [filteredWorkouts, setFilteredWorkouts] = useState<PlannedWorkout[]>(
+    [],
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+  const { keyboardY, bottomOffset } = useKeyboardOffset();
 
   const loadWorkouts = useCallback(async () => {
     try {
@@ -33,6 +41,7 @@ export default function WorkoutScreen() {
       const token = await TokenService.get();
       const plannedWorkouts = await getPlannedWorkouts(token || undefined);
       setWorkouts(plannedWorkouts);
+      setFilteredWorkouts(plannedWorkouts);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Erreur lors du chargement";
@@ -49,10 +58,6 @@ export default function WorkoutScreen() {
       loadWorkouts();
     }, [loadWorkouts]),
   );
-
-  const goToCreateWorkout = () => {
-    router.push("/workouts/create");
-  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -113,6 +118,7 @@ export default function WorkoutScreen() {
             colors={["#7B5CF0"]}
           />
         }
+        contentContainerStyle={{ paddingBottom: bottomOffset }}
       >
         {loading ? (
           <View style={styles.centerContainer}>
@@ -141,7 +147,7 @@ export default function WorkoutScreen() {
           </View>
         ) : workouts.length > 0 ? (
           <View style={styles.workoutsContainer}>
-            {workouts.map((workout) => (
+            {filteredWorkouts.map((workout) => (
               <WorkoutCard
                 key={workout.id}
                 workout={workout}
@@ -176,7 +182,7 @@ export default function WorkoutScreen() {
               {t.createFirstWorkout}
             </Text>
             <TouchableOpacity
-              onPress={goToCreateWorkout}
+              onPress={() => router.push("/(tabs)/workouts/createWorkout")}
               style={styles.emptyStateButton}
             >
               <Ionicons name="add-circle" size={22} color="#fff" />
@@ -379,5 +385,22 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 15,
+  },
+  fab: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: WorkoutTheme.accent.purple,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    zIndex: 100,
   },
 });

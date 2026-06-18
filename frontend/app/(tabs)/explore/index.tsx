@@ -209,7 +209,12 @@ export default function ExploreScreen() {
   );
 
   return (
-    <View style={styles.safeArea}>
+    <View
+      style={{
+        backgroundColor: WorkoutTheme.background,
+        flex: 1,
+      }}
+    >
       <StatusBar barStyle="light-content" />
 
       <ScrollView

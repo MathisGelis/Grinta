@@ -20,7 +20,7 @@ import ExerciseSearch from "@/components/workout/ExerciseSearch";
 import { Exercise } from "@/services/exercises.service";
 import ExerciseSetupItem, {
   ExerciseSetupData,
-} from "@/components/workout/ExerciseSetupItem";
+} from "@/components/workoutCreation/ExerciseSetupItem";
 import {
   createPlannedWorkout,
   CreateWorkoutRequest,

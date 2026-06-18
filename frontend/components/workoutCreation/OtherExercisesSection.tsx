@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { WorkoutExercise } from "@/services/workouts.service";
 import { Exercise } from "@/services/exercises.service";
-import ExerciseSearch from "@/components/workout/ExerciseSearch";
+import ExerciseSearch from "@/components/workoutCreation/ExerciseSearch";
 
 interface OtherExercisesSectionProps {
   exercises: WorkoutExercise[];

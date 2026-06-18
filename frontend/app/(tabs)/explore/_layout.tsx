@@ -45,7 +45,10 @@ export default function ExploreStack() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="notification" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="notification"
+        options={{ headerShown: false, animation: "slide_from_left" }}
+      />
       <Stack.Screen name="chat" options={{ headerShown: false }} />
       <Stack.Screen name="user-profile" options={{ headerShown: false }} />
     </Stack>

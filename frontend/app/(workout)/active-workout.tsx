@@ -20,11 +20,11 @@ import {
   createCompletedWorkout,
   CompletedExercise,
 } from "@/services/completed-workouts.service";
-import WorkoutSessionHeader from "@/components/workout/WorkoutSessionHeader";
+import WorkoutSessionHeader from "@/components/workoutCreation/WorkoutSessionHeader";
 import CurrentExerciseSection, {
   CompletedSet as CompletedSetType,
-} from "@/components/workout/CurrentExerciseSection";
-import OtherExercisesSection from "@/components/workout/OtherExercisesSection";
+} from "@/components/workoutCreation/CurrentExerciseSection";
+import OtherExercisesSection from "@/components/workoutCreation/OtherExercisesSection";
 
 interface ExerciseState {
   exerciseData: WorkoutExercise;
@@ -367,7 +367,7 @@ export default function ActiveWorkoutScreen() {
       Alert.alert("Succès", "Séance enregistrée avec succès!", [
         {
           text: "OK",
-          onPress: () => router.push("/(tabs)/stats"),
+          onPress: () => router.replace("/(tabs)/stats"),
         },
       ]);
     } catch (error) {
