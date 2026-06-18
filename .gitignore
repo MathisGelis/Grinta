@@ -1,48 +1,66 @@
-# ========================
-# Node / Nest.js backend
-# ========================
+# Node
 node_modules/
-dist/
-.env
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-yarn.lock
+pnpm-debug.log*
 
-# VS Code
-.vscode/
+# Build
+build/
+android/app/build/
+ios/build/
+ios/Pods/
+*.xcworkspace
 
-# Mac
+# OS
 .DS_Store
+Thumbs.db
 
-# ========================
-# Flutter / Dart mobile
-# ========================
-# Dart / Flutter
-.flutter-plugins
-.flutter-plugins-dependencies
-.dart_tool/
-.packages
-.pub-cache/
-build/
-ios/Flutter/Flutter.podspec
-**/Generated.xcconfig
-
-# Android
+# IDE / Editor
+.vscode/
+.idea/
 *.iml
-.gradle/
-local.properties
-.cxx/
-captures/
-.externalNativeBuild/
-*.apk
-*.ap_
-*.so
-*.aar
 
-# Flutter build outputs
-build/
+# Environment
+.env
+.env.local
+.env.development
+.env.production
+.env.test
 
-# Misc
-*.txt
+# Metro / Expo / Cache
+.expo/
+.expo-shared/
+.expo3/
+.expo2/
+.expo-cache/
+.bundle/
+dist/
+tmp/
+.cache/
+coverage/
+*.log
+
+# React Native
+# Android
+android/.gradle/
+android/local.properties
+android/.idea
+android/.settings
+android/app/src/main/assets/index.android.bundle
+android/app/src/main/assets/sourcemaps/
+# iOS
+ios/Pods/
+ios/build/
+ios/DerivedData/
+*.xcuserdata
+*.xccheckout
+*.xcuserstate
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_o_
