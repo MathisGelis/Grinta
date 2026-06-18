@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import ExerciseSearch from "@/components/workout/ExerciseSearch";
+import ExerciseSearch from "@/components/workoutCreation/ExerciseSearch";
 import { Exercise } from "@/services/exercises.service";
 import ExerciseSetupItem, {
   ExerciseSetupData,

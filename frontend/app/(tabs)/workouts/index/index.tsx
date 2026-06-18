@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   View,
   Text,
@@ -13,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import WorkoutCard from "@/components/workout/WorkoutCard";
+import WorkoutCard from "@/components/workoutCreation/WorkoutCard";
 import {
   getPlannedWorkouts,
   PlannedWorkout,
@@ -58,6 +59,10 @@ export default function WorkoutScreen() {
       loadWorkouts();
     }, [loadWorkouts]),
   );
+
+  const goToCreateWorkout = () => {
+    router.push("/(tabs)/workouts/createWorkout");
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
