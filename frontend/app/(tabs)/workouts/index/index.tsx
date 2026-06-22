@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   View,
   Text,
@@ -8,7 +7,6 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
-  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, router } from "expo-router";
@@ -22,7 +20,6 @@ import {
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
-import GlassSearchBar from "@/components/GlassSearchBar";
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
@@ -33,8 +30,7 @@ export default function WorkoutScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const insets = useSafeAreaInsets();
-  const { keyboardY, bottomOffset } = useKeyboardOffset();
+  const { bottomOffset } = useKeyboardOffset();
 
   const loadWorkouts = useCallback(async () => {
     try {
@@ -113,7 +109,7 @@ export default function WorkoutScreen() {
       {/* Workouts List */}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomOffset }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -123,7 +119,6 @@ export default function WorkoutScreen() {
             colors={["#7B5CF0"]}
           />
         }
-        contentContainerStyle={{ paddingBottom: bottomOffset }}
       >
         {loading ? (
           <View style={styles.centerContainer}>

@@ -14,7 +14,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+
+
 import { ProgrammeService } from "@/services/programme.service";
 import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
 import { ConnectionsService, UserListItem, FollowRequest } from "@/services/connections.service";
@@ -47,7 +48,7 @@ export default function ExploreScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const [userId, setUserId] = useState("");
-  const [recommendations, setRecommendations] = useState<UserListItem[]>([]);
+  const [, setRecommendations] = useState<UserListItem[]>([]);
   const [requests, setRequests] = useState<FollowRequest[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
@@ -172,7 +173,6 @@ export default function ExploreScreen() {
     setSelectedProgramme(null);
   }
 
-  const displayList = searchQuery.trim() ? searchResults : recommendations;
 
   const renderUserCard = (u: UserListItem) => (
     <View key={u.id} style={styles.userCard}>

@@ -15,13 +15,6 @@ import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
 import { StatsService } from "@/services/stats.service";
 import { useTranslation } from "@/contexts/LanguageContext";
 
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.round((seconds % 3600) / 60);
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
-}
-
 function formatJoinDate(dateStr: string): string {
   const d = new Date(dateStr);
   const months = [
@@ -36,8 +29,8 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [totalCalories, setTotalCalories] = useState(0);
-  const [totalDuration, setTotalDuration] = useState(0);
+
+
 
   const MENU_ITEMS = [
     { id: "edit", label: t.editProfile, icon: "person-outline" as const, route: "/(tabs)/profile/edit-profile" },
@@ -56,10 +49,6 @@ export default function ProfileScreen() {
         StatsService.getSummary("month").catch(() => null),
       ]);
       setProfile(profileData);
-      if (summaryData) {
-        setTotalCalories(summaryData.current.calories);
-        setTotalDuration(summaryData.current.durationSeconds);
-      }
     } catch {
       // silently fail
     } finally {
