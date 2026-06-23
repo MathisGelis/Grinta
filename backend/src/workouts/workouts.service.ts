@@ -86,15 +86,16 @@ export class WorkoutService {
   }
 
   async updatePlannedWorkout(
-    user: any,
+    user: User,
     workoutId: string,
     dto: UpdatePlannedWorkoutDto,
   ) {
     const workout = await this.plannedRepo.findOne({
-      where: { id: workoutId, user: { id: user.userId } },
+      where: { id: workoutId, user: { id: user.id } },
       relations: ['exercises', 'exercises.exercise'],
     });
     if (!workout) throw new NotFoundException('Planned workout not found');
+
     Object.assign(workout, {
       title: dto.title,
       description: dto.description,
@@ -124,16 +125,17 @@ export class WorkoutService {
   }
 
   async updateCompletedWorkout(
-    user: any,
+    user: User,
     workoutId: string,
     dto: UpdateCompletedWorkoutDto,
   ) {
     const workout = await this.completedRepo.findOne({
-      where: { id: workoutId, user: { id: user.userId } },
+      where: { id: workoutId, user: { id: user.id } },
       relations: ['exercises', 'exercises.exercise'],
     });
 
     if (!workout) throw new NotFoundException('Completed workout not found');
+
     Object.assign(workout, {
       title: dto.title,
       description: dto.description,
@@ -167,9 +169,9 @@ export class WorkoutService {
     return this.completedRepo.save(workout);
   }
 
-  async getPlannedWorkouts(user: any) {
+  async getPlannedWorkouts(user: User) {
     const workouts = await this.plannedRepo.find({
-      where: { user: { id: user.userId } },
+      where: { user: { id: user.id } },
       relations: ['exercises'],
       order: { createdAt: 'DESC' },
     });
@@ -182,9 +184,9 @@ export class WorkoutService {
     }));
   }
 
-  async getCompletedWorkouts(user: any) {
+  async getCompletedWorkouts(user: User) {
     const workouts = await this.completedRepo.find({
-      where: { user: { id: user.userId } },
+      where: { user: { id: user.id } },
       relations: ['exercises'],
       order: { completionDate: 'DESC' },
     });
@@ -199,9 +201,9 @@ export class WorkoutService {
     }));
   }
 
-  async getPlannedWorkoutById(user: any, workoutId: string) {
+  async getPlannedWorkoutById(user: User, workoutId: string) {
     const workout = await this.plannedRepo.findOne({
-      where: { id: workoutId, user: { id: user.userId } },
+      where: { id: workoutId, user: { id: user.id } },
       relations: ['exercises'],
     });
 
@@ -212,9 +214,9 @@ export class WorkoutService {
     };
   }
 
-  async getCompletedWorkoutById(user: any, workoutId: string) {
+  async getCompletedWorkoutById(user: User, workoutId: string) {
     const workout = await this.completedRepo.findOne({
-      where: { id: workoutId, user: { id: user.userId } },
+      where: { id: workoutId, user: { id: user.id } },
       relations: ['exercises'],
     });
 
@@ -225,12 +227,9 @@ export class WorkoutService {
     };
   }
 
-  async deletePlannedWorkout(user: any, workoutId: string) {
+  async deletePlannedWorkout(user: User, workoutId: string) {
     const workout = await this.plannedRepo.findOne({
-      where: {
-        id: workoutId,
-        user: { id: user.userId },
-      },
+      where: { id: workoutId, user: { id: user.id } },
     });
 
     if (!workout) throw new NotFoundException('Planned workout not found');
@@ -238,12 +237,9 @@ export class WorkoutService {
     return { message: 'Planned workout deleted successfully' };
   }
 
-  async deleteCompletedWorkout(user: any, workoutId: string) {
+  async deleteCompletedWorkout(user: User, workoutId: string) {
     const workout = await this.completedRepo.findOne({
-      where: {
-        id: workoutId,
-        user: { id: user.userId },
-      },
+      where: { id: workoutId, user: { id: user.id } },
     });
 
     if (!workout) throw new NotFoundException('Completed workout not found');
