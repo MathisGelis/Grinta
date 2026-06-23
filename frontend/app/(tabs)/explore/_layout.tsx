@@ -50,6 +50,7 @@ export default function ExploreStack() {
         options={{ headerShown: false, animation: "slide_from_left" }}
       />
       <Stack.Screen name="chat" options={{ headerShown: false }} />
+      <Stack.Screen name="user-profile" options={{ headerShown: false }} />
     </Stack>
   );
 }

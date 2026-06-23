@@ -80,6 +80,12 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
+        name="social"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           tabBarIcon: ({ color, focused }) => (
@@ -118,15 +124,17 @@ function CenterCreateButton({ onPress }: { onPress?: () => void }) {
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       activeOpacity={1}
-      style={styles.centerButtonWrapper} // 👈 important
+      style={styles.centerButtonWrapper}
     >
       <Animated.View
         style={{
           transform: [{ scale: scaleAnim }],
         }}
       >
-        <View style={styles.centerButton}>
-          <Ionicons name="add" size={40} color="white" />
+        <View style={styles.glowRing}>
+          <View style={styles.centerButton}>
+            <Ionicons name="add" size={40} color="white" />
+          </View>
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -162,6 +170,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  glowRing: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: "rgba(123, 92, 240, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: WorkoutTheme.accent.purple,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 10,
+  },
   centerButton: {
     width: 55,
     height: 55,
@@ -169,12 +190,6 @@ const styles = StyleSheet.create({
     backgroundColor: WorkoutTheme.accent.purple,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 0,
-    elevation: 5,
-    shadowColor: WorkoutTheme.accent.purple,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
   },
   centerButtonWrapper: {
     flex: 1,

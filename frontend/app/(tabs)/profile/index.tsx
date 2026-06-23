@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,16 +6,31 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { getItem } from "@/core/services/storage";
 import { TokenService } from "@/services/token.service";
+import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
+import { StatsService } from "@/services/stats.service";
 import { useTranslation } from "@/contexts/LanguageContext";
+
+function formatJoinDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  return `${months[d.getMonth()]} ${d.getFullYear()}`;
+}
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
-  const [userName, setUserName] = useState("Athlete");
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+
 
   const MENU_ITEMS = [
     { id: "edit", label: t.editProfile, icon: "person-outline" as const, route: "/(tabs)/profile/edit-profile" },
@@ -23,11 +38,27 @@ export default function ProfileScreen() {
     { id: "settings", label: t.settings, icon: "settings-outline" as const, route: "/(tabs)/profile/settings" },
   ];
 
-  useEffect(() => {
-    getItem("user_name").then((name) => {
-      if (name) setUserName(name);
-    });
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const me = await UserService.getMe();
+      setUser(me);
+
+      const [profileData, summaryData] = await Promise.all([
+        UserService.getProfile(me.id),
+        StatsService.getSummary("month").catch(() => null),
+      ]);
+      setProfile(profileData);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSignOut = () => {
     Alert.alert(t.signOutConfirmTitle, t.signOutConfirmMsg, [
@@ -43,12 +74,18 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const userName = user?.displayName ?? "Athlete";
   const initials = userName
     .split(" ")
     .map((w) => w[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const joinedDate = user?.createdAt ? formatJoinDate(user.createdAt) : "";
+  const workoutsCount = profile?.workoutsCount ?? 0;
+  const followersCount = profile?.followersCount ?? 0;
+  const followingCount = profile?.followingCount ?? 0;
 
   return (
     <View style={styles.container}>
@@ -61,68 +98,85 @@ export default function ProfileScreen() {
           <Text style={styles.headerTitle}>{t.profile}</Text>
         </View>
 
-        {/* Avatar */}
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarRing}>
-            <View style={styles.avatarInner}>
-              <Text style={styles.avatarInitials}>{initials}</Text>
-            </View>
-          </View>
-          <Text style={styles.userName}>{userName}</Text>
-          <Text style={styles.joinedText}>{t.joined} March 2025</Text>
-        </View>
-
-        {/* Stats row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNum}>12</Text>
-            <Text style={styles.statLabel}>{t.workoutsLabel}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNum}>3,450</Text>
-            <Text style={styles.statLabel}>{t.calories}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNum}>6h 30m</Text>
-            <Text style={styles.statLabel}>{t.active}</Text>
-          </View>
-        </View>
-
-        {/* PRO card */}
-        <TouchableOpacity style={styles.proCard}>
-          <View>
-            <Text style={styles.proTitle}>{t.upgradeToPro}</Text>
-            <Text style={styles.proSub}>{t.unlockAll}</Text>
-          </View>
-          <View style={styles.proBadge}>
-            <MaterialCommunityIcons name="crown" size={18} color="#F59E0B" />
-          </View>
-        </TouchableOpacity>
-
-        {/* Menu */}
-        <View style={styles.menuSection}>
-          {MENU_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.menuItem}
-              onPress={() => item.route && router.push(item.route as any)}
-            >
-              <View style={styles.menuIconWrap}>
-                <Ionicons name={item.icon} size={20} color="#7B5CF0" />
+        {loading ? (
+          <ActivityIndicator size="large" color="#7B5CF0" style={{ marginTop: 60 }} />
+        ) : (
+          <>
+            {/* Avatar */}
+            <View style={styles.avatarSection}>
+              <View style={styles.avatarRing}>
+                <View style={styles.avatarInner}>
+                  <Text style={styles.avatarInitials}>{initials}</Text>
+                </View>
               </View>
-              <Text style={styles.menuLabel}>{item.label}</Text>
-              <Ionicons name="chevron-forward" size={18} color="#555" />
-            </TouchableOpacity>
-          ))}
-        </View>
+              <Text style={styles.userName}>{userName}</Text>
+              {user?.uniqueName ? (
+                <Text style={styles.pseudoText}>@{user.uniqueName}</Text>
+              ) : null}
+              {joinedDate ? (
+                <Text style={styles.joinedText}>{t.joined} {joinedDate}</Text>
+              ) : null}
+            </View>
 
-        {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-          <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
-          <Text style={styles.signOutText}>{t.signOut}</Text>
-        </TouchableOpacity>
+            {/* Stats row */}
+            <View style={styles.statsRow}>
+              <TouchableOpacity
+                style={styles.statItem}
+                onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: user?.id, tab: "followers" } } as any)}
+              >
+                <Text style={styles.statNum}>{followersCount}</Text>
+                <Text style={styles.statLabel}>Followers</Text>
+              </TouchableOpacity>
+              <View style={styles.statDivider} />
+              <TouchableOpacity
+                style={styles.statItem}
+                onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: user?.id, tab: "following" } } as any)}
+              >
+                <Text style={styles.statNum}>{followingCount}</Text>
+                <Text style={styles.statLabel}>Following</Text>
+              </TouchableOpacity>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNum}>{workoutsCount}</Text>
+                <Text style={styles.statLabel}>{t.workoutsLabel}</Text>
+              </View>
+            </View>
+
+            {/* PRO card */}
+            <TouchableOpacity style={styles.proCard}>
+              <View>
+                <Text style={styles.proTitle}>{t.upgradeToPro}</Text>
+                <Text style={styles.proSub}>{t.unlockAll}</Text>
+              </View>
+              <View style={styles.proBadge}>
+                <MaterialCommunityIcons name="crown" size={18} color="#F59E0B" />
+              </View>
+            </TouchableOpacity>
+
+            {/* Menu */}
+            <View style={styles.menuSection}>
+              {MENU_ITEMS.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.menuItem}
+                  onPress={() => item.route && router.push(item.route as any)}
+                >
+                  <View style={styles.menuIconWrap}>
+                    <Ionicons name={item.icon} size={20} color="#7B5CF0" />
+                  </View>
+                  <Text style={styles.menuLabel}>{item.label}</Text>
+                  <Ionicons name="chevron-forward" size={18} color="#555" />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Sign Out */}
+            <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+              <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
+              <Text style={styles.signOutText}>{t.signOut}</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -150,7 +204,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarInitials: { color: "#fff", fontSize: 28, fontWeight: "700" },
-  userName: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 4 },
+  userName: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 2 },
+  pseudoText: { color: "#7B5CF0", fontSize: 14, fontWeight: "500", marginBottom: 4 },
   joinedText: { color: "#888", fontSize: 13 },
 
   statsRow: {

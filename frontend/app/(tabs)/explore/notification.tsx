@@ -1,44 +1,49 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WorkoutTheme } from "@/constants/Colors";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function NotificationsScreen() {
+  const { t } = useTranslation();
+
   return (
-    <SafeAreaView
-      edges={["top", "left", "right"]}
-      style={{ backgroundColor: WorkoutTheme.background }}
-      className="flex-1"
-    >
-      <View
-        className="flex-row items-center justify-between px-4 py-3 border-b"
-        style={{
-          borderBottomColor: WorkoutTheme.backgroundSecondary,
-        }}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#fff" />
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-
-        <Text className="text-lg font-semibold text-white">Notifications</Text>
-
-        <View className="w-7" />
+        <Text style={styles.headerTitle}>{t.notifications}</Text>
+        <View style={{ width: 40 }} />
       </View>
-      <View className="flex-1 flex flex-col items-center justify-center pb-40 gap-1">
-        <Ionicons
-          name="notifications-outline"
-          size={64}
-          color={WorkoutTheme.accent.purple}
-        />
-        <Text className="text-2xl font-bold text-white text-center">
-          Page à venir
-        </Text>
-        <Text className="text-lg text-gray-400 text-center">
-          Cette fonctionnalité sera bientôt disponible
-        </Text>
+
+      <View style={styles.empty}>
+        <Ionicons name="notifications-off-outline" size={48} color="#444" />
+        <Text style={styles.emptyText}>{t.noNotifications}</Text>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#121212" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 64,
+    paddingBottom: 16,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  empty: { alignItems: "center", marginTop: 80, gap: 12 },
+  emptyText: { color: "#555", fontSize: 16 },
+});

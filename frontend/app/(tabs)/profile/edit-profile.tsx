@@ -7,48 +7,82 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { getItem, saveItem } from "@/core/services/storage";
+import { UserService, CurrentUser } from "@/services/user.service";
+import { saveItem } from "@/core/services/storage";
 
 export default function EditProfileScreen() {
-  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [uniqueName, setUniqueName] = useState("");
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    Promise.all([getItem("user_name"), getItem("user_email")]).then(([n, e]) => {
-      if (n) setName(n);
-      if (e) setEmail(e);
-    });
+    UserService.getMe()
+      .then((me) => {
+        setUser(me);
+        setDisplayName(me.displayName);
+        setUniqueName(me.uniqueName);
+        setEmail(me.email);
+      })
+      .catch(() => Alert.alert("Erreur", "Impossible de charger le profil"))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      Alert.alert("Error", "Name cannot be empty");
+    if (!displayName.trim()) {
+      Alert.alert("Erreur", "Le nom ne peut pas être vide");
       return;
     }
-    setLoading(true);
+    if (!uniqueName.trim() || uniqueName.trim().length < 3) {
+      Alert.alert("Erreur", "Le pseudo doit contenir au moins 3 caractères");
+      return;
+    }
+    if (!user) return;
+
+    setSaving(true);
     try {
-      await saveItem("user_name", name.trim());
-      if (email.trim()) await saveItem("user_email", email.trim());
-      Alert.alert("Success", "Profile updated", [
+      const updates: Record<string, string> = {};
+      if (displayName.trim() !== user.displayName) updates.displayName = displayName.trim();
+      if (uniqueName.trim() !== user.uniqueName) updates.uniqueName = uniqueName.trim().toLowerCase();
+      if (email.trim() !== user.email) updates.email = email.trim().toLowerCase();
+
+      if (Object.keys(updates).length === 0) {
+        router.back();
+        return;
+      }
+
+      await UserService.updateProfile(user.id, updates);
+      await saveItem("user_name", displayName.trim());
+      Alert.alert("Succès", "Profil mis à jour", [
         { text: "OK", onPress: () => router.back() },
       ]);
-    } catch {
-      Alert.alert("Error", "Could not save profile");
+    } catch (err: any) {
+      Alert.alert("Erreur", err.message || "Impossible de sauvegarder");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const initials = name
+  const initials = displayName
     .split(" ")
     .map((w) => w[0])
     .join("")
     .toUpperCase()
     .slice(0, 2) || "?";
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#7B5CF0" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -81,15 +115,32 @@ export default function EditProfileScreen() {
         {/* Form */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Name</Text>
+            <Text style={styles.label}>Nom</Text>
             <TextInput
               style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Your name"
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Votre nom"
               placeholderTextColor="#555"
             />
             <View style={styles.underline} />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Pseudo</Text>
+            <View style={styles.pseudoRow}>
+              <Text style={styles.atSign}>@</Text>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                value={uniqueName}
+                onChangeText={(text) => setUniqueName(text.replace(/[^a-zA-Z0-9_]/g, ""))}
+                placeholder="votre_pseudo"
+                placeholderTextColor="#555"
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.underline} />
+            <Text style={styles.hint}>Min. 3 caractères, lettres, chiffres et _ uniquement</Text>
           </View>
 
           <View style={styles.inputGroup}>
@@ -98,7 +149,7 @@ export default function EditProfileScreen() {
               style={styles.input}
               value={email}
               onChangeText={setEmail}
-              placeholder="your@email.com"
+              placeholder="votre@email.com"
               placeholderTextColor="#555"
               autoCapitalize="none"
               keyboardType="email-address"
@@ -111,9 +162,9 @@ export default function EditProfileScreen() {
         <TouchableOpacity
           style={styles.saveBtn}
           onPress={handleSave}
-          disabled={loading}
+          disabled={saving}
         >
-          <Text style={styles.saveBtnText}>{loading ? "Saving..." : "Save Changes"}</Text>
+          <Text style={styles.saveBtnText}>{saving ? "Sauvegarde..." : "Sauvegarder"}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -171,6 +222,18 @@ const styles = StyleSheet.create({
   label: { color: "#7B5CF0", fontSize: 12, marginBottom: 10 },
   input: { color: "#fff", fontSize: 16, paddingVertical: 6 },
   underline: { height: 1, backgroundColor: "#2a2a2a", marginTop: 6 },
+  hint: { color: "#555", fontSize: 11, marginTop: 6 },
+
+  pseudoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  atSign: {
+    color: "#7B5CF0",
+    fontSize: 16,
+    fontWeight: "700",
+    marginRight: 4,
+  },
 
   saveBtn: {
     marginHorizontal: 24,
