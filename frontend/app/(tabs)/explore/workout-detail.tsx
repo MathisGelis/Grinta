@@ -1,8 +1,8 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
-  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,29 +11,17 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { api } from "@/services/api";
+import { TokenService } from "@/services/token.service";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const EXERCISES = [
-  {
-    name: "Simple Warm-Up Exercises",
-    duration: "0:30",
-    image:
-      "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80",
-  },
-  {
-    name: "Stability Training Basics",
-    duration: "1:00",
-    image:
-      "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=80",
-  },
-  {
-    name: "Core Plank Series",
-    duration: "0:45",
-    image:
-      "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&q=80",
-  },
-];
+interface Exercise {
+  id: string;
+  name: string;
+  muscleGroup?: string;
+}
 
 export default function WorkoutDetailScreen() {
   const router = useRouter();
@@ -41,33 +29,54 @@ export default function WorkoutDetailScreen() {
     id: string;
     title: string;
     category: string;
-    image: string;
     duration: string;
     calories: string;
     description: string;
   }>();
 
-  const title = params.title || "Emma's Core Challenge";
-  const category = params.category || "Intermediate";
-  const image =
-    params.image ||
-    "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80";
-  const duration = params.duration || "60 min";
-  const calories = params.calories || "350";
-  const description =
-    params.description ||
-    "Want your body to be healthy. Join our program with directions according to body's goals.";
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const title = params.title || "Workout";
+  const category = params.category || "";
+  const duration = params.duration || "";
+  const calories = params.calories || "";
+  const description = params.description || "";
+
+  useEffect(() => {
+    async function fetchExercises() {
+      try {
+        const token = await TokenService.get();
+        const data = await api.get<Exercise[]>("/exercises", token ?? undefined);
+        setExercises(data);
+      } catch {
+        // silently fail
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchExercises();
+  }, []);
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
-      {/* Hero image */}
+      {/* Hero section */}
       <View style={styles.heroContainer}>
-        <Image source={{ uri: image }} style={styles.heroImage} resizeMode="cover" />
-        {/* Back button */}
+        <View style={styles.heroBg}>
+          <Ionicons name="barbell" size={64} color="#7B5CF033" />
+        </View>
         <SafeAreaView style={styles.backWrapper} edges={["top"]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
         </SafeAreaView>
@@ -79,45 +88,56 @@ export default function WorkoutDetailScreen() {
         contentContainerStyle={styles.sheetContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title & category */}
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.category}>Workouts · {category}</Text>
+        {category ? <Text style={styles.category}>Workouts · {category}</Text> : null}
 
         {/* Stats pills */}
-        <View style={styles.statsRow}>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillText}>▶ {duration}</Text>
+        {(duration || calories) && (
+          <View style={styles.statsRow}>
+            {duration ? (
+              <View style={styles.statPill}>
+                <Text style={styles.statPillText}>▶ {duration}</Text>
+              </View>
+            ) : null}
+            {calories ? (
+              <View style={styles.statPill}>
+                <Text style={styles.statPillText}>🔥 {calories} Cal</Text>
+              </View>
+            ) : null}
           </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillText}>🔥 {calories} Cal</Text>
-          </View>
-        </View>
+        )}
 
-        {/* Description */}
-        <Text style={styles.description}>{description}</Text>
+        {description ? <Text style={styles.description}>{description}</Text> : null}
 
         {/* Exercise list */}
         <Text style={styles.exercisesTitle}>Exercises</Text>
-        {EXERCISES.map((ex, idx) => (
-          <View key={idx} style={styles.exerciseCard}>
-            <Image
-              source={{ uri: ex.image }}
-              style={styles.exerciseThumbnail}
-              resizeMode="cover"
-            />
-            <View style={styles.exerciseInfo}>
-              <Text style={styles.exerciseName}>{ex.name}</Text>
-              <Text style={styles.exerciseDuration}>{ex.duration}</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
+        {loading ? (
+          <ActivityIndicator size="small" color="#7B5CF0" style={{ marginTop: 16 }} />
+        ) : exercises.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Aucun exercice disponible</Text>
           </View>
-        ))}
+        ) : (
+          exercises.map((ex) => (
+            <View key={ex.id} style={styles.exerciseCard}>
+              <View style={styles.exerciseIcon}>
+                <Ionicons name="fitness-outline" size={24} color="#7B5CF0" />
+              </View>
+              <View style={styles.exerciseInfo}>
+                <Text style={styles.exerciseName}>{ex.name}</Text>
+                {ex.muscleGroup && (
+                  <Text style={styles.exerciseDuration}>{ex.muscleGroup}</Text>
+                )}
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </View>
+          ))
+        )}
 
-        {/* Spacer so content clears the fixed button */}
         <View style={{ height: 90 }} />
       </ScrollView>
 
-      {/* Start Workout button — fixed at bottom */}
+      {/* Start Workout button */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.startButton}>
           <Text style={styles.startButtonText}>Start Workout</Text>
@@ -134,12 +154,14 @@ const styles = StyleSheet.create({
   },
 
   heroContainer: {
-    height: SCREEN_HEIGHT * 0.45,
+    height: SCREEN_HEIGHT * 0.3,
     position: "relative",
+    backgroundColor: "#1a1a1a",
   },
-  heroImage: {
-    width: "100%",
-    height: "100%",
+  heroBg: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   backWrapper: {
     position: "absolute",
@@ -224,13 +246,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#2a2a2a",
     borderRadius: 14,
-    padding: 10,
+    padding: 14,
     marginBottom: 10,
   },
-  exerciseThumbnail: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
+  exerciseIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#2a1f4a",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   exerciseInfo: {
@@ -252,6 +277,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     paddingLeft: 8,
   },
+
+  emptyCard: {
+    backgroundColor: "#2a2a2a",
+    borderRadius: 14,
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: { color: "#555", fontSize: 14 },
 
   bottomBar: {
     position: "absolute",

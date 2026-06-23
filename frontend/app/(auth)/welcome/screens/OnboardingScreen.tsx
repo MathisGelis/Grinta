@@ -8,7 +8,7 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
-import { slides } from "../data/slides";
+import { slides } from "@/constants/slides";
 import OnboardingSlide from "../components/OnboardingSlide";
 import { router } from "expo-router";
 
