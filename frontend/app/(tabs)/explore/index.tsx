@@ -1,95 +1,27 @@
-import { getItem } from "@/core/services/storage";
+import { getItem, saveItem } from "@/core/services/storage";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
-  Image,
+  ActivityIndicator,
+  Alert,
   Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
-const FEATURED_WORKOUT = {
-  id: "1",
-  title: "Emma&#39;s Core Challenge",
-  category: "Intermediate",
-  image:
-    "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80",
-  duration: "60 min",
-  calories: 350,
-  description:
-    "Want your body to be healthy. Join our program with directions according to body's goals.",
-  exercises: [
-    { name: "Simple Warm-Up Exercises", duration: "0:30" },
-    { name: "Stability Training Basics", duration: "1:00" },
-    { name: "Core Plank Series", duration: "0:45" },
-  ],
-};
 
-const BEGINNER_WORKOUTS = [
-  {
-    id: "2",
-    title: "Lea's Cardio Starter",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
-    duration: "45 min",
-    calories: 280,
-    isPro: false,
-  },
-  {
-    id: "3",
-    title: "Alex's HIIT Power Series",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&q=80",
-    duration: "30 min",
-    calories: 320,
-    isPro: false,
-  },
-  {
-    id: "4",
-    title: "Luca's Leg Day Inferno",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1434608519344-49d77a124f62?w=800&q=80",
-    duration: "50 min",
-    calories: 400,
-    isPro: true,
-  },
-  {
-    id: "5",
-    title: "Maya's Endurance Burn",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=800&q=80",
-    duration: "40 min",
-    calories: 300,
-    isPro: false,
-  },
-];
-
-const NEW_WORKOUTS = [
-  {
-    id: "6",
-    title: "Chris Power Lift",
-    category: "Advance",
-    image:
-      "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&q=80",
-  },
-  {
-    id: "7",
-    title: "Yoga Flow Morning",
-    category: "Beginner",
-    image:
-      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80",
-  },
-];
+import { ProgrammeService } from "@/services/programme.service";
+import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
+import { ConnectionsService, UserListItem, FollowRequest } from "@/services/connections.service";
+import { UserService } from "@/services/user.service";
+import { Ionicons } from "@expo/vector-icons";
+import { WorkoutTheme } from "@/constants/Colors";
 
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
@@ -98,31 +30,31 @@ function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   return "goodEvening";
 }
 
-type Workout = {
+type Programme = {
   id: string;
   title: string;
-  category: string;
-  image: string;
-  duration?: string;
-  calories?: number;
-  isPro?: boolean;
   description?: string;
-  exercises?: { name: string; duration: string }[];
+  workouts: any[];
 };
 
 export default function ExploreScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [userName, setUserName] = useState("there");
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [userName, setUserName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [programmes, setProgrammes] = useState<Programme[]>([]);
+  const [recentWorkouts, setRecentWorkouts] = useState<CompletedWorkout[]>([]);
+  const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const filters = useMemo(() => [t.beginner, t.intermediate, t.advance], [t.beginner, t.intermediate, t.advance]);
-  const [activeFilter, setActiveFilter] = useState(filters[0]);
-
-  React.useEffect(() => {
-    setActiveFilter(filters[0]);
-  }, [filters]);
+  const [userId, setUserId] = useState("");
+  const [, setRecommendations] = useState<UserListItem[]>([]);
+  const [requests, setRequests] = useState<FollowRequest[]>([]);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserListItem[]>([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     getItem("user_name").then((name) => {
@@ -130,188 +62,327 @@ export default function ExploreScreen() {
     });
   }, []);
 
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const me = await UserService.getMe();
+      setUserId(me.id);
+      if (me.displayName) {
+        setUserName(me.displayName);
+        saveItem("user_name", me.displayName);
+      }
+
+      const [programmesData, workoutsData, recs, followingData, requestsData] = await Promise.all([
+        ProgrammeService.getAll().catch(() => []),
+        WorkoutService.getCompleted().catch(() => []),
+        ConnectionsService.getRecommendations().catch(() => []),
+        ConnectionsService.getFollowing(me.id).catch(() => []),
+        ConnectionsService.getRequests().catch(() => []),
+      ]);
+      setProgrammes(programmesData);
+      setRecentWorkouts(workoutsData.slice(0, 3));
+      setRecommendations(recs);
+      setFollowingIds(new Set(followingData.map((u) => u.id)));
+      setRequests(requestsData);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const results = await ConnectionsService.searchUsers(searchQuery.trim());
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  const handleFollow = async (targetId: string) => {
+    try {
+      const result = await ConnectionsService.follow(targetId);
+      if (result.status === "FOLLOWING") {
+        setFollowingIds((prev) => new Set([...prev, targetId]));
+      } else if (result.status === "REQUEST_SENT") {
+        setPendingIds((prev) => new Set([...prev, targetId]));
+      }
+    } catch (err: any) {
+      Alert.alert("Erreur", err.message || "Impossible de follow");
+    }
+  };
+
+  const handleUnfollow = async (targetId: string) => {
+    try {
+      await ConnectionsService.unfollow(targetId);
+      setFollowingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(targetId);
+        return next;
+      });
+    } catch (err: any) {
+      Alert.alert("Erreur", err.message || "Impossible d'unfollow");
+    }
+  };
+
+  const handleAccept = async (requestId: string) => {
+    try {
+      await ConnectionsService.acceptRequest(requestId);
+      setRequests((prev) => prev.filter((r) => r.request_id !== requestId));
+    } catch (err: any) {
+      Alert.alert("Erreur", err.message || "Erreur");
+    }
+  };
+
+  const handleReject = async (requestId: string) => {
+    try {
+      await ConnectionsService.rejectRequest(requestId);
+      setRequests((prev) => prev.filter((r) => r.request_id !== requestId));
+    } catch (err: any) {
+      Alert.alert("Erreur", err.message || "Erreur");
+    }
+  };
+
   function getFormattedDate(): string {
     const now = new Date();
     return `${t.days[(now.getDay() + 6) % 7]} ${now.getDate()} ${t.months[now.getMonth()].slice(0, 3)}`;
   }
 
-  function openWorkoutModal(workout: Workout) {
-    setSelectedWorkout(workout);
+  function openProgrammeModal(programme: Programme) {
+    setSelectedProgramme(programme);
     setModalVisible(true);
   }
 
   function closeModal() {
     setModalVisible(false);
-    setSelectedWorkout(null);
+    setSelectedProgramme(null);
   }
 
-  function handleUseWorkout() {
-    if (!selectedWorkout) return;
-    closeModal();
-    router.push({
-      pathname: "/(tabs)/explore/workout-detail",
-      params: {
-        id: selectedWorkout.id,
-        title: selectedWorkout.title,
-        category: selectedWorkout.category,
-        image: selectedWorkout.image,
-        duration: selectedWorkout.duration ?? "",
-        calories: selectedWorkout.calories?.toString() ?? "",
-        description: selectedWorkout.description ?? "",
-      },
-    });
-  }
 
-  function handleFeaturedTap() {
-    router.push({
-      pathname: "/(tabs)/explore/workout-detail",
-      params: {
-        id: FEATURED_WORKOUT.id,
-        title: FEATURED_WORKOUT.title,
-        category: FEATURED_WORKOUT.category,
-        image: FEATURED_WORKOUT.image,
-        duration: FEATURED_WORKOUT.duration,
-        calories: FEATURED_WORKOUT.calories.toString(),
-        description: FEATURED_WORKOUT.description,
-      },
-    });
-  }
+  const renderUserCard = (u: UserListItem) => (
+    <View key={u.id} style={styles.userCard}>
+      <TouchableOpacity
+        style={styles.userInfo}
+        onPress={() => router.push({ pathname: "/(tabs)/explore/user-profile", params: { userId: u.id } } as any)}
+      >
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {u.displayName?.[0]?.toUpperCase() ?? "?"}
+          </Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.displayName}>{u.displayName}</Text>
+          <Text style={styles.uniqueName}>@{u.uniqueName}</Text>
+        </View>
+      </TouchableOpacity>
+      {u.id !== userId && (
+        followingIds.has(u.id) ? (
+          <TouchableOpacity style={styles.followingBtn} onPress={() => handleUnfollow(u.id)}>
+            <Text style={styles.followingBtnText}>Suivi</Text>
+          </TouchableOpacity>
+        ) : pendingIds.has(u.id) ? (
+          <View style={styles.pendingBtn}>
+            <Text style={styles.pendingBtnText}>Envoyé</Text>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.followBtn} onPress={() => handleFollow(u.id)}>
+            <Text style={styles.followBtnText}>Suivre</Text>
+          </TouchableOpacity>
+        )
+      )}
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <View
+      style={{
+        backgroundColor: WorkoutTheme.background,
+        flex: 1,
+      }}
+    >
+      <StatusBar barStyle="light-content" />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header greeting ── */}
+        {/* Header greeting */}
         <View style={styles.headerRow}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.helloText}>
-              {t.hello} {userName},
+              {t.hello}{userName ? ` ${userName}` : ""}
             </Text>
-            <Text style={styles.greetingText}>{t[getGreetingKey()]} 👋</Text>
+            <Text style={styles.greetingText}>{t[getGreetingKey()]}</Text>
           </View>
-        </View>
-
-        {/* ── Today's community favorite ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.todaysCommunityFavorite}</Text>
-          <Text style={styles.dateText}>{getFormattedDate()}</Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.featuredCard}
-          activeOpacity={0.9}
-          onPress={handleFeaturedTap}
-        >
-          <Image
-            source={{ uri: FEATURED_WORKOUT.image }}
-            style={styles.featuredImage}
-            resizeMode="cover"
-          />
-          <View style={styles.featuredOverlay}>
-            <Text style={styles.featuredTag}>{t.communityTopPick}</Text>
-            <Text style={styles.featuredSubtitle}>
-              | Emma&apos;s Core Challenge
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* ── Workout Categories ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.workoutCategories}</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>{t.seeAll}</Text>
+          <TouchableOpacity
+            style={styles.socialIconBtn}
+            onPress={() => router.push("/(tabs)/social" as any)}
+          >
+            <Ionicons name="people-outline" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Filter pills */}
-        <View style={styles.pillRow}>
-          {filters.map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.pill, activeFilter === f && styles.pillActive]}
-              onPress={() => setActiveFilter(f)}
-            >
-              <Text
-                style={[
-                  styles.pillText,
-                  activeFilter === f && styles.pillTextActive,
-                ]}
-              >
-                {f}
-              </Text>
+        {/* Search users */}
+        <View style={styles.searchWrap}>
+          <Ionicons name="search" size={18} color="#555" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Rechercher un utilisateur..."
+            placeholderTextColor="#555"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={18} color="#555" />
             </TouchableOpacity>
-          ))}
+          )}
         </View>
 
-        {/* Category workout cards */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScroll}
-        >
-          {BEGINNER_WORKOUTS.map((w) => (
-            <TouchableOpacity
-              key={w.id}
-              style={styles.categoryCard}
-              activeOpacity={0.85}
-              onPress={() => openWorkoutModal(w)}
-            >
-              <Image
-                source={{ uri: w.image }}
-                style={styles.categoryCardImage}
-                resizeMode="cover"
-              />
-              <View style={styles.categoryCardOverlay}>
-                <Text style={styles.categoryCardTitle} numberOfLines={2}>
-                  {w.title}
-                </Text>
-                <Text style={styles.categoryCardSub}>
-                  | {t.workoutsLabel2} · {w.category}
-                </Text>
+        {/* Search results */}
+        {searchQuery.trim() ? (
+          <View style={{ paddingHorizontal: 16 }}>
+            <Text style={styles.socialSectionTitle}>Résultats</Text>
+            {searching ? (
+              <ActivityIndicator size="small" color="#7B5CF0" style={{ marginTop: 16 }} />
+            ) : searchResults.length === 0 ? (
+              <View style={styles.socialEmpty}>
+                <Ionicons name="search-outline" size={32} color="#444" />
+                <Text style={styles.socialEmptyText}>Aucun résultat</Text>
               </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+            ) : (
+              searchResults.map(renderUserCard)
+            )}
+          </View>
+        ) : (
+          <>
+            {/* Date */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t.todaysCommunityFavorite}</Text>
+              <Text style={styles.dateText}>{getFormattedDate()}</Text>
+            </View>
 
-        {/* ── New Workouts ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
-        </View>
+            {loading ? (
+              <ActivityIndicator size="large" color="#7B5CF0" style={{ marginTop: 40 }} />
+            ) : (
+              <>
+                {/* Pending follow requests */}
+                {requests.length > 0 && (
+                  <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+                    <Text style={styles.socialSectionTitle}>Demandes ({requests.length})</Text>
+                    {requests.map((req) => (
+                      <View key={req.request_id} style={styles.userCard}>
+                        <TouchableOpacity
+                          style={styles.userInfo}
+                          onPress={() => router.push({ pathname: "/(tabs)/explore/user-profile", params: { userId: req.user_id } } as any)}
+                        >
+                          <View style={styles.avatar}>
+                            <Text style={styles.avatarText}>
+                              {req.user_displayName?.[0]?.toUpperCase() ?? "?"}
+                            </Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.displayName}>{req.user_displayName}</Text>
+                            <Text style={styles.uniqueName}>@{req.user_uniqueName}</Text>
+                          </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(req.request_id)}>
+                          <Ionicons name="checkmark" size={16} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(req.request_id)}>
+                          <Ionicons name="close" size={16} color="#fff" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScroll}
-        >
-          {NEW_WORKOUTS.map((w) => (
-            <TouchableOpacity
-              key={w.id}
-              style={styles.newCard}
-              activeOpacity={0.85}
-              onPress={() => openWorkoutModal(w)}
-            >
-              <Image
-                source={{ uri: w.image }}
-                style={styles.newCardImage}
-                resizeMode="cover"
-              />
-              <View style={styles.newCardOverlay}>
-                <Text style={styles.newCardTitle} numberOfLines={2}>
-                  {w.title}
-                </Text>
-                <Text style={styles.categoryCardSub}>| {w.category}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                {/* Programmes */}
+                {programmes.length > 0 ? (
+                  <>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionTitle}>{t.workoutCategories}</Text>
+                    </View>
+
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.horizontalScroll}
+                    >
+                      {programmes.map((p) => (
+                        <TouchableOpacity
+                          key={p.id}
+                          style={styles.programmeCard}
+                          activeOpacity={0.85}
+                          onPress={() => openProgrammeModal(p)}
+                        >
+                          <View style={styles.programmeIconWrap}>
+                            <Ionicons name="barbell-outline" size={28} color="#7B5CF0" />
+                          </View>
+                          <Text style={styles.programmeTitle} numberOfLines={2}>
+                            {p.title}
+                          </Text>
+                          <Text style={styles.programmeSub}>
+                            {p.workouts?.length ?? 0} workouts
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                ) : (
+                  <View style={styles.emptyCard}>
+                    <Ionicons name="barbell-outline" size={40} color="#444" />
+                    <Text style={styles.emptyText}>Aucun programme disponible</Text>
+                    <Text style={styles.emptySubText}>Créez votre premier programme pour commencer</Text>
+                  </View>
+                )}
+
+                {/* Recent completed workouts */}
+                {recentWorkouts.length > 0 && (
+                  <>
+                    <View style={[styles.sectionHeader, { marginTop: 16 }]}>
+                      <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
+                    </View>
+
+                    {recentWorkouts.map((w) => (
+                      <View key={w.id} style={styles.recentCard}>
+                        <View style={styles.recentIconWrap}>
+                          <Ionicons name="checkmark-circle" size={24} color="#34D399" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.recentTitle}>{w.title}</Text>
+                          <Text style={styles.recentSub}>
+                            {Math.round(w.totalDurationSeconds / 60)} min
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
 
-      {/* ── Workout Modal ── */}
+      {/* Programme Modal */}
       <Modal
         visible={modalVisible}
         transparent
@@ -320,72 +391,45 @@ export default function ExploreScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalSheet}>
-            {selectedWorkout && selectedWorkout.isPro ? (
-              <>
-                <Image
-                  source={{ uri: selectedWorkout.image }}
-                  style={styles.modalImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.modalBody}>
-                  <Text style={styles.modalTitle}>{t.upgradeToPremium}</Text>
-                  <Text style={styles.modalWorkoutTitle}>
-                    {selectedWorkout.title}
-                  </Text>
+            {selectedProgramme && (
+              <View style={styles.modalBody}>
+                <Text style={styles.modalWorkoutTitle}>
+                  {selectedProgramme.title}
+                </Text>
+                {selectedProgramme.description && (
                   <Text style={styles.modalDescription}>
-                    {t.subscribePremium}
+                    {selectedProgramme.description}
                   </Text>
-                  <TouchableOpacity style={styles.premiumButton}>
-                    <Text style={styles.premiumButtonText}>{t.bePremium}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={closeModal}
-                    style={styles.cancelLink}
-                  >
-                    <Text style={styles.cancelText}>{t.cancel2}</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : selectedWorkout ? (
-              <>
-                <Image
-                  source={{ uri: selectedWorkout.image }}
-                  style={styles.modalImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.modalBody}>
-                  <Text style={styles.modalWorkoutTitle}>
-                    {selectedWorkout.title}
-                  </Text>
-                  <Text style={styles.modalCategory}>
-                    {selectedWorkout.category}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.useButton}
-                    onPress={handleUseWorkout}
-                  >
-                    <Text style={styles.useButtonText}>{t.useIt}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={closeModal}
-                    style={styles.cancelLink}
-                  >
-                    <Text style={styles.cancelText}>{t.cancel2}</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : null}
+                )}
+                <Text style={styles.modalCategory}>
+                  {selectedProgramme.workouts?.length ?? 0} workouts
+                </Text>
+                <TouchableOpacity
+                  style={styles.useButton}
+                  onPress={closeModal}
+                >
+                  <Text style={styles.useButtonText}>OK</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={closeModal}
+                  style={styles.cancelLink}
+                >
+                  <Text style={styles.cancelText}>{t.cancel2}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#121212",
+    paddingTop: 8,
+    backgroundColor: WorkoutTheme.background,
   },
   scroll: {
     flex: 1,
@@ -395,20 +439,43 @@ const styles = StyleSheet.create({
   },
 
   headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 16,
+    paddingBottom: 12,
+  },
+  socialIconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
   },
   helloText: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
   },
   greetingText: {
     fontSize: 15,
-    color: "#aaaaaa",
+    color: WorkoutTheme.text.secondary,
     marginTop: 2,
   },
+
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    gap: 8,
+  },
+  searchInput: { flex: 1, color: "#fff", fontSize: 15 },
 
   sectionHeader: {
     flexDirection: "row",
@@ -421,136 +488,160 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
   },
   dateText: {
     fontSize: 13,
-    color: "#7B5CF0",
+    color: WorkoutTheme.accent.purple,
     fontWeight: "600",
   },
-  seeAll: {
+
+  socialSectionTitle: {
+    color: "#888",
     fontSize: 13,
-    color: "#7B5CF0",
     fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 10,
+    marginTop: 4,
   },
 
-  featuredCard: {
-    marginHorizontal: 16,
-    height: 200,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 24,
-  },
-  featuredImage: {
-    width: "100%",
-    height: "100%",
-  },
-  featuredOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  featuredTag: {
-    color: "#ffffff",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-  featuredSubtitle: {
-    color: "#cccccc",
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  pillRow: {
+  userCard: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    marginBottom: 14,
-    gap: 8,
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    gap: 10,
   },
-  pill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: 10,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#333333",
+    backgroundColor: "#2a1f4a",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  pillActive: {
+  avatarText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  displayName: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  uniqueName: { color: "#888", fontSize: 12, marginTop: 1 },
+
+  followBtn: {
     backgroundColor: "#7B5CF0",
-    borderColor: "#7B5CF0",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
-  pillText: {
-    color: "#888888",
-    fontSize: 13,
-    fontWeight: "600",
+  followBtnText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  followingBtn: {
+    backgroundColor: "transparent",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#333",
   },
-  pillTextActive: {
-    color: "#ffffff",
+  followingBtnText: { color: "#888", fontSize: 12, fontWeight: "600" },
+  pendingBtn: {
+    backgroundColor: "transparent",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#333",
   },
+  pendingBtnText: { color: "#555", fontSize: 12, fontWeight: "600" },
+
+  acceptBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#34D399",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rejectBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#FF6B6B",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  socialEmpty: { alignItems: "center", marginTop: 24, gap: 8 },
+  socialEmptyText: { color: "#555", fontSize: 14 },
 
   horizontalScroll: {
     paddingHorizontal: 16,
     paddingBottom: 4,
   },
 
-  categoryCard: {
-    width: 220,
-    height: 160,
+  programmeCard: {
+    width: 180,
+    backgroundColor: "#1a1a1a",
     borderRadius: 16,
-    overflow: "hidden",
+    padding: 16,
     marginRight: 12,
   },
-  categoryCardImage: {
-    width: "100%",
-    height: "100%",
+  programmeIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#2a1f4a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
-  categoryCardOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 10,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  categoryCardTitle: {
+  programmeTitle: {
     color: "#ffffff",
     fontWeight: "bold",
-    fontSize: 13,
+    fontSize: 14,
+    marginBottom: 4,
   },
-  categoryCardSub: {
-    color: "#aaaaaa",
-    fontSize: 11,
-    marginTop: 2,
-  },
-
-  newCard: {
-    width: 160,
-    height: 120,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginRight: 12,
-  },
-  newCardImage: {
-    width: "100%",
-    height: "100%",
-  },
-  newCardOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 8,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  newCardTitle: {
-    color: "#ffffff",
-    fontWeight: "bold",
+  programmeSub: {
+    color: "#888",
     fontSize: 12,
   },
+
+  emptyCard: {
+    marginHorizontal: 16,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    padding: 32,
+    alignItems: "center",
+    gap: 8,
+  },
+  emptyText: { color: "#888", fontSize: 16, fontWeight: "600" },
+  emptySubText: { color: "#555", fontSize: 13, textAlign: "center" },
+
+  recentCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    gap: 12,
+  },
+  recentIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#1a2f1a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recentTitle: { color: "#fff", fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  recentSub: { color: "#888", fontSize: 12 },
 
   modalBackdrop: {
     flex: 1,
@@ -558,45 +649,35 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalSheet: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: WorkoutTheme.backgroundSecondary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",
-  },
-  modalImage: {
-    width: "100%",
-    height: 200,
   },
   modalBody: {
     padding: 20,
     alignItems: "center",
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#ffffff",
-    marginBottom: 6,
-  },
   modalWorkoutTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: WorkoutTheme.text.primary,
     textAlign: "center",
     marginBottom: 6,
   },
   modalCategory: {
     fontSize: 14,
-    color: "#7B5CF0",
+    color: WorkoutTheme.accent.purple,
     marginBottom: 20,
   },
   modalDescription: {
     fontSize: 14,
-    color: "#aaaaaa",
+    color: WorkoutTheme.text.secondary,
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 12,
   },
   useButton: {
-    backgroundColor: "#7B5CF0",
+    backgroundColor: WorkoutTheme.accent.purple,
     paddingHorizontal: 48,
     paddingVertical: 14,
     borderRadius: 30,
@@ -605,21 +686,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   useButtonText: {
-    color: "#ffffff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  premiumButton: {
-    backgroundColor: "#F0B429",
-    paddingHorizontal: 48,
-    paddingVertical: 14,
-    borderRadius: 30,
-    marginBottom: 12,
-    width: "100%",
-    alignItems: "center",
-  },
-  premiumButtonText: {
-    color: "#121212",
+    color: WorkoutTheme.text.primary,
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -628,7 +695,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cancelText: {
-    color: "#888888",
+    color: WorkoutTheme.text.secondary,
     fontSize: 14,
   },
 });
