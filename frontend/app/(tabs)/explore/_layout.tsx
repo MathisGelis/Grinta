@@ -28,6 +28,13 @@ function ExploreHeader() {
 
         <TouchableOpacity
           className="w-10 h-10 items-center justify-center bg-[#2e2e2e] rounded-xl"
+          onPress={() => router.push("/(tabs)/social" as any)}
+        >
+          <Ionicons name="people-outline" size={20} color="#ffffff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="w-10 h-10 items-center justify-center bg-[#2e2e2e] rounded-xl"
           onPress={() => router.push("/(tabs)/explore/chat")}
         >
           <Ionicons name="paper-plane-outline" size={20} color="#ffffff" />

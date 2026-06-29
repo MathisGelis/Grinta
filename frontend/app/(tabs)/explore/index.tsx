@@ -10,7 +10,6 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -18,7 +17,7 @@ import {
 
 import { ProgrammeService } from "@/services/programme.service";
 import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
-import { ConnectionsService, UserListItem, FollowRequest } from "@/services/connections.service";
+import { ConnectionsService, FollowRequest } from "@/services/connections.service";
 import { UserService } from "@/services/user.service";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
@@ -48,13 +47,7 @@ export default function ExploreScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const [userId, setUserId] = useState("");
-  const [, setRecommendations] = useState<UserListItem[]>([]);
   const [requests, setRequests] = useState<FollowRequest[]>([]);
-  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<UserListItem[]>([]);
-  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     getItem("user_name").then((name) => {
@@ -72,17 +65,13 @@ export default function ExploreScreen() {
         saveItem("user_name", me.displayName);
       }
 
-      const [programmesData, workoutsData, recs, followingData, requestsData] = await Promise.all([
+      const [programmesData, workoutsData, requestsData] = await Promise.all([
         ProgrammeService.getAll().catch(() => []),
         WorkoutService.getCompleted().catch(() => []),
-        ConnectionsService.getRecommendations().catch(() => []),
-        ConnectionsService.getFollowing(me.id).catch(() => []),
         ConnectionsService.getRequests().catch(() => []),
       ]);
       setProgrammes(programmesData);
       setRecentWorkouts(workoutsData.slice(0, 3));
-      setRecommendations(recs);
-      setFollowingIds(new Set(followingData.map((u) => u.id)));
       setRequests(requestsData);
     } catch {
       // silently fail
@@ -94,51 +83,6 @@ export default function ExploreScreen() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const timeout = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const results = await ConnectionsService.searchUsers(searchQuery.trim());
-        setSearchResults(results);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 400);
-    return () => clearTimeout(timeout);
-  }, [searchQuery]);
-
-  const handleFollow = async (targetId: string) => {
-    try {
-      const result = await ConnectionsService.follow(targetId);
-      if (result.status === "FOLLOWING") {
-        setFollowingIds((prev) => new Set([...prev, targetId]));
-      } else if (result.status === "REQUEST_SENT") {
-        setPendingIds((prev) => new Set([...prev, targetId]));
-      }
-    } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Impossible de follow");
-    }
-  };
-
-  const handleUnfollow = async (targetId: string) => {
-    try {
-      await ConnectionsService.unfollow(targetId);
-      setFollowingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(targetId);
-        return next;
-      });
-    } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Impossible d'unfollow");
-    }
-  };
 
   const handleAccept = async (requestId: string) => {
     try {
@@ -174,40 +118,6 @@ export default function ExploreScreen() {
   }
 
 
-  const renderUserCard = (u: UserListItem) => (
-    <View key={u.id} style={styles.userCard}>
-      <TouchableOpacity
-        style={styles.userInfo}
-        onPress={() => router.push({ pathname: "/(tabs)/explore/user-profile", params: { userId: u.id } } as any)}
-      >
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {u.displayName?.[0]?.toUpperCase() ?? "?"}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.displayName}>{u.displayName}</Text>
-          <Text style={styles.uniqueName}>@{u.uniqueName}</Text>
-        </View>
-      </TouchableOpacity>
-      {u.id !== userId && (
-        followingIds.has(u.id) ? (
-          <TouchableOpacity style={styles.followingBtn} onPress={() => handleUnfollow(u.id)}>
-            <Text style={styles.followingBtnText}>Suivi</Text>
-          </TouchableOpacity>
-        ) : pendingIds.has(u.id) ? (
-          <View style={styles.pendingBtn}>
-            <Text style={styles.pendingBtnText}>Envoyé</Text>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.followBtn} onPress={() => handleFollow(u.id)}>
-            <Text style={styles.followBtnText}>Suivre</Text>
-          </TouchableOpacity>
-        )
-      )}
-    </View>
-  );
-
   return (
     <View
       style={{
@@ -230,51 +140,10 @@ export default function ExploreScreen() {
             </Text>
             <Text style={styles.greetingText}>{t[getGreetingKey()]}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.socialIconBtn}
-            onPress={() => router.push("/(tabs)/social" as any)}
-          >
-            <Ionicons name="people-outline" size={22} color="#fff" />
-          </TouchableOpacity>
         </View>
 
-        {/* Search users */}
-        <View style={styles.searchWrap}>
-          <Ionicons name="search" size={18} color="#555" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Rechercher un utilisateur..."
-            placeholderTextColor="#555"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Ionicons name="close-circle" size={18} color="#555" />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Search results */}
-        {searchQuery.trim() ? (
-          <View style={{ paddingHorizontal: 16 }}>
-            <Text style={styles.socialSectionTitle}>Résultats</Text>
-            {searching ? (
-              <ActivityIndicator size="small" color="#7B5CF0" style={{ marginTop: 16 }} />
-            ) : searchResults.length === 0 ? (
-              <View style={styles.socialEmpty}>
-                <Ionicons name="search-outline" size={32} color="#444" />
-                <Text style={styles.socialEmptyText}>Aucun résultat</Text>
-              </View>
-            ) : (
-              searchResults.map(renderUserCard)
-            )}
-          </View>
-        ) : (
-          <>
-            {/* Date */}
-            <View style={styles.sectionHeader}>
+        {/* Date */}
+        <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>{t.todaysCommunityFavorite}</Text>
               <Text style={styles.dateText}>{getFormattedDate()}</Text>
             </View>
@@ -378,8 +247,6 @@ export default function ExploreScreen() {
                 )}
               </>
             )}
-          </>
-        )}
       </ScrollView>
 
       {/* Programme Modal */}
@@ -445,14 +312,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
   },
-  socialIconBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   helloText: {
     fontSize: 22,
     fontWeight: "bold",
@@ -463,19 +322,6 @@ const styles = StyleSheet.create({
     color: WorkoutTheme.text.secondary,
     marginTop: 2,
   },
-
-  searchWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 16,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-    gap: 8,
-  },
-  searchInput: { flex: 1, color: "#fff", fontSize: 15 },
 
   sectionHeader: {
     flexDirection: "row",
@@ -533,32 +379,6 @@ const styles = StyleSheet.create({
   displayName: { color: "#fff", fontSize: 14, fontWeight: "600" },
   uniqueName: { color: "#888", fontSize: 12, marginTop: 1 },
 
-  followBtn: {
-    backgroundColor: "#7B5CF0",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  followBtnText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  followingBtn: {
-    backgroundColor: "transparent",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  followingBtnText: { color: "#888", fontSize: 12, fontWeight: "600" },
-  pendingBtn: {
-    backgroundColor: "transparent",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  pendingBtnText: { color: "#555", fontSize: 12, fontWeight: "600" },
-
   acceptBtn: {
     width: 30,
     height: 30,
@@ -575,9 +395,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  socialEmpty: { alignItems: "center", marginTop: 24, gap: 8 },
-  socialEmptyText: { color: "#555", fontSize: 14 },
 
   horizontalScroll: {
     paddingHorizontal: 16,

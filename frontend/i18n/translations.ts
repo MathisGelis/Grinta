@@ -87,6 +87,7 @@ export interface Strings {
   myWorkouts: string;
   sessionCount: string;
   sessions: string;
+  programmes: string;
   exercises: string;
   loadingWorkouts: string;
   oops: string;
@@ -199,6 +200,7 @@ const en: Strings = {
   myWorkouts: "My Workouts",
   sessionCount: "session",
   sessions: "Sessions",
+  programmes: "Programs",
   exercises: "Exercises",
   loadingWorkouts: "Loading workouts...",
   oops: "Oops!",
@@ -310,6 +312,7 @@ const fr: Strings = {
   myWorkouts: "Mes séances",
   sessionCount: "séance",
   sessions: "Séances",
+  programmes: "Programmes",
   exercises: "Exercices",
   loadingWorkouts: "Chargement des séances...",
   oops: "Oups !",
@@ -421,6 +424,7 @@ const es: Strings = {
   myWorkouts: "Mis entrenamientos",
   sessionCount: "sesión",
   sessions: "Sesiones",
+  programmes: "Programas",
   exercises: "Ejercicios",
   loadingWorkouts: "Cargando entrenamientos...",
   oops: "¡Ups!",
@@ -532,6 +536,7 @@ const de: Strings = {
   myWorkouts: "Meine Trainings",
   sessionCount: "Training",
   sessions: "Trainings",
+  programmes: "Programme",
   exercises: "Übungen",
   loadingWorkouts: "Trainings werden geladen...",
   oops: "Hoppla!",
@@ -643,6 +648,7 @@ const it: Strings = {
   myWorkouts: "I miei allenamenti",
   sessionCount: "sessione",
   sessions: "Sessioni",
+  programmes: "Programmi",
   exercises: "Esercizi",
   loadingWorkouts: "Caricamento allenamenti...",
   oops: "Ops!",

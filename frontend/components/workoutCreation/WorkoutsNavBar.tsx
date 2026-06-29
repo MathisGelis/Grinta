@@ -2,17 +2,19 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, TouchableOpacity, Text, Animated } from "react-native";
 import { router, usePathname } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const NAV_TABS = [
-  { label: "Séances", route: "/(tabs)/workouts" },
-  { label: "Programmes", route: "/(tabs)/workouts/programms" },
-  { label: "Exercices", route: "/(tabs)/workouts/exercises" },
-];
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export function WorkoutsNavBar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [tabWidth, setTabWidth] = useState(0);
+
+  const NAV_TABS = [
+    { label: t.sessions, route: "/(tabs)/workouts" },
+    { label: t.programmes, route: "/(tabs)/workouts/programms" },
+    { label: t.exercises, route: "/(tabs)/workouts/exercises" },
+  ];
 
   const getActiveIndex = () => {
     if (pathname.includes("exercises")) return 2;
@@ -37,6 +39,9 @@ export function WorkoutsNavBar() {
 
   return (
     <SafeAreaView edges={["top"]} className="bg-[#0F0F0F]">
+      <Text className="text-2xl font-bold text-white px-4 mb-3">
+        {t.myWorkouts}
+      </Text>
       <View
         className="flex flex-row bg-[#2e2e2e] rounded-full p-1 items-center justify-center mx-4 mb-4"
         onLayout={(e) => {
