@@ -67,22 +67,6 @@ export default function WorkoutScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>{t.myWorkouts}</Text>
-          <Text style={styles.headerSubtitle}>
-            {workouts.length} {t.sessionCount}{workouts.length !== 1 ? "s" : ""}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={goToCreateWorkout}
-          style={styles.createButton}
-        >
-          <Ionicons name="add" size={26} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
       {/* Quick stats */}
       {!loading && !error && workouts.length > 0 && (
         <View style={styles.quickStats}>
