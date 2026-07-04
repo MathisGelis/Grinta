@@ -59,7 +59,7 @@ export default function ExploreScreen() {
   );
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [userId, setUserId] = useState("");
+  const [, setUserId] = useState("");
   const [requests, setRequests] = useState<FollowRequest[]>([]);
 
   const [users, setUsers] = useState<UserRecommended[]>([]);
