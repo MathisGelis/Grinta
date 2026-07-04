@@ -56,10 +56,6 @@ export default function WorkoutScreen() {
     }, [loadWorkouts]),
   );
 
-  const goToCreateWorkout = () => {
-    router.push("/(tabs)/workouts/createWorkout");
-  };
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadWorkouts().finally(() => setRefreshing(false));
@@ -71,7 +67,9 @@ export default function WorkoutScreen() {
       {!loading && !error && workouts.length > 0 && (
         <View style={styles.quickStats}>
           <View style={styles.quickStatItem}>
-            <View style={[styles.quickStatIcon, { backgroundColor: "#2a1f4a" }]}>
+            <View
+              style={[styles.quickStatIcon, { backgroundColor: "#2a1f4a" }]}
+            >
               <Ionicons name="barbell" size={16} color="#7B5CF0" />
             </View>
             <Text style={styles.quickStatValue}>{workouts.length}</Text>
@@ -79,7 +77,9 @@ export default function WorkoutScreen() {
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>
-            <View style={[styles.quickStatIcon, { backgroundColor: "#1a2f1a" }]}>
+            <View
+              style={[styles.quickStatIcon, { backgroundColor: "#1a2f1a" }]}
+            >
               <Ionicons name="fitness" size={16} color="#34D399" />
             </View>
             <Text style={styles.quickStatValue}>
@@ -93,7 +93,10 @@ export default function WorkoutScreen() {
       {/* Workouts List */}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomOffset }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottomOffset },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -162,9 +165,7 @@ export default function WorkoutScreen() {
               <Ionicons name="barbell-outline" size={48} color="#7B5CF0" />
             </View>
             <Text style={styles.emptyStateTitle}>{t.noWorkouts}</Text>
-            <Text style={styles.emptyStateText}>
-              {t.createFirstWorkout}
-            </Text>
+            <Text style={styles.emptyStateText}>{t.createFirstWorkout}</Text>
             <TouchableOpacity
               onPress={() => router.push("/(tabs)/workouts/createWorkout")}
               style={styles.emptyStateButton}

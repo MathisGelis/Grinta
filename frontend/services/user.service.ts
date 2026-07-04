@@ -31,6 +31,13 @@ export interface UpdateUserData {
   weight?: number;
 }
 
+export interface SearchUser {
+  id: string;
+  uniqueName: string;
+  displayName: string;
+  image_url: string;
+}
+
 export const UserService = {
   async updateProfile(userId: string, data: UpdateUserData) {
     const token = await TokenService.get();
@@ -47,5 +54,11 @@ export const UserService = {
   async getProfile(userId: string): Promise<UserProfile> {
     const token = await TokenService.get();
     return api.get<UserProfile>(`/users/${userId}/profile`, token ?? undefined);
+  },
+
+  async searchUsers(query: string): Promise<SearchUser[]> {
+    const token = await TokenService.get();
+    if (!query.trim()) return [];
+    return api.get<SearchUser[]>(`/users/search?q=${encodeURIComponent(query)}`, token ?? undefined);
   },
 };

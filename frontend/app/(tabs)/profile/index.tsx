@@ -18,8 +18,18 @@ import { useTranslation } from "@/contexts/LanguageContext";
 function formatJoinDate(dateStr: string): string {
   const d = new Date(dateStr);
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   return `${months[d.getMonth()]} ${d.getFullYear()}`;
 }
@@ -30,12 +40,25 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-
-
   const MENU_ITEMS = [
-    { id: "edit", label: t.editProfile, icon: "person-outline" as const, route: "/(tabs)/profile/edit-profile" },
-    { id: "privacy", label: t.privacyPolicy, icon: "shield-checkmark-outline" as const, route: "/(tabs)/profile/privacy-policy" },
-    { id: "settings", label: t.settings, icon: "settings-outline" as const, route: "/(tabs)/profile/settings" },
+    {
+      id: "edit",
+      label: t.editProfile,
+      icon: "person-outline" as const,
+      route: "/(tabs)/profile/edit-profile",
+    },
+    {
+      id: "privacy",
+      label: t.privacyPolicy,
+      icon: "shield-checkmark-outline" as const,
+      route: "/(tabs)/profile/privacy-policy",
+    },
+    {
+      id: "settings",
+      label: t.settings,
+      icon: "settings-outline" as const,
+      route: "/(tabs)/profile/settings",
+    },
   ];
 
   const fetchData = useCallback(async () => {
@@ -44,7 +67,7 @@ export default function ProfileScreen() {
       const me = await UserService.getMe();
       setUser(me);
 
-      const [profileData, summaryData] = await Promise.all([
+      const [profileData] = await Promise.all([
         UserService.getProfile(me.id),
         StatsService.getSummary("month").catch(() => null),
       ]);
@@ -99,7 +122,11 @@ export default function ProfileScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#7B5CF0" style={{ marginTop: 60 }} />
+          <ActivityIndicator
+            size="large"
+            color="#7B5CF0"
+            style={{ marginTop: 60 }}
+          />
         ) : (
           <>
             {/* Avatar */}
@@ -114,7 +141,9 @@ export default function ProfileScreen() {
                 <Text style={styles.pseudoText}>@{user.uniqueName}</Text>
               ) : null}
               {joinedDate ? (
-                <Text style={styles.joinedText}>{t.joined} {joinedDate}</Text>
+                <Text style={styles.joinedText}>
+                  {t.joined} {joinedDate}
+                </Text>
               ) : null}
             </View>
 
@@ -122,7 +151,12 @@ export default function ProfileScreen() {
             <View style={styles.statsRow}>
               <TouchableOpacity
                 style={styles.statItem}
-                onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: user?.id, tab: "followers" } } as any)}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/profile/followers",
+                    params: { userId: user?.id, tab: "followers" },
+                  } as any)
+                }
               >
                 <Text style={styles.statNum}>{followersCount}</Text>
                 <Text style={styles.statLabel}>Followers</Text>
@@ -130,7 +164,12 @@ export default function ProfileScreen() {
               <View style={styles.statDivider} />
               <TouchableOpacity
                 style={styles.statItem}
-                onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: user?.id, tab: "following" } } as any)}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/profile/followers",
+                    params: { userId: user?.id, tab: "following" },
+                  } as any)
+                }
               >
                 <Text style={styles.statNum}>{followingCount}</Text>
                 <Text style={styles.statLabel}>Following</Text>
@@ -149,7 +188,11 @@ export default function ProfileScreen() {
                 <Text style={styles.proSub}>{t.unlockAll}</Text>
               </View>
               <View style={styles.proBadge}>
-                <MaterialCommunityIcons name="crown" size={18} color="#F59E0B" />
+                <MaterialCommunityIcons
+                  name="crown"
+                  size={18}
+                  color="#F59E0B"
+                />
               </View>
             </TouchableOpacity>
 
@@ -205,7 +248,12 @@ const styles = StyleSheet.create({
   },
   avatarInitials: { color: "#fff", fontSize: 28, fontWeight: "700" },
   userName: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 2 },
-  pseudoText: { color: "#7B5CF0", fontSize: 14, fontWeight: "500", marginBottom: 4 },
+  pseudoText: {
+    color: "#7B5CF0",
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
   joinedText: { color: "#888", fontSize: 13 },
 
   statsRow: {

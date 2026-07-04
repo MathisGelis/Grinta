@@ -14,13 +14,17 @@ import {
   View,
 } from "react-native";
 
-
 import { ProgrammeService } from "@/services/programme.service";
 import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
-import { ConnectionsService, FollowRequest } from "@/services/connections.service";
+import {
+  ConnectionsService,
+  FollowRequest,
+} from "@/services/connections.service";
 import { UserService } from "@/services/user.service";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
+import { RecommendedUsersList } from "@/components/explorePage/RecommendedUsersList";
+import { getRecommendedUsers } from "@/services/social.service";
 
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
@@ -36,6 +40,13 @@ type Programme = {
   workouts: any[];
 };
 
+type UserRecommended = {
+  id: string;
+  uniqueName: string;
+  displayName: string;
+  followerscount: string;
+};
+
 export default function ExploreScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -43,11 +54,19 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(true);
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [recentWorkouts, setRecentWorkouts] = useState<CompletedWorkout[]>([]);
-  const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
+  const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(
+    null,
+  );
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [userId, setUserId] = useState("");
+  const [, setUserId] = useState("");
   const [requests, setRequests] = useState<FollowRequest[]>([]);
+
+  const [users, setUsers] = useState<UserRecommended[]>([]);
+
+  const handleDismissUser = (userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  };
 
   useEffect(() => {
     getItem("user_name").then((name) => {
@@ -65,14 +84,17 @@ export default function ExploreScreen() {
         saveItem("user_name", me.displayName);
       }
 
-      const [programmesData, workoutsData, requestsData] = await Promise.all([
-        ProgrammeService.getAll().catch(() => []),
-        WorkoutService.getCompleted().catch(() => []),
-        ConnectionsService.getRequests().catch(() => []),
-      ]);
+      const [programmesData, workoutsData, requestsData, recommendedUsersData] =
+        await Promise.all([
+          ProgrammeService.getAll().catch(() => []),
+          WorkoutService.getCompleted().catch(() => []),
+          ConnectionsService.getRequests().catch(() => []),
+          getRecommendedUsers().catch(() => []),
+        ]);
       setProgrammes(programmesData);
       setRecentWorkouts(workoutsData.slice(0, 3));
       setRequests(requestsData);
+      setUsers(recommendedUsersData);
     } catch {
       // silently fail
     } finally {
@@ -117,13 +139,13 @@ export default function ExploreScreen() {
     setSelectedProgramme(null);
   }
 
-
   return (
     <View
       style={{
         backgroundColor: WorkoutTheme.background,
         flex: 1,
       }}
+      className="flex flex-col pt-4"
     >
       <StatusBar barStyle="light-content" />
 
@@ -136,7 +158,8 @@ export default function ExploreScreen() {
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.helloText}>
-              {t.hello}{userName ? ` ${userName}` : ""}
+              {t.hello}
+              {userName ? ` ${userName}` : ""}
             </Text>
             <Text style={styles.greetingText}>{t[getGreetingKey()]}</Text>
           </View>
@@ -144,109 +167,160 @@ export default function ExploreScreen() {
 
         {/* Date */}
         <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t.todaysCommunityFavorite}</Text>
-              <Text style={styles.dateText}>{getFormattedDate()}</Text>
-            </View>
+          <Text style={styles.sectionTitle}>{t.todaysCommunityFavorite}</Text>
+          <Text style={styles.dateText}>{getFormattedDate()}</Text>
+        </View>
 
-            {loading ? (
-              <ActivityIndicator size="large" color="#7B5CF0" style={{ marginTop: 40 }} />
-            ) : (
-              <>
-                {/* Pending follow requests */}
-                {requests.length > 0 && (
-                  <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-                    <Text style={styles.socialSectionTitle}>Demandes ({requests.length})</Text>
-                    {requests.map((req) => (
-                      <View key={req.request_id} style={styles.userCard}>
-                        <TouchableOpacity
-                          style={styles.userInfo}
-                          onPress={() => router.push({ pathname: "/(tabs)/explore/user-profile", params: { userId: req.user_id } } as any)}
-                        >
-                          <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>
-                              {req.user_displayName?.[0]?.toUpperCase() ?? "?"}
-                            </Text>
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.displayName}>{req.user_displayName}</Text>
-                            <Text style={styles.uniqueName}>@{req.user_uniqueName}</Text>
-                          </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(req.request_id)}>
-                          <Ionicons name="checkmark" size={16} color="#fff" />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(req.request_id)}>
-                          <Ionicons name="close" size={16} color="#fff" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                {/* Programmes */}
-                {programmes.length > 0 ? (
-                  <>
-                    <View style={styles.sectionHeader}>
-                      <Text style={styles.sectionTitle}>{t.workoutCategories}</Text>
-                    </View>
-
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.horizontalScroll}
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#7B5CF0"
+            style={{ marginTop: 40 }}
+          />
+        ) : (
+          <>
+            {/* Pending follow requests */}
+            {requests.length > 0 ? (
+              <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+                <Text style={styles.socialSectionTitle}>
+                  Demandes ({requests.length})
+                </Text>
+                {requests.map((req) => (
+                  <View key={req.request_id} style={styles.userCard}>
+                    <TouchableOpacity
+                      style={styles.userInfo}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(tabs)/explore/user-profile",
+                          params: { userId: req.user_id },
+                        } as any)
+                      }
                     >
-                      {programmes.map((p) => (
-                        <TouchableOpacity
-                          key={p.id}
-                          style={styles.programmeCard}
-                          activeOpacity={0.85}
-                          onPress={() => openProgrammeModal(p)}
-                        >
-                          <View style={styles.programmeIconWrap}>
-                            <Ionicons name="barbell-outline" size={28} color="#7B5CF0" />
-                          </View>
-                          <Text style={styles.programmeTitle} numberOfLines={2}>
-                            {p.title}
-                          </Text>
-                          <Text style={styles.programmeSub}>
-                            {p.workouts?.length ?? 0} workouts
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </>
-                ) : (
-                  <View style={styles.emptyCard}>
-                    <Ionicons name="barbell-outline" size={40} color="#444" />
-                    <Text style={styles.emptyText}>Aucun programme disponible</Text>
-                    <Text style={styles.emptySubText}>Créez votre premier programme pour commencer</Text>
-                  </View>
-                )}
-
-                {/* Recent completed workouts */}
-                {recentWorkouts.length > 0 && (
-                  <>
-                    <View style={[styles.sectionHeader, { marginTop: 16 }]}>
-                      <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
-                    </View>
-
-                    {recentWorkouts.map((w) => (
-                      <View key={w.id} style={styles.recentCard}>
-                        <View style={styles.recentIconWrap}>
-                          <Ionicons name="checkmark-circle" size={24} color="#34D399" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.recentTitle}>{w.title}</Text>
-                          <Text style={styles.recentSub}>
-                            {Math.round(w.totalDurationSeconds / 60)} min
-                          </Text>
-                        </View>
+                      <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>
+                          {req.user_displayName?.[0]?.toUpperCase() ?? "?"}
+                        </Text>
                       </View>
-                    ))}
-                  </>
-                )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.displayName}>
+                          {req.user_displayName}
+                        </Text>
+                        <Text style={styles.uniqueName}>
+                          @{req.user_uniqueName}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.acceptBtn}
+                      onPress={() => handleAccept(req.request_id)}
+                    >
+                      <Ionicons name="checkmark" size={16} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.rejectBtn}
+                      onPress={() => handleReject(req.request_id)}
+                    >
+                      <Ionicons name="close" size={16} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View className="px-4 py-20 items-center justify-center">
+                <Text className="text-lg font-semibold text-gray-500">
+                  Aucun favori trouvé pour le moment.
+                </Text>
+              </View>
+            )}
+
+            {users.length > 0 && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>
+                    Utilisateurs recommandés
+                  </Text>
+                </View>
+                <RecommendedUsersList
+                  users={users}
+                  onDismiss={handleDismissUser}
+                />
               </>
             )}
+
+            {/* Programmes */}
+            {programmes.length > 0 ? (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>{t.workoutCategories}</Text>
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalScroll}
+                >
+                  {programmes.map((p) => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={styles.programmeCard}
+                      activeOpacity={0.85}
+                      onPress={() => openProgrammeModal(p)}
+                    >
+                      <View style={styles.programmeIconWrap}>
+                        <Ionicons
+                          name="barbell-outline"
+                          size={28}
+                          color="#7B5CF0"
+                        />
+                      </View>
+                      <Text style={styles.programmeTitle} numberOfLines={2}>
+                        {p.title}
+                      </Text>
+                      <Text style={styles.programmeSub}>
+                        {p.workouts?.length ?? 0} workouts
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            ) : (
+              <View style={styles.emptyCard}>
+                <Ionicons name="barbell-outline" size={40} color="#444" />
+                <Text style={styles.emptyText}>Aucun programme disponible</Text>
+                <Text style={styles.emptySubText}>
+                  Créez votre premier programme pour commencer
+                </Text>
+              </View>
+            )}
+
+            {/* Recent completed workouts */}
+            {recentWorkouts.length > 0 && (
+              <>
+                <View style={[styles.sectionHeader, { marginTop: 16 }]}>
+                  <Text style={styles.sectionTitle}>{t.newWorkouts}</Text>
+                </View>
+
+                {recentWorkouts.map((w) => (
+                  <View key={w.id} style={styles.recentCard}>
+                    <View style={styles.recentIconWrap}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={24}
+                        color="#34D399"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.recentTitle}>{w.title}</Text>
+                      <Text style={styles.recentSub}>
+                        {Math.round(w.totalDurationSeconds / 60)} min
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
 
       {/* Programme Modal */}
@@ -271,10 +345,7 @@ export default function ExploreScreen() {
                 <Text style={styles.modalCategory}>
                   {selectedProgramme.workouts?.length ?? 0} workouts
                 </Text>
-                <TouchableOpacity
-                  style={styles.useButton}
-                  onPress={closeModal}
-                >
+                <TouchableOpacity style={styles.useButton} onPress={closeModal}>
                   <Text style={styles.useButtonText}>OK</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -457,7 +528,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  recentTitle: { color: "#fff", fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  recentTitle: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
   recentSub: { color: "#888", fontSize: 12 },
 
   modalBackdrop: {
