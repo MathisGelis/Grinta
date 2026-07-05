@@ -25,6 +25,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { RecommendedUsersList } from "@/components/explorePage/RecommendedUsersList";
 import { getRecommendedUsers } from "@/services/social.service";
+import { PostsService } from "@/services/posts.service";
 
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
@@ -63,6 +64,7 @@ export default function ExploreScreen() {
   const [requests, setRequests] = useState<FollowRequest[]>([]);
 
   const [users, setUsers] = useState<UserRecommended[]>([]);
+  const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
 
   const handleDismissUser = (userId: string) => {
     setUsers((prev) => prev.filter((u) => u.id !== userId));
@@ -122,6 +124,38 @@ export default function ExploreScreen() {
     } catch (err: any) {
       Alert.alert("Erreur", err.message || "Erreur");
     }
+  };
+
+  const handlePublishWorkout = (workout: CompletedWorkout) => {
+    const isPublished = publishedIds.has(workout.id);
+    Alert.alert(
+      isPublished ? "Retirer la publication" : "Publier",
+      isPublished
+        ? `Retirer "${workout.title}" du feed ?`
+        : `Publier "${workout.title}" dans le feed ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: isPublished ? "Retirer" : "Publier",
+          onPress: async () => {
+            try {
+              if (isPublished) {
+                setPublishedIds((prev) => {
+                  const next = new Set(prev);
+                  next.delete(workout.id);
+                  return next;
+                });
+              } else {
+                await PostsService.createPost(workout.id);
+                setPublishedIds((prev) => new Set(prev).add(workout.id));
+              }
+            } catch {
+              Alert.alert("Erreur", "Impossible de modifier la publication.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   function getFormattedDate(): string {
@@ -315,6 +349,19 @@ export default function ExploreScreen() {
                         {Math.round(w.totalDurationSeconds / 60)} min
                       </Text>
                     </View>
+                    <TouchableOpacity
+                      onPress={() => handlePublishWorkout(w)}
+                      style={[
+                        styles.publishBtn,
+                        publishedIds.has(w.id) && styles.publishBtnActive,
+                      ]}
+                    >
+                      <Ionicons
+                        name={publishedIds.has(w.id) ? "cloud-done" : "cloud-upload-outline"}
+                        size={18}
+                        color={publishedIds.has(w.id) ? "#34D399" : "#888"}
+                      />
+                    </TouchableOpacity>
                   </View>
                 ))}
               </>
@@ -535,6 +582,17 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   recentSub: { color: "#888", fontSize: 12 },
+  publishBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#1a1a2a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  publishBtnActive: {
+    backgroundColor: "#1a2a1a",
+  },
 
   modalBackdrop: {
     flex: 1,

@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { StatsService, PeriodSummary, Consistency } from "@/services/stats.service";
 import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
+import { PostsService } from "@/services/posts.service";
 
 function getWeekDates(weekOffset: number) {
   const today = new Date();
@@ -45,6 +46,7 @@ export default function StatsScreen() {
   const [summary, setSummary] = useState<PeriodSummary | null>(null);
   const [consistency, setConsistency] = useState<Consistency | null>(null);
   const [completedWorkouts, setCompletedWorkouts] = useState<CompletedWorkout[]>([]);
+  const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
 
   const weekDates = getWeekDates(weekOffset);
   const displayMonth = weekDates[0];
@@ -72,12 +74,23 @@ export default function StatsScreen() {
     fetchData();
   }, [fetchData]);
 
-  const totalCalories = summary?.current?.calories ?? 0;
-  const totalWorkouts = consistency?.totalWorkouts ?? 0;
   const currentStreak = consistency?.currentStreakDays ?? 0;
-  const completedCount = summary?.current?.workouts ?? 0;
 
-  const recentWorkouts = completedWorkouts.slice(0, 5);
+  const selectedDate = weekDates[selectedDay];
+  const selectedDateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+
+  const dayWorkouts = completedWorkouts.filter((w) => {
+    const d = new Date(w.completionDate);
+    const wStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return wStr === selectedDateStr;
+  });
+
+  const dayCalories = dayWorkouts.reduce((sum, w) => {
+    const mins = w.totalDurationSeconds / 60;
+    return sum + Math.round(mins * 7.5);
+  }, 0);
+
+  const totalWorkouts = completedWorkouts.length;
 
   const handleDeleteWorkout = (workout: CompletedWorkout) => {
     Alert.alert(
@@ -94,6 +107,38 @@ export default function StatsScreen() {
               setCompletedWorkouts((prev) => prev.filter((w) => w.id !== workout.id));
             } catch {
               Alert.alert("Erreur", "Impossible de supprimer");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handlePublishWorkout = (workout: CompletedWorkout) => {
+    const isPublished = publishedIds.has(workout.id);
+    Alert.alert(
+      isPublished ? "Retirer la publication" : "Publier",
+      isPublished
+        ? `Retirer "${workout.title}" du feed ?`
+        : `Publier "${workout.title}" dans le feed ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: isPublished ? "Retirer" : "Publier",
+          onPress: async () => {
+            try {
+              if (isPublished) {
+                setPublishedIds((prev) => {
+                  const next = new Set(prev);
+                  next.delete(workout.id);
+                  return next;
+                });
+              } else {
+                await PostsService.createPost(workout.id);
+                setPublishedIds((prev) => new Set(prev).add(workout.id));
+              }
+            } catch {
+              Alert.alert("Erreur", "Impossible de modifier la publication.");
             }
           },
         },
@@ -172,7 +217,7 @@ export default function StatsScreen() {
             <View style={styles.bigRingSection}>
               <View style={styles.bigRingOuter}>
                 <View style={styles.bigRingInner}>
-                  <Text style={styles.bigRingValue}>{Math.round(totalCalories)}</Text>
+                  <Text style={styles.bigRingValue}>{dayCalories}</Text>
                   <Text style={styles.bigRingLabel}>Cal</Text>
                 </View>
               </View>
@@ -195,7 +240,7 @@ export default function StatsScreen() {
               </View>
               <View style={styles.smallRingItem}>
                 <View style={[styles.ringOuter, { borderColor: "#34D399" }]}>
-                  <Text style={styles.ringValue}>{completedCount}</Text>
+                  <Text style={styles.ringValue}>{dayWorkouts.length}</Text>
                 </View>
                 <Text style={styles.ringLabel}>{t.completedLabel}</Text>
               </View>
@@ -204,12 +249,12 @@ export default function StatsScreen() {
             {/* Finished Workouts */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t.finishedWorkout}</Text>
-              {recentWorkouts.length === 0 && (
+              {dayWorkouts.length === 0 && (
                 <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>Aucun entraînement complété</Text>
+                  <Text style={styles.emptyText}>Repos ce jour-là 💤</Text>
                 </View>
               )}
-              {recentWorkouts.map((w) => (
+              {dayWorkouts.map((w) => (
                 <View key={w.id} style={styles.workoutCard}>
                   <View style={styles.checkBox}>
                     <Ionicons name="checkmark" size={16} color="#fff" />
@@ -220,6 +265,19 @@ export default function StatsScreen() {
                       {formatWorkoutDate(w.completionDate)} · {formatDuration(w.totalDurationSeconds)}
                     </Text>
                   </View>
+                  <TouchableOpacity
+                    onPress={() => handlePublishWorkout(w)}
+                    style={[
+                      styles.publishBtn,
+                      publishedIds.has(w.id) && styles.publishBtnActive,
+                    ]}
+                  >
+                    <Ionicons
+                      name={publishedIds.has(w.id) ? "cloud-done" : "cloud-upload-outline"}
+                      size={18}
+                      color={publishedIds.has(w.id) ? "#34D399" : "#888"}
+                    />
+                  </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleDeleteWorkout(w)}
                     style={styles.deleteBtn}
@@ -341,6 +399,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: { color: "#555", fontSize: 14 },
+  publishBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#1a1a2a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  publishBtnActive: {
+    backgroundColor: "#1a2a1a",
+  },
   deleteBtn: {
     width: 36,
     height: 36,
