@@ -158,8 +158,8 @@ const styles = StyleSheet.create({
     elevation: 10,
     shadowColor: "#7B5CF0",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
 
     flexDirection: "row",
     justifyContent: "space-around",

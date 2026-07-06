@@ -25,6 +25,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { RecommendedUsersList } from "@/components/explorePage/RecommendedUsersList";
 import { getRecommendedUsers } from "@/services/social.service";
+import { Post, PostsService } from "@/services/posts.service";
 
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
@@ -63,6 +64,8 @@ export default function ExploreScreen() {
   const [requests, setRequests] = useState<FollowRequest[]>([]);
 
   const [users, setUsers] = useState<UserRecommended[]>([]);
+  const [topPosts, setTopPosts] = useState<Post[]>([]);
+  const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
 
   const handleDismissUser = (userId: string) => {
     setUsers((prev) => prev.filter((u) => u.id !== userId));
@@ -84,17 +87,24 @@ export default function ExploreScreen() {
         saveItem("user_name", me.displayName);
       }
 
-      const [programmesData, workoutsData, requestsData, recommendedUsersData] =
-        await Promise.all([
-          ProgrammeService.getAll().catch(() => []),
-          WorkoutService.getCompleted().catch(() => []),
-          ConnectionsService.getRequests().catch(() => []),
-          getRecommendedUsers().catch(() => []),
-        ]);
+      const [
+        programmesData,
+        workoutsData,
+        requestsData,
+        recommendedUsersData,
+        topPostsData,
+      ] = await Promise.all([
+        ProgrammeService.getAll().catch(() => []),
+        WorkoutService.getCompleted().catch(() => []),
+        ConnectionsService.getRequests().catch(() => []),
+        getRecommendedUsers().catch(() => []),
+        PostsService.getTopPosts(5),
+      ]);
       setProgrammes(programmesData);
       setRecentWorkouts(workoutsData.slice(0, 3));
       setRequests(requestsData);
       setUsers(recommendedUsersData);
+      setTopPosts(topPostsData);
     } catch {
       // silently fail
     } finally {
@@ -122,6 +132,38 @@ export default function ExploreScreen() {
     } catch (err: any) {
       Alert.alert("Erreur", err.message || "Erreur");
     }
+  };
+
+  const handlePublishWorkout = (workout: CompletedWorkout) => {
+    const isPublished = publishedIds.has(workout.id);
+    Alert.alert(
+      isPublished ? "Retirer la publication" : "Publier",
+      isPublished
+        ? `Retirer "${workout.title}" du feed ?`
+        : `Publier "${workout.title}" dans le feed ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: isPublished ? "Retirer" : "Publier",
+          onPress: async () => {
+            try {
+              if (isPublished) {
+                setPublishedIds((prev) => {
+                  const next = new Set(prev);
+                  next.delete(workout.id);
+                  return next;
+                });
+              } else {
+                await PostsService.createPost(workout.id);
+                setPublishedIds((prev) => new Set(prev).add(workout.id));
+              }
+            } catch {
+              Alert.alert("Erreur", "Impossible de modifier la publication.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   function getFormattedDate(): string {
@@ -179,6 +221,77 @@ export default function ExploreScreen() {
           />
         ) : (
           <>
+            <View style={{ marginBottom: 16 }}>
+              {topPosts.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.topPostsScroll}
+                >
+                  {topPosts.map((post) => (
+                    <View key={post.id} style={styles.topPostCard}>
+                      <View style={styles.topPostHeader}>
+                        <View style={styles.topPostAvatar}>
+                          <Text style={styles.topPostAvatarText}>
+                            {post.displayName?.[0]?.toUpperCase() ?? "?"}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.topPostName} numberOfLines={1}>
+                            {post.displayName}
+                          </Text>
+                          <Text style={styles.topPostMeta}>
+                            {new Date(post.createdAt).toLocaleDateString(
+                              "fr-FR",
+                            )}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.topPostMetrics}>
+                        <View style={styles.topPostMetric}>
+                          <Ionicons
+                            name="heart-outline"
+                            size={14}
+                            color="#FF6B6B"
+                          />
+                          <Text style={styles.topPostMetricText}>
+                            {post.likesCount}
+                          </Text>
+                        </View>
+                        <View style={styles.topPostMetric}>
+                          <Ionicons
+                            name="chatbubble-outline"
+                            size={14}
+                            color="#7B5CF0"
+                          />
+                          <Text style={styles.topPostMetricText}>
+                            {post.commentsCount}
+                          </Text>
+                        </View>
+                        <View style={styles.topPostMetric}>
+                          <Ionicons
+                            name="trending-up-outline"
+                            size={14}
+                            color="#34D399"
+                          />
+                          <Text style={styles.topPostMetricText}>
+                            {post.score}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>
+                    Aucun post populaire pour le moment.
+                  </Text>
+                </View>
+              )}
+            </View>
+
             {/* Pending follow requests */}
             {requests.length > 0 ? (
               <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
@@ -225,13 +338,7 @@ export default function ExploreScreen() {
                   </View>
                 ))}
               </View>
-            ) : (
-              <View className="px-4 py-20 items-center justify-center">
-                <Text className="text-lg font-semibold text-gray-500">
-                  Aucun favori trouvé pour le moment.
-                </Text>
-              </View>
-            )}
+            ) : null}
 
             {users.length > 0 && (
               <>
@@ -315,6 +422,23 @@ export default function ExploreScreen() {
                         {Math.round(w.totalDurationSeconds / 60)} min
                       </Text>
                     </View>
+                    <TouchableOpacity
+                      onPress={() => handlePublishWorkout(w)}
+                      style={[
+                        styles.publishBtn,
+                        publishedIds.has(w.id) && styles.publishBtnActive,
+                      ]}
+                    >
+                      <Ionicons
+                        name={
+                          publishedIds.has(w.id)
+                            ? "cloud-done"
+                            : "cloud-upload-outline"
+                        }
+                        size={18}
+                        color={publishedIds.has(w.id) ? "#34D399" : "#888"}
+                      />
+                    </TouchableOpacity>
                   </View>
                 ))}
               </>
@@ -421,6 +545,61 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 10,
     marginTop: 4,
+  },
+
+  topPostsScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  topPostCard: {
+    width: 220,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    padding: 14,
+    marginRight: 12,
+  },
+  topPostHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 10,
+  },
+  topPostAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#2a1f4a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  topPostAvatarText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  topPostName: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  topPostMeta: {
+    color: "#888",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  topPostMetrics: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  topPostMetric: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  topPostMetricText: {
+    color: "#fff",
+    fontSize: 12,
   },
 
   userCard: {
@@ -535,6 +714,17 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   recentSub: { color: "#888", fontSize: 12 },
+  publishBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#1a1a2a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  publishBtnActive: {
+    backgroundColor: "#1a2a1a",
+  },
 
   modalBackdrop: {
     flex: 1,
