@@ -11,31 +11,48 @@ async function request<T>(
   body?: any,
   token?: string
 ): Promise<T> {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
 
-  const data = await response.json();
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (error) {
+    throw new Error(
+      `Impossible de joindre l'API (${BASE_URL}${endpoint}): ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  const rawText = await response.text();
+  let data: any = undefined;
+
+  if (rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = rawText;
+    }
+  }
 
   if (!response.ok) {
-
-    const raw = data.message;
+    const raw = data?.message ?? data?.error ?? data;
     const msg = Array.isArray(raw)
       ? raw[0]
       : typeof raw === "string"
       ? raw
       : typeof raw === "object" && raw !== null
-      ? (typeof raw.message === "string" ? raw.message : raw.error ?? data.error ?? "Erreur serveur")
-      : data.error ?? "Erreur serveur";
-    throw new Error(msg);
+      ? (typeof raw.message === "string" ? raw.message : raw.error ?? data?.error ?? "Erreur serveur")
+      : data?.error ?? "Erreur serveur";
+    throw new Error(msg || `Erreur ${response.status}`);
   }
 
-  return data;
+  return data as T;
 }
 
 export const api = {
