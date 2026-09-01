@@ -33,6 +33,15 @@ export class PostsController {
   }
 
   @Auth()
+  @Get(':postId')
+  @ApiOperation({ summary: 'Get a post by ID' })
+  @ApiResponse({ status: 200, description: 'Post returned' })
+  @ApiResponse({ status: 404, description: 'Post not found' })
+  async getPost(@Req() req, @Param('postId') postId: string) {
+    return this.postsService.getPostById(req.user.id, postId);
+  }
+
+  @Auth()
   @Delete(':postId')
   @ApiOperation({ summary: 'Delete a post' })
   @ApiResponse({ status: 200, description: 'Post deleted successfully' })

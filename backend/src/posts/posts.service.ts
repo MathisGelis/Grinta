@@ -263,7 +263,37 @@ export class PostsService {
       .getRawMany();
   }
 
-  /** Reject text that fails moderation. Does not reveal the matched words. */
+  async getPostById(userId: string, postId: string) {
+    const rows = await this.postRepository
+      .createQueryBuilder('post')
+      .innerJoin('post.user', 'u')
+      .leftJoin('post.workout', 'w')
+      .where('post.id = :postId', { postId })
+      .select([
+        'post.id AS id',
+        'post."createdAt" AS "createdAt"',
+        'u.id AS "userId"',
+        'u."displayName" AS "displayName"',
+        'u."uniqueName" AS "uniqueName"',
+        'w.id AS "workoutId"',
+        'w.title AS "workoutTitle"',
+        'w.description AS "workoutDescription"',
+        'w."completionDate" AS "workoutCompletionDate"',
+        'w."totalDurationSeconds" AS "workoutDurationSeconds"',
+        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
+        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
+        `EXISTS (
+          SELECT 1 FROM post_likes ml
+          WHERE ml."postId" = post.id AND ml."userId" = :userId
+        ) AS "isLiked"`,
+      ])
+      .setParameter('userId', userId)
+      .getRawOne();
+
+    if (!rows) throw new NotFoundException('Post not found');
+    return rows;
+  }
+
   private async assertCleanText(content: string) {
     const result = await this.moderation.check(content);
     if (!result.ok) {
