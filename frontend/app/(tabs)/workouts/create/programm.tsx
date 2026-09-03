@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { SelectList } from "react-native-dropdown-select-list";
-import ProgrammeDayEditor from "@/components/workoutCreation/ProgrammeDayEditor";
+import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
 import { createProgramme, ProgrammeDay } from "@/services/programms.service";
 import {
   getPlannedWorkouts,

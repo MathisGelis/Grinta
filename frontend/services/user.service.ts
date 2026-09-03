@@ -51,6 +51,14 @@ export const UserService = {
     return full;
   },
 
+  /** Resolves the id from the token rather than storage: user_id is only
+   *  written at registration, so it is missing for anyone who just logged in. */
+  async deleteAccount(): Promise<void> {
+    const token = await TokenService.get();
+    const me = await api.get<{ id: string }>("/auth/me", token ?? undefined);
+    await api.delete(`/users/${me.id}`, token ?? undefined);
+  },
+
   async getProfile(userId: string): Promise<UserProfile> {
     const token = await TokenService.get();
     return api.get<UserProfile>(`/users/${userId}/profile`, token ?? undefined);

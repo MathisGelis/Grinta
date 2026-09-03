@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
-import { ExerciseSetupData } from "@/components/workoutCreation/ExerciseSetupItem";
+import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
 
 interface WorkoutStatsProps {
   exercises: ExerciseSetupData[];
