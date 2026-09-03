@@ -209,7 +209,7 @@ export default function ExercisesScreen() {
   return (
     <SafeAreaView
       edges={["bottom", "left", "right"]}
-      className="h-full w-full bg-[#0F0F0F] px-4"
+      className="flex-1 bg-[#0F0F0F] px-4"
     >
       {loading ? (
         <View className="flex-1 items-center justify-center">
@@ -369,7 +369,7 @@ export default function ExercisesScreen() {
         <GlassSearchBar
           items={exercises.map((e) => e.name)}
           onResults={handleSearchResults}
-          onAdd={() => router.push("/(tabs)/workouts/createExercise")}
+          onAdd={() => router.push("/(tabs)/workouts/create/exercise")}
           placeholder="Rechercher un exercice…"
           filter={openFilterModal}
         />

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
-import WorkoutImagePicker from "./WorkoutImagePicker";
+import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
 
 interface WorkoutFormFieldsProps {
   name: string;

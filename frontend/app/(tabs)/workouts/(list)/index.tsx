@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import WorkoutCard from "@/components/workoutCreation/WorkoutCard";
+import WorkoutCard from "@/components/workout/card/WorkoutCard";
 import {
   getPlannedWorkouts,
   PlannedWorkout,
@@ -167,7 +167,7 @@ export default function WorkoutScreen() {
             <Text style={styles.emptyStateTitle}>{t.noWorkouts}</Text>
             <Text style={styles.emptyStateText}>{t.createFirstWorkout}</Text>
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/workouts/createWorkout")}
+              onPress={() => router.push("/(tabs)/workouts/create/workout")}
               style={styles.emptyStateButton}
             >
               <Ionicons name="add-circle" size={22} color="#fff" />

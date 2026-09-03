@@ -20,23 +20,22 @@ import {
   createCompletedWorkout,
   CompletedExercise,
 } from "@/services/completed-workouts.service";
-import WorkoutSessionHeader from "@/components/workoutCreation/WorkoutSessionHeader";
-import CurrentExerciseSection, {
-  CompletedSet as CompletedSetType,
-} from "@/components/workoutCreation/CurrentExerciseSection";
-import OtherExercisesSection from "@/components/workoutCreation/OtherExercisesSection";
-
-interface ExerciseState {
-  exerciseData: WorkoutExercise;
-  completedSetIndices: number[];
-  completedSets: CompletedSetType[];
-  restTimeSeconds: number;
-}
+import WorkoutSessionHeader from "@/components/workout/session/WorkoutSessionHeader";
+import CurrentExerciseSection from "@/components/workout/session/CurrentExerciseSection";
+import OtherExercisesSection from "@/components/workout/session/OtherExercisesSection";
+import {
+  ExerciseState,
+  clearActiveSession,
+  elapsedSince,
+  getActiveSession,
+  saveActiveSession,
+} from "@/services/active-session.service";
 
 export default function ActiveWorkoutScreen() {
   const params = useLocalSearchParams();
   const workoutId = params.workoutId as string;
   const workoutName = params.workoutName as string;
+  const isResuming = params.resume === "1";
 
   const [exercisesState, setExercisesState] = useState<ExerciseState[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -51,10 +50,31 @@ export default function ActiveWorkoutScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedExercises, setCompletedExercises] = useState<number[]>([]);
   const setTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const totalTimeRef = useRef(0);
+
+  useEffect(() => {
+    totalTimeRef.current = totalWorkoutTime;
+  }, [totalWorkoutTime]);
 
   const loadWorkout = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Resuming a minimized session: restore from storage rather than
+      // refetching, otherwise every completed set would be lost.
+      if (isResuming) {
+        const stored = await getActiveSession();
+
+        if (stored) {
+          setExercisesState(stored.exercisesState);
+          setCurrentExerciseIndex(stored.currentExerciseIndex);
+          setCurrentSetIndex(stored.currentSetIndex);
+          setCompletedExercises(stored.completedExercises);
+          setTotalWorkoutTime(elapsedSince(stored));
+          return;
+        }
+      }
+
       const token = await TokenService.get();
       const data = await getWorkoutById(workoutId, token || undefined);
 
@@ -69,11 +89,12 @@ export default function ActiveWorkoutScreen() {
     } catch (error) {
       console.error("Erreur:", error);
       Alert.alert("Erreur", "Impossible de charger la séance");
+      await clearActiveSession();
       router.back();
     } finally {
       setLoading(false);
     }
-  }, [workoutId]);
+  }, [workoutId, isResuming]);
 
   // Load workout data
   useEffect(() => {
@@ -118,6 +139,34 @@ export default function ActiveWorkoutScreen() {
       if (interval) clearInterval(interval);
     };
   }, [showRestScreen, restTimeRemaining]);
+
+  const persistSession = useCallback(async () => {
+    if (exercisesState.length === 0) return;
+    await saveActiveSession({
+      workoutId,
+      workoutName,
+      exercisesState,
+      currentExerciseIndex,
+      currentSetIndex,
+      completedExercises,
+      totalWorkoutTime: totalTimeRef.current,
+    });
+  }, [
+    workoutId,
+    workoutName,
+    exercisesState,
+    currentExerciseIndex,
+    currentSetIndex,
+    completedExercises,
+  ]);
+
+  // Autosave on every meaningful change so the session survives an app kill.
+  // The timer is deliberately not a dependency (it would write once a second):
+  // it is recomputed from savedAt when the session is resumed.
+  useEffect(() => {
+    if (loading) return;
+    void persistSession();
+  }, [loading, persistSession]);
 
   const currentExerciseState = exercisesState[currentExerciseIndex];
   const currentExercise = currentExerciseState?.exerciseData;
@@ -329,8 +378,12 @@ export default function ActiveWorkoutScreen() {
     );
   };
 
-  const handleMinimize = () => {
-    router.push("/(tabs)/workout-trigger");
+  const handleMinimize = async () => {
+    await persistSession();
+    // "/(tabs)/workout-trigger" renders null - it only exists to reserve the
+    // center slot in the tab bar - so pushing it showed a blank screen.
+    // Same call shape as the end-of-workout redirect just below.
+    router.replace("/(tabs)/explore");
   };
 
   const handleSubmitCompletion = async () => {
@@ -364,6 +417,7 @@ export default function ActiveWorkoutScreen() {
       };
 
       await createCompletedWorkout(request, token || undefined);
+      await clearActiveSession();
       Alert.alert("Succès", "Séance enregistrée avec succès!", [
         {
           text: "OK",

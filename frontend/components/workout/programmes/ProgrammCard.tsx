@@ -20,7 +20,7 @@ import {
   Programm,
   ProgrammeDay,
 } from "@/services/programms.service";
-import ProgrammeDayEditor from "@/components/workoutCreation/ProgrammeDayEditor";
+import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
 
 interface ProgrammCardProps {
   program: SmallProgramm;
