@@ -1,6 +1,4 @@
-import { Platform } from "react-native";
-
-const DEV_API = Platform.OS === "android" ? "http://192.168.31.7:3000" : "http://localhost:3000";
+const DEV_API = "https://grinta-backend.duckdns.org";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API;
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";

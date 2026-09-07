@@ -1,9 +1,9 @@
 import "../global.css";
 import {
+  ThemeProvider,
   DarkTheme,
   DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+} from "expo-router/react-navigation";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";

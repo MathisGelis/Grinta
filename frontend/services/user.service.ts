@@ -38,6 +38,13 @@ export interface SearchUser {
   image_url: string;
 }
 
+export type User = {
+  id: string;
+  uniqueName: string;
+  displayName: string;
+  followerscount: string;
+};
+
 export const UserService = {
   async updateProfile(userId: string, data: UpdateUserData) {
     const token = await TokenService.get();

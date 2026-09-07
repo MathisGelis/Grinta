@@ -1,5 +1,5 @@
 import { ScrollView, TouchableOpacity, Text } from "react-native";
-import { User } from "@/services/social.service";
+import { User } from "@/services/user.service";
 import { WorkoutTheme } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";

@@ -78,9 +78,12 @@ function ExploreHeader() {
 export default function ExploreLayout() {
   const pathname = usePathname();
 
-  // notification et chat sont de vraies pages plein écran, sans le header
+  // Ces écrans sont des pages plein écran, sans le header Explore
   const hideHeader =
-    pathname.endsWith("/notification") || pathname.endsWith("/chat");
+    pathname.endsWith("/notification") ||
+    pathname.endsWith("/chat") ||
+    pathname.endsWith("/userPost") ||
+    pathname.includes("/user-profile");
 
   return (
     <SearchProvider>
@@ -98,6 +101,7 @@ export default function ExploreLayout() {
             options={{ animation: "slide_from_left" }}
           />
           <Stack.Screen name="chat" />
+          <Stack.Screen name="userPost"/>
         </Stack>
       </View>
     </SearchProvider>
