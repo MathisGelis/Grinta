@@ -201,9 +201,9 @@ export class WorkoutService {
     }));
   }
 
-  async getPlannedWorkoutById(user: User, workoutId: string) {
+  async getPlannedWorkoutById(workoutId: string) {
     const workout = await this.plannedRepo.findOne({
-      where: { id: workoutId, user: { id: user.id } },
+      where: { id: workoutId },
       relations: ['exercises'],
     });
 
@@ -214,9 +214,9 @@ export class WorkoutService {
     };
   }
 
-  async getCompletedWorkoutById(user: User, workoutId: string) {
+  async getCompletedWorkoutById(workoutId: string) {
     const workout = await this.completedRepo.findOne({
-      where: { id: workoutId, user: { id: user.id } },
+      where: { id: workoutId },
       relations: ['exercises'],
     });
 

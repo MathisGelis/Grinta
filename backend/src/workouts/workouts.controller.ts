@@ -91,8 +91,8 @@ export class WorkoutsController {
     description: 'Workout returned',
     type: PlannedWorkoutListDto,
   })
-  getPlannedById(@Req() req, @Param('id') id: string) {
-    return this.workoutService.getPlannedWorkoutById(req.user, id);
+  getPlannedById(@Param('id') id: string) {
+    return this.workoutService.getPlannedWorkoutById(id);
   }
 
   @Get('completed/:id')
@@ -102,8 +102,8 @@ export class WorkoutsController {
     description: 'Workout returned',
     type: CompletedWorkoutListDto,
   })
-  getCompletedById(@Req() req, @Param('id') id: string) {
-    return this.workoutService.getCompletedWorkoutById(req.user, id);
+  getCompletedById(@Param('id') id: string) {
+    return this.workoutService.getCompletedWorkoutById(id);
   }
 
   @Delete('planned/:id')
