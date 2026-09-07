@@ -61,6 +61,56 @@ export class PostsService {
     return { message: 'Post deleted' };
   }
 
+  async getPostById(userId: string, postId: string) {
+    const rows = await this.postRepository
+      .createQueryBuilder('post')
+      .innerJoin('post.user', 'u')
+      .leftJoin('post.workout', 'w')
+      .where('post.id = :postId', { postId })
+      .select([
+        'post.id AS id',
+        'post."createdAt" AS "createdAt"',
+        'u.id AS "userId"',
+        'u."displayName" AS "displayName"',
+        'u."uniqueName" AS "uniqueName"',
+        'w.id AS "workoutId"',
+        'w.title AS "workoutTitle"',
+        'w.description AS "workoutDescription"',
+        'w."completionDate" AS "workoutCompletionDate"',
+        'w."totalDurationSeconds" AS "workoutDurationSeconds"',
+        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
+        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
+        `EXISTS (
+          SELECT 1 FROM post_likes ml
+          WHERE ml."postId" = post.id AND ml."userId" = :userId
+        ) AS "isLiked"`,
+      ])
+      .setParameter('userId', userId)
+      .getRawOne();
+
+    if (!rows) throw new NotFoundException('Post not found');
+    return rows;
+  }
+
+  async getMyPosts(userId: string, limit = 20) {
+    return this.postRepository
+      .createQueryBuilder('post')
+      .innerJoin('post.workout', 'w')
+      .where('post."userId" = :userId', { userId })
+      .select([
+        'post.id AS id',
+        'post."createdAt" AS "createdAt"',
+        'w.id AS "workoutId"',
+        'w.title AS "workoutTitle"',
+        'w."completionDate" AS "workoutCompletionDate"',
+        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
+        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
+      ])
+      .orderBy('post."createdAt"', 'DESC')
+      .limit(limit)
+      .getRawMany();
+  }
+
   async toggleLike(userId: string, postId: string) {
     const existing = await this.likeRepository.findOne({
       where: { user: { id: userId }, post: { id: postId } },
@@ -261,37 +311,6 @@ export class PostsService {
       .limit(limit)
       .setParameter('userId', userId)
       .getRawMany();
-  }
-
-  async getPostById(userId: string, postId: string) {
-    const rows = await this.postRepository
-      .createQueryBuilder('post')
-      .innerJoin('post.user', 'u')
-      .leftJoin('post.workout', 'w')
-      .where('post.id = :postId', { postId })
-      .select([
-        'post.id AS id',
-        'post."createdAt" AS "createdAt"',
-        'u.id AS "userId"',
-        'u."displayName" AS "displayName"',
-        'u."uniqueName" AS "uniqueName"',
-        'w.id AS "workoutId"',
-        'w.title AS "workoutTitle"',
-        'w.description AS "workoutDescription"',
-        'w."completionDate" AS "workoutCompletionDate"',
-        'w."totalDurationSeconds" AS "workoutDurationSeconds"',
-        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
-        `EXISTS (
-          SELECT 1 FROM post_likes ml
-          WHERE ml."postId" = post.id AND ml."userId" = :userId
-        ) AS "isLiked"`,
-      ])
-      .setParameter('userId', userId)
-      .getRawOne();
-
-    if (!rows) throw new NotFoundException('Post not found');
-    return rows;
   }
 
   private async assertCleanText(content: string) {
