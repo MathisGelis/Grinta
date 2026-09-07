@@ -56,18 +56,7 @@ export default function WorkoutCard({
     new Map(),
   );
 
-  useEffect(() => {
-    loadExercisesMap();
-  }, []);
-
-  useEffect(() => {
-    if (!isEditing && !isLoading) {
-      setEditedTitle(workout.title);
-      setEditedDescription(workout.description || "");
-    }
-  }, [workout.title, workout.description, isEditing, isLoading]);
-
-  const loadExercisesMap = async () => {
+  const loadExercisesMap = useCallback(async () => {
     try {
       const exercises = await getAllExercises();
       const map = new Map<string, Exercise>();
@@ -78,7 +67,18 @@ export default function WorkoutCard({
     } catch (error) {
       console.error("Erreur lors du chargement des exercices:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadExercisesMap();
+  }, [loadExercisesMap]);
+
+  useEffect(() => {
+    if (!isEditing && !isLoading) {
+      setEditedTitle(workout.title);
+      setEditedDescription(workout.description || "");
+    }
+  }, [workout.title, workout.description, isEditing, isLoading]);
 
   const loadWorkoutData = useCallback(async () => {
     setIsLoading(true);

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { StatsService, PeriodSummary, Consistency } from "@/services/stats.service";
+import { StatsService, Consistency } from "@/services/stats.service";
 import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
 import { PostsService } from "@/services/posts.service";
 
@@ -43,9 +43,10 @@ export default function StatsScreen() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState(getTodayIndex());
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<PeriodSummary | null>(null);
   const [consistency, setConsistency] = useState<Consistency | null>(null);
-  const [completedWorkouts, setCompletedWorkouts] = useState<CompletedWorkout[]>([]);
+  const [completedWorkouts, setCompletedWorkouts] = useState<
+    CompletedWorkout[]
+  >([]);
   const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
 
   const weekDates = getWeekDates(weekOffset);
@@ -55,12 +56,10 @@ export default function StatsScreen() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [summaryData, consistencyData, workoutsData] = await Promise.all([
-        StatsService.getSummary("week"),
+      const [consistencyData, workoutsData] = await Promise.all([
         StatsService.getConsistency(),
         WorkoutService.getCompleted(),
       ]);
-      setSummary(summaryData);
       setConsistency(consistencyData);
       setCompletedWorkouts(workoutsData);
     } catch {
@@ -93,25 +92,23 @@ export default function StatsScreen() {
   const totalWorkouts = completedWorkouts.length;
 
   const handleDeleteWorkout = (workout: CompletedWorkout) => {
-    Alert.alert(
-      "Supprimer",
-      `Supprimer "${workout.title}" ?`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await WorkoutService.deleteCompleted(workout.id);
-              setCompletedWorkouts((prev) => prev.filter((w) => w.id !== workout.id));
-            } catch {
-              Alert.alert("Erreur", "Impossible de supprimer");
-            }
-          },
+    Alert.alert("Supprimer", `Supprimer "${workout.title}" ?`, [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await WorkoutService.deleteCompleted(workout.id);
+            setCompletedWorkouts((prev) =>
+              prev.filter((w) => w.id !== workout.id),
+            );
+          } catch {
+            Alert.alert("Erreur", "Impossible de supprimer");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handlePublishWorkout = (workout: CompletedWorkout) => {
@@ -142,7 +139,7 @@ export default function StatsScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -210,7 +207,11 @@ export default function StatsScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#7B5CF0" style={{ marginTop: 40 }} />
+          <ActivityIndicator
+            size="large"
+            color="#7B5CF0"
+            style={{ marginTop: 40 }}
+          />
         ) : (
           <>
             {/* Calorie ring */}
@@ -262,7 +263,8 @@ export default function StatsScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.workoutName}>{w.title}</Text>
                     <Text style={styles.workoutMeta}>
-                      {formatWorkoutDate(w.completionDate)} · {formatDuration(w.totalDurationSeconds)}
+                      {formatWorkoutDate(w.completionDate)} ·{" "}
+                      {formatDuration(w.totalDurationSeconds)}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -273,7 +275,11 @@ export default function StatsScreen() {
                     ]}
                   >
                     <Ionicons
-                      name={publishedIds.has(w.id) ? "cloud-done" : "cloud-upload-outline"}
+                      name={
+                        publishedIds.has(w.id)
+                          ? "cloud-done"
+                          : "cloud-upload-outline"
+                      }
                       size={18}
                       color={publishedIds.has(w.id) ? "#34D399" : "#888"}
                     />
