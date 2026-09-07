@@ -1,20 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, TouchableOpacity, Text, Animated } from "react-native";
 import { router, usePathname } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export function WorkoutsNavBar() {
   const { t } = useTranslation();
+  // Not <SafeAreaView>: that renders a native view which gets its insets
+  // asynchronously, so the bar paints once at the very top before dropping
+  // into place. The context insets are seeded synchronously by the
+  // SafeAreaProvider in app/_layout.tsx.
+  const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [tabWidth, setTabWidth] = useState(0);
 
   const NAV_TABS = [
-    { label: t.sessions, route: "/(tabs)/workouts" },
-    { label: t.programmes, route: "/(tabs)/workouts/programms" },
-    { label: t.exercises, route: "/(tabs)/workouts/exercises" },
-  ];
+    { label: t.sessions, route: "/workouts" },
+    { label: t.programmes, route: "/workouts/programms" },
+    { label: t.exercises, route: "/workouts/exercises" },
+  ] as const;
 
   const getActiveIndex = () => {
     if (pathname.includes("exercises")) return 2;
@@ -38,7 +43,7 @@ export function WorkoutsNavBar() {
   });
 
   return (
-    <SafeAreaView edges={["top"]} className="bg-[#0F0F0F]">
+    <View style={{ paddingTop: insets.top }} className="bg-[#0F0F0F]">
       <Text className="text-2xl font-bold text-white px-4 mb-3">
         {t.myWorkouts}
       </Text>
@@ -79,6 +84,6 @@ export function WorkoutsNavBar() {
           );
         })}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

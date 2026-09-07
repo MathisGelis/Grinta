@@ -11,17 +11,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
-import ExerciseSearch from "@/components/workoutCreation/ExerciseSearch";
+import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
 import { Exercise } from "@/services/exercises.service";
-import { ExerciseSetupData } from "@/components/workoutCreation/ExerciseSetupItem";
+import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
 import {
   createPlannedWorkout,
   CreateWorkoutRequest,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
-import WorkoutFormFields from "@/components/workoutCreation/workout/WorkoutFormFields";
-import ExerciseSection from "@/components/workoutCreation/workout/ExerciseSection";
-import WorkoutStats from "@/components/workoutCreation/workout/WorkoutStats";
+import WorkoutFormFields from "@/components/workout/editor/WorkoutFormFields";
+import ExerciseSection from "@/components/workout/editor/ExerciseSection";
+import WorkoutStats from "@/components/workout/editor/WorkoutStats";
 
 export default function CreateWorkoutScreen() {
   const [name, setName] = useState("");

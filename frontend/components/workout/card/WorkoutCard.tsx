@@ -10,11 +10,11 @@ import {
   deletePlannedWorkout,
 } from "@/services/workouts.service";
 import { getAllExercises, Exercise } from "@/services/exercises.service";
-import { ExerciseSetupData } from "./ExerciseSetupItem";
-import WorkoutCardHeader from "./WorkoutCardHeader";
-import WorkoutTabs from "./WorkoutTabs";
-import WorkoutInfosTab from "./WorkoutInfosTab";
-import WorkoutStatsTab from "./WorkoutStatsTab";
+import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
+import WorkoutCardHeader from "@/components/workout/card/WorkoutCardHeader";
+import WorkoutTabs from "@/components/workout/card/WorkoutTabs";
+import WorkoutInfosTab from "@/components/workout/card/WorkoutInfosTab";
+import WorkoutStatsTab from "@/components/workout/card/WorkoutStatsTab";
 
 interface WorkoutCardProps {
   workout: {

@@ -92,10 +92,10 @@ export default function StatsScreen() {
   const totalWorkouts = completedWorkouts.length;
 
   const handleDeleteWorkout = (workout: CompletedWorkout) => {
-    Alert.alert("Supprimer", `Supprimer "${workout.title}" ?`, [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t.delete, `${t.delete} "${workout.title}" ?`, [
+      { text: t.cancel, style: "cancel" },
       {
-        text: "Supprimer",
+        text: t.delete,
         style: "destructive",
         onPress: async () => {
           try {
@@ -104,7 +104,7 @@ export default function StatsScreen() {
               prev.filter((w) => w.id !== workout.id),
             );
           } catch {
-            Alert.alert("Erreur", "Impossible de supprimer");
+            Alert.alert(t.error, t.cannotDelete);
           }
         },
       },
@@ -114,14 +114,14 @@ export default function StatsScreen() {
   const handlePublishWorkout = (workout: CompletedWorkout) => {
     const isPublished = publishedIds.has(workout.id);
     Alert.alert(
-      isPublished ? "Retirer la publication" : "Publier",
+      isPublished ? t.unpublish : t.publish,
       isPublished
         ? `Retirer "${workout.title}" du feed ?`
         : `Publier "${workout.title}" dans le feed ?`,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: isPublished ? "Retirer" : "Publier",
+          text: isPublished ? t.remove : t.publish,
           onPress: async () => {
             try {
               if (isPublished) {
@@ -135,7 +135,7 @@ export default function StatsScreen() {
                 setPublishedIds((prev) => new Set(prev).add(workout.id));
               }
             } catch {
-              Alert.alert("Erreur", "Impossible de modifier la publication.");
+              Alert.alert(t.error, t.cannotUpdatePublication);
             }
           },
         },
@@ -219,7 +219,7 @@ export default function StatsScreen() {
               <View style={styles.bigRingOuter}>
                 <View style={styles.bigRingInner}>
                   <Text style={styles.bigRingValue}>{dayCalories}</Text>
-                  <Text style={styles.bigRingLabel}>Cal</Text>
+                  <Text style={styles.bigRingLabel}>{t.calShort}</Text>
                 </View>
               </View>
               <Text style={styles.bigRingCaption}>{t.dailyCaloriesBurned}</Text>
@@ -231,13 +231,13 @@ export default function StatsScreen() {
                 <View style={[styles.ringOuter, { borderColor: "#7B5CF0" }]}>
                   <Text style={styles.ringValue}>{currentStreak}d</Text>
                 </View>
-                <Text style={styles.ringLabel}>Streak</Text>
+                <Text style={styles.ringLabel}>{t.streak}</Text>
               </View>
               <View style={styles.smallRingItem}>
                 <View style={[styles.ringOuter, { borderColor: "#EC4899" }]}>
                   <Text style={styles.ringValue}>{totalWorkouts}</Text>
                 </View>
-                <Text style={styles.ringLabel}>Total</Text>
+                <Text style={styles.ringLabel}>{t.total}</Text>
               </View>
               <View style={styles.smallRingItem}>
                 <View style={[styles.ringOuter, { borderColor: "#34D399" }]}>
@@ -252,7 +252,7 @@ export default function StatsScreen() {
               <Text style={styles.sectionTitle}>{t.finishedWorkout}</Text>
               {dayWorkouts.length === 0 && (
                 <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>Repos ce jour-là 💤</Text>
+                  <Text style={styles.emptyText}>{t.restDay} 💤</Text>
                 </View>
               )}
               {dayWorkouts.map((w) => (
