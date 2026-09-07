@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -10,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TokenService } from "@/services/token.service";
 import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
 import { StatsService } from "@/services/stats.service";
@@ -18,24 +18,48 @@ import { useTranslation } from "@/contexts/LanguageContext";
 function formatJoinDate(dateStr: string): string {
   const d = new Date(dateStr);
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   return `${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-
-
   const MENU_ITEMS = [
-    { id: "edit", label: t.editProfile, icon: "person-outline" as const, route: "/(tabs)/profile/edit-profile" },
-    { id: "privacy", label: t.privacyPolicy, icon: "shield-checkmark-outline" as const, route: "/(tabs)/profile/privacy-policy" },
-    { id: "settings", label: t.settings, icon: "settings-outline" as const, route: "/(tabs)/profile/settings" },
+    {
+      id: "edit",
+      label: t.editProfile,
+      icon: "person-outline" as const,
+      route: "/(tabs)/profile/edit-profile",
+    },
+    {
+      id: "privacy",
+      label: t.privacyPolicy,
+      icon: "shield-checkmark-outline" as const,
+      route: "/(tabs)/profile/privacy-policy",
+    },
+    {
+      id: "settings",
+      label: t.settings,
+      icon: "settings-outline" as const,
+      route: "/(tabs)/profile/settings",
+    },
   ];
 
   const fetchData = useCallback(async () => {
@@ -44,7 +68,7 @@ export default function ProfileScreen() {
       const me = await UserService.getMe();
       setUser(me);
 
-      const [profileData, summaryData] = await Promise.all([
+      const [profileData] = await Promise.all([
         UserService.getProfile(me.id),
         StatsService.getSummary("month").catch(() => null),
       ]);
@@ -89,17 +113,16 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t.profile}</Text>
-        </View>
+      {/* Pinned above the content so it can never ride up under the clock. */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <Text style={styles.headerTitle}>{t.profile}</Text>
+      </View>
 
+      {/* Fixed height, no scroll: spacing below is tuned so everything fits
+          between the header and the tab bar. */}
+      <View style={[styles.content, { paddingBottom: insets.bottom + 100 }]}>
         {loading ? (
-          <ActivityIndicator size="large" color="#7B5CF0" style={{ marginTop: 60 }} />
+          <ActivityIndicator size="large" color="#7B5CF0" />
         ) : (
           <>
             {/* Avatar */}
@@ -114,7 +137,9 @@ export default function ProfileScreen() {
                 <Text style={styles.pseudoText}>@{user.uniqueName}</Text>
               ) : null}
               {joinedDate ? (
-                <Text style={styles.joinedText}>{t.joined} {joinedDate}</Text>
+                <Text style={styles.joinedText}>
+                  {t.joined} {joinedDate}
+                </Text>
               ) : null}
             </View>
 
@@ -122,7 +147,12 @@ export default function ProfileScreen() {
             <View style={styles.statsRow}>
               <TouchableOpacity
                 style={styles.statItem}
-                onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: user?.id, tab: "followers" } } as any)}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/profile/followers",
+                    params: { userId: user?.id, tab: "followers" },
+                  } as any)
+                }
               >
                 <Text style={styles.statNum}>{followersCount}</Text>
                 <Text style={styles.statLabel}>Followers</Text>
@@ -130,7 +160,12 @@ export default function ProfileScreen() {
               <View style={styles.statDivider} />
               <TouchableOpacity
                 style={styles.statItem}
-                onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: user?.id, tab: "following" } } as any)}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/profile/followers",
+                    params: { userId: user?.id, tab: "following" },
+                  } as any)
+                }
               >
                 <Text style={styles.statNum}>{followingCount}</Text>
                 <Text style={styles.statLabel}>Following</Text>
@@ -149,7 +184,11 @@ export default function ProfileScreen() {
                 <Text style={styles.proSub}>{t.unlockAll}</Text>
               </View>
               <View style={styles.proBadge}>
-                <MaterialCommunityIcons name="crown" size={18} color="#F59E0B" />
+                <MaterialCommunityIcons
+                  name="crown"
+                  size={18}
+                  color="#F59E0B"
+                />
               </View>
             </TouchableOpacity>
 
@@ -177,35 +216,45 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </>
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 8 },
+  header: { paddingHorizontal: 24, paddingBottom: 8 },
   headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
 
-  avatarSection: { alignItems: "center", paddingVertical: 24 },
+  content: { flex: 1, justifyContent: "center" },
+  avatarSection: {
+    alignItems: "center",
+    paddingTop: 4,
+    paddingBottom: 16,
+  },
   avatarRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     padding: 3,
     backgroundColor: "#7B5CF0",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   avatarInner: {
     flex: 1,
-    borderRadius: 48,
+    borderRadius: 42,
     backgroundColor: "#2a1f4a",
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarInitials: { color: "#fff", fontSize: 28, fontWeight: "700" },
-  userName: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 2 },
-  pseudoText: { color: "#7B5CF0", fontSize: 14, fontWeight: "500", marginBottom: 4 },
+  avatarInitials: { color: "#fff", fontSize: 26, fontWeight: "700" },
+  userName: { color: "#fff", fontSize: 20, fontWeight: "700", marginBottom: 2 },
+  pseudoText: {
+    color: "#7B5CF0",
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
   joinedText: { color: "#888", fontSize: 13 },
 
   statsRow: {
@@ -213,8 +262,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#1a1a1a",
     borderRadius: 20,
     marginHorizontal: 16,
-    padding: 20,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 12,
   },
   statItem: { flex: 1, alignItems: "center" },
   statNum: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 4 },
@@ -228,8 +277,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#1a1a1a",
     borderRadius: 20,
     marginHorizontal: 16,
-    padding: 20,
-    marginBottom: 24,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: "#F59E0B44",
   },
@@ -249,13 +298,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#1a1a1a",
     borderRadius: 20,
     overflow: "hidden",
-    marginBottom: 24,
+    marginBottom: 12,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#2a2a2a",
     gap: 14,
@@ -276,7 +325,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
     marginHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 14,
     backgroundColor: "#1a1a1a",
     borderRadius: 20,
   },
