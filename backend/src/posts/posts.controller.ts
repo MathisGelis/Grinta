@@ -33,6 +33,14 @@ export class PostsController {
   }
 
   @Auth()
+  @Get('mine')
+  @ApiOperation({ summary: 'Get all posts by the current user' })
+  @ApiResponse({ status: 200, description: 'List returned' })
+  async getMyPosts(@Req() req, @Query('limit') limit?: number) {
+    return this.postsService.getMyPosts(req.user.id, limit || 20);
+  }
+
+  @Auth()
   @Get(':postId')
   @ApiOperation({ summary: 'Get a post by ID' })
   @ApiResponse({ status: 200, description: 'Post returned' })
