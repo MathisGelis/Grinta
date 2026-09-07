@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface WorkoutSessionHeaderProps {
   workoutTitle: string;
@@ -16,6 +17,7 @@ export default function WorkoutSessionHeader({
   onMinimize,
   onEndWorkout,
 }: WorkoutSessionHeaderProps) {
+  const { t } = useTranslation();
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -54,7 +56,7 @@ export default function WorkoutSessionHeader({
             letterSpacing: 0.5,
           }}
         >
-          Séance en cours
+          {t.workoutInProgress}
         </Text>
         <Text
           style={{
