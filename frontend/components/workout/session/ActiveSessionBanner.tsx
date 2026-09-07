@@ -3,6 +3,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { resumeSession } from "@/hooks/useActiveSession";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   ActiveSession,
   elapsedSince,
@@ -14,6 +15,7 @@ export default function ActiveSessionBanner({
 }: {
   session: ActiveSession | null;
 }) {
+  const { t } = useTranslation();
   const [elapsed, setElapsed] = useState(0);
 
   // The ticking clock lives here rather than in the hook so the once-a-second
@@ -76,7 +78,7 @@ export default function ActiveSessionBanner({
             letterSpacing: 0.5,
           }}
         >
-          Séance en cours
+          {t.workoutInProgress}
         </Text>
         <Text
           numberOfLines={1}

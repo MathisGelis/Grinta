@@ -19,11 +19,11 @@ import {
   fullPlannedWorkout,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
+import Modal from "react-native-modal";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 /** Rough work time per set, used only for the "~x min" estimate. */
 const SECONDS_PER_SET = 45;
-/** Below this many workouts the pill row is easier to scan than a search box. */
-const SEARCH_THRESHOLD = 5;
 
 function formatRest(seconds: number) {
   if (seconds < 60) return `${seconds}s`;
@@ -34,6 +34,7 @@ function formatRest(seconds: number) {
 }
 
 export default function CurrentWorkoutScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
   const [selectedWorkout, setSelectedWorkout] =
@@ -42,6 +43,7 @@ export default function CurrentWorkoutScreen() {
     null,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [pickerVisible, setPickerVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -53,7 +55,7 @@ export default function CurrentWorkoutScreen() {
         setSelectedWorkout(detail);
       } catch (error) {
         console.error("Erreur lors du chargement des détails:", error);
-        Alert.alert("Erreur", "Impossible de charger les détails de la séance");
+        Alert.alert(t.error, t.cannotLoadWorkoutDetails);
       } finally {
         setLoadingDetail(false);
       }
@@ -75,7 +77,7 @@ export default function CurrentWorkoutScreen() {
       }
     } catch (error) {
       console.error("Erreur lors du chargement des workouts:", error);
-      Alert.alert("Erreur", "Impossible de charger les séances");
+      Alert.alert(t.error, t.cannotLoadWorkouts);
     } finally {
       setLoading(false);
     }
@@ -173,7 +175,7 @@ export default function CurrentWorkoutScreen() {
             letterSpacing: -0.3,
           }}
         >
-          Sélectionner une séance
+          {t.selectWorkout}
         </Text>
         <TouchableOpacity
           onPress={closeScreen}
@@ -213,7 +215,7 @@ export default function CurrentWorkoutScreen() {
               textAlign: "center",
             }}
           >
-            Aucune séance créée
+            {t.noWorkoutCreated}
           </Text>
           <Text
             style={{
@@ -223,123 +225,11 @@ export default function CurrentWorkoutScreen() {
               textAlign: "center",
             }}
           >
-            Créez une séance dans l&apos;onglet Workouts pour commencer
+            {t.createWorkoutHint}
           </Text>
         </View>
       ) : (
         <>
-          {/* Picker first: switching is one tap, no scrolling back up */}
-          {workouts.length > SEARCH_THRESHOLD && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: WorkoutTheme.backgroundTertiary,
-                borderRadius: 10,
-                paddingHorizontal: 12,
-                marginHorizontal: 16,
-                marginBottom: 10,
-              }}
-            >
-              <Ionicons
-                name="search"
-                size={16}
-                color={WorkoutTheme.text.tertiary}
-              />
-              <TextInput
-                style={{
-                  flex: 1,
-                  paddingVertical: 10,
-                  paddingHorizontal: 8,
-                  fontSize: 14,
-                  color: WorkoutTheme.text.primary,
-                }}
-                placeholder="Rechercher une séance..."
-                placeholderTextColor={WorkoutTheme.text.tertiary}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery("")}>
-                  <Ionicons
-                    name="close-circle"
-                    size={16}
-                    color={WorkoutTheme.text.tertiary}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          <View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: 16,
-                gap: 8,
-                paddingBottom: 14,
-              }}
-            >
-              {filteredWorkouts.map((workout) => {
-                const active = selectedWorkoutId === workout.id;
-
-                return (
-                  <TouchableOpacity
-                    key={workout.id}
-                    onPress={() => handleSelectWorkout(workout.id)}
-                    activeOpacity={0.8}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 8,
-                      paddingHorizontal: 14,
-                      paddingVertical: 9,
-                      borderRadius: 999,
-                      backgroundColor: active
-                        ? WorkoutTheme.accent.purple
-                        : WorkoutTheme.backgroundTertiary,
-                      borderWidth: 1,
-                      borderColor: active
-                        ? WorkoutTheme.accent.purple
-                        : WorkoutTheme.border,
-                    }}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "600",
-                        maxWidth: 190,
-                        color: active ? "white" : WorkoutTheme.text.secondary,
-                      }}
-                    >
-                      {workout.title}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontWeight: "700",
-                        color: active
-                          ? "rgba(255,255,255,0.75)"
-                          : WorkoutTheme.text.tertiary,
-                      }}
-                    >
-                      {workout.totalExercises}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-              {filteredWorkouts.length === 0 && (
-                <Text
-                  style={{ fontSize: 13, color: WorkoutTheme.text.tertiary }}
-                >
-                  Aucune séance trouvée
-                </Text>
-              )}
-            </ScrollView>
-          </View>
-
           <ScrollView
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
@@ -347,16 +237,44 @@ export default function CurrentWorkoutScreen() {
           >
             {selectedWorkout && (
               <>
-                <Text
+                <TouchableOpacity
+                  onPress={() => setPickerVisible(true)}
+                  activeOpacity={0.7}
                   style={{
-                    fontSize: 26,
-                    fontWeight: "700",
-                    color: WorkoutTheme.text.primary,
-                    letterSpacing: -0.5,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
                   }}
                 >
-                  {selectedWorkout.title}
-                </Text>
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      flex: 1,
+                      fontSize: 26,
+                      fontWeight: "700",
+                      color: WorkoutTheme.text.primary,
+                      letterSpacing: -0.5,
+                    }}
+                  >
+                    {selectedWorkout.title}
+                  </Text>
+                  <View
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: 15,
+                      backgroundColor: WorkoutTheme.backgroundTertiary,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons
+                      name="chevron-down"
+                      size={17}
+                      color={WorkoutTheme.text.secondary}
+                    />
+                  </View>
+                </TouchableOpacity>
                 {selectedWorkout.description ? (
                   <Text
                     style={{
@@ -384,16 +302,16 @@ export default function CurrentWorkoutScreen() {
                     }}
                   >
                     {[
-                      { value: `${summary.exercises}`, label: "exercices" },
-                      { value: `${summary.sets}`, label: "séries" },
+                      { value: `${summary.exercises}`, label: t.exercises },
+                      { value: `${summary.sets}`, label: t.sets },
                       {
                         value:
                           summary.volume >= 1000
                             ? `${(summary.volume / 1000).toFixed(1)}t`
                             : `${summary.volume}kg`,
-                        label: "volume",
+                        label: t.volumeLabel,
                       },
-                      { value: `~${summary.minutes}min`, label: "durée" },
+                      { value: `~${summary.minutes}min`, label: t.duration },
                     ].map((stat, index) => (
                       <View
                         key={stat.label}
@@ -552,6 +470,170 @@ export default function CurrentWorkoutScreen() {
             )}
           </ScrollView>
 
+          {/* Picker as a sheet: a horizontal pill row stops working once
+              there are more than a handful of workouts. */}
+          <Modal
+            isVisible={pickerVisible}
+            onBackdropPress={() => setPickerVisible(false)}
+            onSwipeComplete={() => setPickerVisible(false)}
+            swipeDirection="down"
+            propagateSwipe
+            useNativeDriverForBackdrop
+            style={{ justifyContent: "flex-end", margin: 0 }}
+          >
+            <View
+              style={{
+                backgroundColor: WorkoutTheme.backgroundSecondary,
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                maxHeight: "82%",
+                paddingTop: 10,
+                paddingBottom: Math.max(insets.bottom, 16),
+              }}
+            >
+              <View
+                style={{
+                  height: 4,
+                  width: 44,
+                  borderRadius: 2,
+                  alignSelf: "center",
+                  backgroundColor: WorkoutTheme.border,
+                  marginBottom: 14,
+                }}
+              />
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: WorkoutTheme.backgroundTertiary,
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  marginHorizontal: 16,
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons
+                  name="search"
+                  size={16}
+                  color={WorkoutTheme.text.tertiary}
+                />
+                <TextInput
+                  style={{
+                    flex: 1,
+                    paddingVertical: 11,
+                    paddingHorizontal: 8,
+                    fontSize: 14,
+                    color: WorkoutTheme.text.primary,
+                  }}
+                  placeholder={t.searchWorkout}
+                  placeholderTextColor={WorkoutTheme.text.tertiary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCorrect={false}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery("")}>
+                    <Ionicons
+                      name="close-circle"
+                      size={16}
+                      color={WorkoutTheme.text.tertiary}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+              >
+                {filteredWorkouts.map((workout) => {
+                  const active = selectedWorkoutId === workout.id;
+
+                  return (
+                    <TouchableOpacity
+                      key={workout.id}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        setPickerVisible(false);
+                        if (!active) handleSelectWorkout(workout.id);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        borderRadius: 12,
+                        padding: 14,
+                        backgroundColor: active
+                          ? WorkoutTheme.accent.purple + "22"
+                          : WorkoutTheme.backgroundTertiary,
+                        borderWidth: 1,
+                        borderColor: active
+                          ? WorkoutTheme.accent.purple
+                          : WorkoutTheme.border,
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 15,
+                            fontWeight: "600",
+                            color: WorkoutTheme.text.primary,
+                          }}
+                        >
+                          {workout.title}
+                        </Text>
+                        {workout.description ? (
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontSize: 12,
+                              marginTop: 3,
+                              color: WorkoutTheme.text.tertiary,
+                            }}
+                          >
+                            {workout.description}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "700",
+                          marginRight: 10,
+                          color: WorkoutTheme.text.tertiary,
+                        }}
+                      >
+                        {workout.totalExercises} {t.exercisesShort}
+                      </Text>
+                      {active && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color={WorkoutTheme.accent.purple}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+
+                {filteredWorkouts.length === 0 && (
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      textAlign: "center",
+                      paddingVertical: 28,
+                      color: WorkoutTheme.text.tertiary,
+                    }}
+                  >
+                    {t.noWorkoutFound}
+                  </Text>
+                )}
+              </ScrollView>
+            </View>
+          </Modal>
+
           {/* Pinned: the primary action should never require scrolling */}
           <View
             style={{
@@ -582,7 +664,7 @@ export default function CurrentWorkoutScreen() {
               <Text
                 style={{ fontSize: 15, fontWeight: "700", color: "white" }}
               >
-                Commencer la séance
+                {t.startWorkout}
               </Text>
             </TouchableOpacity>
           </View>

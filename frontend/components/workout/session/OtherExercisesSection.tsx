@@ -5,6 +5,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import { WorkoutExercise } from "@/services/workouts.service";
 import { Exercise } from "@/services/exercises.service";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface OtherExercisesSectionProps {
   exercises: WorkoutExercise[];
@@ -21,6 +22,7 @@ export default function OtherExercisesSection({
   onAddExercise,
   completedExercises,
 }: OtherExercisesSectionProps) {
+  const { t } = useTranslation();
   const [showAddModal, setShowAddModal] = useState(false);
 
   const handleAddExercise = (exercise: Exercise) => {
@@ -67,7 +69,7 @@ export default function OtherExercisesSection({
               color: WorkoutTheme.text.primary,
             }}
           >
-            Autres exercices ({otherExercises.length})
+            {t.otherExercises} ({otherExercises.length})
           </Text>
           <TouchableOpacity
             onPress={() => setShowAddModal(true)}
@@ -92,7 +94,7 @@ export default function OtherExercisesSection({
                 marginLeft: 6,
               }}
             >
-              Ajouter
+              {t.add}
             </Text>
           </TouchableOpacity>
         </View>
@@ -187,7 +189,7 @@ export default function OtherExercisesSection({
                 color: WorkoutTheme.text.secondary,
               }}
             >
-              Aucun autre exercice
+              {t.noOtherExercise}
             </Text>
           </View>
         )}

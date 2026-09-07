@@ -23,6 +23,7 @@ import {
 } from "@/services/exercises.service";
 import { TokenService } from "@/services/token.service";
 import { useFocusEffect, router } from "expo-router";
+import { useTranslation } from "@/contexts/LanguageContext";
 import Modal from "react-native-modal";
 
 const MUSCLE_FILTER_OPTIONS = Object.entries(MUSCLE_LABELS).map(
@@ -30,6 +31,7 @@ const MUSCLE_FILTER_OPTIONS = Object.entries(MUSCLE_LABELS).map(
 );
 
 export default function ExercisesScreen() {
+  const { t } = useTranslation();
   const { keyboardY, bottomOffset } = useKeyboardOffset();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
@@ -56,7 +58,7 @@ export default function ExercisesScreen() {
       setUserCreatedIds(createdIds);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Erreur lors du chargement";
+        err instanceof Error ? err.message : t.loadingError;
       setError(message);
       console.error("Erreur:", err);
     } finally {
@@ -107,18 +109,18 @@ export default function ExercisesScreen() {
 
   const handleDeleteExercise = async (exercise: Exercise) => {
     Alert.alert(
-      "Supprimer l'exercice ?",
-      `Voulez-vous vraiment retirer "${exercise.name}" de vos exercices ?`,
+      t.deleteExerciseQuestion,
+      `"${exercise.name}" — ${t.removeFromYourExercises}`,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: "Supprimer",
+          text: t.delete,
           style: "destructive",
           onPress: async () => {
             try {
               const token = await TokenService.get();
               if (!token) {
-                Alert.alert("Erreur", "Authentification requise");
+                Alert.alert(t.error, t.authRequired);
                 return;
               }
               await deleteExercise(exercise.id, token);
@@ -127,8 +129,8 @@ export default function ExercisesScreen() {
               const message =
                 err instanceof Error
                   ? err.message
-                  : "Erreur lors de la suppression";
-              Alert.alert("Erreur", message);
+                  : t.deletionError;
+              Alert.alert(t.error, message);
             }
           },
         },
@@ -146,7 +148,7 @@ export default function ExercisesScreen() {
     ...(userExercises.length > 0
       ? [
           {
-            title: "Exercices créés par vous",
+            title: t.yourExercises,
             items: userExercises,
             canDelete: true,
           },
@@ -155,7 +157,7 @@ export default function ExercisesScreen() {
     ...(sharedExercises.length > 0
       ? [
           {
-            title: "Exercices partagés",
+            title: t.sharedExercises,
             items: sharedExercises,
             canDelete: false,
           },
@@ -213,7 +215,7 @@ export default function ExercisesScreen() {
     >
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">Chargement des exercices...</Text>
+          <Text className="text-gray-500">{t.loadingExercises}</Text>
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center">
@@ -221,7 +223,7 @@ export default function ExercisesScreen() {
         </View>
       ) : filteredExercises.length === 0 ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">Aucun exercice trouvé.</Text>
+          <Text className="text-gray-500">{t.noExerciseFound}</Text>
         </View>
       ) : (
         <FlatList
@@ -258,7 +260,7 @@ export default function ExercisesScreen() {
           <View className="mb-4 h-1.5 w-16 self-center rounded-full bg-[#3A3A3A]" />
           <View className="mb-4 flex-row items-center justify-between">
             <Text className="text-xl font-semibold text-white">
-              Filtrer les exercices
+              {t.filterExercises}
             </Text>
             <TouchableOpacity onPress={() => setIsFilterModalVisible(false)}>
               <Ionicons name="close" size={22} color="#B8B8B8" />
@@ -271,7 +273,7 @@ export default function ExercisesScreen() {
             className="max-h-[70%]"
           >
             <Text className="mb-2 text-sm font-semibold text-[#CFC6FF]">
-              Équipement
+              {t.equipment}
             </Text>
             <View className="mb-4 flex-row flex-wrap gap-2">
               {Object.entries(EQUIPMENT_LABELS).map(([key, label]) => {
@@ -293,7 +295,7 @@ export default function ExercisesScreen() {
             </View>
 
             <Text className="mb-2 text-sm font-semibold text-[#CFC6FF]">
-              Muscle principal
+              {t.primaryMuscle}
             </Text>
             <View className="mb-4 flex-row flex-wrap gap-2">
               {MUSCLE_FILTER_OPTIONS.map((item) => {
@@ -315,7 +317,7 @@ export default function ExercisesScreen() {
             </View>
 
             <Text className="mb-2 text-sm font-semibold text-[#CFC6FF]">
-              Type d&apos;exercice
+              {t.exerciseType}
             </Text>
             <View className="mb-4 flex-row flex-wrap gap-2">
               {EXERCISE_TYPE_LABELS &&
@@ -345,7 +347,7 @@ export default function ExercisesScreen() {
               className="flex-1 rounded-xl border border-[#2F2F2F] bg-[#1A1A1A] py-3"
             >
               <Text className="text-center text-sm font-semibold text-[#E5E5E5]">
-                Réinitialiser
+                {t.reset}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -353,7 +355,7 @@ export default function ExercisesScreen() {
               className="flex-1 rounded-xl bg-[#7C5DB7] py-3"
             >
               <Text className="text-center text-sm font-semibold text-white">
-                Appliquer
+                {t.apply}
               </Text>
             </TouchableOpacity>
           </View>
@@ -370,7 +372,7 @@ export default function ExercisesScreen() {
           items={exercises.map((e) => e.name)}
           onResults={handleSearchResults}
           onAdd={() => router.push("/(tabs)/workouts/create/exercise")}
-          placeholder="Rechercher un exercice…"
+          placeholder={t.searchExercise}
           filter={openFilterModal}
         />
       </Animated.View>
