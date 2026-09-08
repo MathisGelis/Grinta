@@ -20,23 +20,24 @@ import {
   createCompletedWorkout,
   CompletedExercise,
 } from "@/services/completed-workouts.service";
-import WorkoutSessionHeader from "@/components/workoutCreation/WorkoutSessionHeader";
-import CurrentExerciseSection, {
-  CompletedSet as CompletedSetType,
-} from "@/components/workoutCreation/CurrentExerciseSection";
-import OtherExercisesSection from "@/components/workoutCreation/OtherExercisesSection";
-
-interface ExerciseState {
-  exerciseData: WorkoutExercise;
-  completedSetIndices: number[];
-  completedSets: CompletedSetType[];
-  restTimeSeconds: number;
-}
+import WorkoutSessionHeader from "@/components/workout/session/WorkoutSessionHeader";
+import CurrentExerciseSection from "@/components/workout/session/CurrentExerciseSection";
+import OtherExercisesSection from "@/components/workout/session/OtherExercisesSection";
+import { useTranslation } from "@/contexts/LanguageContext";
+import {
+  ExerciseState,
+  clearActiveSession,
+  elapsedSince,
+  getActiveSession,
+  saveActiveSession,
+} from "@/services/active-session.service";
 
 export default function ActiveWorkoutScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const workoutId = params.workoutId as string;
   const workoutName = params.workoutName as string;
+  const isResuming = params.resume === "1";
 
   const [exercisesState, setExercisesState] = useState<ExerciseState[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -51,10 +52,31 @@ export default function ActiveWorkoutScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedExercises, setCompletedExercises] = useState<number[]>([]);
   const setTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const totalTimeRef = useRef(0);
+
+  useEffect(() => {
+    totalTimeRef.current = totalWorkoutTime;
+  }, [totalWorkoutTime]);
 
   const loadWorkout = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Resuming a minimized session: restore from storage rather than
+      // refetching, otherwise every completed set would be lost.
+      if (isResuming) {
+        const stored = await getActiveSession();
+
+        if (stored) {
+          setExercisesState(stored.exercisesState);
+          setCurrentExerciseIndex(stored.currentExerciseIndex);
+          setCurrentSetIndex(stored.currentSetIndex);
+          setCompletedExercises(stored.completedExercises);
+          setTotalWorkoutTime(elapsedSince(stored));
+          return;
+        }
+      }
+
       const token = await TokenService.get();
       const data = await getWorkoutById(workoutId, token || undefined);
 
@@ -68,12 +90,13 @@ export default function ActiveWorkoutScreen() {
       setExercisesState(initialState);
     } catch (error) {
       console.error("Erreur:", error);
-      Alert.alert("Erreur", "Impossible de charger la séance");
+      Alert.alert(t.error, t.cannotLoadWorkout);
+      await clearActiveSession();
       router.back();
     } finally {
       setLoading(false);
     }
-  }, [workoutId]);
+  }, [workoutId, isResuming]);
 
   // Load workout data
   useEffect(() => {
@@ -118,6 +141,34 @@ export default function ActiveWorkoutScreen() {
       if (interval) clearInterval(interval);
     };
   }, [showRestScreen, restTimeRemaining]);
+
+  const persistSession = useCallback(async () => {
+    if (exercisesState.length === 0) return;
+    await saveActiveSession({
+      workoutId,
+      workoutName,
+      exercisesState,
+      currentExerciseIndex,
+      currentSetIndex,
+      completedExercises,
+      totalWorkoutTime: totalTimeRef.current,
+    });
+  }, [
+    workoutId,
+    workoutName,
+    exercisesState,
+    currentExerciseIndex,
+    currentSetIndex,
+    completedExercises,
+  ]);
+
+  // Autosave on every meaningful change so the session survives an app kill.
+  // The timer is deliberately not a dependency (it would write once a second):
+  // it is recomputed from savedAt when the session is resumed.
+  useEffect(() => {
+    if (loading) return;
+    void persistSession();
+  }, [loading, persistSession]);
 
   const currentExerciseState = exercisesState[currentExerciseIndex];
   const currentExercise = currentExerciseState?.exerciseData;
@@ -239,8 +290,8 @@ export default function ActiveWorkoutScreen() {
 
     if (exerciseExists) {
       Alert.alert(
-        "Exercice en doublon",
-        `"${exercise.exerciseName}" est déjà ajouté à la séance.`,
+        t.duplicateExercise,
+        `"${exercise.exerciseName}" ${t.alreadyAdded}`,
       );
       return;
     }
@@ -257,12 +308,12 @@ export default function ActiveWorkoutScreen() {
 
   const handleDeleteExercise = () => {
     Alert.alert(
-      "Supprimer l'exercice",
-      "Êtes-vous sûr de vouloir supprimer cet exercice de la séance?",
+      t.deleteExercise,
+      t.deleteExerciseConfirm,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: "Supprimer",
+          text: t.delete,
           onPress: () => {
             const newState = exercisesState.filter(
               (_, index) => index !== currentExerciseIndex,
@@ -271,8 +322,8 @@ export default function ActiveWorkoutScreen() {
             if (newState.length === 0) {
               // No more exercises, go back
               Alert.alert(
-                "Dernière exercice",
-                "Impossible de supprimer le dernier exercice.",
+                t.lastExerciseTitle,
+                t.cannotDeleteLastExercise,
               );
               return;
             }
@@ -316,12 +367,12 @@ export default function ActiveWorkoutScreen() {
 
   const handleEndWorkout = () => {
     Alert.alert(
-      "Terminer la séance",
-      "Êtes-vous sûr de vouloir terminer cette séance maintenant?",
+      t.finishWorkout,
+      t.finishWorkoutConfirm,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: "Terminer",
+          text: t.finish,
           onPress: () => setShowCompletionModal(true),
           style: "destructive",
         },
@@ -329,13 +380,17 @@ export default function ActiveWorkoutScreen() {
     );
   };
 
-  const handleMinimize = () => {
-    router.push("/(tabs)/workout-trigger");
+  const handleMinimize = async () => {
+    await persistSession();
+    // "/(tabs)/workout-trigger" renders null - it only exists to reserve the
+    // center slot in the tab bar - so pushing it showed a blank screen.
+    // Same call shape as the end-of-workout redirect just below.
+    router.replace("/(tabs)/explore");
   };
 
   const handleSubmitCompletion = async () => {
     if (!completionTitle.trim()) {
-      Alert.alert("Erreur", "Veuillez entrer un titre");
+      Alert.alert(t.error, t.pleaseEnterTitle);
       return;
     }
 
@@ -364,7 +419,8 @@ export default function ActiveWorkoutScreen() {
       };
 
       await createCompletedWorkout(request, token || undefined);
-      Alert.alert("Succès", "Séance enregistrée avec succès!", [
+      await clearActiveSession();
+      Alert.alert(t.success, t.workoutSavedSuccess, [
         {
           text: "OK",
           onPress: () => router.replace("/(tabs)/stats"),
@@ -372,7 +428,7 @@ export default function ActiveWorkoutScreen() {
       ]);
     } catch (error) {
       console.error("Erreur:", error);
-      Alert.alert("Erreur", "Impossible d'enregistrer la séance");
+      Alert.alert(t.error, t.cannotSaveWorkout);
     } finally {
       setIsSubmitting(false);
     }
@@ -440,7 +496,7 @@ export default function ActiveWorkoutScreen() {
                   letterSpacing: 0.5,
                 }}
               >
-                Temps de repos
+                {t.restTime}
               </Text>
               <Text
                 style={{
@@ -460,7 +516,7 @@ export default function ActiveWorkoutScreen() {
                   marginBottom: 24,
                 }}
               >
-                secondes
+                {t.seconds}
               </Text>
 
               {/* Skip rest button */}
@@ -478,7 +534,7 @@ export default function ActiveWorkoutScreen() {
               >
                 <Ionicons name="play-forward" size={16} color="white" />
                 <Text style={{ color: "white", fontWeight: "700" }}>
-                  Passer le repos
+                  {t.skipRest}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -588,7 +644,7 @@ export default function ActiveWorkoutScreen() {
                   marginTop: 16,
                 }}
               >
-                Séance complétée!
+                {t.workoutCompleted}
               </Text>
             </View>
 
@@ -607,7 +663,7 @@ export default function ActiveWorkoutScreen() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Titre
+                  {t.titleLabel}
                 </Text>
                 <TextInput
                   style={{
@@ -620,7 +676,7 @@ export default function ActiveWorkoutScreen() {
                     fontSize: 14,
                     color: WorkoutTheme.text.primary,
                   }}
-                  placeholder="Nom de la séance"
+                  placeholder={t.workoutNameLabel}
                   placeholderTextColor={WorkoutTheme.text.tertiary}
                   value={completionTitle}
                   onChangeText={setCompletionTitle}
@@ -639,7 +695,7 @@ export default function ActiveWorkoutScreen() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Description (optionnel)
+                  {t.descriptionOptional}
                 </Text>
                 <TextInput
                   style={{
@@ -654,7 +710,7 @@ export default function ActiveWorkoutScreen() {
                     minHeight: 80,
                     textAlignVertical: "top",
                   }}
-                  placeholder="Ajouter une description..."
+                  placeholder={t.addDescriptionPlaceholder}
                   placeholderTextColor={WorkoutTheme.text.tertiary}
                   value={completionDescription}
                   onChangeText={setCompletionDescription}
@@ -690,7 +746,7 @@ export default function ActiveWorkoutScreen() {
                           color: "white",
                         }}
                       >
-                        Enregistrer
+                        {t.save}
                       </Text>
                     </>
                   )}
@@ -717,7 +773,7 @@ export default function ActiveWorkoutScreen() {
                       color: WorkoutTheme.text.secondary,
                     }}
                   >
-                    Retour
+                    {t.back}
                   </Text>
                 </TouchableOpacity>
               </View>

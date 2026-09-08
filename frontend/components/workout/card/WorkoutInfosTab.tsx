@@ -9,9 +9,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
-import ExerciseSetupItem, { ExerciseSetupData } from "./ExerciseSetupItem";
-import WorkoutActionButtons from "./WorkoutActionButtons";
-import ExerciseSearch from "@/components/workoutCreation/ExerciseSearch";
+import ExerciseSetupItem, { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
+import WorkoutActionButtons from "@/components/workout/card/WorkoutActionButtons";
+import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
 
 interface WorkoutInfosTabProps {
   isEditing: boolean;

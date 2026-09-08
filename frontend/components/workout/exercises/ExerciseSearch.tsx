@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -31,13 +31,7 @@ export default function ExerciseSearch({
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [loadingExercises, setLoadingExercises] = useState(false);
 
-  useEffect(() => {
-    if (visible && availableExercises.length === 0) {
-      loadExercises();
-    }
-  }, [visible, availableExercises.length]);
-
-  const loadExercises = async () => {
+  const loadExercises = useCallback(async () => {
     setLoadingExercises(true);
     try {
       const allExercises = await getAllExercises();
@@ -49,7 +43,13 @@ export default function ExerciseSearch({
     } finally {
       setLoadingExercises(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (visible && availableExercises.length === 0) {
+      loadExercises();
+    }
+  }, [visible, availableExercises.length, loadExercises]);
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
