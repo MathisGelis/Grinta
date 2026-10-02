@@ -167,65 +167,71 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found');
     const isOwner = currentUserId === targetUserId;
-    const [isFollowing, followStatus] = await Promise.all([
-      this.connectionRepository.exist({
-        where: {
-          follower: { id: currentUserId },
-          following: { id: targetUserId },
-        },
-      }),
+    // A public profile or the owner's own page never depends on the follow
+    // status, so the posts are fetched alongside the rest instead of after it.
+    const postsAreOpen = user.isPublic || isOwner;
+    const [followStatus, counts, openPosts] = await Promise.all([
       this.connectionsService.getFollowStatus(currentUserId, targetUserId),
+      this.getProfileCounts(targetUserId),
+      postsAreOpen
+        ? this.findProfilePosts(currentUserId, targetUserId)
+        : Promise.resolve(null),
     ]);
-    const canSeePosts = user.isPublic || isOwner || isFollowing;
-    const [followersCount, followingCount, workoutsCount, postsCount] =
-      await Promise.all([
-        this.connectionRepository.count({
-          where: { following: { id: targetUserId } },
-        }),
-        this.connectionRepository.count({
-          where: { follower: { id: targetUserId } },
-        }),
-        this.completedWorkoutRepository.count({
-          where: { user: { id: targetUserId } },
-        }),
-        this.postRepository.count({
-          where: { user: { id: targetUserId } },
-        }),
-      ]);
-    let posts = [];
-
-    if (canSeePosts) {
-      posts = await this.postRepository
-        .createQueryBuilder('post')
-        .where('post."userId" = :targetUserId', { targetUserId })
-        .select([
-          'post.id AS id',
-          'post."createdAt" AS "createdAt"',
-          `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-          `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
-          `EXISTS (
-            SELECT 1 FROM post_likes ml
-            WHERE ml."postId" = post.id
-            AND ml."userId" = :currentUserId
-          ) AS "isLiked"`,
-        ])
-        .orderBy('post."createdAt"', 'DESC')
-        .setParameter('currentUserId', currentUserId)
-        .getRawMany();
-    }
+    const isFollowing = followStatus === 'FOLLOWING';
+    const canSeePosts = postsAreOpen || isFollowing;
+    const posts = canSeePosts
+      ? (openPosts ??
+        (await this.findProfilePosts(currentUserId, targetUserId)))
+      : undefined;
 
     return {
       id: user.id,
       displayName: user.displayName,
       uniqueName: user.uniqueName,
-      followersCount,
-      followingCount,
-      workoutsCount,
-      postsCount,
+      ...counts,
       followStatus,
-      posts: canSeePosts ? posts : undefined,
+      posts,
       isPrivate: !user.isPublic && !isOwner && !isFollowing,
     };
+  }
+
+  // One statement for the four counters instead of one round trip each.
+  private async getProfileCounts(userId: string): Promise<{
+    followersCount: number;
+    followingCount: number;
+    workoutsCount: number;
+    postsCount: number;
+  }> {
+    const [counts] = await this.userRepository.query(
+      `SELECT
+         (SELECT COUNT(*)::int FROM connections WHERE "followingId" = $1) AS "followersCount",
+         (SELECT COUNT(*)::int FROM connections WHERE "followerId" = $1) AS "followingCount",
+         (SELECT COUNT(*)::int FROM completed_workouts WHERE "userId" = $1) AS "workoutsCount",
+         (SELECT COUNT(*)::int FROM posts WHERE "userId" = $1) AS "postsCount"`,
+      [userId],
+    );
+
+    return counts;
+  }
+
+  private findProfilePosts(currentUserId: string, targetUserId: string) {
+    return this.postRepository
+      .createQueryBuilder('post')
+      .where('post."userId" = :targetUserId', { targetUserId })
+      .select([
+        'post.id AS id',
+        'post."createdAt" AS "createdAt"',
+        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
+        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
+        `EXISTS (
+          SELECT 1 FROM post_likes ml
+          WHERE ml."postId" = post.id
+          AND ml."userId" = :currentUserId
+        ) AS "isLiked"`,
+      ])
+      .orderBy('post."createdAt"', 'DESC')
+      .setParameter('currentUserId', currentUserId)
+      .getRawMany();
   }
 
   async generateUniqueUsernameFromDisplayName(

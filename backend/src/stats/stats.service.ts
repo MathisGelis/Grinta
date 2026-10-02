@@ -52,7 +52,14 @@ export class StatsService {
     });
 
     if (!workout) throw new NotFoundException('Completed workout not found');
-    const weightKg = await this.resolveBodyWeight(user.id, bodyWeightKg);
+    const { start, end } = dayRange(workout.completionDate);
+    const [weightKg, dayWorkouts] = await Promise.all([
+      this.resolveBodyWeight(user.id, bodyWeightKg),
+      this.completedRepo.find({
+        where: { user: { id: user.id }, completionDate: Between(start, end) },
+        relations: ['exercises'],
+      }),
+    ]);
     const durations = this.calculator.distributeDuration(workout);
     const exercises = workout.exercises.map((cwe, i) =>
       this.calculator.computeExerciseStats(cwe, durations[i], weightKg),
@@ -63,11 +70,6 @@ export class StatsService {
     const totalVolume = sum(exercises, (e) => e.volume);
     const estimatedCalories = sum(exercises, (e) => e.estimatedCalories);
 
-    const { start, end } = dayRange(workout.completionDate);
-    const dayWorkouts = await this.completedRepo.find({
-      where: { user: { id: user.id }, completionDate: Between(start, end) },
-      relations: ['exercises'],
-    });
     const fullDayLoad = round(
       dayWorkouts.reduce((acc, w) => acc + this.calculator.workoutVolume(w), 0),
     );
@@ -122,8 +124,8 @@ export class StatsService {
   async getPeriodSummary(user: AuthUser, query: PeriodQueryDto) {
     const current = resolvePeriodRange(query.period, query.date);
     const previous = previousPeriodRange(query.period, query.date);
-    const weightKg = await this.resolveBodyWeight(user.id);
-    const [currentWorkouts, previousWorkouts] = await Promise.all([
+    const [weightKg, currentWorkouts, previousWorkouts] = await Promise.all([
+      this.resolveBodyWeight(user.id),
       this.fetchWorkoutsInRange(user.id, current),
       this.fetchWorkoutsInRange(user.id, previous),
     ]);

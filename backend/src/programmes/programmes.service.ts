@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Programme } from './entities/programme.entity';
 import { ProgrammeDay } from './entities/programme-day.entity';
 import { PlannedWorkout } from 'src/workouts/entities/planned-workout.entity';
@@ -38,9 +38,7 @@ export class ProgrammesService {
       description: dto.description,
     });
 
-    programme.days = await Promise.all(
-      dto.days.map((dayDto) => this.buildDay(user, dayDto)),
-    );
+    programme.days = await this.buildDays(user, dto.days);
     return this.programmeRepo.save(programme);
   }
 
@@ -62,9 +60,7 @@ export class ProgrammesService {
     Object.assign(programme, omitUndefined(scalarFields));
     if (days) {
       await this.dayRepo.delete({ programme: { id: programme.id } });
-      programme.days = await Promise.all(
-        days.map((dayDto) => this.buildDay(user, dayDto)),
-      );
+      programme.days = await this.buildDays(user, days);
     }
     return this.programmeRepo.save(programme);
   }
@@ -130,19 +126,33 @@ export class ProgrammesService {
     return { message: 'Programme deleted successfully' };
   }
 
-  private async buildDay(
+  /**
+   * Builds the days of a programme, checking in one query that every referenced
+   * workout belongs to the caller. A day without workoutId is a rest day.
+   */
+  private async buildDays(
     user: AuthUser,
-    dayDto: ProgrammeDayDto,
-  ): Promise<ProgrammeDay> {
-    let workout: PlannedWorkout | null = null;
+    dayDtos: ProgrammeDayDto[],
+  ): Promise<ProgrammeDay[]> {
+    const workoutIds = [
+      ...new Set(dayDtos.map((d) => d.workoutId).filter(Boolean)),
+    ] as string[];
+    const owned = workoutIds.length
+      ? await this.workoutRepo.find({
+          where: { id: In(workoutIds), user: { id: user.id } },
+        })
+      : [];
+    const byId = new Map(owned.map((w) => [w.id, w]));
 
-    if (dayDto.workoutId) {
-      workout = await this.workoutRepo.findOne({
-        where: { id: dayDto.workoutId, user: { id: user.id } },
-      });
-      if (!workout)
-        throw new NotFoundException(`Workout ${dayDto.workoutId} not found`);
-    }
-    return this.dayRepo.create({ dayNumber: dayDto.dayNumber, workout });
+    return dayDtos.map((dayDto) => {
+      let workout: PlannedWorkout | null = null;
+
+      if (dayDto.workoutId) {
+        workout = byId.get(dayDto.workoutId) ?? null;
+        if (!workout)
+          throw new NotFoundException(`Workout ${dayDto.workoutId} not found`);
+      }
+      return this.dayRepo.create({ dayNumber: dayDto.dayNumber, workout });
+    });
   }
 }

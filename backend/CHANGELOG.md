@@ -1,5 +1,20 @@
 # Changelog backend
 
+## Non publié : Phase 2, optimisation des temps de réponse
+
+Détail des mesures, des plans d'exécution et des décisions dans [PERFORMANCE.md](PERFORMANCE.md). Réponses des endpoints modifiés comparées à celles de la Phase 1 sur la même base : identiques.
+
+- **Treize index sur les clés étrangères** (migration `AddForeignKeyIndexes`, réversible, et déclarations `@Index` sur les entités). `GET /posts/feed/top` passe de 4,4 s à 13 ms, `GET /users/:id/profile` de 1,1 s à 8 ms, `GET /posts/mine` de 688 ms à 7 ms (mesuré sur 69 000 workouts, 291 000 likes, hors latence réseau).
+- **Moins de requêtes** : profil de 7 à 3, création de workout de 10 à 5, création de programme de 12 à 5. Les exercices et workouts référencés sont résolus en une requête au lieu d'une par élément, les listes de workouts comptent leurs exercices en SQL.
+- **Tri déterministe** des listes de workouts (critère secondaire `createdAt` puis `id`).
+- **Infrastructure de migration** absente de cette branche : `data-source.ts`, configuration de base partagée entre l'application et la CLI, scripts `migration:*`.
+- **Journal des requêtes lentes** (`DB_SLOW_QUERY_MS`, 300 ms par défaut) sans paramètres, pour ne jamais écrire un email ou un hash dans les logs. `DB_LOGGING=true` imprime toutes les requêtes, développement uniquement.
+- Nouvelles variables d'environnement, toutes optionnelles : `DB_SYNCHRONIZE` (défaut `true`), `DB_SSL`, `DB_SLOW_QUERY_MS`, `DB_LOGGING`, `TRUST_PROXY_HOPS`.
+
+**Déploiement** : `deploy.sh` n'est pas modifié. Tant que `synchronize: true` est actif, les index sont créés au démarrage suivant, sans action manuelle (brève prise de verrou en écriture par table, négligeable à la taille de la beta). Passer à `synchronize: false` demande une migration de référence, voir PERFORMANCE.md.
+
+**À décider** : l'ordre des exercices d'un workout n'est pas garanti en base (pas de colonne de position), voir PERFORMANCE.md.
+
 ## Non publié : Phase 1, audit sécurité et qualité
 
 Chaque correctif a été vérifié contre une vraie base Postgres. Le même scénario a été joué sur le code d'origine (`origin/backend`, 17 contrôles sur 40 passaient) et sur le code corrigé (40 sur 40).

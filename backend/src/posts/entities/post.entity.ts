@@ -8,11 +8,14 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  Index,
 } from 'typeorm';
 import { PostComment } from './comment.entity';
 import { PostLike } from './like.entity';
 
 @Entity('posts')
+@Index('IDX_posts_user_created', ['user', 'createdAt'])
+@Index('IDX_posts_created', ['createdAt'])
 export class Post {
   @PrimaryGeneratedColumn('uuid')
   id: string;

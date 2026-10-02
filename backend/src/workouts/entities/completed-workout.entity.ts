@@ -5,6 +5,7 @@ import {
   ManyToOne,
   OneToMany,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/users.entity';
@@ -13,6 +14,7 @@ import { Exercise } from '../../exercise/entities/exercise.entity';
 export type SetPair = { reps: number; weight: number };
 
 @Entity('completed_workouts')
+@Index('IDX_completed_workouts_user_date', ['user', 'completionDate'])
 export class CompletedWorkout {
   @PrimaryGeneratedColumn('uuid')
   @ApiProperty()
@@ -50,6 +52,7 @@ export class CompletedWorkout {
 }
 
 @Entity('completed_workout_exercises')
+@Index('IDX_completed_workout_exercises_workout', ['workout'])
 export class CompletedWorkoutExercise {
   @PrimaryGeneratedColumn('uuid')
   id: string;

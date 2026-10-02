@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Exercise } from 'src/exercise/entities/exercise.entity';
 import { AuthUser } from 'src/auth/auth-user.interface';
 import { CreateCompletedWorkoutDto } from './dto/create-completed-workout.dto';
@@ -41,19 +41,15 @@ export class WorkoutService {
       description: dto.description,
     });
 
-    workout.exercises = await Promise.all(
-      dto.exercises.map(async (exDto) => {
-        const exercise = await this.exerciseRepo.findOne({
-          where: { id: exDto.exerciseId },
-        });
+    const byId = await this.resolveExercises(
+      dto.exercises.map((exDto) => exDto.exerciseId),
+    );
 
-        if (!exercise)
-          throw new NotFoundException(`Exercise ${exDto.exerciseId} not found`);
-        return this.plannedExRepo.create({
-          exercise,
-          sets: exDto.sets,
-          plannedRestSeconds: exDto.plannedRestSeconds,
-        });
+    workout.exercises = dto.exercises.map((exDto) =>
+      this.plannedExRepo.create({
+        exercise: byId.get(exDto.exerciseId),
+        sets: exDto.sets,
+        plannedRestSeconds: exDto.plannedRestSeconds,
       }),
     );
     return this.plannedRepo.save(workout);
@@ -68,19 +64,15 @@ export class WorkoutService {
       description: dto.description,
     });
 
-    workout.exercises = await Promise.all(
-      dto.exercises.map(async (exDto) => {
-        const exercise = await this.exerciseRepo.findOne({
-          where: { id: exDto.exerciseId },
-        });
+    const byId = await this.resolveExercises(
+      dto.exercises.map((exDto) => exDto.exerciseId),
+    );
 
-        if (!exercise)
-          throw new NotFoundException(`Exercise ${exDto.exerciseId} not found`);
-        return this.completedExRepo.create({
-          exercise,
-          sets: exDto.sets,
-          timerSeconds: exDto.timerSeconds,
-        });
+    workout.exercises = dto.exercises.map((exDto) =>
+      this.completedExRepo.create({
+        exercise: byId.get(exDto.exerciseId),
+        sets: exDto.sets,
+        timerSeconds: exDto.timerSeconds,
       }),
     );
     return this.completedRepo.save(workout);
@@ -102,22 +94,16 @@ export class WorkoutService {
     Object.assign(workout, omitUndefined(scalarFields));
 
     if (exercises) {
-      await this.plannedExRepo.remove(workout.exercises);
-      workout.exercises = await Promise.all(
-        exercises.map(async (exDto) => {
-          const exercise = await this.exerciseRepo.findOne({
-            where: { id: exDto.exerciseId },
-          });
+      const byId = await this.resolveExercises(
+        exercises.map((exDto) => exDto.exerciseId),
+      );
 
-          if (!exercise)
-            throw new NotFoundException(
-              `Exercise ${exDto.exerciseId} not found`,
-            );
-          return this.plannedExRepo.create({
-            exercise,
-            sets: exDto.sets,
-            plannedRestSeconds: exDto.plannedRestSeconds,
-          });
+      await this.plannedExRepo.remove(workout.exercises);
+      workout.exercises = exercises.map((exDto) =>
+        this.plannedExRepo.create({
+          exercise: byId.get(exDto.exerciseId),
+          sets: exDto.sets,
+          plannedRestSeconds: exDto.plannedRestSeconds,
         }),
       );
     }
@@ -142,58 +128,62 @@ export class WorkoutService {
     if (completionDate) workout.completionDate = new Date(completionDate);
 
     if (exercises) {
-      await this.completedExRepo.remove(workout.exercises);
-      workout.exercises = await Promise.all(
-        exercises.map(async (exDto) => {
-          const exercise = await this.exerciseRepo.findOne({
-            where: { id: exDto.exerciseId },
-          });
+      const byId = await this.resolveExercises(
+        exercises.map((exDto) => exDto.exerciseId),
+      );
 
-          if (!exercise)
-            throw new NotFoundException(
-              `Exercise ${exDto.exerciseId} not found`,
-            );
-          return this.completedExRepo.create({
-            exercise,
-            sets: exDto.sets,
-            timerSeconds: exDto.timerSeconds,
-          });
+      await this.completedExRepo.remove(workout.exercises);
+      workout.exercises = exercises.map((exDto) =>
+        this.completedExRepo.create({
+          exercise: byId.get(exDto.exerciseId),
+          sets: exDto.sets,
+          timerSeconds: exDto.timerSeconds,
         }),
       );
     }
     return this.completedRepo.save(workout);
   }
 
+  // The list screens only need the number of exercises, so it is counted in
+  // SQL. Loading every exercise row (with its eager Exercise join and the sets
+  // JSON) just to read `.length` made this the heaviest read for active users.
   async getPlannedWorkouts(user: AuthUser) {
-    const workouts = await this.plannedRepo.find({
-      where: { user: { id: user.id } },
-      relations: ['exercises'],
-      order: { createdAt: 'DESC' },
-    });
-
-    return workouts.map((w) => ({
-      id: w.id,
-      title: w.title,
-      description: w.description,
-      totalExercises: w.exercises.length,
-    }));
+    return this.plannedRepo
+      .createQueryBuilder('w')
+      .select([
+        'w.id AS id',
+        'w.title AS title',
+        'w.description AS description',
+      ])
+      .addSelect(
+        '(SELECT COUNT(*)::int FROM planned_workout_exercises e WHERE e."workoutId" = w.id)',
+        'totalExercises',
+      )
+      .where('w."userId" = :userId', { userId: user.id })
+      .orderBy('w."createdAt"', 'DESC')
+      .addOrderBy('w.id', 'DESC')
+      .getRawMany();
   }
 
   async getCompletedWorkouts(user: AuthUser) {
-    const workouts = await this.completedRepo.find({
-      where: { user: { id: user.id } },
-      relations: ['exercises'],
-      order: { completionDate: 'DESC' },
-    });
-
-    return workouts.map((w) => ({
-      id: w.id,
-      title: w.title,
-      description: w.description,
-      completionDate: w.completionDate,
-      totalDurationSeconds: w.totalDurationSeconds,
-      totalExercises: w.exercises.length,
-    }));
+    return this.completedRepo
+      .createQueryBuilder('w')
+      .select([
+        'w.id AS id',
+        'w.title AS title',
+        'w.description AS description',
+        'w."completionDate" AS "completionDate"',
+        'w."totalDurationSeconds" AS "totalDurationSeconds"',
+      ])
+      .addSelect(
+        '(SELECT COUNT(*)::int FROM completed_workout_exercises e WHERE e."workoutId" = w.id)',
+        'totalExercises',
+      )
+      .where('w."userId" = :userId', { userId: user.id })
+      .orderBy('w."completionDate"', 'DESC')
+      .addOrderBy('w."createdAt"', 'DESC')
+      .addOrderBy('w.id', 'DESC')
+      .getRawMany();
   }
 
   async getPlannedWorkoutById(workoutId: string) {
@@ -240,5 +230,21 @@ export class WorkoutService {
     if (!workout) throw new NotFoundException('Completed workout not found');
     await this.completedRepo.remove(workout);
     return { message: 'Completed workout deleted successfully' };
+  }
+
+  /**
+   * Loads every exercise referenced by a payload in one query instead of one
+   * query per exercise, and fails with the first unknown id in payload order.
+   */
+  private async resolveExercises(
+    exerciseIds: string[],
+  ): Promise<Map<string, Exercise>> {
+    const unique = [...new Set(exerciseIds)];
+    const found = await this.exerciseRepo.find({ where: { id: In(unique) } });
+    const byId = new Map(found.map((exercise) => [exercise.id, exercise]));
+    const missing = unique.find((id) => !byId.has(id));
+
+    if (missing) throw new NotFoundException(`Exercise ${missing} not found`);
+    return byId;
   }
 }
