@@ -4,12 +4,13 @@ import { Repository } from 'typeorm';
 import { Programme } from './entities/programme.entity';
 import { ProgrammeDay } from './entities/programme-day.entity';
 import { PlannedWorkout } from 'src/workouts/entities/planned-workout.entity';
-import { User } from 'src/users/entities/users.entity';
+import { AuthUser } from 'src/auth/auth-user.interface';
 import {
   CreateProgrammeDto,
   ProgrammeDayDto,
 } from './dto/create-programme.dto';
 import { UpdateProgrammeDto } from './dto/update-programme.dto';
+import { omitUndefined } from 'src/common/utils/omit-undefined';
 
 @Injectable()
 export class ProgrammesService {
@@ -25,7 +26,7 @@ export class ProgrammesService {
   ) {}
 
   async createProgramme(
-    user: User,
+    user: AuthUser,
     dto: CreateProgrammeDto,
   ): Promise<Programme> {
     const programme = this.programmeRepo.create({
@@ -44,7 +45,7 @@ export class ProgrammesService {
   }
 
   async updateProgramme(
-    user: User,
+    user: AuthUser,
     id: string,
     dto: UpdateProgrammeDto,
   ): Promise<Programme> {
@@ -54,17 +55,21 @@ export class ProgrammesService {
     });
     if (!programme) throw new NotFoundException('Programme not found');
 
-    Object.assign(programme, dto);
-    if (dto.days) {
+    // Only scalar fields are merged. Spreading the whole dto would also put
+    // the raw `days` payload on the entity before it is rebuilt below.
+    const { days, ...scalarFields } = dto;
+
+    Object.assign(programme, omitUndefined(scalarFields));
+    if (days) {
       await this.dayRepo.delete({ programme: { id: programme.id } });
       programme.days = await Promise.all(
-        dto.days.map((dayDto) => this.buildDay(user, dayDto)),
+        days.map((dayDto) => this.buildDay(user, dayDto)),
       );
     }
     return this.programmeRepo.save(programme);
   }
 
-  async getProgrammesByUser(user: User) {
+  async getProgrammesByUser(user: AuthUser) {
     const programmes = await this.programmeRepo.find({
       where: { user: { id: user.id } },
       relations: ['days', 'days.workout'],
@@ -80,7 +85,7 @@ export class ProgrammesService {
     }));
   }
 
-  async getProgrammeById(user: User, id: string) {
+  async getProgrammeById(user: AuthUser, id: string) {
     const programme = await this.programmeRepo.findOne({
       where: { id, user: { id: user.id } },
       relations: ['days', 'days.workout'],
@@ -112,7 +117,10 @@ export class ProgrammesService {
     };
   }
 
-  async deleteProgramme(user: User, id: string): Promise<{ message: string }> {
+  async deleteProgramme(
+    user: AuthUser,
+    id: string,
+  ): Promise<{ message: string }> {
     const programme = await this.programmeRepo.findOne({
       where: { id, user: { id: user.id } },
     });
@@ -123,7 +131,7 @@ export class ProgrammesService {
   }
 
   private async buildDay(
-    user: User,
+    user: AuthUser,
     dayDto: ProgrammeDayDto,
   ): Promise<ProgrammeDay> {
     let workout: PlannedWorkout | null = null;

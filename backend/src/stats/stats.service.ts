@@ -4,6 +4,7 @@ import { Between, MoreThanOrEqual, Repository } from 'typeorm';
 import { CompletedWorkout } from '../workouts/entities/completed-workout.entity';
 import { PlannedWorkout } from '../workouts/entities/planned-workout.entity';
 import { User } from '../users/entities/users.entity';
+import { AuthUser } from '../auth/auth-user.interface';
 import { DetailedMuscleGroup } from '../exercise/enums/detailed-muscle.enum';
 import { DEFAULT_BODY_WEIGHT_KG } from './constants/met-values';
 import {
@@ -40,7 +41,11 @@ export class StatsService {
     private readonly calculator: StatsCalculatorService,
   ) {}
 
-  async getWorkoutStats(user: any, workoutId: string, bodyWeightKg?: number) {
+  async getWorkoutStats(
+    user: AuthUser,
+    workoutId: string,
+    bodyWeightKg?: number,
+  ) {
     const workout = await this.completedRepo.findOne({
       where: { id: workoutId, user: { id: user.id } },
       relations: ['exercises', 'exercises.exercise'],
@@ -91,7 +96,7 @@ export class StatsService {
     };
   }
 
-  async getMuscleDistribution(user: any, query: PeriodQueryDto) {
+  async getMuscleDistribution(user: AuthUser, query: PeriodQueryDto) {
     const range = resolvePeriodRange(query.period, query.date);
     const workouts = await this.fetchWorkoutsInRange(user.id, range);
     const { perMuscle, total } =
@@ -114,7 +119,7 @@ export class StatsService {
     };
   }
 
-  async getPeriodSummary(user: any, query: PeriodQueryDto) {
+  async getPeriodSummary(user: AuthUser, query: PeriodQueryDto) {
     const current = resolvePeriodRange(query.period, query.date);
     const previous = previousPeriodRange(query.period, query.date);
     const weightKg = await this.resolveBodyWeight(user.id);
@@ -161,7 +166,7 @@ export class StatsService {
     };
   }
 
-  async getConsistency(user: any) {
+  async getConsistency(user: AuthUser) {
     const since = startOfDay(addDays(new Date(), -365));
     const workouts = await this.completedRepo.find({
       where: {
@@ -222,7 +227,7 @@ export class StatsService {
     };
   }
 
-  async getMuscleFrequency(user: any) {
+  async getMuscleFrequency(user: AuthUser) {
     const now = new Date();
     const since = startOfDay(addDays(now, -90));
     const sevenDaysAgo = addDays(now, -7);
@@ -298,7 +303,7 @@ export class StatsService {
     return { generatedAt: now, muscles };
   }
 
-  async getTrainingBalance(user: any, query: PeriodQueryDto) {
+  async getTrainingBalance(user: AuthUser, query: PeriodQueryDto) {
     const range = resolvePeriodRange(query.period, query.date);
     const workouts = await this.fetchWorkoutsInRange(user.id, range);
     const { perMuscle, total } =

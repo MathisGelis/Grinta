@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { clampLimit } from '../common/utils/limit';
 import { ModerationService } from '../moderation/moderation.service';
 import { CommentReport } from './entities/comment-report.entity';
 import { PostComment } from './entities/comment.entity';
@@ -37,11 +38,17 @@ export class PostsService {
     const workout = await this.postRepository.manager.findOne(
       'CompletedWorkout',
       {
-        where: { id: workoutId },
+        where: { id: workoutId, user: { id: userId } },
       },
     );
 
     if (!workout) throw new NotFoundException('Workout not found');
+    const alreadyPosted = await this.postRepository.exists({
+      where: { workout: { id: workoutId } },
+    });
+
+    if (alreadyPosted)
+      throw new BadRequestException('Ce workout est déjà publié.');
     const post = this.postRepository.create({
       user: { id: userId },
       workout: { id: workoutId },
@@ -67,6 +74,7 @@ export class PostsService {
       .innerJoin('post.user', 'u')
       .leftJoin('post.workout', 'w')
       .where('post.id = :postId', { postId })
+      .andWhere(this.visibleToViewerSql('u'))
       .select([
         'post.id AS id',
         'post."createdAt" AS "createdAt"',
@@ -86,13 +94,14 @@ export class PostsService {
         ) AS "isLiked"`,
       ])
       .setParameter('userId', userId)
+      .setParameter('viewerId', userId)
       .getRawOne();
 
     if (!rows) throw new NotFoundException('Post not found');
     return rows;
   }
 
-  async getMyPosts(userId: string, limit = 20) {
+  async getMyPosts(userId: string, limit?: number) {
     return this.postRepository
       .createQueryBuilder('post')
       .innerJoin('post.workout', 'w')
@@ -107,11 +116,12 @@ export class PostsService {
         `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
       ])
       .orderBy('post."createdAt"', 'DESC')
-      .limit(limit)
+      .limit(clampLimit(limit))
       .getRawMany();
   }
 
   async toggleLike(userId: string, postId: string) {
+    await this.assertPostVisible(userId, postId);
     const existing = await this.likeRepository.findOne({
       where: { user: { id: userId }, post: { id: postId } },
     });
@@ -128,7 +138,8 @@ export class PostsService {
     return { liked: true };
   }
 
-  async getLikesList(postId: string) {
+  async getLikesList(viewerId: string, postId: string) {
+    await this.assertPostVisible(viewerId, postId);
     return this.likeRepository
       .createQueryBuilder('like')
       .innerJoin('like.user', 'user')
@@ -145,6 +156,7 @@ export class PostsService {
   }
 
   async commentPost(userId: string, postId: string, content: string) {
+    await this.assertPostVisible(userId, postId);
     await this.assertCleanText(content);
     return this.commentRepository.save({
       user: { id: userId },
@@ -183,7 +195,8 @@ export class PostsService {
     return { message: 'Comment deleted' };
   }
 
-  async getCommentsList(postId: string) {
+  async getCommentsList(viewerId: string, postId: string) {
+    await this.assertPostVisible(viewerId, postId);
     return this.commentRepository
       .createQueryBuilder('comment')
       .innerJoin('comment.user', 'user')
@@ -237,7 +250,7 @@ export class PostsService {
     };
   }
 
-  async getFollowingFeed(userId: string, limit = 20) {
+  async getFollowingFeed(userId: string, limit?: number) {
     return this.postRepository
       .createQueryBuilder('post')
       .innerJoin('post.user', 'postUser')
@@ -253,8 +266,8 @@ export class PostsService {
         'post.id AS id',
         'post.createdAt AS "createdAt"',
         'postUser.displayName AS "displayName"',
-        `(SELECT COUNT(*) FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-        `(SELECT COUNT(*) FROM post_comments c WHERE c."postId" = post.id) AS "commentsCount"`,
+        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
+        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id
@@ -262,12 +275,12 @@ export class PostsService {
         ) AS "isLiked"`,
       ])
       .orderBy('post.createdAt', 'DESC')
-      .limit(limit)
+      .limit(clampLimit(limit))
       .setParameter('userId', userId)
       .getRawMany();
   }
 
-  async getTopPostsThisMonth(userId: string, limit = 20) {
+  async getTopPostsThisMonth(userId: string, limit?: number) {
     const startOfMonth = new Date();
 
     startOfMonth.setDate(1);
@@ -293,13 +306,13 @@ export class PostsService {
         'post.id AS id',
         'post."createdAt" AS "createdAt"',
         'u."displayName" AS "displayName"',
-        `(SELECT COUNT(*) FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-        `(SELECT COUNT(*) FROM post_comments c WHERE c."postId" = post.id) AS "commentsCount"`,
+        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
+        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
         `(
           (SELECT COUNT(*) FROM post_likes l WHERE l."postId" = post.id)
           +
-          (SELECT COUNT(*) FROM post_comments c WHERE c."postId" = post.id)
-        ) AS score`,
+          (SELECT COUNT(*) FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false)
+        )::int AS score`,
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id
@@ -308,9 +321,43 @@ export class PostsService {
       ])
       .orderBy('score', 'DESC')
       .addOrderBy('post."createdAt"', 'DESC')
-      .limit(limit)
+      .limit(clampLimit(limit))
       .setParameter('userId', userId)
       .getRawMany();
+  }
+
+  /**
+   * SQL predicate true when the viewer may see the posts of the user aliased
+   * as `authorAlias`: the viewer is the author, the author has a public
+   * profile, or the viewer follows them. Expects a `:viewerId` parameter.
+   */
+  private visibleToViewerSql(authorAlias: string): string {
+    return `(
+      ${authorAlias}.id = :viewerId
+      OR ${authorAlias}."isPublic" = true
+      OR EXISTS (
+        SELECT 1 FROM connections vc
+        WHERE vc."followingId" = ${authorAlias}.id
+        AND vc."followerId" = :viewerId
+      )
+    )`;
+  }
+
+  /**
+   * Throws 404 when the post does not exist or its author's profile is private
+   * and the viewer does not follow them. The same status is used for both
+   * cases so a private post id cannot be probed.
+   */
+  private async assertPostVisible(viewerId: string, postId: string) {
+    const visible = await this.postRepository
+      .createQueryBuilder('post')
+      .innerJoin('post.user', 'author')
+      .where('post.id = :postId', { postId })
+      .andWhere(this.visibleToViewerSql('author'))
+      .setParameter('viewerId', viewerId)
+      .getExists();
+
+    if (!visible) throw new NotFoundException('Post not found');
   }
 
   private async assertCleanText(content: string) {

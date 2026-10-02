@@ -192,7 +192,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'COUNT(*) AS score',
+        'COUNT(*)::int AS score',
       ])
       .where('c1.follower = :currentUserId', { currentUserId })
       .andWhere('user.id != :currentUserId', { currentUserId })
@@ -220,7 +220,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'COUNT(c.id) AS followersCount',
+        'COUNT(c.id)::int AS followersCount',
       ])
       .groupBy('user.id')
       .orderBy('followersCount', 'DESC')

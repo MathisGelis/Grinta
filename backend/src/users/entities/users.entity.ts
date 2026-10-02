@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 @Unique(['email'])
@@ -12,8 +13,12 @@ export class User {
   @ApiProperty()
   email: string;
 
+  // Stripped from every serialized response by the global
+  // ClassSerializerInterceptor, including when a User is nested in another
+  // entity. The hash must only ever be read server-side.
   @Column()
-  @ApiProperty()
+  @Exclude({ toPlainOnly: true })
+  @ApiHideProperty()
   password: string;
 
   @Column()

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Exercise } from './entities/exercise.entity';
 import { UserExerciseStats } from './entities/user-exercise-stats.entity';
 import { UpdateUserExerciseStatsDto } from './dto/update-user-exercise-stats.dto';
-import { User } from '../users/entities/users.entity';
+import { AuthUser } from '../auth/auth-user.interface';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { GetExercisesQueryDto } from './dto/get-exercises.query.dto';
@@ -67,7 +67,7 @@ export class ExerciseService {
 
   // USER-SPECIFIC STATS
   async updateUserStats(
-    user: User,
+    user: AuthUser,
     exerciseId: string,
     dto: UpdateUserExerciseStatsDto,
   ): Promise<UserExerciseStats> {
@@ -83,7 +83,7 @@ export class ExerciseService {
 
     if (!stats) {
       stats = this.statsRepository.create({
-        user,
+        user: { id: user.id },
         exercise,
       });
     }
@@ -92,7 +92,7 @@ export class ExerciseService {
     return this.statsRepository.save(stats);
   }
 
-  async getUserStats(user: User, exerciseId: string) {
+  async getUserStats(user: AuthUser, exerciseId: string) {
     return this.statsRepository.findOne({
       where: {
         user: { id: user.id },

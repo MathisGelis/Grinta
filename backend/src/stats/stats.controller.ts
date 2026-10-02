@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Auth } from '../auth/auth.decorators';
+import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { PeriodQueryDto } from './dto/period-query.dto';
 import {
   ConsistencyDto,
@@ -30,7 +31,7 @@ export class StatsController {
   })
   @ApiResponse({ status: 404, description: 'Completed workout not found' })
   getWorkoutStats(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Query() query: WorkoutStatsQueryDto,
   ) {
@@ -46,7 +47,7 @@ export class StatsController {
     description: 'Summary returned',
     type: PeriodSummaryDto,
   })
-  getSummary(@Req() req, @Query() query: PeriodQueryDto) {
+  getSummary(@Req() req: AuthenticatedRequest, @Query() query: PeriodQueryDto) {
     return this.statsService.getPeriodSummary(req.user, query);
   }
 
@@ -59,7 +60,10 @@ export class StatsController {
     description: 'Distribution returned',
     type: MuscleDistributionDto,
   })
-  getMuscleDistribution(@Req() req, @Query() query: PeriodQueryDto) {
+  getMuscleDistribution(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: PeriodQueryDto,
+  ) {
     return this.statsService.getMuscleDistribution(req.user, query);
   }
 
@@ -72,7 +76,7 @@ export class StatsController {
     description: 'Balance returned',
     type: TrainingBalanceDto,
   })
-  getBalance(@Req() req, @Query() query: PeriodQueryDto) {
+  getBalance(@Req() req: AuthenticatedRequest, @Query() query: PeriodQueryDto) {
     return this.statsService.getTrainingBalance(req.user, query);
   }
 
@@ -85,7 +89,7 @@ export class StatsController {
     description: 'Consistency returned',
     type: ConsistencyDto,
   })
-  getConsistency(@Req() req) {
+  getConsistency(@Req() req: AuthenticatedRequest) {
     return this.statsService.getConsistency(req.user);
   }
 
@@ -98,7 +102,7 @@ export class StatsController {
     description: 'Frequency returned',
     type: MuscleFrequencyDto,
   })
-  getMuscleFrequency(@Req() req) {
+  getMuscleFrequency(@Req() req: AuthenticatedRequest) {
     return this.statsService.getMuscleFrequency(req.user);
   }
 }

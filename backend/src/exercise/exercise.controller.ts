@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ExerciseService } from './exercise.service';
 import { UpdateUserExerciseStatsDto } from './dto/update-user-exercise-stats.dto';
 import { Auth } from '../auth/auth.decorators';
+import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { ExerciseListDto } from './dto/exercise-list.dto';
@@ -76,7 +77,7 @@ export class ExerciseController {
   })
   @ApiResponse({ status: 200, description: 'Stats returned' })
   @ApiResponse({ status: 404, description: 'Exercise or stats not found' })
-  async getStats(@Req() req, @Param('id') id: string) {
+  async getStats(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.exerciseService.getUserStats(req.user, id);
   }
 
@@ -91,7 +92,7 @@ export class ExerciseController {
   @ApiResponse({ status: 404, description: 'Exercise not found' })
   @ApiResponse({ status: 400, description: 'Invalid payload' })
   async updateStats(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdateUserExerciseStatsDto,
   ) {

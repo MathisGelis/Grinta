@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth } from '../auth/auth.decorators';
+import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { CreateCompletedWorkoutDto } from './dto/create-completed-workout.dto';
 import { CreatePlannedWorkoutDto } from './dto/create-planned-workout.dto';
 import { CompletedWorkoutListDto } from './dto/list-completed-workout.dto';
@@ -27,14 +28,20 @@ export class WorkoutsController {
   @Post('planned')
   @ApiOperation({ summary: 'Create a planned workout' })
   @ApiResponse({ status: 201, description: 'Planned workout created' })
-  createPlanned(@Req() req, @Body() dto: CreatePlannedWorkoutDto) {
+  createPlanned(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: CreatePlannedWorkoutDto,
+  ) {
     return this.workoutService.createPlannedWorkout(req.user, dto);
   }
 
   @Post('completed')
   @ApiOperation({ summary: 'Create a completed workout' })
   @ApiResponse({ status: 201, description: 'Completed workout saved' })
-  createCompleted(@Req() req, @Body() dto: CreateCompletedWorkoutDto) {
+  createCompleted(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: CreateCompletedWorkoutDto,
+  ) {
     return this.workoutService.createCompletedWorkout(req.user, dto);
   }
 
@@ -42,7 +49,7 @@ export class WorkoutsController {
   @ApiOperation({ summary: 'Update a planned workout' })
   @ApiResponse({ status: 200, description: 'Planned workout updated' })
   updatePlanned(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdatePlannedWorkoutDto,
   ) {
@@ -53,7 +60,7 @@ export class WorkoutsController {
   @ApiOperation({ summary: 'Update a completed workout' })
   @ApiResponse({ status: 200, description: 'Completed workout updated' })
   updateCompleted(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdateCompletedWorkoutDto,
   ) {
@@ -68,7 +75,9 @@ export class WorkoutsController {
     type: PlannedWorkoutListDto,
     isArray: true,
   })
-  getPlanned(@Req() req): Promise<PlannedWorkoutListDto[]> {
+  getPlanned(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<PlannedWorkoutListDto[]> {
     return this.workoutService.getPlannedWorkouts(req.user);
   }
 
@@ -80,7 +89,9 @@ export class WorkoutsController {
     type: CompletedWorkoutListDto,
     isArray: true,
   })
-  getCompleted(@Req() req): Promise<CompletedWorkoutListDto[]> {
+  getCompleted(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<CompletedWorkoutListDto[]> {
     return this.workoutService.getCompletedWorkouts(req.user);
   }
 
@@ -109,14 +120,14 @@ export class WorkoutsController {
   @Delete('planned/:id')
   @ApiOperation({ summary: 'Delete a planned workout' })
   @ApiResponse({ status: 200, description: 'Planned workout deleted' })
-  deletePlanned(@Req() req, @Param('id') id: string) {
+  deletePlanned(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.workoutService.deletePlannedWorkout(req.user, id);
   }
 
   @Delete('completed/:id')
   @ApiOperation({ summary: 'Delete a completed workout' })
   @ApiResponse({ status: 200, description: 'Completed workout deleted' })
-  deleteCompleted(@Req() req, @Param('id') id: string) {
+  deleteCompleted(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.workoutService.deleteCompletedWorkout(req.user, id);
   }
 }
