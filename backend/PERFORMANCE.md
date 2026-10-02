@@ -110,6 +110,22 @@ Les réponses des endpoints modifiés ont été comparées octet pour octet, anc
 - **Pagination.** Non ajoutée : elle change le contrat de l'API et le frontend n'envoie aucun paramètre. Pour mémoire, `GET /workouts/completed` pèse 56 ko pour 300 workouts et croît linéairement. Proposition opt-in compatible : `?limit=` et `?before=<completionDate>` avec le tri déterministe ajouté ici, l'absence de paramètre gardant le comportement actuel.
 - **Insertions de TypeORM** : déjà groupées en un seul `INSERT` pour les exercices d'un workout, rien de plus à gagner.
 
+## Nouveaux endpoints Stats (Phase 3)
+
+Mesurés sur le même jeu de données, régime établi (médiane de 10 appels), compte de 300 workouts :
+
+| Endpoint | p50 (ms) | Requêtes | Coût principal |
+| --- | ---: | ---: | --- |
+| `GET /stats/records` | 43 | 5, en parallèle | 4 agrégations sur tout l'historique (25, 14 et 13 ms de base pour les trois plus lourdes) |
+| `GET /stats/comparisons?period=month` | 38 | 4 | hydratation ORM de 6 mois de workouts, la base ne prend que 3 ms |
+| `GET /stats/progression` | 12 | 2 | 2 ms de base |
+| `GET /stats/heatmap` | 7 | 1 | `Index Only Scan` sur `IDX_completed_workouts_user_date` |
+| `GET /stats/workout-type-breakdown` | 6 | 2, en parallèle | 1 ms de base |
+
+Aucun nouvel index : `EXPLAIN` montre `IDX_completed_workouts_user_date` puis `IDX_completed_workout_exercises_workout` pour `progression`, `records` et `heatmap`.
+
+`records` est le seul endpoint qui relit tout l'historique de l'utilisateur à chaque appel, son temps croît donc linéairement avec le nombre de workouts : 43 ms à 300 workouts, de l'ordre de 400 ms à 3 000 (extrapolation linéaire, non mesurée). Le résultat ne change que lorsqu'un workout est ajouté, modifié ou supprimé : si cela devient visible, le mettre en cache par utilisateur ou le tenir à jour à l'écriture règle le problème.
+
 ## Défaut découvert, à décider
 
 **L'ordre des exercices d'un workout n'est pas garanti.** Aucune colonne de position n'existe sur `completed_workout_exercises` ni `planned_workout_exercises` : l'ordre renvoyé est celui des lignes en base, que Postgres ne promet pas (il peut changer après une mise à jour, un vacuum ou un changement de plan). Pour un workout, la séquence des exercices a un sens pour l'utilisateur. Correction proposée : colonne `position` entière, renseignée à partir de l'index dans le tableau reçu, tri sur cette colonne, migration avec remplissage des lignes existantes.

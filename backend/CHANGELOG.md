@@ -1,5 +1,30 @@
 # Changelog backend
 
+## Non publié : Phase 3, nouveaux endpoints de statistiques
+
+Les six endpoints proposés par le CLAUDE.md sont ajoutés au module `stats`. Tous sont authentifiés, typés (DTO de requête validés, DTO de réponse documentés dans Swagger) et ne renvoient que les données de l'appelant. Le SQL réduit l'historique aux quelques lignes utiles (un utilisateur, un exercice, une fenêtre, ou un agrégat par exercice, type ou jour) et `StatsCalculatorService` porte tout le calcul, couvert par des tests unitaires.
+
+| Endpoint | Rôle |
+| --- | --- |
+| `GET /stats/progression?exerciseId=&metric=volume\|1rm&period=1m\|3m\|6m\|1y\|all` | Série temporelle d'un exercice, un point par jour d'entraînement, avec premier, dernier et meilleur point et une tendance. `metric` vaut `volume` par défaut et `period` vaut `3m` |
+| `GET /stats/records` | Pour chaque exercice : meilleur 1RM estimé, poids le plus lourd, meilleur volume sur un workout. Globalement : workout le plus long, workout au plus gros volume, plus longue série de jours consécutifs |
+| `GET /stats/adherence?completedWorkoutId=&plannedWorkoutId=` | Compare un workout réalisé à son plan : statut par exercice (`completed`, `exceeded`, `partial`, `skipped`), exercices hors plan, score de 0 à 100 et note (`full`, `high`, `partial`, `low`) |
+| `GET /stats/comparisons?period=week\|month&date=` | Période en cours contre la moyenne personnelle des 8 semaines ou 6 mois précédents |
+| `GET /stats/workout-type-breakdown?period=week\|month&date=` | Séries, volume et nombre d'exercices par `exercise_type` et par `equipment_type`, avec la part de chacun |
+| `GET /stats/heatmap?year=` | Calendrier annuel : jours avec au moins un workout et niveau d'intensité de 1 à 4 |
+
+Vérification : chaque endpoint a été comparé à un calcul indépendant sur la base de test (69 000 workouts). Progression et records recalculés depuis les lignes brutes pour tous les exercices, heatmap et breakdown contre du SQL direct et contre `/stats/summary`, baseline de `comparisons` contre la moyenne de huit appels `/stats/summary`. Temps en régime établi sur un compte de 300 workouts : `records` 43 ms, `comparisons` 38 ms, `progression` 12 ms, `heatmap` 7 ms, `workout-type-breakdown` 6 ms. Les plans d'exécution passent tous par les index de la Phase 2, aucune migration n'est nécessaire.
+
+### Choix de conception à connaître
+
+- **`comparisons` proratise la moyenne.** Comparer le mardi les séances de la semaine à la moyenne d'une semaine entière afficherait toujours « très en dessous ». La moyenne de référence est donc multipliée par la part de la période déjà écoulée (`elapsedPct`) pour donner `expectedByNow`, et `changePct` est calculé contre cette valeur. `baselineAverage` reste exposé pour qui préfère la comparaison brute. Une période terminée (`date` dans le passé) utilise la moyenne entière. Contrepartie : l'entraînement est irrégulier, la semaine d'un mercredi après une séance de jambes le lundi n'est qu'une approximation.
+- **Une période n'entre dans la moyenne que si l'utilisateur avait déjà commencé avant son début**, ce qui écarte la première période partielle et le temps d'avant l'inscription. Sans aucune période éligible, `baseline` vaut `null`, tous les verdicts `unknown` et le message demande plus d'historique. Les périodes sans séance après le premier workout comptent bien pour zéro.
+- **Seuil `on_track` de 5 %** (`constants/comparison.ts`). Le seuil de tendance de `progression` est aussi de 5 %, calculé sur la moyenne des trois premiers et des trois derniers points pour qu'une mauvaise séance ne retourne pas la tendance.
+- **Niveaux de la heatmap relatifs à la journée la plus longue de l'année** (4 pour la plus longue, 1 au minimum pour tout jour actif). Simple et déterministe, mais une journée exceptionnelle écrase les autres vers le niveau 1. Des quartiles sont une alternative si le rendu le demande.
+- **`progression` ne compte que les séries avec un poids et des répétitions positifs.** Un exercice au poids du corps ne renvoie donc aucun point. Une métrique `reps` serait nécessaire pour les suivre, non demandée ici.
+- **`adherence` : le workout réalisé doit appartenir à l'appelant, le plan peut être n'importe quel plan lisible**, comme `GET /workouts/planned/:id` qui reste ouvert à tout utilisateur authentifié. Un utilisateur peut donc suivre le programme d'un autre. Les exercices sortent dans l'ordre stocké du plan, non garanti (voir PERFORMANCE.md).
+- **Les jours sont en UTC** (calendrier de `progression` et `heatmap`, groupement des records). Identique aux autres endpoints tant que le serveur tourne en UTC.
+
 ## Non publié : Phase 2, optimisation des temps de réponse
 
 Détail des mesures, des plans d'exécution et des décisions dans [PERFORMANCE.md](PERFORMANCE.md). Réponses des endpoints modifiés comparées à celles de la Phase 1 sur la même base : identiques.

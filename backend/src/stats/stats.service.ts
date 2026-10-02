@@ -6,6 +6,9 @@ import { PlannedWorkout } from '../workouts/entities/planned-workout.entity';
 import { User } from '../users/entities/users.entity';
 import { AuthUser } from '../auth/auth-user.interface';
 import { DetailedMuscleGroup } from '../exercise/enums/detailed-muscle.enum';
+import { Exercise } from '../exercise/entities/exercise.entity';
+import { HEATMAP_MAX_LEVEL } from './constants/progression';
+import { BASELINE_PERIODS } from './constants/comparison';
 import { DEFAULT_BODY_WEIGHT_KG } from './constants/met-values';
 import {
   BodyRegion,
@@ -13,14 +16,39 @@ import {
   MUSCLE_REGION,
   MuscleCategory,
 } from './constants/muscle-groups';
+import { AdherenceQueryDto } from './dto/adherence-query.dto';
+import { HeatmapQueryDto } from './dto/heatmap-query.dto';
 import { PeriodQueryDto } from './dto/period-query.dto';
+import {
+  ProgressionPeriod,
+  ProgressionQueryDto,
+} from './dto/progression-query.dto';
+import {
+  AdherenceDto,
+  ComparisonsDto,
+  HeatmapDto,
+  ProgressionDto,
+  RecordsDto,
+  WorkoutRecordDto,
+  WorkoutTypeBreakdownDto,
+} from './dto/stats-response.dto';
 import { StatsCalculatorService } from './stats-calculator.service';
+import {
+  BestSetRow,
+  BreakdownRow,
+  HeatmapRow,
+  PeriodTotals,
+  ProgressionRow,
+  SessionVolumeRow,
+} from './stats.types';
 import {
   addDays,
   dayKey,
   dayRange,
   DateRange,
+  elapsedFraction,
   percentChange,
+  precedingPeriodRanges,
   resolvePeriodRange,
   previousPeriodRange,
   round,
@@ -38,6 +66,8 @@ export class StatsService {
     private readonly plannedRepo: Repository<PlannedWorkout>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(Exercise)
+    private readonly exerciseRepo: Repository<Exercise>,
     private readonly calculator: StatsCalculatorService,
   ) {}
 
@@ -355,6 +385,338 @@ export class StatsService {
     };
   }
 
+  // -------------------------------------------------------------------------
+  // Progression, records, adherence, comparisons, breakdown, heatmap
+  //
+  // The SQL here only reduces the history to the few rows each calculation
+  // needs (one user, one exercise, one window, or an aggregate per exercise,
+  // type or day). The maths lives in StatsCalculatorService.
+  // -------------------------------------------------------------------------
+
+  async getProgression(
+    user: AuthUser,
+    query: ProgressionQueryDto,
+  ): Promise<ProgressionDto> {
+    const exercise = await this.exerciseRepo.findOne({
+      where: { id: query.exerciseId },
+    });
+
+    if (!exercise) throw new NotFoundException('Exercise not found');
+    const now = new Date();
+    const rangeStart = progressionRangeStart(query.period, now);
+    const rows = await this.rows<ProgressionRow>(
+      `SELECT to_char(w."completionDate", 'YYYY-MM-DD') AS day,
+              w.id AS "workoutId",
+              e.sets AS sets
+         FROM completed_workouts w
+         JOIN completed_workout_exercises e ON e."workoutId" = w.id
+        WHERE w."userId" = $1
+          AND e."exerciseId" = $2
+          AND ($3::date IS NULL OR w."completionDate" >= $3::date)
+        ORDER BY w."completionDate"`,
+      [user.id, exercise.id, rangeStart ? dayKey(rangeStart) : null],
+    );
+    const points = this.calculator.progressionPoints(rows, query.metric);
+
+    return {
+      exercise: {
+        id: exercise.id,
+        name: exercise.name,
+        primaryMuscle: exercise.primary_muscle,
+      },
+      metric: query.metric,
+      period: query.period,
+      rangeStart,
+      rangeEnd: now,
+      summary: this.calculator.summarizeProgression(points),
+      points,
+    };
+  }
+
+  async getRecords(user: AuthUser): Promise<RecordsDto> {
+    const [bestSets, sessionVolumes, longest, highestVolume, days] =
+      await Promise.all([
+        // Heaviest set for each exercise and rep count, earliest date on a tie.
+        this.rows<BestSetRow>(
+          `SELECT DISTINCT ON (x."exerciseId", x.reps)
+                  x."exerciseId", x.name, x."primaryMuscle", x.reps, x.weight,
+                  x."achievedAt"
+             FROM (
+               SELECT e."exerciseId" AS "exerciseId", ex.name AS name,
+                      ex.primary_muscle AS "primaryMuscle",
+                      (s->>'reps')::float8 AS reps,
+                      (s->>'weight')::float8 AS weight,
+                      w."completionDate" AS "achievedAt"
+                 FROM completed_workouts w
+                 JOIN completed_workout_exercises e ON e."workoutId" = w.id
+                 JOIN exercises ex ON ex.id = e."exerciseId"
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(e.sets, '[]'::jsonb)) s
+                WHERE w."userId" = $1
+             ) x
+            WHERE x.reps > 0 AND x.weight > 0
+            ORDER BY x."exerciseId", x.reps, x.weight DESC, x."achievedAt"`,
+          [user.id],
+        ),
+        // Highest volume load of a single workout, per exercise.
+        this.rows<SessionVolumeRow>(
+          `SELECT DISTINCT ON (v."exerciseId")
+                  v."exerciseId", v."workoutId", v.volume, v."achievedAt"
+             FROM (
+               SELECT e."exerciseId" AS "exerciseId", w.id AS "workoutId",
+                      w."completionDate" AS "achievedAt",
+                      SUM((s->>'reps')::float8 * (s->>'weight')::float8) AS volume
+                 FROM completed_workouts w
+                 JOIN completed_workout_exercises e ON e."workoutId" = w.id
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(e.sets, '[]'::jsonb)) s
+                WHERE w."userId" = $1
+                GROUP BY e."exerciseId", w.id, w."completionDate"
+             ) v
+            WHERE v.volume > 0
+            ORDER BY v."exerciseId", v.volume DESC, v."achievedAt"`,
+          [user.id],
+        ),
+        this.rows<WorkoutRecordDto>(
+          `SELECT id AS "workoutId", title,
+                  "totalDurationSeconds" AS value, "completionDate" AS "achievedAt"
+             FROM completed_workouts
+            WHERE "userId" = $1
+            ORDER BY "totalDurationSeconds" DESC, "completionDate"
+            LIMIT 1`,
+          [user.id],
+        ),
+        this.rows<WorkoutRecordDto>(
+          `SELECT w.id AS "workoutId", w.title,
+                  SUM((s->>'reps')::float8 * (s->>'weight')::float8) AS value,
+                  w."completionDate" AS "achievedAt"
+             FROM completed_workouts w
+             JOIN completed_workout_exercises e ON e."workoutId" = w.id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(e.sets, '[]'::jsonb)) s
+            WHERE w."userId" = $1
+            GROUP BY w.id, w.title, w."completionDate"
+            ORDER BY value DESC NULLS LAST, w."completionDate"
+            LIMIT 1`,
+          [user.id],
+        ),
+        this.rows<{ day: string }>(
+          `SELECT DISTINCT to_char("completionDate", 'YYYY-MM-DD') AS day
+             FROM completed_workouts
+            WHERE "userId" = $1`,
+          [user.id],
+        ),
+      ]);
+    const dayKeys = days.map((d) => d.day);
+    const volumeRecord = highestVolume[0];
+
+    return {
+      generatedAt: new Date(),
+      exercises: this.calculator.exerciseRecords(bestSets, sessionVolumes),
+      workouts: {
+        longestWorkout: longest[0] ?? null,
+        highestVolumeWorkout:
+          volumeRecord && Number(volumeRecord.value) > 0
+            ? { ...volumeRecord, value: round(Number(volumeRecord.value)) }
+            : null,
+        longestStreakDays: this.calculator.longestStreak(dayKeys),
+        totalTrainingDays: dayKeys.length,
+      },
+    };
+  }
+
+  /**
+   * Compares a session with a plan. The completed workout must be the
+   * caller's. The plan can be any readable planned workout, the same openness
+   * as GET /workouts/planned/:id, so a user can follow a programme made by
+   * someone else.
+   */
+  async getAdherence(
+    user: AuthUser,
+    query: AdherenceQueryDto,
+  ): Promise<AdherenceDto> {
+    const [completed, planned] = await Promise.all([
+      this.completedRepo.findOne({
+        where: { id: query.completedWorkoutId, user: { id: user.id } },
+        relations: ['exercises', 'exercises.exercise'],
+      }),
+      this.plannedRepo.findOne({
+        where: { id: query.plannedWorkoutId },
+        relations: ['exercises', 'exercises.exercise'],
+      }),
+    ]);
+
+    if (!completed) throw new NotFoundException('Completed workout not found');
+    if (!planned) throw new NotFoundException('Planned workout not found');
+    return this.calculator.computeAdherence(planned, completed);
+  }
+
+  async getComparisons(
+    user: AuthUser,
+    query: PeriodQueryDto,
+  ): Promise<ComparisonsDto> {
+    const now = new Date();
+    const current = resolvePeriodRange(query.period, query.date);
+    const baselineRanges = precedingPeriodRanges(
+      query.period,
+      query.date,
+      BASELINE_PERIODS[query.period],
+    );
+    const window: DateRange = {
+      start: baselineRanges[baselineRanges.length - 1].start,
+      end: baselineRanges[0].end,
+    };
+    const [weightKg, currentWorkouts, windowWorkouts, first] =
+      await Promise.all([
+        this.resolveBodyWeight(user.id),
+        this.fetchWorkoutsInRange(user.id, current),
+        this.fetchWorkoutsInRange(user.id, window),
+        this.completedRepo
+          .createQueryBuilder('w')
+          .select('MIN(w."completionDate")', 'first')
+          .where('w."userId" = :userId', { userId: user.id })
+          .getRawOne<{ first: Date | null }>(),
+      ]);
+    // A period counts only if the user had already started before it began,
+    // so the first, partial period and the time before signing up are left out.
+    const firstWorkout = first?.first ?? null;
+    const usable = firstWorkout
+      ? baselineRanges.filter((r) => firstWorkout < r.start)
+      : [];
+    const totalsOf = (workouts: CompletedWorkout[]): PeriodTotals => {
+      const t = this.calculator.aggregateTotals(workouts, weightKg);
+
+      return {
+        workouts: t.workouts,
+        durationSeconds: t.durationSeconds,
+        sets: t.sets,
+        reps: t.reps,
+        volume: t.volume,
+        calories: t.calories,
+      };
+    };
+    const baselineTotals = usable.map((range) =>
+      totalsOf(
+        windowWorkouts.filter(
+          (w) =>
+            w.completionDate >= range.start && w.completionDate <= range.end,
+        ),
+      ),
+    );
+    const average = baselineTotals.length
+      ? this.calculator.averageTotals(baselineTotals)
+      : null;
+    const currentTotals = totalsOf(currentWorkouts);
+    const elapsed = elapsedFraction(current, now);
+    const comparison = this.calculator.compareToBaseline(
+      currentTotals,
+      average,
+      elapsed,
+    );
+
+    return {
+      period: query.period,
+      rangeStart: current.start,
+      rangeEnd: current.end,
+      elapsedPct: round(elapsed * 100, 1),
+      current: currentTotals,
+      baseline: average
+        ? {
+            periodsConsidered: usable.length,
+            rangeStart: usable[usable.length - 1].start,
+            rangeEnd: usable[0].end,
+            average,
+          }
+        : null,
+      comparison,
+      insights: this.calculator.comparisonInsights(
+        comparison,
+        usable.length,
+        query.period,
+        elapsed,
+      ),
+    };
+  }
+
+  async getWorkoutTypeBreakdown(
+    user: AuthUser,
+    query: PeriodQueryDto,
+  ): Promise<WorkoutTypeBreakdownDto> {
+    const range = resolvePeriodRange(query.period, query.date);
+    const [byExerciseType, byEquipmentType] = await Promise.all([
+      this.breakdownRows(user.id, range, 'exercise_type'),
+      this.breakdownRows(user.id, range, 'equipment_type'),
+    ]);
+
+    return {
+      period: query.period,
+      rangeStart: range.start,
+      rangeEnd: range.end,
+      totalSets: byExerciseType.reduce((acc, r) => acc + r.sets, 0),
+      byExerciseType: this.calculator.breakdownSlices(byExerciseType),
+      byEquipmentType: this.calculator.breakdownSlices(byEquipmentType),
+    };
+  }
+
+  async getHeatmap(
+    user: AuthUser,
+    query: HeatmapQueryDto,
+  ): Promise<HeatmapDto> {
+    const year = query.year ?? new Date().getUTCFullYear();
+    const rows = await this.rows<HeatmapRow>(
+      `SELECT to_char(w."completionDate", 'YYYY-MM-DD') AS day,
+              COUNT(*)::int AS workouts,
+              COALESCE(SUM(w."totalDurationSeconds"), 0)::int AS "durationSeconds"
+         FROM completed_workouts w
+        WHERE w."userId" = $1
+          AND w."completionDate" >= $2::date
+          AND w."completionDate" < $3::date
+        GROUP BY 1
+        ORDER BY 1`,
+      [user.id, `${year}-01-01`, `${year + 1}-01-01`],
+    );
+    const days = this.calculator.heatmapDays(rows);
+
+    return {
+      year,
+      totalWorkouts: rows.reduce((acc, r) => acc + r.workouts, 0),
+      activeDays: rows.length,
+      totalDurationSeconds: rows.reduce((acc, r) => acc + r.durationSeconds, 0),
+      maxWorkoutsInDay: Math.max(0, ...rows.map((r) => r.workouts)),
+      longestStreakDays: this.calculator.longestStreak(rows.map((r) => r.day)),
+      maxLevel: HEATMAP_MAX_LEVEL,
+      days,
+    };
+  }
+
+  /** Runs a read-only SQL reduction and types its rows. */
+  private rows<T>(sql: string, params: unknown[]): Promise<T[]> {
+    return this.completedRepo.query(sql, params);
+  }
+
+  private breakdownRows(
+    userId: string,
+    range: DateRange,
+    column: keyof typeof BREAKDOWN_COLUMNS,
+  ): Promise<BreakdownRow[]> {
+    // The column comes from a closed set of constants, never from the request.
+    const group = BREAKDOWN_COLUMNS[column];
+
+    return this.rows<BreakdownRow>(
+      `SELECT ${group}::text AS type,
+              COUNT(DISTINCT ex.id)::int AS exercises,
+              COALESCE(SUM(jsonb_array_length(COALESCE(e.sets, '[]'::jsonb))), 0)::int AS sets,
+              COALESCE(SUM((
+                SELECT SUM((s->>'reps')::float8 * (s->>'weight')::float8)
+                  FROM jsonb_array_elements(COALESCE(e.sets, '[]'::jsonb)) s
+              )), 0)::float8 AS volume
+         FROM completed_workouts w
+         JOIN completed_workout_exercises e ON e."workoutId" = w.id
+         JOIN exercises ex ON ex.id = e."exerciseId"
+        WHERE w."userId" = $1
+          AND w."completionDate" BETWEEN $2 AND $3
+        GROUP BY ${group}`,
+      [userId, range.start, range.end],
+    );
+  }
+
   private async resolveBodyWeight(
     userId: string,
     override?: number,
@@ -380,4 +742,24 @@ export class StatsService {
       relations: ['exercises', 'exercises.exercise'],
     });
   }
+}
+
+const BREAKDOWN_COLUMNS = {
+  exercise_type: 'ex.exercise_type',
+  equipment_type: 'ex.equipment_type',
+} as const;
+
+function progressionRangeStart(
+  period: ProgressionPeriod,
+  now: Date,
+): Date | null {
+  const days = {
+    [ProgressionPeriod.ONE_MONTH]: 30,
+    [ProgressionPeriod.THREE_MONTHS]: 90,
+    [ProgressionPeriod.SIX_MONTHS]: 180,
+    [ProgressionPeriod.ONE_YEAR]: 365,
+    [ProgressionPeriod.ALL]: null,
+  }[period];
+
+  return days === null ? null : startOfDay(addDays(now, -days));
 }
