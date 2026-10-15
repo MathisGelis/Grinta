@@ -1,7 +1,7 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
 
-export interface PeriodSummary {
+interface PeriodSummary {
   period: string;
   rangeStart: string;
   rangeEnd: string;

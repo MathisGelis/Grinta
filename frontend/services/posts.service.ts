@@ -22,22 +22,17 @@ export interface Post {
   },
 }
 
-export interface PostLike {
-  id: string,
-  displayName: string,
-  uniqueName: string,
-  createdAt: string,
+interface PostLike {
+  id: string;
+  displayName: string;
+  uniqueName: string;
+  createdAt: string;
 }
 
 export const PostsService = {
   async createPost(workoutId: string): Promise<{ id: string }> {
     const token = await TokenService.get();
     return api.post<{ id: string }>("/posts", { workoutId }, token ?? undefined);
-  },
-
-  async deletePost(postId: string): Promise<void> {
-    const token = await TokenService.get();
-    return api.delete(`/posts/${postId}`, token ?? undefined);
   },
 
   async getTopPosts(limit: number): Promise<Post[]> {
@@ -64,10 +59,6 @@ export const PostsService = {
     }
   },
 
-  async getPostById(postId: string): Promise<Post | null> {
-    const token = await TokenService.get();
-    return api.get<Post | null>(`/posts/${encodeURIComponent(postId)}`, token ?? undefined);
-  },
   async likePost(postId: string): Promise<void> {
     const token = await TokenService.get();
     return api.patch(`/posts/${postId}/like`, {}, token ?? undefined);

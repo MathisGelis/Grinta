@@ -1,10 +1,10 @@
 import { api } from "./api";
 
-export interface LoginResponse {
+interface LoginResponse {
   access_token: string;
 }
 
-export interface RegisterResponse {
+interface RegisterResponse {
   access_token: string;
   id: string;
 }

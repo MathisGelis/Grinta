@@ -9,11 +9,6 @@ export interface SmallProgramm {
   difficulty: string;
 }
 
-export interface SmallProgrammDay {
-  dayNumber: number;
-  workoutId: string | null;
-}
-
 export interface ProgrammeDay {
   dayNumber: number;
   workout: SmallWorkout | null;
@@ -36,7 +31,7 @@ export interface Programm {
   days: ProgrammeDay[];
 }
 
-export interface createProgramm {
+interface createProgramm {
   weekNumber: number;
   difficulty: string;
   locationType: string;
@@ -48,7 +43,7 @@ export interface createProgramm {
   }[];
 }
 
-export interface editProgramm {
+interface editProgramm {
   weekNumber: number;
   difficulty: string;
   locationType: string;
@@ -89,7 +84,6 @@ export async function createProgramme(
 ): Promise<createProgramm> {
   try {
     const token = await TokenService.get() || undefined;
-    console.log("Création du programme avec les données:", JSON.stringify(programmeData, null, 2));
     return await api.post<createProgramm>("/programmes", programmeData, token);
   } catch (error) {
     console.error("Error lors de la création du programme:", error);
@@ -103,7 +97,6 @@ export async function updateProgramme(
 ): Promise<editProgramm> {
   try {
     const token = await TokenService.get() || undefined;
-    console.log(`Mise à jour du programme ${id} avec les données:`, JSON.stringify(programmeData, null, 2));
     return await api.patch<editProgramm>(`/programmes/${id}`, programmeData, token);
   } catch (error) {
     console.error("Error lors de la mise à jour du programme:", error);
