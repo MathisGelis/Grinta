@@ -1,59 +1,51 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+import palette from './palette';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+export const WorkoutTheme = {
+  background: palette.background,
+  backgroundSecondary: palette.surface,
+  backgroundTertiary: palette.raised,
 
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+  text: {
+    primary: palette.ink,
+    secondary: palette.inkSoft,
+    tertiary: palette.inkMuted,
+    disabled: palette.inkFaint,
+    light: palette.inkLight,
   },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+
+  accent: {
+    purple: palette.accent,
+    purpleLight: palette.accentLight,
+    purpleDark: palette.accentDark,
+    purpleTint: palette.accentTint,
+    purpleText: palette.accentText,
+  },
+
+  status: {
+    success: palette.success,
+    warning: palette.warning,
+    danger: palette.danger,
+    info: palette.info,
+    successTint: palette.successTint,
+    dangerTint: palette.dangerTint,
+    dangerBorder: palette.dangerBorder,
+    dangerLight: palette.dangerLight,
+    infoTint: palette.infoTint,
+  },
+
+  border: palette.line,
+
+  overlay: {
+    dim: palette.overlay,
+    scrim: palette.scrim,
+    glassFill: palette.glassFill,
+    glassBorder: palette.glassBorder,
+    glassText: palette.glassText,
+    glassStrong: palette.glassStrong,
   },
 };
 
-// Workout theme with dark grays and purple accents
-export const WorkoutTheme = {
-  // Dark backgrounds
-  background: '#0F0F0F',
-  backgroundSecondary: '#1A1A1A',
-  backgroundTertiary: '#252525',
-  
-  // Text colors
-  text: {
-    primary: '#FFFFFF',
-    secondary: '#B8B8B8',
-    tertiary: '#808080',
-  },
-  
-  // Accent colors
-  accent: {
-    purple: '#7C5DB7',
-    purpleLight: '#9B79D8',
-    purpleDark: '#5A3F8F',
-  },
-  
-  // Status colors
-  status: {
-    success: '#10B981',
-    warning: '#F59E0B',
-    danger: '#EF4444',
-    info: '#3B82F6',
-  },
-  
-  // Border colors
-  border: '#333333',
+export const withAlpha = (hex: string, opacity: number) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${opacity})`;
 };

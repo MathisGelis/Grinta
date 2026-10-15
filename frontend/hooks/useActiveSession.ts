@@ -5,12 +5,6 @@ import {
   getActiveSession,
 } from "@/services/active-session.service";
 
-/**
- * Reads the minimized session on every focus, so callers learn about it as
- * soon as the tabs come back. Deliberately does not tick the timer: the
- * consumers that need a running clock derive it from the session themselves,
- * which keeps the once-a-second re-render out of the tab layout.
- */
 export function useActiveSession(): ActiveSession | null {
   const [session, setSession] = useState<ActiveSession | null>(null);
 
