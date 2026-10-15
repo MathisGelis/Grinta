@@ -1,45 +1,26 @@
-import { Stack, router } from "expo-router";
-import { TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { Stack } from "expo-router";
+import { WorkoutTheme } from "@/constants/Colors";
 
 export default function WorkoutsStack() {
-  const { t } = useTranslation();
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: "#121212" },
-        headerTintColor: "#fff",
-        headerShadowVisible: false,
+        headerShown: false,
+        contentStyle: { backgroundColor: "transparent" },
       }}
     >
-      <Stack.Screen name="(list)" options={{ headerShown: false }} />
+      <Stack.Screen name="(list)" />
       <Stack.Screen
         name="create/workout"
-        options={{
-          title: t.newSession,
-          presentation: "modal",
-          headerTitleStyle: {
-            color: "#fff",
-            fontSize: 17,
-            fontWeight: "700",
-          },
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: "#1a1a1a",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="chevron-back" size={22} color="#fff" />
-            </TouchableOpacity>
-          ),
-        }}
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="create/exercise"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="create/programm"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
       />
     </Stack>
   );

@@ -1,8 +1,11 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
+import IconButton from "@/components/ui/IconButton";
+import Glass from "@/components/ui/Glass";
+import PressableScale from "@/components/ui/PressableScale";
 
 interface WorkoutSessionHeaderProps {
   workoutTitle: string;
@@ -34,77 +37,48 @@ export default function WorkoutSessionHeader({
   };
 
   return (
-    <View
-      style={{
-        backgroundColor: WorkoutTheme.backgroundTertiary,
-        borderBottomWidth: 1,
-        borderBottomColor: WorkoutTheme.border,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}
-    >
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: "600",
-            color: WorkoutTheme.text.secondary,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
-          }}
+    <View className="gap-5 px-5 pb-2 pt-3">
+      <View className="flex-row items-center justify-between">
+        <IconButton
+          icon="chevron-down"
+          variant="glass"
+          label={t.minimizeLabel}
+          onPress={onMinimize}
+        />
+        <View className="mx-3 flex-1 items-center">
+          <Text className="text-xs text-ink-muted">{t.workoutInProgress}</Text>
+          <Text
+            className="mt-0.5 text-base font-semibold text-ink"
+            numberOfLines={1}
+          >
+            {workoutTitle}
+          </Text>
+        </View>
+        <PressableScale
+          onPress={onEndWorkout}
+          accessibilityRole="button"
+          accessibilityLabel={t.finishWorkout}
+          style={{ width: 44, height: 44, borderRadius: 22 }}
         >
-          {t.workoutInProgress}
-        </Text>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "700",
-            color: WorkoutTheme.text.primary,
-            marginTop: 4,
-          }}
-        >
-          {workoutTitle}
-        </Text>
+          <Glass
+            className="items-center justify-center"
+            style={{ width: 44, height: 44, borderRadius: 22 }}
+          >
+            <Ionicons
+              name="stop"
+              size={18}
+              color={WorkoutTheme.status.warning}
+            />
+          </Glass>
+        </PressableScale>
       </View>
 
-      <View
-        style={{
-          backgroundColor: WorkoutTheme.background,
-          borderRadius: 8,
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          marginHorizontal: 12,
-        }}
+      <Text
+        className="text-center text-[56px] font-semibold text-ink"
+        style={{ fontVariant: ["tabular-nums"], letterSpacing: -1 }}
       >
-        <Text
-          style={{
-            fontSize: 12,
-            fontWeight: "700",
-            color: WorkoutTheme.accent.purple,
-          }}
-        >
-          {formatTime(totalTime)}
-        </Text>
-      </View>
-
-      <TouchableOpacity onPress={onMinimize} style={{ padding: 8 }}>
-        <Ionicons
-          name="chevron-down"
-          size={24}
-          color={WorkoutTheme.text.primary}
-        />
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={onEndWorkout} style={{ padding: 8 }}>
-        <Ionicons
-          name="stop-circle"
-          size={24}
-          color={WorkoutTheme.status.warning}
-        />
-      </TouchableOpacity>
+        {formatTime(totalTime)}
+      </Text>
     </View>
   );
 }

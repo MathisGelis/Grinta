@@ -1,34 +1,35 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function ChatScreen() {
+  const { t } = useTranslation();
   return (
     <SafeAreaView
       edges={["top", "left", "right"]}
-      style={{ backgroundColor: WorkoutTheme.background }}
+      
       className="flex-1"
     >
-      {/* Header */}
+      <ScreenBackground />
       <View
-        className="flex-row items-center justify-between px-4 py-3 border-b"
-        style={{
-          borderBottomColor: WorkoutTheme.backgroundSecondary,
-        }}
+        className="flex-row items-center justify-between px-4 py-3 border-b border-b-surface"
+        
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#fff" />
-        </TouchableOpacity>
+        <PressableScale onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={28} color={WorkoutTheme.text.primary} />
+        </PressableScale>
 
-        <Text className="text-lg font-semibold text-white">Messages</Text>
+        <Text className="text-lg font-semibold text-ink">{t.messagesTitle}</Text>
 
         <View className="w-7" />
       </View>
 
-      {/* Content */}
       <View className="flex-1 items-center justify-center pb-40">
         <Ionicons
           name="paper-plane-outline"
@@ -36,13 +37,13 @@ export default function ChatScreen() {
           color={WorkoutTheme.accent.purple}
         />
 
-        <Text className="mt-4 text-2xl font-bold text-white">Page à venir</Text>
+        <Text className="mt-4 text-2xl font-bold text-ink">{t.comingSoonTitle}</Text>
 
         <Text
-          className="mt-2 text-sm text-center"
-          style={{ color: WorkoutTheme.text.secondary }}
+          className="mt-2 text-sm text-center text-ink-soft"
+          
         >
-          Cette fonctionnalité sera bientôt disponible
+          {t.comingSoonText}
         </Text>
       </View>
     </SafeAreaView>

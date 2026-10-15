@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  Animated,
-} from "react-native";
+import { View, Text, ScrollView, StatusBar, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
 export default function WorkoutSummaryScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
@@ -39,13 +35,12 @@ export default function WorkoutSummaryScreen() {
     return `${minutes}min ${secs}s`;
   };
 
-  // Mock stats
   const stats = {
     calories: 520,
     exercises: 3,
     sets: 11,
     reps: 91,
-    volume: 2750, // kg
+    volume: 2750,
   };
 
   const goHome = () => {
@@ -57,11 +52,11 @@ export default function WorkoutSummaryScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-neutral-950">
-      <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
+    <SafeAreaView edges={["top"]} className="flex-1">
+      <ScreenBackground />
+      <StatusBar barStyle="light-content" backgroundColor={WorkoutTheme.background} />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Celebration animation */}
         <Animated.View
           style={{
             transform: [{ scale: scaleAnim }],
@@ -69,142 +64,130 @@ export default function WorkoutSummaryScreen() {
           className="items-center justify-center py-12"
         >
           <View
-            className="rounded-full p-6 mb-6"
-            style={{
-              backgroundColor: "#7B61FF",
-            }}
+            className="rounded-full p-6 mb-6 bg-accent"
+            
           >
             <Ionicons name="checkmark" size={64} color="white" />
           </View>
-          <Text className="text-3xl font-bold text-white text-center">
+          <Text className="text-3xl font-bold text-ink text-center">
             {t.workoutComplete}
           </Text>
-          <Text className="text-base text-neutral-400 text-center mt-2">
+          <Text className="text-base text-ink-muted text-center mt-2">
             {t.greatEffortToday}
           </Text>
         </Animated.View>
 
-        {/* Workout name and time */}
         <View className="px-4 mb-6">
-          <View className="bg-neutral-900 rounded-2xl p-6 border border-neutral-800">
-            <Text className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+          <View className="bg-surface rounded-tile p-6 border border-line">
+            <Text className="text-sm font-semibold text-ink-muted uppercase tracking-wider mb-2">
               {t.workoutsLabel}
             </Text>
-            <Text className="text-2xl font-bold text-white mb-4">
+            <Text className="text-2xl font-bold text-ink mb-4">
               {workoutName}
             </Text>
 
-            <View className="flex-row justify-between items-center pt-4 border-t border-neutral-800">
+            <View className="flex-row justify-between items-center pt-4 border-t border-line">
               <View>
-                <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
+                <Text className="text-xs text-ink-muted uppercase font-semibold mb-1">
                   {t.totalTime}
                 </Text>
-                <Text className="text-2xl font-bold text-white">
+                <Text className="text-2xl font-bold text-ink">
                   {formatTime(totalTime)}
                 </Text>
               </View>
-              <Ionicons name="time" size={32} color="#7B61FF" />
+              <Ionicons name="time" size={32} color={WorkoutTheme.accent.purple} />
             </View>
           </View>
         </View>
 
-        {/* Stats Grid */}
         <View className="px-4 mb-6">
-          <Text className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+          <Text className="text-sm font-semibold text-ink-muted uppercase tracking-wider mb-3">
             {t.summary}
           </Text>
 
           <View className="flex-row flex-wrap gap-2">
-            {/* Calories */}
-            <View className="flex-1 min-w-[47%] bg-neutral-900 rounded-xl p-4 border border-neutral-800">
+            <View className="flex-1 min-w-[47%] bg-surface rounded-xl p-4 border border-line">
               <View className="mb-3">
-                <Ionicons name="flame" size={24} color="#ef4444" />
+                <Ionicons name="flame" size={24} color={WorkoutTheme.status.danger} />
               </View>
-              <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
+              <Text className="text-xs text-ink-muted uppercase font-semibold mb-1">
                 {t.calories}
               </Text>
-              <Text className="text-2xl font-bold text-white">
+              <Text className="text-2xl font-bold text-ink">
                 {stats.calories}
-                <Text className="text-sm text-neutral-400"> kcal</Text>
+                <Text className="text-sm text-ink-muted"> kcal</Text>
               </Text>
             </View>
 
-            {/* Exercises */}
-            <View className="flex-1 min-w-[47%] bg-neutral-900 rounded-xl p-4 border border-neutral-800">
+            <View className="flex-1 min-w-[47%] bg-surface rounded-xl p-4 border border-line">
               <View className="mb-3">
-                <Ionicons name="barbell" size={24} color="#3b82f6" />
+                <Ionicons name="barbell" size={24} color={WorkoutTheme.status.info} />
               </View>
-              <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
+              <Text className="text-xs text-ink-muted uppercase font-semibold mb-1">
                 {t.exercises}
               </Text>
-              <Text className="text-2xl font-bold text-white">
+              <Text className="text-2xl font-bold text-ink">
                 {stats.exercises}
               </Text>
             </View>
 
-            {/* Sets */}
-            <View className="flex-1 min-w-[47%] bg-neutral-900 rounded-xl p-4 border border-neutral-800">
+            <View className="flex-1 min-w-[47%] bg-surface rounded-xl p-4 border border-line">
               <View className="mb-3">
-                <Ionicons name="layers" size={24} color="#7B61FF" />
+                <Ionicons name="layers" size={24} color={WorkoutTheme.accent.purple} />
               </View>
-              <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
+              <Text className="text-xs text-ink-muted uppercase font-semibold mb-1">
                 {t.sets}
               </Text>
-              <Text className="text-2xl font-bold text-white">
+              <Text className="text-2xl font-bold text-ink">
                 {stats.sets}
               </Text>
             </View>
 
-            {/* Reps */}
-            <View className="flex-1 min-w-[47%] bg-neutral-900 rounded-xl p-4 border border-neutral-800">
+            <View className="flex-1 min-w-[47%] bg-surface rounded-xl p-4 border border-line">
               <View className="mb-3">
-                <Ionicons name="repeat" size={24} color="#ec4899" />
+                <Ionicons name="repeat" size={24} color={WorkoutTheme.status.info} />
               </View>
-              <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
+              <Text className="text-xs text-ink-muted uppercase font-semibold mb-1">
                 {t.totalReps}
               </Text>
-              <Text className="text-2xl font-bold text-white">
+              <Text className="text-2xl font-bold text-ink">
                 {stats.reps}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Volume */}
         <View className="px-4 mb-6">
-          <View className="bg-neutral-900 rounded-xl p-4 border border-neutral-800 flex-row items-center gap-4">
+          <View className="bg-surface rounded-xl p-4 border border-line flex-row items-center gap-4">
             <View
-              className="rounded-full p-3"
-              style={{ backgroundColor: "#7B61FF/20" }}
+              className="rounded-full p-3 bg-accent/20"
+              
             >
-              <Ionicons name="cube" size={24} color="#d97706" />
+              <Ionicons name="cube" size={24} color={WorkoutTheme.status.warning} />
             </View>
             <View className="flex-1">
-              <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
+              <Text className="text-xs text-ink-muted uppercase font-semibold mb-1">
                 {t.totalVolume}
               </Text>
-              <Text className="text-xl font-bold text-white">
+              <Text className="text-xl font-bold text-ink">
                 {stats.volume.toLocaleString()}
-                <Text className="text-sm text-neutral-400"> kg</Text>
+                <Text className="text-sm text-ink-muted"> kg</Text>
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Achievement banner */}
         <View className="px-4 mb-8">
           <View
-            className="rounded-xl p-4 flex-row items-center gap-3"
-            style={{
-              backgroundColor: "#7B61FF",
-            }}
+            className="rounded-xl p-4 flex-row items-center gap-3 bg-accent"
+            
           >
             <Ionicons name="star" size={28} color="white" />
             <View className="flex-1">
-              <Text className="text-white font-bold text-sm">
+              <Text className="text-ink font-bold text-sm">
                 {t.greatConsistency}
               </Text>
-              <Text className="text-white/80 text-xs">
+              <Text className="text-ink/80 text-xs">
                 5 {t.weeklyWorkoutsDone}
               </Text>
             </View>
@@ -212,24 +195,21 @@ export default function WorkoutSummaryScreen() {
         </View>
       </ScrollView>
 
-      {/* Buttons */}
-      <View className="bg-neutral-900 border-t border-neutral-800 px-4 py-4 gap-2">
-        <TouchableOpacity
+      <View className="bg-surface border-t border-line px-4 py-4 gap-2">
+        <PressableScale
           onPress={goHome}
-          className="rounded-lg py-4 items-center justify-center flex-row gap-2"
-          style={{
-            backgroundColor: "#7B61FF",
-          }}
+          className="rounded-full py-4 items-center justify-center flex-row gap-2 bg-accent"
+          
         >
           <Ionicons name="home" size={20} color="white" />
-          <Text className="text-white font-bold text-lg">{t.goHome}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+          <Text className="text-ink font-bold text-lg">{t.goHome}</Text>
+        </PressableScale>
+        <PressableScale
           onPress={goBack}
-          className="bg-neutral-800 rounded-lg py-3 items-center justify-center"
+          className="bg-raised rounded-lg py-3 items-center justify-center"
         >
-          <Text className="text-white font-semibold">{t.backToWorkouts}</Text>
-        </TouchableOpacity>
+          <Text className="text-ink font-semibold">{t.backToWorkouts}</Text>
+        </PressableScale>
       </View>
     </SafeAreaView>
   );

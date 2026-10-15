@@ -1,15 +1,12 @@
 import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, ScrollView, Animated, RefreshControl, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Modal from "react-native-modal";
+import GlassSearchBar from "@/components/GlassSearchBar";
+import PressableScale from "@/components/ui/PressableScale";
 import { useFocusEffect, router } from "expo-router";
+import Card from "@/components/ui/Card";
+import Stat from "@/components/ui/Stat";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import WorkoutCard from "@/components/workout/card/WorkoutCard";
@@ -30,7 +27,22 @@ export default function WorkoutScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { bottomOffset } = useKeyboardOffset();
+  const { keyboardY, bottomOffset } = useKeyboardOffset();
+  const [sortBy, setSortBy] = useState<"default" | "name" | "exercises">(
+    "default",
+  );
+  const [sortModalVisible, setSortModalVisible] = useState(false);
+
+  const handleSearchResults = (titles: string[]) => {
+    setFilteredWorkouts(workouts.filter((w) => titles.includes(w.title)));
+  };
+
+  const sortedWorkouts = [...filteredWorkouts].sort((a, b) => {
+    if (sortBy === "name") return a.title.localeCompare(b.title);
+    if (sortBy === "exercises")
+      return (b.totalExercises ?? 0) - (a.totalExercises ?? 0);
+    return 0;
+  });
 
   const loadWorkouts = useCallback(async () => {
     try {
@@ -41,13 +53,13 @@ export default function WorkoutScreen() {
       setFilteredWorkouts(plannedWorkouts);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Erreur lors du chargement";
+        err instanceof Error ? err.message : t.loadingError;
       setError(message);
       console.error("Erreur:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,79 +74,69 @@ export default function WorkoutScreen() {
   }, [loadWorkouts]);
 
   return (
-    <View style={styles.container}>
-      {/* Quick stats */}
+    <View className="flex-1">
       {!loading && !error && workouts.length > 0 && (
-        <View style={styles.quickStats}>
-          <View style={styles.quickStatItem}>
-            <View
-              style={[styles.quickStatIcon, { backgroundColor: "#2a1f4a" }]}
-            >
-              <Ionicons name="barbell" size={16} color="#7B5CF0" />
+        <View className="mx-5 mb-4 flex-row gap-3">
+          <Card size="tile" className="flex-1 gap-3">
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
+              <Ionicons name="barbell" size={18} color={WorkoutTheme.accent.purple} />
             </View>
-            <Text style={styles.quickStatValue}>{workouts.length}</Text>
-            <Text style={styles.quickStatLabel}>{t.sessions}</Text>
-          </View>
-          <View style={styles.quickStatDivider} />
-          <View style={styles.quickStatItem}>
-            <View
-              style={[styles.quickStatIcon, { backgroundColor: "#1a2f1a" }]}
-            >
-              <Ionicons name="fitness" size={16} color="#34D399" />
+            <Stat value={workouts.length} label={t.sessions} />
+          </Card>
+          <Card size="tile" className="flex-1 gap-3">
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-success-tint">
+              <Ionicons name="fitness" size={18} color={WorkoutTheme.status.success} />
             </View>
-            <Text style={styles.quickStatValue}>
-              {workouts.reduce((sum, w) => sum + (w.totalExercises ?? 0), 0)}
-            </Text>
-            <Text style={styles.quickStatLabel}>{t.exercises}</Text>
-          </View>
+            <Stat
+              value={workouts.reduce((sum, w) => sum + (w.totalExercises ?? 0), 0)}
+              label={t.exercises}
+            />
+          </Card>
         </View>
       )}
 
-      {/* Workouts List */}
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: bottomOffset },
-        ]}
+        className="flex-1"
+        contentContainerClassName="grow"
+        contentContainerStyle={{ paddingBottom: bottomOffset + 80 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#7B5CF0"
-            colors={["#7B5CF0"]}
+            tintColor={WorkoutTheme.accent.purple}
+            colors={[WorkoutTheme.accent.purple]}
           />
         }
       >
         {loading ? (
-          <View style={styles.centerContainer}>
-            <View style={styles.loadingRing}>
-              <ActivityIndicator size="large" color="#7B5CF0" />
+          <View className="flex-1 justify-center items-center px-8 py-[60px]">
+            <View className="w-20 h-20 rounded-full bg-surface items-center justify-center mb-4">
+              <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
             </View>
-            <Text style={styles.loadingText}>{t.loadingWorkouts}</Text>
+            <Text className="text-sm text-ink-muted">{t.loadingWorkouts}</Text>
           </View>
         ) : error ? (
-          <View style={styles.centerContainer}>
-            <View style={styles.errorIconWrap}>
-              <Ionicons name="alert-circle" size={48} color="#EF4444" />
+          <View className="flex-1 justify-center items-center px-8 py-[60px]">
+            <View className="w-20 h-20 rounded-full bg-danger-tint items-center justify-center mb-4">
+              <Ionicons name="alert-circle" size={48} color={WorkoutTheme.status.danger} />
             </View>
-            <Text style={styles.errorTitle}>{t.oops}</Text>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity
+            <Text className="text-xl font-bold text-ink mb-2">{t.oops}</Text>
+            <Text className="text-sm text-ink-muted text-center leading-[20px]">{error}</Text>
+            <PressableScale
               onPress={() => {
                 setLoading(true);
                 loadWorkouts();
               }}
-              style={styles.retryButton}
+              className="mt-6 h-[52px] flex-row items-center gap-2 rounded-full bg-accent px-6"
             >
-              <Ionicons name="refresh" size={20} color="#fff" />
-              <Text style={styles.retryButtonText}>{t.retryBtn}</Text>
-            </TouchableOpacity>
+              <Ionicons name="refresh" size={20} color={WorkoutTheme.text.primary} />
+              <Text className="text-ink font-semibold text-sm">{t.retryBtn}</Text>
+            </PressableScale>
           </View>
         ) : workouts.length > 0 ? (
-          <View style={styles.workoutsContainer}>
-            {filteredWorkouts.map((workout) => (
+          <View className="gap-3 px-5 pt-1">
+            {sortedWorkouts.map((workout) => (
               <WorkoutCard
                 key={workout.id}
                 workout={workout}
@@ -160,232 +162,80 @@ export default function WorkoutScreen() {
             ))}
           </View>
         ) : (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <Ionicons name="barbell-outline" size={48} color="#7B5CF0" />
+          <View className="flex-1 items-center justify-center px-8 py-[60px]">
+            <View className="w-24 h-24 rounded-full bg-info-tint items-center justify-center mb-6">
+              <Ionicons name="barbell-outline" size={48} color={WorkoutTheme.accent.purple} />
             </View>
-            <Text style={styles.emptyStateTitle}>{t.noWorkouts}</Text>
-            <Text style={styles.emptyStateText}>{t.createFirstWorkout}</Text>
-            <TouchableOpacity
+            <Text className="text-xl font-bold text-ink mb-2">{t.noWorkouts}</Text>
+            <Text className="text-sm text-ink-muted text-center leading-[20px]">{t.createFirstWorkout}</Text>
+            <PressableScale
               onPress={() => router.push("/(tabs)/workouts/create/workout")}
-              style={styles.emptyStateButton}
+              className="mt-7 h-[52px] flex-row items-center gap-2 rounded-full bg-accent px-6"
             >
-              <Ionicons name="add-circle" size={22} color="#fff" />
-              <Text style={styles.emptyStateButtonText}>{t.createWorkout}</Text>
-            </TouchableOpacity>
+              <Ionicons name="add-circle" size={22} color={WorkoutTheme.text.primary} />
+              <Text className="text-ink font-semibold text-[15px]">{t.createWorkout}</Text>
+            </PressableScale>
           </View>
         )}
-        <View style={{ height: 100 }} />
       </ScrollView>
+
+      <Animated.View
+        className="absolute left-0 right-0 px-5"
+        style={{
+          bottom: bottomOffset + 12,
+          transform: [{ translateY: keyboardY }],
+        }}
+      >
+        <GlassSearchBar
+          items={workouts.map((w) => w.title)}
+          onResults={handleSearchResults}
+          onAdd={() => router.push("/(tabs)/workouts/create/workout")}
+          placeholder={t.searchWorkout}
+          filter={() => setSortModalVisible(true)}
+        />
+      </Animated.View>
+
+      <Modal
+        isVisible={sortModalVisible}
+        onBackdropPress={() => setSortModalVisible(false)}
+        onSwipeComplete={() => setSortModalVisible(false)}
+        swipeDirection="down"
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        useNativeDriverForBackdrop
+        useNativeDriver
+        hideModalContentWhileAnimating
+        style={{ justifyContent: "flex-end", margin: 0 }}
+      >
+        <View className="gap-3 rounded-t-hero bg-surface p-5 pb-10">
+          <View className="mb-1 h-1.5 w-12 self-center rounded-full bg-raised" />
+          <Text className="mb-1 text-xl font-semibold text-ink">{t.sortBy}</Text>
+          {(
+            [
+              { value: "default", label: t.sortDefault },
+              { value: "name", label: t.sortName },
+              { value: "exercises", label: t.sortExerciseCount },
+            ] as const
+          ).map((o) => (
+            <PressableScale
+              key={o.value}
+              accessibilityRole="button"
+              accessibilityState={{ selected: sortBy === o.value }}
+              onPress={() => {
+                setSortBy(o.value);
+                setSortModalVisible(false);
+              }}
+              className={`h-12 flex-row items-center justify-between rounded-full px-5 ${sortBy === o.value ? "bg-accent" : "bg-raised"}`}
+            >
+              <Text className="text-base font-medium text-ink">{o.label}</Text>
+              {sortBy === o.value && (
+                <Ionicons name="checkmark" size={20} color={WorkoutTheme.text.primary} />
+              )}
+            </PressableScale>
+          ))}
+        </View>
+      </Modal>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 64,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#fff",
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#888",
-    marginTop: 2,
-  },
-  createButton: {
-    backgroundColor: "#7B5CF0",
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#7B5CF0",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-
-  quickStats: {
-    flexDirection: "row",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 16,
-  },
-  quickStatItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 6,
-  },
-  quickStatIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quickStatValue: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  quickStatLabel: {
-    color: "#888",
-    fontSize: 11,
-  },
-  quickStatDivider: {
-    width: 1,
-    backgroundColor: "#2a2a2a",
-    marginVertical: 4,
-  },
-
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-    paddingVertical: 60,
-  },
-  loadingRing: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: "#888",
-  },
-
-  errorIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#2a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: "#888",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#7B5CF0",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 14,
-    marginTop: 24,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-
-  workoutsContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    gap: 12,
-  },
-
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-    paddingVertical: 60,
-  },
-  emptyIconWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "#1a1a2e",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: "#888",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  emptyStateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#7B5CF0",
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 16,
-    marginTop: 28,
-    shadowColor: "#7B5CF0",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  emptyStateButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: WorkoutTheme.accent.purple,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    zIndex: 100,
-  },
-});

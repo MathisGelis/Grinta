@@ -1,19 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { UserService, UserProfile } from "@/services/user.service";
 import { ConnectionsService } from "@/services/connections.service";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function UserProfileScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ userId: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -28,11 +24,11 @@ export default function UserProfileScreen() {
       setProfile(data);
       setFollowStatus(data.followStatus);
     } catch {
-      Alert.alert("Erreur", "Impossible de charger le profil");
+      Alert.alert(t.error, t.cannotLoadProfile);
     } finally {
       setLoading(false);
     }
-  }, [params.userId]);
+  }, [t, params.userId]);
 
   useEffect(() => {
     fetchProfile();
@@ -48,7 +44,7 @@ export default function UserProfileScreen() {
         setProfile({ ...profile, followersCount: profile.followersCount + 1 });
       }
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Erreur");
+      Alert.alert(t.error, err.message || t.error);
     } finally {
       setActionLoading(false);
     }
@@ -64,7 +60,7 @@ export default function UserProfileScreen() {
         setProfile({ ...profile, followersCount: Math.max(0, profile.followersCount - 1) });
       }
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Erreur");
+      Alert.alert(t.error, err.message || t.error);
     } finally {
       setActionLoading(false);
     }
@@ -81,92 +77,87 @@ export default function UserProfileScreen() {
     if (followStatus === "SELF") return null;
     if (followStatus === "FOLLOWING") {
       return (
-        <TouchableOpacity style={styles.unfollowBtn} onPress={handleUnfollow} disabled={actionLoading}>
-          <Text style={styles.unfollowBtnText}>{actionLoading ? "..." : "Suivi"}</Text>
-        </TouchableOpacity>
+        <PressableScale className="bg-transparent px-8 py-2.5 rounded-tile border border-line" onPress={handleUnfollow} disabled={actionLoading}>
+          <Text className="text-ink-muted text-sm font-semibold">{actionLoading ? "..." : t.followingStatus}</Text>
+        </PressableScale>
       );
     }
     if (followStatus === "REQUEST_SENT") {
       return (
-        <View style={styles.pendingBtn}>
-          <Text style={styles.pendingBtnText}>Demande envoyée</Text>
+        <View className="bg-transparent px-8 py-2.5 rounded-tile border border-line">
+          <Text className="text-ink-faint text-sm font-semibold">{t.requestSent}</Text>
         </View>
       );
     }
     return (
-      <TouchableOpacity style={styles.followBtn} onPress={handleFollow} disabled={actionLoading}>
-        <Text style={styles.followBtnText}>
-          {actionLoading ? "..." : followStatus === "FOLLOW_BACK" ? "Suivre en retour" : "Suivre"}
+      <PressableScale className="bg-accent px-8 py-2.5 rounded-full" onPress={handleFollow} disabled={actionLoading}>
+        <Text className="text-ink text-sm font-semibold">
+          {actionLoading ? "..." : followStatus === "FOLLOW_BACK" ? t.followBackAction : t.followAction}
         </Text>
-      </TouchableOpacity>
+      </PressableScale>
     );
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+    <View className="flex-1">
+      <View className="flex-row items-center px-4 pt-16 pb-4 justify-between">
+        <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
+          <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
+        </PressableScale>
+        <Text className="text-ink text-lg font-bold flex-1 text-center" numberOfLines={1}>
           {profile?.uniqueName ? `@${profile.uniqueName}` : "Profil"}
         </Text>
-        <View style={{ width: 40 }} />
+        <View className="w-10" />
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#7B5CF0" style={{ marginTop: 60 }} />
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: 60 }} />
       ) : profile ? (
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 120 }}
         >
-          {/* Avatar */}
-          <View style={styles.avatarSection}>
-            <View style={styles.avatarRing}>
-              <View style={styles.avatarInner}>
-                <Text style={styles.avatarInitials}>{initials}</Text>
+          <View className="items-center py-5">
+            <View className="w-[88px] h-[88px] rounded-full p-[3px] bg-accent mb-3">
+              <View className="flex-1 rounded-[44px] bg-accent-tint items-center justify-center">
+                <Text className="text-ink text-[26px] font-bold">{initials}</Text>
               </View>
             </View>
-            <Text style={styles.userName}>{profile.displayName}</Text>
-            <Text style={styles.pseudoText}>@{profile.uniqueName}</Text>
+            <Text className="text-ink text-xl font-bold mb-0.5">{profile.displayName}</Text>
+            <Text className="text-accent text-sm font-medium">@{profile.uniqueName}</Text>
           </View>
 
-          {/* Follow button */}
-          <View style={styles.followSection}>
+          <View className="items-center mb-5">
             {renderFollowButton()}
           </View>
 
-          {/* Stats */}
-          <View style={styles.statsRow}>
-            <TouchableOpacity
-              style={styles.statItem}
+          <View className="flex-row bg-surface rounded-card mx-5 p-5 mb-4">
+            <PressableScale
+              className="flex-1 items-center"
               onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: params.userId, tab: "followers" } } as any)}
             >
-              <Text style={styles.statNum}>{profile.followersCount}</Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </TouchableOpacity>
-            <View style={styles.statDivider} />
-            <TouchableOpacity
-              style={styles.statItem}
+              <Text className="text-ink text-lg font-bold mb-1">{profile.followersCount}</Text>
+              <Text className="text-ink-muted text-xs">{t.followersLabel}</Text>
+            </PressableScale>
+            <View className="w-[1px] bg-raised" />
+            <PressableScale
+              className="flex-1 items-center"
               onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: params.userId, tab: "following" } } as any)}
             >
-              <Text style={styles.statNum}>{profile.followingCount}</Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </TouchableOpacity>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNum}>{profile.workoutsCount}</Text>
-              <Text style={styles.statLabel}>Workouts</Text>
+              <Text className="text-ink text-lg font-bold mb-1">{profile.followingCount}</Text>
+              <Text className="text-ink-muted text-xs">{t.followingLabel}</Text>
+            </PressableScale>
+            <View className="w-[1px] bg-raised" />
+            <View className="flex-1 items-center">
+              <Text className="text-ink text-lg font-bold mb-1">{profile.workoutsCount}</Text>
+              <Text className="text-ink-muted text-xs">{t.workoutsLabel}</Text>
             </View>
           </View>
 
-          {/* Private notice */}
           {profile.isPrivate && (
-            <View style={styles.privateCard}>
-              <Ionicons name="lock-closed" size={20} color="#888" />
-              <Text style={styles.privateText}>Ce profil est privé</Text>
+            <View className="flex-row items-center justify-center bg-surface rounded-tile mx-4 p-5 gap-2">
+              <Ionicons name="lock-closed" size={20} color={WorkoutTheme.text.tertiary} />
+              <Text className="text-ink-muted text-sm">{t.privateProfile}</Text>
             </View>
           )}
         </ScrollView>
@@ -174,96 +165,3 @@ export default function UserProfileScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 64,
-    paddingBottom: 16,
-    justifyContent: "space-between",
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700", flex: 1, textAlign: "center" },
-
-  avatarSection: { alignItems: "center", paddingVertical: 20 },
-  avatarRing: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    padding: 3,
-    backgroundColor: "#7B5CF0",
-    marginBottom: 12,
-  },
-  avatarInner: {
-    flex: 1,
-    borderRadius: 44,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitials: { color: "#fff", fontSize: 26, fontWeight: "700" },
-  userName: { color: "#fff", fontSize: 20, fontWeight: "700", marginBottom: 2 },
-  pseudoText: { color: "#7B5CF0", fontSize: 14, fontWeight: "500" },
-
-  followSection: { alignItems: "center", marginBottom: 20 },
-  followBtn: {
-    backgroundColor: "#7B5CF0",
-    paddingHorizontal: 32,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  followBtnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
-  unfollowBtn: {
-    backgroundColor: "transparent",
-    paddingHorizontal: 32,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  unfollowBtnText: { color: "#888", fontSize: 14, fontWeight: "600" },
-  pendingBtn: {
-    backgroundColor: "transparent",
-    paddingHorizontal: 32,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  pendingBtnText: { color: "#555", fontSize: 14, fontWeight: "600" },
-
-  statsRow: {
-    flexDirection: "row",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    marginHorizontal: 16,
-    padding: 20,
-    marginBottom: 16,
-  },
-  statItem: { flex: 1, alignItems: "center" },
-  statNum: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 4 },
-  statLabel: { color: "#888", fontSize: 12 },
-  statDivider: { width: 1, backgroundColor: "#2a2a2a" },
-
-  privateCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    marginHorizontal: 16,
-    padding: 20,
-    gap: 8,
-  },
-  privateText: { color: "#888", fontSize: 14 },
-});

@@ -1,23 +1,20 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { AuthService } from "@/services/auth.service";
 import { TokenService } from "@/services/token.service";
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Dimensions,
-  ScrollView,
-} from "react-native";
+import { View, Text, TextInput, StyleSheet, Image, Dimensions, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 const { height } = Dimensions.get("window");
 const HERO_HEIGHT = height * 0.38;
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +24,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setError(null);
     if (!email || !password) {
-      setError("Veuillez remplir tous les champs");
+      setError(t.fillAllFields);
       return;
     }
     try {
@@ -36,130 +33,124 @@ export default function LoginScreen() {
       await TokenService.save(response.access_token);
       router.replace("/(tabs)/explore");
     } catch (err: any) {
-      setError(err.message || "Identifiants incorrects");
+      setError(err.message || t.wrongCredentials);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1">
+      <ScreenBackground />
       <ScrollView
-        style={styles.scroll}
+        className="flex-1"
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        {/* Hero section */}
         <View style={styles.hero}>
           <Image
             source={require("@/assets/onboarding2.jpg")}
-            style={styles.heroImage}
+            className="w-full h-full absolute"
             resizeMode="cover"
           />
-          <View style={[styles.overlay, { height: "100%", opacity: 0.2 }]} />
-          <View style={[styles.overlay, { height: "70%", opacity: 0.4 }]} />
-          <View style={[styles.overlay, { height: "45%", opacity: 0.6 }]} />
-          <View style={[styles.overlay, { height: "20%", opacity: 0.9 }]} />
+          <LinearGradient
+            colors={["transparent", WorkoutTheme.background]}
+            className="absolute inset-x-0 bottom-0 h-[75%]"
+          />
 
-          {/* Tabs */}
-          <View style={styles.tabs}>
+          <View className="absolute top-14 left-6 flex-row gap-7">
             <View>
-              <Text style={styles.tabActive}>Login</Text>
-              <View style={styles.tabUnderline} />
+              <Text className="text-ink text-base font-semibold">{t.login}</Text>
+              <View className="h-0.5 bg-accent rounded-full mt-1" />
             </View>
-            <TouchableOpacity onPress={() => router.replace("/(auth)/RegisterScreen")}>
-              <Text style={styles.tabInactive}>Sign up</Text>
-            </TouchableOpacity>
+            <PressableScale onPress={() => router.replace("/(auth)/RegisterScreen")}>
+              <Text className="text-ink-muted text-base">{t.signUp}</Text>
+            </PressableScale>
           </View>
 
-          {/* Title */}
-          <View style={styles.heroText}>
-            <Text style={styles.heroTitle}>Welcome back</Text>
+          <View className="absolute bottom-5 left-6 right-6">
+            <Text className="text-ink text-[32px] font-light">{t.welcomeBack}</Text>
           </View>
         </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <View style={styles.inputRow}>
+        <View className="px-6 pt-8">
+          <View className="mb-4">
+            <Text className="text-ink-muted text-sm mb-2 ml-5">{t.email}</Text>
+            <View className="flex-row items-center h-14 rounded-full bg-surface px-5">
               <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="your@email.com"
-                placeholderTextColor="#555"
+                className="text-ink text-base flex-1 h-full"
+                placeholder={t.emailPlaceholder}
+                placeholderTextColor={WorkoutTheme.text.disabled}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
               {email.length > 0 && (
-                <View style={styles.checkmark}>
-                  <Ionicons name="checkmark" size={14} color="#fff" />
+                <View className="w-[26px] h-[26px] rounded-full bg-accent items-center justify-center">
+                  <Ionicons name="checkmark" size={14} color={WorkoutTheme.text.primary} />
                 </View>
               )}
             </View>
-            <View style={styles.underline} />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputRow}>
+          <View className="mb-4">
+            <Text className="text-ink-muted text-sm mb-2 ml-5">{t.passwordLabel}</Text>
+            <View className="flex-row items-center h-14 rounded-full bg-surface px-5">
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                className="text-ink text-base flex-1 h-full"
                 placeholder="••••••••"
-                placeholderTextColor="#555"
+                placeholderTextColor={WorkoutTheme.text.disabled}
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
                 textContentType="oneTimeCode"
               />
-              <TouchableOpacity
+              <PressableScale
                 onPress={() => setShowPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons
                   name={showPassword ? "eye" : "eye-off"}
                   size={20}
-                  color="#555"
+                  color={WorkoutTheme.text.disabled}
                 />
-              </TouchableOpacity>
+              </PressableScale>
             </View>
-            <View style={styles.underline} />
           </View>
 
-          <TouchableOpacity style={styles.forgotBtn}>
-            <Text style={styles.forgotText}>Forgot Password</Text>
-          </TouchableOpacity>
+          <PressableScale className="self-end -mt-4 mb-2">
+            <Text className="text-accent text-[13px]">{t.forgotPassword}</Text>
+          </PressableScale>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text className="text-danger text-[13px] text-center mt-2">{error}</Text> : null}
         </View>
 
-        {/* Bottom actions */}
-        <View style={styles.bottom}>
-          <TouchableOpacity style={styles.socialBtn}>
-            <FontAwesome name="apple" size={22} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialBtn}>
-            <FontAwesome name="google" size={20} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.mainBtn}
+        <View className="flex-row items-center px-6 pt-6 gap-3">
+          <PressableScale className="w-14 h-14 rounded-full bg-raised items-center justify-center">
+            <FontAwesome name="apple" size={22} color={WorkoutTheme.text.primary} />
+          </PressableScale>
+          <PressableScale className="w-14 h-14 rounded-full bg-raised items-center justify-center">
+            <FontAwesome name="google" size={20} color={WorkoutTheme.text.primary} />
+          </PressableScale>
+          <PressableScale
+            className="flex-1 h-14 bg-accent rounded-full flex-row items-center justify-center"
             onPress={handleLogin}
             disabled={loading}
           >
-            <Text style={styles.mainBtnText}>
-              {loading ? "Loading..." : "Login"}
+            <Text className="text-ink text-base font-bold">
+              {loading ? t.loadingEllipsis : t.login}
             </Text>
             {!loading && (
               <Ionicons
                 name="chevron-forward"
                 size={18}
-                color="#fff"
+                color={WorkoutTheme.text.primary}
                 style={{ marginLeft: 4 }}
               />
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </ScrollView>
     </View>
@@ -167,91 +158,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  scroll: { flex: 1 },
 
   hero: { height: HERO_HEIGHT, position: "relative" },
-  heroImage: { width: "100%", height: "100%", position: "absolute" },
-  overlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#121212",
-  },
-  tabs: {
-    position: "absolute",
-    top: 56,
-    left: 24,
-    flexDirection: "row",
-    gap: 28,
-  },
-  tabActive: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  tabInactive: { color: "#888", fontSize: 16 },
-  tabUnderline: {
-    height: 2,
-    backgroundColor: "#7B5CF0",
-    borderRadius: 1,
-    marginTop: 4,
-  },
-  heroText: {
-    position: "absolute",
-    bottom: 20,
-    left: 24,
-    right: 24,
-  },
-  heroTitle: { color: "#fff", fontSize: 32, fontWeight: "300" },
 
-  form: { paddingHorizontal: 24, paddingTop: 32 },
-  inputGroup: { marginBottom: 32 },
-  label: { color: "#7B5CF0", fontSize: 12, marginBottom: 10 },
-  inputRow: { flexDirection: "row", alignItems: "center" },
-  input: {
-    color: "#fff",
-    fontSize: 16,
-    paddingVertical: 6,
-  },
-  underline: { height: 1, backgroundColor: "#2a2a2a", marginTop: 8 },
-  checkmark: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    backgroundColor: "#7B5CF0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  forgotBtn: { alignSelf: "flex-end", marginTop: -16, marginBottom: 8 },
-  forgotText: { color: "#7B5CF0", fontSize: 13 },
-  error: {
-    color: "#ff6b6b",
-    fontSize: 13,
-    textAlign: "center",
-    marginTop: 8,
-  },
-
-  bottom: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    gap: 12,
-  },
-  socialBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mainBtn: {
-    flex: 1,
-    height: 52,
-    backgroundColor: "#7B5CF0",
-    borderRadius: 30,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mainBtnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });

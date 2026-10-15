@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { WorkoutExercise } from "@/services/workouts.service";
@@ -7,6 +7,8 @@ import { Exercise } from "@/services/exercises.service";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
 import { useTranslation } from "@/contexts/LanguageContext";
 
+import PressableScale from "@/components/ui/PressableScale";
+import { format } from "@/i18n/translations";
 interface OtherExercisesSectionProps {
   exercises: WorkoutExercise[];
   currentExerciseIndex: number;
@@ -42,61 +44,24 @@ export default function OtherExercisesSection({
 
   return (
     <>
-      <View
-        style={{
-          backgroundColor: WorkoutTheme.backgroundTertiary,
-          paddingHorizontal: 16,
-          paddingVertical: 16,
-          marginHorizontal: 16,
-          marginVertical: 16,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: WorkoutTheme.border,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 12,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "700",
-              color: WorkoutTheme.text.primary,
-            }}
-          >
-            {t.otherExercises} ({otherExercises.length})
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowAddModal(true)}
-            style={{
-              backgroundColor: WorkoutTheme.accent.purple,
-              borderRadius: 8,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              marginLeft: 8,
-            }}
-          >
-            <Ionicons name="add" size={16} color="white" />
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: "white",
-                textAlign: "center",
-                marginLeft: 6,
-              }}
-            >
-              {t.add}
+      <View className="my-3 gap-4">
+        <View className="flex-row items-center justify-between px-5">
+          <Text className="text-xl font-semibold text-ink">
+            {t.otherExercises}
+            <Text className="text-base font-normal text-ink-muted">
+              {" "}
+              {otherExercises.length}
             </Text>
-          </TouchableOpacity>
+          </Text>
+          <PressableScale
+            onPress={() => setShowAddModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t.add}
+            className="h-10 flex-row items-center gap-1.5 rounded-full bg-accent px-4"
+          >
+            <Ionicons name="add" size={18} color={WorkoutTheme.text.primary} />
+            <Text className="text-sm font-semibold text-ink">{t.add}</Text>
+          </PressableScale>
         </View>
 
         {otherExercises.length > 0 ? (
@@ -104,93 +69,53 @@ export default function OtherExercisesSection({
             horizontal
             showsHorizontalScrollIndicator={false}
             scrollEventThrottle={16}
-            style={{ marginHorizontal: -16, paddingHorizontal: 16 }}
+            contentContainerClassName="gap-3 px-5"
           >
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              {otherExercises.map((exercise, index) => {
-                const realIndex = exercises.findIndex(
-                  (e) => e.exerciseId === exercise.exerciseId,
-                );
-                const isCompleted = completedExercises.includes(realIndex);
+            {otherExercises.map((exercise) => {
+              const realIndex = exercises.findIndex(
+                (e) => e.exerciseId === exercise.exerciseId,
+              );
+              const isCompleted = completedExercises.includes(realIndex);
 
-                return (
-                  <TouchableOpacity
-                    key={exercise.exerciseId}
-                    onPress={() => onSelectExercise(realIndex)}
-                    style={{
-                      backgroundColor: isCompleted
-                        ? WorkoutTheme.status.success + "20"
-                        : WorkoutTheme.background,
-                      borderRadius: 10,
-                      padding: 12,
-                      borderWidth: 2,
-                      borderColor: isCompleted
-                        ? WorkoutTheme.status.success
-                        : WorkoutTheme.border,
-                      minWidth: 140,
-                      maxWidth: 140,
-                    }}
+              return (
+                <PressableScale
+                  key={exercise.exerciseId}
+                  onPress={() => onSelectExercise(realIndex)}
+                  accessibilityRole="button"
+                  accessibilityLabel={exercise.exerciseName}
+                  className={`w-[156px] gap-3 rounded-tile p-4 ${isCompleted ? "bg-success-tint" : "bg-surface"}`}
+                >
+                  <View
+                    className={`h-10 w-10 items-center justify-center rounded-full ${isCompleted ? "bg-success/20" : "bg-accent-tint"}`}
                   >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <Ionicons
-                        name="barbell"
-                        size={14}
-                        color={
-                          isCompleted
-                            ? WorkoutTheme.status.success
-                            : WorkoutTheme.accent.purple
-                        }
-                      />
-                      {isCompleted && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={14}
-                          color={WorkoutTheme.status.success}
-                        />
-                      )}
-                    </View>
+                    <Ionicons
+                      name={isCompleted ? "checkmark" : "barbell"}
+                      size={18}
+                      color={
+                        isCompleted
+                          ? WorkoutTheme.status.success
+                          : WorkoutTheme.accent.purple
+                      }
+                    />
+                  </View>
+                  <View>
                     <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "600",
-                        color: WorkoutTheme.text.primary,
-                      }}
+                      className="text-sm font-semibold text-ink"
                       numberOfLines={2}
                     >
                       {exercise.exerciseName}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        fontWeight: "500",
-                        color: WorkoutTheme.text.secondary,
-                        marginTop: 6,
-                      }}
-                    >
-                      {exercise.sets.length} séries
+                    <Text className="mt-0.5 text-xs text-ink-muted">
+                      {format(t.setsCount, { n: exercise.sets.length })}
                     </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                  </View>
+                </PressableScale>
+              );
+            })}
           </ScrollView>
         ) : (
-          <View style={{ alignItems: "center", paddingVertical: 16 }}>
-            <Text
-              style={{
-                fontSize: 13,
-                color: WorkoutTheme.text.secondary,
-              }}
-            >
-              {t.noOtherExercise}
-            </Text>
+          <View className="mx-5 items-center rounded-card bg-surface p-6">
+            <Text className="text-sm text-ink-muted">{t.noOtherExercise}</Text>
           </View>
         )}
       </View>

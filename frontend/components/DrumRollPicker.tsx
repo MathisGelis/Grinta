@@ -8,6 +8,7 @@ import {
   NativeScrollEvent,
 } from "react-native";
 
+import { WorkoutTheme } from "@/constants/Colors";
 const ITEM_HEIGHT = 60;
 
 interface DrumRollPickerProps {
@@ -59,13 +60,12 @@ export function DrumRollPicker({
 
   return (
     <View style={styles.container}>
-      {/* Purple selection lines */}
       <View
-        style={[styles.line, { top: ITEM_HEIGHT * 3 }]}
+        className="absolute left-[20%] right-[20%] h-[1.5px] bg-accent z-[10]" style={{ top: ITEM_HEIGHT * 3 }}
         pointerEvents="none"
       />
       <View
-        style={[styles.line, { top: ITEM_HEIGHT * 4 }]}
+        className="absolute left-[20%] right-[20%] h-[1.5px] bg-accent z-[10]" style={{ top: ITEM_HEIGHT * 4 }}
         pointerEvents="none"
       />
 
@@ -86,13 +86,13 @@ export function DrumRollPicker({
                 style={{
                   fontSize: getFontSize(distance),
                   fontWeight: isSelected ? "bold" : "normal",
-                  color: "#fff",
+                  color: WorkoutTheme.text.primary,
                   opacity: getOpacity(distance),
                 }}
               >
                 {item}
                 {isSelected && unit ? (
-                  <Text style={styles.unit}> {unit}</Text>
+                  <Text className="text-xl font-normal"> {unit}</Text>
                 ) : null}
               </Text>
             </View>
@@ -113,17 +113,5 @@ const styles = StyleSheet.create({
     height: ITEM_HEIGHT,
     justifyContent: "center",
     alignItems: "center",
-  },
-  line: {
-    position: "absolute",
-    left: "20%",
-    right: "20%",
-    height: 1.5,
-    backgroundColor: "#7B5CF0",
-    zIndex: 10,
-  },
-  unit: {
-    fontSize: 20,
-    fontWeight: "normal",
   },
 });

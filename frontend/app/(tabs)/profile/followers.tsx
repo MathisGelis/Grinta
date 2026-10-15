@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { ConnectionsService, UserListItem } from "@/services/connections.service";
 
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function FollowersScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ userId: string; tab: string }>();
   const [activeTab, setActiveTab] = useState<"followers" | "following">(
     (params.tab as any) || "followers"
@@ -37,36 +35,26 @@ export default function FollowersScreen() {
   const list = activeTab === "followers" ? followers : following;
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {activeTab === "followers" ? "Followers" : "Following"}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View className="flex-1">
+      <ScreenHeader title={activeTab === "followers" ? t.followersLabel : t.followingLabel} />
 
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "followers" && styles.tabActive]}
+      <View className="flex-row mx-4 mb-4 gap-2">
+        <PressableScale
+          className={`flex-1 py-2.5 rounded-full items-center ${activeTab === "followers" ? "bg-accent" : "bg-surface"}`}
           onPress={() => setActiveTab("followers")}
         >
-          <Text style={[styles.tabText, activeTab === "followers" && styles.tabTextActive]}>
-            Followers ({followers.length})
+          <Text className={`text-[13px] font-semibold ${activeTab === "followers" ? "text-ink" : "text-ink-muted"}`}>
+            {t.followersLabel} ({followers.length})
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "following" && styles.tabActive]}
+        </PressableScale>
+        <PressableScale
+          className={`flex-1 py-2.5 rounded-full items-center ${activeTab === "following" ? "bg-accent" : "bg-surface"}`}
           onPress={() => setActiveTab("following")}
         >
-          <Text style={[styles.tabText, activeTab === "following" && styles.tabTextActive]}>
-            Following ({following.length})
+          <Text className={`text-[13px] font-semibold ${activeTab === "following" ? "text-ink" : "text-ink-muted"}`}>
+            {t.followingLabel} ({following.length})
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       <ScrollView
@@ -74,97 +62,35 @@ export default function FollowersScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
       >
         {loading ? (
-          <ActivityIndicator size="small" color="#7B5CF0" style={{ marginTop: 32 }} />
+          <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: 32 }} />
         ) : list.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="person-outline" size={36} color="#444" />
-            <Text style={styles.emptyText}>
-              {activeTab === "followers" ? "Aucun follower" : "Aucun abonnement"}
+          <View className="items-center mt-12 gap-2.5">
+            <Ionicons name="person-outline" size={36} color={WorkoutTheme.text.disabled} />
+            <Text className="text-ink-faint text-sm">
+              {activeTab === "followers" ? t.noFollowers : t.noFollowing}
             </Text>
           </View>
         ) : (
           list.map((u) => (
-            <TouchableOpacity
+            <PressableScale
               key={u.id}
-              style={styles.userCard}
+              className="flex-row items-center bg-surface rounded-tile p-3 mb-2 gap-2.5"
               onPress={() => router.push({ pathname: "/(tabs)/profile/user-profile", params: { userId: u.id } } as any)}
             >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
+              <View className="w-10 h-10 rounded-full bg-accent-tint items-center justify-center">
+                <Text className="text-ink text-base font-bold">
                   {u.displayName?.[0]?.toUpperCase() ?? "?"}
                 </Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.displayName}>{u.displayName}</Text>
-                <Text style={styles.uniqueName}>@{u.uniqueName}</Text>
+              <View className="flex-1">
+                <Text className="text-ink text-sm font-semibold">{u.displayName}</Text>
+                <Text className="text-ink-muted text-xs mt-[1px]">@{u.uniqueName}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#555" />
-            </TouchableOpacity>
+              <Ionicons name="chevron-forward" size={16} color={WorkoutTheme.text.disabled} />
+            </PressableScale>
           ))
         )}
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 64,
-    paddingBottom: 16,
-    justifyContent: "space-between",
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
-
-  tabsRow: {
-    flexDirection: "row",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    gap: 8,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-  },
-  tabActive: { backgroundColor: "#7B5CF0" },
-  tabText: { color: "#888", fontSize: 13, fontWeight: "600" },
-  tabTextActive: { color: "#fff" },
-
-  userCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 8,
-    gap: 10,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  displayName: { color: "#fff", fontSize: 14, fontWeight: "600" },
-  uniqueName: { color: "#888", fontSize: 12, marginTop: 1 },
-
-  empty: { alignItems: "center", marginTop: 48, gap: 10 },
-  emptyText: { color: "#555", fontSize: 14 },
-});

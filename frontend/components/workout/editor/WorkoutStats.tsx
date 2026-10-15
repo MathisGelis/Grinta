@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutStatsProps {
   exercises: ExerciseSetupData[];
   estimatedTime: string;
@@ -17,23 +18,19 @@ interface StatItemProps {
 
 function StatItem({ icon, value, label }: StatItemProps) {
   return (
-    <View
-      className="flex-1 rounded-xl px-3 py-3.5 items-center border gap-1.5"
-      style={{
-        backgroundColor: WorkoutTheme.backgroundSecondary,
-        borderColor: WorkoutTheme.border,
-      }}
-    >
-      <Ionicons name={icon} size={20} color={WorkoutTheme.accent.purple} />
-      <Text
-        className="text-base font-bold"
-        style={{ color: WorkoutTheme.accent.purple }}
-      >
-        {value}
-      </Text>
-      <Text className="text-xs" style={{ color: WorkoutTheme.text.secondary }}>
-        {label}
-      </Text>
+    <View className="flex-1 gap-3 rounded-tile bg-surface p-4">
+      <View className="h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
+        <Ionicons name={icon} size={18} color={WorkoutTheme.accent.purple} />
+      </View>
+      <View>
+        <Text
+          className="text-xl font-semibold text-ink"
+          style={{ fontVariant: ["tabular-nums"] }}
+        >
+          {value}
+        </Text>
+        <Text className="mt-0.5 text-xs text-ink-muted">{label}</Text>
+      </View>
     </View>
   );
 }
@@ -42,6 +39,7 @@ export default function WorkoutStats({
   exercises,
   estimatedTime,
 }: WorkoutStatsProps) {
+  const { t } = useTranslation();
   const totalWeight = exercises.reduce((total, ex) => {
     return total + ex.sets.reduce((sum, set) => sum + set.weight * set.reps, 0);
   }, 0);
@@ -49,21 +47,18 @@ export default function WorkoutStats({
   const totalSets = exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
 
   return (
-    <View className="mt-6 mb-5">
-      <Text
-        className="text-sm font-bold mb-3"
-        style={{ color: WorkoutTheme.text.primary }}
-      >
-        Statistiques estimées
+    <View className="gap-4">
+      <Text className="text-xl font-semibold text-ink">
+        {t.estimatedStats}
       </Text>
-      <View className="flex-row gap-2">
+      <View className="flex-row gap-3">
         <StatItem
           icon="barbell"
           value={`${totalWeight.toFixed(0)}kg`}
-          label="Poids total"
+          label={t.totalWeight}
         />
-        <StatItem icon="repeat" value={String(totalSets)} label="Séries" />
-        <StatItem icon="timer" value={`${estimatedTime}m`} label="Durée" />
+        <StatItem icon="repeat" value={String(totalSets)} label={t.sets} />
+        <StatItem icon="timer" value={`${estimatedTime}m`} label={t.duration} />
       </View>
     </View>
   );

@@ -1,20 +1,14 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Dimensions, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/services/api";
 import { TokenService } from "@/services/token.service";
 
+import { WorkoutTheme, withAlpha } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface Exercise {
@@ -24,6 +18,7 @@ interface Exercise {
 }
 
 export default function WorkoutDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{
     id: string;
@@ -37,7 +32,7 @@ export default function WorkoutDetailScreen() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const title = params.title || "Workout";
+  const title = params.title || t.workoutsLabel;
   const category = params.category || "";
   const duration = params.duration || "";
   const calories = params.calories || "";
@@ -50,7 +45,6 @@ export default function WorkoutDetailScreen() {
         const data = await api.get<Exercise[]>("/exercises", token ?? undefined);
         setExercises(data);
       } catch {
-        // silently fail
       } finally {
         setLoading(false);
       }
@@ -59,7 +53,7 @@ export default function WorkoutDetailScreen() {
   }, []);
 
   return (
-    <View style={styles.root}>
+    <View className="flex-1">
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar
         barStyle="light-content"
@@ -67,244 +61,92 @@ export default function WorkoutDetailScreen() {
         translucent
       />
 
-      {/* Hero section */}
       <View style={styles.heroContainer}>
-        <View style={styles.heroBg}>
-          <Ionicons name="barbell" size={64} color="#7B5CF033" />
+        <View className="flex-1 items-center justify-center">
+          <Ionicons name="barbell" size={64} color={withAlpha(WorkoutTheme.accent.purple, 0.2)} />
         </View>
-        <SafeAreaView style={styles.backWrapper} edges={["top"]}>
-          <TouchableOpacity
-            style={styles.backButton}
+        <SafeAreaView className="absolute top-0 left-0 right-0" edges={["top"]}>
+          <PressableScale
+            className="m-4 w-10 h-10 rounded-full bg-glass-strong justify-center items-center"
             onPress={() => router.back()}
           >
-            <Text style={styles.backArrow}>←</Text>
-          </TouchableOpacity>
+            <Text className="text-xl text-background font-bold leading-[22px]">←</Text>
+          </PressableScale>
         </SafeAreaView>
       </View>
 
-      {/* Content sheet */}
       <ScrollView
-        style={styles.sheet}
+        className="flex-1 bg-surface rounded-tl-[24px] rounded-tr-[24px] -mt-6"
         contentContainerStyle={styles.sheetContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>{title}</Text>
-        {category ? <Text style={styles.category}>Workouts · {category}</Text> : null}
+        <Text className="text-2xl font-bold text-ink mb-1.5">{title}</Text>
+        {category ? <Text className="text-sm text-accent font-semibold mb-4">{t.workoutsLabel} · {category}</Text> : null}
 
-        {/* Stats pills */}
         {(duration || calories) && (
-          <View style={styles.statsRow}>
+          <View className="flex-row gap-2.5 mb-4">
             {duration ? (
-              <View style={styles.statPill}>
-                <Text style={styles.statPillText}>▶ {duration}</Text>
+              <View className="bg-raised rounded-tile px-4 py-2">
+                <Text className="text-ink text-[13px] font-semibold">▶ {duration}</Text>
               </View>
             ) : null}
             {calories ? (
-              <View style={styles.statPill}>
-                <Text style={styles.statPillText}>🔥 {calories} Cal</Text>
+              <View className="bg-raised rounded-tile px-4 py-2">
+                <Text className="text-ink text-[13px] font-semibold">🔥 {calories} {t.calShort}</Text>
               </View>
             ) : null}
           </View>
         )}
 
-        {description ? <Text style={styles.description}>{description}</Text> : null}
+        {description ? <Text className="text-sm text-ink-soft leading-[22px] mb-6">{description}</Text> : null}
 
-        {/* Exercise list */}
-        <Text style={styles.exercisesTitle}>Exercises</Text>
+        <Text className="text-lg font-bold text-ink mb-3">{t.exercises}</Text>
         {loading ? (
-          <ActivityIndicator size="small" color="#7B5CF0" style={{ marginTop: 16 }} />
+          <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: 16 }} />
         ) : exercises.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Aucun exercice disponible</Text>
+          <View className="bg-raised rounded-tile p-5 items-center">
+            <Text className="text-ink-faint text-sm">{t.noExerciseAvailable}</Text>
           </View>
         ) : (
           exercises.map((ex) => (
-            <View key={ex.id} style={styles.exerciseCard}>
-              <View style={styles.exerciseIcon}>
-                <Ionicons name="fitness-outline" size={24} color="#7B5CF0" />
+            <View key={ex.id} className="flex-row items-center bg-raised rounded-tile p-3.5 mb-2.5">
+              <View className="w-12 h-12 rounded-full bg-accent-tint items-center justify-center mr-3">
+                <Ionicons name="fitness-outline" size={24} color={WorkoutTheme.accent.purple} />
               </View>
-              <View style={styles.exerciseInfo}>
-                <Text style={styles.exerciseName}>{ex.name}</Text>
+              <View className="flex-1">
+                <Text className="text-ink text-sm font-semibold mb-1">{ex.name}</Text>
                 {ex.muscleGroup && (
-                  <Text style={styles.exerciseDuration}>{ex.muscleGroup}</Text>
+                  <Text className="text-accent text-[13px] font-medium">{ex.muscleGroup}</Text>
                 )}
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <Text className="text-ink-muted text-[22px] pl-2">›</Text>
             </View>
           ))
         )}
 
-        <View style={{ height: 90 }} />
+        <View className="h-[90px]" />
       </ScrollView>
 
-      {/* Start Workout button */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.startButton}>
-          <Text style={styles.startButtonText}>Start Workout</Text>
-        </TouchableOpacity>
+      <View className="absolute bottom-0 left-0 right-0 bg-surface px-5 py-4 pb-8">
+        <PressableScale className="bg-accent rounded-full py-4 items-center">
+          <Text className="text-ink text-base font-bold">{t.startWorkout}</Text>
+        </PressableScale>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
 
   heroContainer: {
     height: SCREEN_HEIGHT * 0.3,
     position: "relative",
-    backgroundColor: "#1a1a1a",
-  },
-  heroBg: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backWrapper: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-  },
-  backButton: {
-    margin: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  backArrow: {
-    fontSize: 20,
-    color: "#121212",
-    fontWeight: "bold",
-    lineHeight: 22,
+    backgroundColor: WorkoutTheme.backgroundSecondary,
   },
 
-  sheet: {
-    flex: 1,
-    backgroundColor: "#1a1a1a",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24,
-  },
   sheetContent: {
     paddingHorizontal: 20,
     paddingTop: 24,
   },
 
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#ffffff",
-    marginBottom: 6,
-  },
-  category: {
-    fontSize: 14,
-    color: "#7B5CF0",
-    fontWeight: "600",
-    marginBottom: 16,
-  },
-
-  statsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 16,
-  },
-  statPill: {
-    backgroundColor: "#2a2a2a",
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  statPillText: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  description: {
-    fontSize: 14,
-    color: "#aaaaaa",
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-
-  exercisesTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ffffff",
-    marginBottom: 12,
-  },
-
-  exerciseCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#2a2a2a",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-  },
-  exerciseIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  exerciseInfo: {
-    flex: 1,
-  },
-  exerciseName: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  exerciseDuration: {
-    color: "#7B5CF0",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  chevron: {
-    color: "#888888",
-    fontSize: 22,
-    paddingLeft: 8,
-  },
-
-  emptyCard: {
-    backgroundColor: "#2a2a2a",
-    borderRadius: 14,
-    padding: 20,
-    alignItems: "center",
-  },
-  emptyText: { color: "#555", fontSize: 14 },
-
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#1a1a1a",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: 32,
-  },
-  startButton: {
-    backgroundColor: "#7B5CF0",
-    borderRadius: 30,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  startButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
 });

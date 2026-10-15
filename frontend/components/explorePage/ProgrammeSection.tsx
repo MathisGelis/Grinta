@@ -1,10 +1,15 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Programme } from "@/services/programme.service";
 import { useState } from "react";
 import Modal from "react-native-modal";
+import SectionHeader from "@/components/ui/SectionHeader";
+import PressableScale from "@/components/ui/PressableScale";
+import Button from "@/components/ui/Button";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import { format } from "@/i18n/translations";
 type ProgrammeSectionProps = {
   programmes: Programme[];
 };
@@ -30,52 +35,43 @@ export default function ProgrammeSection({
   return (
     <>
       {programmes.length > 0 ? (
-        <>
-          <View className="mx-4 mt-2 mb-3 flex-row items-center justify-between">
-            <Text className="text-[18px] font-bold text-white">
-              {t.workoutCategories}
-            </Text>
-          </View>
-
+        <View className="gap-4">
+          <SectionHeader title={t.workoutCategories} />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: 16,
-              paddingBottom: 4,
-            }}
+            className="-mx-5"
+            contentContainerClassName="gap-3 px-5"
           >
             {programmes.map((p) => (
-              <TouchableOpacity
+              <PressableScale
                 key={p.id}
-                className="mr-3 w-[180px] rounded-2xl bg-[#1a1a1a] p-4"
-                activeOpacity={0.85}
+                className="w-[190px] rounded-tile bg-surface p-4"
                 onPress={() => openProgrammeModal(p)}
+                accessibilityRole="button"
+                accessibilityLabel={p.title}
               >
-                <View className="mb-3 h-12 w-12 items-center justify-center rounded-[14px] bg-[#2a1f4a]">
-                  <Ionicons name="barbell-outline" size={28} color="#7B5CF0" />
+                <View className="mb-4 h-11 w-11 items-center justify-center rounded-full bg-accent-tint">
+                  <Ionicons name="barbell-outline" size={22} color={WorkoutTheme.accent.purple} />
                 </View>
-                <Text
-                  className="mb-1 text-sm font-bold text-white"
-                  numberOfLines={2}
-                >
+                <Text className="text-base font-semibold text-ink" numberOfLines={1}>
                   {p.title}
                 </Text>
-                <Text className="text-[12px] text-[#888]">
-                  {p.workouts?.length ?? 0} workouts
+                <Text className="mt-0.5 text-xs text-ink-muted">
+                  {format(t.workoutsCountLabel, { n: p.workouts?.length ?? 0 })}
                 </Text>
-              </TouchableOpacity>
+              </PressableScale>
             ))}
           </ScrollView>
-        </>
+        </View>
       ) : (
-        <View className="mx-4 items-center gap-2 rounded-2xl bg-[#1a1a1a] px-8 py-8">
-          <Ionicons name="barbell-outline" size={40} color="#444" />
-          <Text className="text-base font-semibold text-[#888]">
-            Aucun programme disponible
+        <View className="items-center gap-2 rounded-card bg-surface p-8">
+          <Ionicons name="barbell-outline" size={40} color={WorkoutTheme.text.disabled} />
+          <Text className="text-base font-semibold text-ink-muted">
+            {t.noProgrammeAvailable}
           </Text>
-          <Text className="text-center text-[13px] text-[#555]">
-            Créez votre premier programme pour commencer
+          <Text className="text-center text-sm text-ink-faint">
+            {t.createFirstProgramme}
           </Text>
         </View>
       )}
@@ -88,31 +84,29 @@ export default function ProgrammeSection({
         animationIn="slideInUp"
         animationOut="slideOutDown"
         useNativeDriverForBackdrop
+        useNativeDriver
+        hideModalContentWhileAnimating
         style={{ justifyContent: "flex-end", margin: 0 }}
       >
-        <View className="overflow-hidden rounded-t-[24px] bg-[#17191d]">
+        <View className="overflow-hidden rounded-t-hero bg-surface pb-6">
+          <View className="mt-3 h-1.5 w-12 self-center rounded-full bg-raised" />
           {selectedProgramme && (
             <View className="items-center p-5">
-              <Text className="mb-1.5 text-center text-lg font-bold text-white">
+              <Text className="mb-1.5 text-center text-lg font-bold text-ink">
                 {selectedProgramme.title}
               </Text>
               {selectedProgramme.description && (
-                <Text className="mb-3 text-center text-sm text-[#B9B7C8]">
+                <Text className="mb-3 text-center text-sm text-ink-soft">
                   {selectedProgramme.description}
                 </Text>
               )}
-              <Text className="mb-5 text-sm text-[#8B5CF6]">
-                {selectedProgramme.workouts?.length ?? 0} workouts
+              <Text className="mb-5 text-sm text-accent">
+                {format(t.workoutsCountLabel, { n: selectedProgramme.workouts?.length ?? 0 })}
               </Text>
-              <TouchableOpacity
-                className="mb-3 w-full items-center rounded-full bg-[#8B5CF6] px-12 py-3.5"
-                onPress={closeModal}
-              >
-                <Text className="text-base font-bold text-white">OK</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={closeModal} className="py-2">
-                <Text className="text-sm text-[#B9B7C8]">{t.cancel2}</Text>
-              </TouchableOpacity>
+              <Button label={t.ok} onPress={closeModal} className="mb-2 w-full" />
+              <PressableScale onPress={closeModal} className="py-2">
+                <Text className="text-sm text-ink-soft">{t.cancel2}</Text>
+              </PressableScale>
             </View>
           )}
         </View>

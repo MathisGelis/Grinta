@@ -2,17 +2,7 @@ import { getItem, saveItem } from "@/core/services/storage";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
-  TextInput,
-  Animated,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StatusBar, Text, View, TextInput, Animated } from "react-native";
 import { ProgrammeService } from "@/services/programme.service";
 import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
 import {
@@ -28,6 +18,14 @@ import RecentWorkout from "@/components/explorePage/RecentsWorkout";
 import ProgrammeSection from "@/components/explorePage/ProgrammeSection";
 import RequestedUsers from "@/components/explorePage/RequestedUsers";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import Screen, { FLOATING_HEADER_OFFSET } from "@/components/ui/Screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import SectionHeader from "@/components/ui/SectionHeader";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import PressableScale from "@/components/ui/PressableScale";
+import { format } from "@/i18n/translations";
+import { LOCALES } from "@/i18n/labels";
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
   if (hour < 12) return "goodMorning";
@@ -44,7 +42,8 @@ type Programme = {
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { t, lang } = useTranslation();
   const { keyboardY, bottomOffset } = useKeyboardOffset(-30);
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -76,7 +75,7 @@ export default function ExploreScreen() {
 
     const optimisticComment = {
       id: `local-${Date.now()}`,
-      displayName: "Vous",
+      displayName: t.youLabel,
       content: trimmed,
       createdAt: new Date().toISOString(),
       userId: userId,
@@ -92,11 +91,11 @@ export default function ExploreScreen() {
         prev.filter((comment) => comment.id !== optimisticComment.id),
       );
       Alert.alert(
-        "Erreur",
-        error?.message || "Impossible d'envoyer le commentaire.",
+        t.error,
+        error?.message || t.cannotSendComment,
       );
     }
-  }, [commentDraft, postModalPostId, userId]);
+  }, [t, commentDraft, postModalPostId, userId]);
 
   const handleStartEditingComment = useCallback((comment: any) => {
     setEditingCommentId(comment.id);
@@ -135,20 +134,20 @@ export default function ExploreScreen() {
         ),
       );
       Alert.alert(
-        "Erreur",
-        error?.message || "Impossible de modifier ce commentaire.",
+        t.error,
+        error?.message || t.cannotEditComment,
       );
     }
-  }, [editingCommentId, editingCommentText, postModalData]);
+  }, [t, editingCommentId, editingCommentText, postModalData]);
 
   const handleDeleteComment = useCallback(
     async (commentId: string) => {
       if (!commentId) return;
 
-      Alert.alert("Supprimer", "Voulez-vous supprimer ce commentaire ?", [
-        { text: "Annuler", style: "cancel" },
+      Alert.alert(t.delete, t.deleteCommentConfirm, [
+        { text: t.cancel, style: "cancel" },
         {
-          text: "Supprimer",
+          text: t.delete,
           style: "destructive",
           onPress: async () => {
             const previous = postModalData;
@@ -161,15 +160,15 @@ export default function ExploreScreen() {
             } catch (error: any) {
               setPostModalData(previous);
               Alert.alert(
-                "Erreur",
-                error?.message || "Impossible de supprimer ce commentaire.",
+                t.error,
+                error?.message || t.cannotDeleteComment,
               );
             }
           },
         },
       ]);
     },
-    [postModalData],
+    [t, postModalData],
   );
 
   const openReportComment = useCallback((commentId: string) => {
@@ -182,7 +181,7 @@ export default function ExploreScreen() {
     if (!reportCommentId) return;
     const trimmedReason = reportReason.trim();
     if (!trimmedReason) {
-      Alert.alert("Signalement", "Veuillez renseigner une raison.");
+      Alert.alert(t.reportTitle, t.reportReasonRequired);
       return;
     }
 
@@ -191,14 +190,14 @@ export default function ExploreScreen() {
       setReportModalVisible(false);
       setReportCommentId(null);
       setReportReason("");
-      Alert.alert("Signalement", "Le commentaire a bien été signalé.");
+      Alert.alert(t.reportTitle, t.reportSentMsg);
     } catch (error: any) {
       Alert.alert(
-        "Erreur",
-        error?.message || "Impossible de signaler ce commentaire.",
+        t.error,
+        error?.message || t.cannotReportComment,
       );
     }
-  }, [reportCommentId, reportReason]);
+  }, [t, reportCommentId, reportReason]);
 
   const openPostModal = useCallback(
     (title: string, type: "likes" | "comments", postId: string) => {
@@ -289,7 +288,6 @@ export default function ExploreScreen() {
       setRequests(requestsData);
       setTopPosts(postsData);
     } catch {
-      // silently fail
     } finally {
       setLoading(false);
     }
@@ -321,86 +319,57 @@ export default function ExploreScreen() {
     fetchPostModalData();
   }, [postModalVisible, postModalType, postModalPostId]);
 
-  function getFormattedDate(): string {
-    const now = new Date();
-    return `${t.days[(now.getDay() + 6) % 7]} ${now.getDate()} ${t.months[now.getMonth()].slice(0, 3)}`;
-  }
-
   return (
-    <View className="flex-1 bg-[#101114] pt-4">
+    <View className="flex-1">
       <StatusBar barStyle="light-content" />
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
+      <Screen
+        topInset={false}
+        contentContainerStyle={{ paddingTop: insets.top + FLOATING_HEADER_OFFSET }}
       >
-        <View className="flex-row items-center px-4 pb-3 pt-2">
-          <View className="flex-1">
-            <Text className="text-[22px] font-bold text-white">
-              {t.hello}
-              {userName ? ` ${userName}` : ""}
-            </Text>
-            <Text className="mt-1 text-[15px] text-[#B9B7C8]">
-              {t[getGreetingKey()]}
-            </Text>
-          </View>
-        </View>
-
-        <View className="mx-4 mt-2 mb-3 flex-row items-center justify-between">
-          <Text className="text-[18px] font-bold text-white">
-            {t.todaysCommunityFavorite}
-          </Text>
-          <Text className="text-[13px] font-semibold text-[#8B5CF6]">
-            {getFormattedDate()}
+        <View>
+          <Text className="text-sm text-ink-muted">{t[getGreetingKey()]}</Text>
+          <Text
+            className="mt-1 text-[32px] font-semibold text-ink"
+            style={{ letterSpacing: -0.5 }}
+            numberOfLines={1}
+          >
+            {t.hello}
+            {userName ? ` ${userName}` : ""}
           </Text>
         </View>
 
-        <View className="mx-4 mb-4 flex-row rounded-xl bg-[#1A1A1A] p-1">
-          <TouchableOpacity
-            className={`flex-1 rounded-lg px-3 py-2 ${
-              postFeed === "top" ? "bg-[#7B5CF0]" : ""
-            }`}
-            onPress={() => setPostFeed("top")}
-          >
-            <Text className="text-center text-sm font-semibold text-white">
-              Tops posts
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`flex-1 rounded-lg px-3 py-2 ${
-              postFeed === "followed" ? "bg-[#7B5CF0]" : ""
-            }`}
-            onPress={() => setPostFeed("followed")}
-          >
-            <Text className="text-center text-sm font-semibold text-white">
-              Personnes suivies
-            </Text>
-          </TouchableOpacity>
+        <View className="gap-4">
+          <SectionHeader title={t.todaysCommunityFavorite} />
+          <SegmentedControl
+            variant="glass"
+            value={postFeed}
+            onChange={setPostFeed}
+            options={[
+              { value: "top", label: t.topPostsTab },
+              { value: "followed", label: t.followedPeopleTab },
+            ]}
+          />
         </View>
 
         {loading ? (
           <ActivityIndicator
             size="large"
-            color="#7B5CF0"
+            color={WorkoutTheme.accent.purple}
             style={{ marginTop: 40 }}
           />
         ) : (
           <>
-            <View className="mb-4">
+            <View className="-mx-5">
               {topPosts.length > 0 ? (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{
-                    paddingHorizontal: 16,
-                    paddingBottom: 4,
-                    gap: 12,
-                  }}
+                  contentContainerClassName="gap-3 px-5"
                 >
                   {topPosts.map((post) => (
-                    <TouchableOpacity
+                    <PressableScale
                       key={post.id}
-                      className="w-[200px] rounded-2xl bg-[#1a1a1a] p-4"
+                      className="w-[220px] rounded-card bg-surface p-5"
                       onPress={() =>
                         router.push({
                           pathname: "/(tabs)/explore/userPost",
@@ -412,71 +381,69 @@ export default function ExploreScreen() {
                       }
                     >
                       <View className="mb-6 flex-row items-center gap-3">
-                        <View className="h-9 w-9 items-center justify-center rounded-full bg-[#2a1f4a]">
-                          <Text className="text-sm font-bold text-white">
+                        <View className="h-9 w-9 items-center justify-center rounded-full bg-accent-tint">
+                          <Text className="text-sm font-bold text-ink">
                             {post.displayName?.[0]?.toUpperCase() ?? "?"}
                           </Text>
                         </View>
                         <View className="flex-1">
                           <Text
-                            className="text-sm font-semibold text-white"
+                            className="text-sm font-semibold text-ink"
                             numberOfLines={1}
                           >
                             {post.displayName}
                           </Text>
-                          <Text className="mt-0.5 text-[12px] text-[#888]">
-                            {new Date(post.createdAt).toLocaleDateString(
-                              "fr-FR",
-                            )}
+                          <Text className="mt-0.5 text-[12px] text-ink-muted">
+                            {new Date(post.createdAt).toLocaleDateString(LOCALES[lang])}
                           </Text>
                         </View>
                       </View>
 
                       <View className="flex-row w-full items-center justify-evenly gap-3">
-                        <TouchableOpacity
+                        <PressableScale
                           className="flex-row items-center gap-1 px-6 py-1"
                           onPress={() => handleToggleLike(post)}
                           onLongPress={() =>
-                            openPostModal("Likes", "likes", post.id)
+                            openPostModal(t.likesTitle, "likes", post.id)
                           }
                           delayLongPress={300}
                         >
                           {post.isLiked ? (
-                            <Ionicons name="heart" size={20} color="#FF6B6B" />
+                            <Ionicons name="heart" size={20} color={WorkoutTheme.status.danger} />
                           ) : (
                             <Ionicons
                               name="heart-outline"
                               size={20}
-                              color="#FF6B6B"
+                              color={WorkoutTheme.status.danger}
                             />
                           )}
-                          <Text className="text-[16px] text-white">
+                          <Text className="text-[16px] text-ink">
                             {post.likesCount}
                           </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                        </PressableScale>
+                        <PressableScale
                           className="flex-row items-center gap-1 px-6 py-1"
                           onPress={() =>
-                            openPostModal("Commentaires", "comments", post.id)
+                            openPostModal(t.commentsTitle, "comments", post.id)
                           }
                         >
                           <Ionicons
                             name="chatbubble-outline"
                             size={20}
-                            color="#7B5CF0"
+                            color={WorkoutTheme.accent.purple}
                           />
-                          <Text className="text-[16px] text-white">
+                          <Text className="text-[16px] text-ink">
                             {post.commentsCount}
                           </Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                       </View>
-                    </TouchableOpacity>
+                    </PressableScale>
                   ))}
                 </ScrollView>
               ) : (
-                <View className="mx-4 rounded-2xl bg-[#1a1a1a] px-8 py-8">
-                  <Text className="text-center text-base font-semibold text-[#888]">
-                    Aucun post populaire pour le moment.
+                <View className="mx-5 rounded-card bg-surface p-8">
+                  <Text className="text-center text-base font-semibold text-ink-muted">
+                    {t.noPopularPosts}
                   </Text>
                 </View>
               )}
@@ -486,7 +453,7 @@ export default function ExploreScreen() {
             <RecentWorkout recentWorkouts={recentWorkouts} />
           </>
         )}
-      </ScrollView>
+      </Screen>
 
       <Modal
         isVisible={reportModalVisible}
@@ -498,41 +465,43 @@ export default function ExploreScreen() {
         animationIn="fadeIn"
         animationOut="fadeOut"
         useNativeDriverForBackdrop
+        useNativeDriver
+        hideModalContentWhileAnimating
         style={{ justifyContent: "center", margin: 24 }}
       >
-        <View className="rounded-2xl bg-[#181A1F] p-4">
-          <Text className="mb-2 text-lg font-semibold text-white">
-            Signaler ce commentaire
+        <View className="rounded-full bg-surface p-4">
+          <Text className="mb-2 text-lg font-semibold text-ink">
+            {t.reportThisComment}
           </Text>
-          <Text className="mb-3 text-sm text-[#B8B8B8]">
-            Expliquez la raison du signalement.
+          <Text className="mb-3 text-sm text-ink-soft">
+            {t.reportExplain}
           </Text>
           <TextInput
             value={reportReason}
             onChangeText={setReportReason}
             multiline
             textAlignVertical="top"
-            placeholder="Raison du signalement..."
-            placeholderTextColor="#7A7A7A"
-            className="min-h-[100px] rounded-xl border border-[#2F2F2F] bg-[#101114] px-3 py-3 text-sm text-white"
+            placeholder={t.reportPlaceholder}
+            placeholderTextColor={WorkoutTheme.text.tertiary}
+            className="min-h-[100px] rounded-full border border-line bg-background px-3 py-3 text-sm text-ink"
           />
           <View className="mt-4 flex-row justify-end gap-2">
-            <TouchableOpacity
+            <PressableScale
               onPress={() => {
                 setReportModalVisible(false);
                 setReportReason("");
                 setReportCommentId(null);
               }}
-              className="rounded-xl bg-[#2A2A2A] px-3 py-2"
+              className="rounded-full bg-raised px-3 py-2"
             >
-              <Text className="text-sm text-[#B8B8B8]">Annuler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              <Text className="text-sm text-ink-soft">{t.cancel}</Text>
+            </PressableScale>
+            <PressableScale
               onPress={handleSubmitReport}
-              className="rounded-xl bg-[#7C5DB7] px-3 py-2"
+              className="rounded-full bg-accent px-3 py-2"
             >
-              <Text className="text-sm font-semibold text-white">Envoyer</Text>
-            </TouchableOpacity>
+              <Text className="text-sm font-semibold text-ink">{t.sendLabel}</Text>
+            </PressableScale>
           </View>
         </View>
       </Modal>
@@ -546,22 +515,24 @@ export default function ExploreScreen() {
         animationIn="slideInUp"
         animationOut="slideOutDown"
         useNativeDriverForBackdrop
+        useNativeDriver
+        hideModalContentWhileAnimating
         style={{ justifyContent: "flex-end", margin: 0 }}
       >
-        <View className="h-[80%] rounded-t-3xl bg-[#121212] p-4 pb-6">
-          <View className="mb-4 h-1.5 w-16 self-center rounded-full bg-[#3A3A3A]" />
+        <View className="h-[80%] rounded-t-hero bg-background p-4 pb-6">
+          <View className="mb-4 h-1.5 w-16 self-center rounded-full bg-line" />
           <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-xl font-semibold text-white">
+            <Text className="text-xl font-semibold text-ink">
               {postModalTitle}
             </Text>
-            <TouchableOpacity onPress={closePostModal}>
-              <Ionicons name="close" size={22} color="#B8B8B8" />
-            </TouchableOpacity>
+            <PressableScale onPress={closePostModal}>
+              <Ionicons name="close" size={22} color={WorkoutTheme.text.secondary} />
+            </PressableScale>
           </View>
 
           {postModalLoading ? (
-            <Text className="text-center text-sm text-[#B8B8B8]">
-              Chargement...
+            <Text className="text-center text-sm text-ink-soft">
+              {t.loadingEllipsis}
             </Text>
           ) : postModalType === "likes" ? (
             <ScrollView
@@ -574,9 +545,9 @@ export default function ExploreScreen() {
               {postModalData.length > 0 ? (
                 <View className="gap-3">
                   {postModalData.map((like: any) => (
-                    <TouchableOpacity
+                    <PressableScale
                       key={like.id}
-                      className="rounded-2xl bg-[#1A1A1A] p-3"
+                      className="rounded-full bg-surface p-3"
                       onPress={() =>
                         router.push({
                           pathname: "/(tabs)/explore/user-profile",
@@ -584,27 +555,26 @@ export default function ExploreScreen() {
                         })
                       }
                     >
-                      <Text className="text-sm font-semibold text-white">
-                        {like.displayName ?? "Utilisateur"}
+                      <Text className="text-sm font-semibold text-ink">
+                        {like.displayName ?? t.userLabel}
                       </Text>
-                      <Text className="mt-1 text-xs text-[#B8B8B8]">
+                      <Text className="mt-1 text-xs text-ink-soft">
                         @{like.uniqueName ?? "unknown"}
                       </Text>
-                    </TouchableOpacity>
+                    </PressableScale>
                   ))}
                 </View>
               ) : (
-                <Text className="justify-center text-sm text-[#B8B8B8]">
-                  Aucun like pour ce post.
+                <Text className="justify-center text-sm text-ink-soft">
+                  {t.noLikesOnPost}
                 </Text>
               )}
             </ScrollView>
           ) : postModalType === "comments" ? (
             <View className="flex-1">
               <View className="mb-2">
-                <Text className="text-xs text-[#B8B8B8]">
-                  {postModalData.length} commentaire
-                  {postModalData.length > 1 ? "s" : ""}
+                <Text className="text-xs text-ink-soft">
+                  {format(t.commentsCount, { n: postModalData.length })}
                 </Text>
               </View>
 
@@ -630,25 +600,24 @@ export default function ExploreScreen() {
                         editingCommentId === comment.id;
 
                       return (
-                        <TouchableOpacity
+                        <PressableScale
                           key={
                             comment.id ??
                             `${commentUserId}-${comment.createdAt}`
                           }
-                          activeOpacity={0.9}
                           onLongPress={() => openReportComment(comment.id)}
-                          className="rounded-2xl bg-[#1A1A1A] p-3"
+                          className="rounded-tile bg-surface p-3"
                         >
                           <View className="mb-2 flex-row items-center justify-between gap-2">
-                            <Text className="text-sm font-semibold text-white">
+                            <Text className="text-sm font-semibold text-ink">
                               {comment.displayName ??
                                 comment.userName ??
-                                "Utilisateur"}
+                                t.userLabel}
                             </Text>
 
                             {isOwnComment && !isEditingThisComment && (
                               <View className="flex-row items-center gap-2">
-                                <TouchableOpacity
+                                <PressableScale
                                   onPress={() =>
                                     handleStartEditingComment(comment)
                                   }
@@ -656,10 +625,10 @@ export default function ExploreScreen() {
                                   <Ionicons
                                     name="create-outline"
                                     size={16}
-                                    color="#8AB4F8"
+                                    color={WorkoutTheme.status.info}
                                   />
-                                </TouchableOpacity>
-                                <TouchableOpacity
+                                </PressableScale>
+                                <PressableScale
                                   onPress={() =>
                                     handleDeleteComment(comment.id)
                                   }
@@ -667,9 +636,9 @@ export default function ExploreScreen() {
                                   <Ionicons
                                     name="trash-outline"
                                     size={16}
-                                    color="#FF6B6B"
+                                    color={WorkoutTheme.status.danger}
                                   />
-                                </TouchableOpacity>
+                                </PressableScale>
                               </View>
                             )}
                           </View>
@@ -681,46 +650,46 @@ export default function ExploreScreen() {
                                 onChangeText={setEditingCommentText}
                                 multiline
                                 textAlignVertical="top"
-                                placeholder="Modifier votre commentaire"
-                                placeholderTextColor="#7A7A7A"
-                                className="min-h-[80px] rounded-xl border border-[#2F2F2F] bg-[#151515] px-3 py-2 text-sm text-white"
+                                placeholder={t.editYourComment}
+                                placeholderTextColor={WorkoutTheme.text.tertiary}
+                                className="min-h-[80px] rounded-xl border border-line bg-background px-3 py-2 text-sm text-ink"
                               />
                               <View className="flex-row justify-end gap-2">
-                                <TouchableOpacity
+                                <PressableScale
                                   onPress={() => {
                                     setEditingCommentId(null);
                                     setEditingCommentText("");
                                   }}
-                                  className="rounded-lg bg-[#2A2A2A] px-3 py-2"
+                                  className="rounded-lg bg-raised px-3 py-2"
                                 >
-                                  <Text className="text-xs text-[#B8B8B8]">
-                                    Annuler
+                                  <Text className="text-xs text-ink-soft">
+                                    {t.cancel}
                                   </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
+                                </PressableScale>
+                                <PressableScale
                                   onPress={handleSaveEditedComment}
-                                  className="rounded-lg bg-[#7C5DB7] px-3 py-2"
+                                  className="rounded-full bg-accent px-3 py-2"
                                 >
-                                  <Text className="text-xs font-semibold text-white">
-                                    Enregistrer
+                                  <Text className="text-xs font-semibold text-ink">
+                                    {t.save}
                                   </Text>
-                                </TouchableOpacity>
+                                </PressableScale>
                               </View>
                             </View>
                           ) : (
-                            <Text className="mt-2 text-xs text-[#B8B8B8]">
+                            <Text className="mt-2 text-xs text-ink-soft">
                               {comment.content ??
                                 comment.message ??
-                                "Aucun commentaire."}
+                                t.noCommentsShort}
                             </Text>
                           )}
-                        </TouchableOpacity>
+                        </PressableScale>
                       );
                     })}
                   </View>
                 ) : (
-                  <Text className="text-sm text-[#B8B8B8]">
-                    Aucun commentaire pour ce post.
+                  <Text className="text-sm text-ink-soft">
+                    {t.noCommentsOnPost}
                   </Text>
                 )}
               </ScrollView>
@@ -732,34 +701,34 @@ export default function ExploreScreen() {
                   transform: [{ translateY: keyboardY }],
                 }}
               >
-                <View className="flex-row items-end gap-2 rounded-2xl border border-[#2F2F2F] bg-[#1A1A1A] p-2">
+                <View className="flex-row items-end gap-2 rounded-tile border border-line bg-surface p-2">
                   <TextInput
                     value={commentDraft}
                     onChangeText={setCommentDraft}
-                    placeholder="Écrire un commentaire…"
-                    placeholderTextColor="#8A8A8A"
+                    placeholder={t.writeComment}
+                    placeholderTextColor={WorkoutTheme.text.tertiary}
                     multiline
                     numberOfLines={4}
                     textAlignVertical="top"
                     blurOnSubmit={false}
                     returnKeyType="default"
                     submitBehavior="newline"
-                    className="flex-1 min-h-[40px] max-h-[120px] px-2 py-2 text-sm text-white"
+                    className="flex-1 min-h-[40px] max-h-[120px] px-2 py-2 text-sm text-ink"
                   />
-                  <TouchableOpacity
+                  <PressableScale
                     onPress={handleSubmitComment}
-                    className="h-10 w-10 items-center justify-center rounded-full bg-[#7C5DB7]"
+                    className="h-10 w-10 items-center justify-center rounded-full bg-accent"
                     disabled={!commentDraft.trim()}
                     style={{ opacity: commentDraft.trim() ? 1 : 0.5 }}
                   >
-                    <Ionicons name="send" size={16} color="#fff" />
-                  </TouchableOpacity>
+                    <Ionicons name="send" size={16} color={WorkoutTheme.text.primary} />
+                  </PressableScale>
                 </View>
               </Animated.View>
             </View>
           ) : (
-            <Text className="text-sm text-[#B8B8B8]">
-              Aucun contenu disponible.
+            <Text className="text-sm text-ink-soft">
+              {t.noContentAvailable}
             </Text>
           )}
         </View>

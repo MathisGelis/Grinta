@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DraggableFlatList, {
   RenderItemParams,
@@ -7,6 +7,11 @@ import DraggableFlatList, {
 import { PlannedWorkout } from "@/services/workouts.service";
 import { ProgrammeDay } from "@/services/programms.service";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import IconButton from "@/components/ui/IconButton";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { format } from "@/i18n/translations";
 interface ProgrammeDayEditorProps {
   days: ProgrammeDay[];
   onChangeDays: (days: ProgrammeDay[]) => void;
@@ -18,6 +23,7 @@ export default function ProgrammeDayEditor({
   onChangeDays,
   availableWorkouts,
 }: ProgrammeDayEditorProps) {
+  const { t } = useTranslation();
   const [showWorkoutPicker, setShowWorkoutPicker] = useState(false);
 
   const addWorkoutDay = useCallback(
@@ -64,95 +70,83 @@ export default function ProgrammeDayEditor({
     drag,
     isActive,
   }: RenderItemParams<ProgrammeDay>) => (
-    <TouchableOpacity
-      activeOpacity={0.9}
+    <PressableScale
       onLongPress={drag}
-      style={{
-        backgroundColor: isActive ? "#1F2937" : "#171717",
-        borderColor: isActive ? "#8B5CF6" : "#2A2A2A",
-        borderWidth: 1,
-        borderRadius: 16,
-        padding: 14,
-        marginBottom: 10,
-      }}
+      className={`mb-2 rounded-tile border p-3 ${isActive ? "border-accent bg-raised" : "border-transparent bg-surface"}`}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            flex: 1,
-            marginRight: 8,
-            gap: 10,
-          }}
-        >
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 999,
-              backgroundColor: "#252525",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name="reorder-three-outline" size={18} color="#E5E7EB" />
+      <View className="w-full flex-row items-center justify-between">
+        <View className="mr-2 flex-1 flex-row items-center gap-3">
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-raised">
+            <Ionicons
+              name="reorder-three-outline"
+              size={18}
+              color={WorkoutTheme.text.light}
+            />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: "#F5F5F5", fontSize: 16, fontWeight: "700" }}>
-              Jour {item.dayNumber} · {item.workout?.title ?? "Jour de repos"}
+          <View className="flex-1">
+            <Text
+              className="text-base font-semibold text-ink"
+              numberOfLines={1}
+            >
+              {format(t.dayN, { n: item.dayNumber })} · {item.workout?.title ?? t.restDay}
             </Text>
-            <Text style={{ color: "#A3A3A3", fontSize: 12, marginTop: 2 }}>
-              {item.workout ? "Séance programmée" : "Jour de repos"}
+            <Text className="mt-0.5 text-xs text-ink-muted">
+              {item.workout ? t.scheduledWorkout : t.restDay}
             </Text>
           </View>
         </View>
-        <TouchableOpacity
+        <PressableScale
           onPress={() => removeDay(item.dayNumber)}
-          style={{ padding: 8, alignItems: "center", justifyContent: "center" }}
-          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t.removeDay}
+          className="h-10 w-10 items-center justify-center rounded-full bg-danger-tint"
         >
-          <Ionicons name="trash-outline" size={18} color="#FCA5A5" />
-        </TouchableOpacity>
+          <Ionicons
+            name="trash-outline"
+            size={18}
+            color={WorkoutTheme.status.danger}
+          />
+        </PressableScale>
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 
   return (
     <View>
       <View className="mb-3 flex-row items-center justify-between">
-        <Text className="text-sm font-semibold text-[#B8B8B8]">
-          Jours du programme
+        <Text className="text-xl font-semibold text-ink">
+          {t.programmeDaysTitle}
         </Text>
-        <View className="flex-row gap-2">
-          <TouchableOpacity
-            onPress={() => setShowWorkoutPicker(true)}
-            className="rounded-full bg-[#232323] px-3 py-2"
-          >
-            <Text className="text-sm font-semibold text-white">+ Workout</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={addRestDay}
-            className="rounded-full bg-[#232323] px-3 py-2"
-          >
-            <Text className="text-sm font-semibold text-white">+ Rest day</Text>
-          </TouchableOpacity>
-        </View>
+      </View>
+      <View className="mb-3 flex-row gap-2">
+        <PressableScale
+          onPress={() => setShowWorkoutPicker(true)}
+          accessibilityRole="button"
+          className="h-10 flex-row items-center gap-1.5 rounded-full bg-accent px-4"
+        >
+          <Ionicons name="add" size={18} color={WorkoutTheme.text.primary} />
+          <Text className="text-sm font-semibold text-ink">{t.addWorkoutDay}</Text>
+        </PressableScale>
+        <PressableScale
+          onPress={addRestDay}
+          accessibilityRole="button"
+          className="h-10 flex-row items-center gap-1.5 rounded-full bg-raised px-4"
+        >
+          <Ionicons name="add" size={18} color={WorkoutTheme.text.primary} />
+          <Text className="text-sm font-semibold text-ink">{t.addRestDay}</Text>
+        </PressableScale>
       </View>
 
-      <View className="mb-4 rounded-2xl border border-[#2F2F2F] bg-[#111111] p-3">
+      <View className="mb-4 rounded-card bg-background p-3">
         {days.length === 0 ? (
           <View className="items-center py-6">
-            <Ionicons name="calendar-outline" size={36} color="#A3A3A3" />
-            <Text className="mt-2 text-sm text-[#C7C7C7]">
-              Aucun jour ajouté pour l&apos;instant.
+            <Ionicons
+              name="calendar-outline"
+              size={36}
+              color={WorkoutTheme.text.secondary}
+            />
+            <Text className="mt-2 text-sm text-ink-soft">
+              {t.noDaysYet}
             </Text>
           </View>
         ) : (
@@ -177,46 +171,49 @@ export default function ProgrammeDayEditor({
         animationType="slide"
         onRequestClose={() => setShowWorkoutPicker(false)}
       >
-        <View className="flex-1 justify-end bg-black/60">
-          <View className="rounded-t-3xl bg-[#111111] p-4">
-            <View className="mb-3 flex-row items-center justify-between">
-              <Text className="text-lg font-semibold text-white">
-                Choisir une séance
+        <View className="flex-1 justify-end bg-scrim">
+          <View className="rounded-t-hero bg-surface p-5 pb-8">
+            <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-raised" />
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-xl font-semibold text-ink">
+                {t.chooseWorkout}
               </Text>
-              <TouchableOpacity onPress={() => setShowWorkoutPicker(false)}>
-                <Ionicons name="close" size={24} color="#E5E7EB" />
-              </TouchableOpacity>
+              <IconButton
+                icon="close"
+                label={t.closeLabel}
+                onPress={() => setShowWorkoutPicker(false)}
+              />
             </View>
             <ScrollView
-              style={{ maxHeight: 320 }}
+              className="max-h-[320px]"
               showsVerticalScrollIndicator={false}
             >
               {availableWorkouts.length === 0 ? (
                 <View className="items-center py-6">
-                  <Text className="text-sm text-[#C7C7C7]">
-                    Aucune séance disponible.
+                  <Text className="text-sm text-ink-soft">
+                    {t.noWorkoutAvailable}
                   </Text>
-                  <Text className="mt-1 text-xs text-[#A3A3A3]">
-                    Créez d&apos;abord une séance dans l&apos;onglet séances.
+                  <Text className="mt-1 text-xs text-ink-soft">
+                    {t.createWorkoutFirst}
                   </Text>
                 </View>
               ) : (
                 availableWorkouts.map((workout) => (
-                  <TouchableOpacity
+                  <PressableScale
                     key={workout.id}
                     onPress={() => addWorkoutDay(workout)}
-                    className="mb-3 rounded-2xl border border-[#2F2F2F] bg-[#171717] p-4"
+                    className="mb-3 rounded-card bg-raised p-4"
                   >
-                    <Text className="text-base font-semibold text-white">
+                    <Text className="text-base font-semibold text-ink">
                       {workout.title}
                     </Text>
-                    <Text className="mt-1 text-xs text-[#A3A3A3]">
-                      {workout.description || "Aucune description"}
+                    <Text className="mt-1 text-xs text-ink-soft">
+                      {workout.description || t.noDescription}
                     </Text>
-                    <Text className="mt-2 text-[11px] text-[#C4B5FD]">
-                      {workout.totalExercises} exercice(s)
+                    <Text className="mt-2 text-[11px] text-accent-text">
+                      {format(t.exercisesCount, { n: workout.totalExercises })}
                     </Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 ))
               )}
             </ScrollView>

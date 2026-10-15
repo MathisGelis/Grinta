@@ -1,17 +1,13 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  TextInput,
-  StyleSheet,
-} from "react-native";
+import { View, Text, FlatList, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LANGUAGE_OPTIONS, Lang } from "@/i18n/translations";
 
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
 export default function SettingsLanguageScreen() {
   const { t, lang, setLang } = useTranslation();
   const [query, setQuery] = useState("");
@@ -23,22 +19,15 @@ export default function SettingsLanguageScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.language}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View className="flex-1">
+      <ScreenHeader title={t.language} />
 
-      {/* Search */}
-      <View style={styles.searchWrap}>
-        <Ionicons name="search" size={18} color="#555" style={{ marginRight: 8 }} />
+      <View className="flex-row items-center bg-surface rounded-tile mx-4 mb-4 px-4 py-3">
+        <Ionicons name="search" size={18} color={WorkoutTheme.text.disabled} style={{ marginRight: 8 }} />
         <TextInput
-          style={styles.searchInput}
+          className="flex-1 text-ink text-[15px]"
           placeholder={t.search}
-          placeholderTextColor="#555"
+          placeholderTextColor={WorkoutTheme.text.disabled}
           value={query}
           onChangeText={setQuery}
         />
@@ -48,79 +37,28 @@ export default function SettingsLanguageScreen() {
         data={filtered}
         keyExtractor={(item) => item.code}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={() => <View className="h-[1px] bg-line mx-0" />}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.langItem}
+          <PressableScale
+            className="flex-row items-center py-[18px] px-1"
             onPress={() => {
               setLang(item.code as Lang);
             }}
           >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.langLabel}>{item.label}</Text>
+            <View className="flex-1">
+              <Text className="text-ink text-[15px]">{item.label}</Text>
               {item.nativeLabel !== item.label && (
-                <Text style={styles.langNative}>{item.nativeLabel}</Text>
+                <Text className="text-ink-faint text-xs mt-0.5">{item.nativeLabel}</Text>
               )}
             </View>
             {lang === item.code && (
-              <View style={styles.checkWrap}>
-                <Ionicons name="checkmark" size={16} color="#fff" />
+              <View className="w-7 h-7 rounded-full bg-accent items-center justify-center">
+                <Ionicons name="checkmark" size={16} color={WorkoutTheme.text.primary} />
               </View>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         )}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 64,
-    paddingBottom: 16,
-    justifyContent: "space-between",
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
-
-  searchWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 14,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  searchInput: { flex: 1, color: "#fff", fontSize: 15 },
-
-  separator: { height: 1, backgroundColor: "#1e1e1e", marginHorizontal: 0 },
-  langItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 18,
-    paddingHorizontal: 4,
-  },
-  langLabel: { color: "#fff", fontSize: 15 },
-  langNative: { color: "#666", fontSize: 12, marginTop: 2 },
-  checkWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: "#7B5CF0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

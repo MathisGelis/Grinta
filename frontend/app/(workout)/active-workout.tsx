@@ -7,8 +7,6 @@ import {
   ActivityIndicator,
   Modal,
   Text,
-  TouchableOpacity,
-  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -32,6 +30,9 @@ import {
   saveActiveSession,
 } from "@/services/active-session.service";
 
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import Button from "@/components/ui/Button";
+import { FormField, TextField } from "@/components/ui/FormField";
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
@@ -62,8 +63,6 @@ export default function ActiveWorkoutScreen() {
     try {
       setLoading(true);
 
-      // Resuming a minimized session: restore from storage rather than
-      // refetching, otherwise every completed set would be lost.
       if (isResuming) {
         const stored = await getActiveSession();
 
@@ -80,7 +79,6 @@ export default function ActiveWorkoutScreen() {
       const token = await TokenService.get();
       const data = await getWorkoutById(workoutId, token || undefined);
 
-      // Initialize exercises state
       const initialState: ExerciseState[] = data.exercises.map((ex) => ({
         exerciseData: ex,
         completedSetIndices: [],
@@ -96,13 +94,11 @@ export default function ActiveWorkoutScreen() {
     } finally {
       setLoading(false);
     }
-  }, [workoutId, isResuming]);
+  }, [t, workoutId, isResuming]);
 
-  // Load workout data
   useEffect(() => {
     loadWorkout();
 
-    // Cleanup timeouts on unmount
     return () => {
       if (setTimeoutRef.current) {
         clearTimeout(setTimeoutRef.current);
@@ -110,7 +106,6 @@ export default function ActiveWorkoutScreen() {
     };
   }, [loadWorkout]);
 
-  // Main timer
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
     if (!showRestScreen) {
@@ -123,7 +118,6 @@ export default function ActiveWorkoutScreen() {
     };
   }, [showRestScreen]);
 
-  // Rest timer
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
     if (showRestScreen && restTimeRemaining > 0) {
@@ -162,9 +156,6 @@ export default function ActiveWorkoutScreen() {
     completedExercises,
   ]);
 
-  // Autosave on every meaningful change so the session survives an app kill.
-  // The timer is deliberately not a dependency (it would write once a second):
-  // it is recomputed from savedAt when the session is resumed.
   useEffect(() => {
     if (loading) return;
     void persistSession();
@@ -179,22 +170,18 @@ export default function ActiveWorkoutScreen() {
     const newState = [...exercisesState];
     const exState = newState[currentExerciseIndex];
 
-    // Track completed set
     exState.completedSetIndices.push(currentSetIndex);
     exState.completedSets.push({ reps, weight });
 
-    // Set rest time
     const restTime = exState.restTimeSeconds || 90;
     setRestTimeRemaining(restTime);
     setShowRestScreen(true);
     setExercisesState(newState);
 
-    // Clear any existing timeout
     if (setTimeoutRef.current) {
       clearTimeout(setTimeoutRef.current);
     }
 
-    // Schedule transition after rest time
     setTimeoutRef.current = setTimeout(
       () => {
         executeSetTransition(isLastSet, isLastExercise, newState);
@@ -209,19 +196,15 @@ export default function ActiveWorkoutScreen() {
     newState: ExerciseState[],
   ) => {
     if (isLastSet) {
-      // Mark exercise as completed
       setCompletedExercises([...completedExercises, currentExerciseIndex]);
 
       if (isLastExercise) {
-        // Finish workout
         setShowCompletionModal(true);
       } else {
-        // Move to next exercise
         setCurrentExerciseIndex(currentExerciseIndex + 1);
         setCurrentSetIndex(0);
       }
     } else {
-      // Move to next set
       setCurrentSetIndex(currentSetIndex + 1);
     }
   };
@@ -248,7 +231,6 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleSkipExercise = () => {
-    // Mark current exercise as completed
     const newCompletedExercises = Array.isArray(completedExercises)
       ? [...completedExercises]
       : [];
@@ -256,7 +238,6 @@ export default function ActiveWorkoutScreen() {
       newCompletedExercises.push(currentExerciseIndex);
     }
 
-    // Find next uncompleted exercise
     let nextExerciseIndex = -1;
     for (let i = currentExerciseIndex + 1; i < exercisesState.length; i++) {
       if (!newCompletedExercises.includes(i)) {
@@ -266,11 +247,9 @@ export default function ActiveWorkoutScreen() {
     }
 
     if (nextExerciseIndex === -1) {
-      // No more uncompleted exercises, finish workout
       setCompletedExercises(newCompletedExercises);
       setShowCompletionModal(true);
     } else {
-      // Move to next uncompleted exercise
       setCompletedExercises(newCompletedExercises);
       setCurrentExerciseIndex(nextExerciseIndex);
       setCurrentSetIndex(0);
@@ -283,7 +262,6 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleAddExercise = (exercise: WorkoutExercise) => {
-    // Check if exercise already exists
     const exerciseExists = exercisesState.some(
       (state) => state.exerciseData.exerciseId === exercise.exerciseId,
     );
@@ -307,85 +285,79 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleDeleteExercise = () => {
-    Alert.alert(
-      t.deleteExercise,
-      t.deleteExerciseConfirm,
-      [
-        { text: t.cancel, style: "cancel" },
-        {
-          text: t.delete,
-          onPress: () => {
-            const newState = exercisesState.filter(
-              (_, index) => index !== currentExerciseIndex,
-            );
+    Alert.alert(t.deleteExercise, t.deleteExerciseConfirm, [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.delete,
+        onPress: () => {
+          const newState = exercisesState.filter(
+            (_, index) => index !== currentExerciseIndex,
+          );
 
-            if (newState.length === 0) {
-              // No more exercises, go back
-              Alert.alert(
-                t.lastExerciseTitle,
-                t.cannotDeleteLastExercise,
-              );
-              return;
-            }
+          if (newState.length === 0) {
+            Alert.alert(t.lastExerciseTitle, t.cannotDeleteLastExercise);
+            return;
+          }
 
-            // Update completed exercises indices
-            const newCompletedExercises = completedExercises
-              .filter((index) => index !== currentExerciseIndex)
-              .map((index) =>
-                index > currentExerciseIndex ? index - 1 : index,
-              );
+          const newCompletedExercises = completedExercises
+            .filter((index) => index !== currentExerciseIndex)
+            .map((index) => (index > currentExerciseIndex ? index - 1 : index));
 
-            setExercisesState(newState);
-            setCompletedExercises(newCompletedExercises);
+          setExercisesState(newState);
+          setCompletedExercises(newCompletedExercises);
 
-            // Move to next exercise or previous if was last
-            let newCurrentIndex = currentExerciseIndex;
-            if (currentExerciseIndex >= newState.length) {
-              newCurrentIndex = newState.length - 1;
-            }
+          let newCurrentIndex = currentExerciseIndex;
+          if (currentExerciseIndex >= newState.length) {
+            newCurrentIndex = newState.length - 1;
+          }
 
-            setCurrentExerciseIndex(newCurrentIndex);
-            setCurrentSetIndex(0);
-          },
-          style: "destructive",
+          setCurrentExerciseIndex(newCurrentIndex);
+          setCurrentSetIndex(0);
         },
-      ],
-    );
+        style: "destructive",
+      },
+    ]);
   };
 
   const handleSkipRest = () => {
-    // Clear the scheduled timeout
     if (setTimeoutRef.current) {
       clearTimeout(setTimeoutRef.current);
     }
 
     setShowRestScreen(false);
 
-    // Execute transition immediately
     executeSetTransition(isLastSet, isLastExercise, exercisesState);
   };
 
   const handleEndWorkout = () => {
-    Alert.alert(
-      t.finishWorkout,
-      t.finishWorkoutConfirm,
-      [
-        { text: t.cancel, style: "cancel" },
-        {
-          text: t.finish,
-          onPress: () => setShowCompletionModal(true),
-          style: "destructive",
-        },
-      ],
-    );
+    Alert.alert(t.finishWorkout, t.finishWorkoutConfirm, [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.finish,
+        onPress: () => setShowCompletionModal(true),
+        style: "destructive",
+      },
+    ]);
   };
 
   const handleMinimize = async () => {
     await persistSession();
-    // "/(tabs)/workout-trigger" renders null - it only exists to reserve the
-    // center slot in the tab bar - so pushing it showed a blank screen.
-    // Same call shape as the end-of-workout redirect just below.
     router.replace("/(tabs)/explore");
+  };
+
+  const handleDiscardWorkout = () => {
+    Alert.alert(t.dontSave, t.dontSaveConfirm, [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.dontSave,
+        style: "destructive",
+        onPress: async () => {
+          await clearActiveSession();
+          setShowCompletionModal(false);
+          router.replace("/(tabs)/explore");
+        },
+      },
+    ]);
   };
 
   const handleSubmitCompletion = async () => {
@@ -398,7 +370,6 @@ export default function ActiveWorkoutScreen() {
       setIsSubmitting(true);
       const token = await TokenService.get();
 
-      // Build completed exercises (only those that were actually done)
       const completedData: CompletedExercise[] = exercisesState
         .map((state, index) => {
           if (state.completedSets.length === 0) return null;
@@ -436,16 +407,9 @@ export default function ActiveWorkoutScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
-      >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+      <SafeAreaView className="flex-1">
+        <ScreenBackground />
+        <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
         </View>
       </SafeAreaView>
@@ -454,9 +418,8 @@ export default function ActiveWorkoutScreen() {
 
   if (showRestScreen) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
-      >
+      <SafeAreaView className="flex-1">
+        <ScreenBackground />
         <StatusBar
           barStyle="light-content"
           backgroundColor={WorkoutTheme.backgroundSecondary}
@@ -467,76 +430,25 @@ export default function ActiveWorkoutScreen() {
           transparent={true}
           onRequestClose={() => {}}
         >
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.7)",
-              justifyContent: "center",
-              alignItems: "center",
-              paddingHorizontal: 16,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: WorkoutTheme.backgroundSecondary,
-                borderRadius: 20,
-                padding: 32,
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: WorkoutTheme.border,
-              }}
-            >
+          <View className="flex-1 items-center justify-center bg-scrim px-5">
+            <View className="w-full items-center rounded-hero bg-surface p-8">
+              <Text className="mb-2 text-sm text-ink-muted">{t.restTime}</Text>
               <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: WorkoutTheme.text.secondary,
-                  marginBottom: 16,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
-              >
-                {t.restTime}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 72,
-                  fontWeight: "700",
-                  color: WorkoutTheme.accent.purple,
-                  textAlign: "center",
-                }}
+                className="text-center text-[96px] font-semibold text-ink"
+                style={{ fontVariant: ["tabular-nums"], letterSpacing: -2 }}
               >
                 {restTimeRemaining}
               </Text>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: WorkoutTheme.text.secondary,
-                  marginTop: 8,
-                  marginBottom: 24,
-                }}
-              >
+              <Text className="mb-8 mt-1 text-base text-ink-muted">
                 {t.seconds}
               </Text>
 
-              {/* Skip rest button */}
-              <TouchableOpacity
+              <Button
+                className="w-full"
+                icon="play-forward"
+                label={t.skipRest}
                 onPress={handleSkipRest}
-                style={{
-                  backgroundColor: WorkoutTheme.accent.purple,
-                  paddingHorizontal: 24,
-                  paddingVertical: 12,
-                  borderRadius: 10,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <Ionicons name="play-forward" size={16} color="white" />
-                <Text style={{ color: "white", fontWeight: "700" }}>
-                  {t.skipRest}
-                </Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
         </Modal>
@@ -545,16 +457,13 @@ export default function ActiveWorkoutScreen() {
   }
 
   return (
-    <SafeAreaView
-      edges={["top"]}
-      style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
-    >
+    <SafeAreaView edges={["top"]} className="flex-1">
+      <ScreenBackground />
       <StatusBar
         barStyle="light-content"
         backgroundColor={WorkoutTheme.backgroundSecondary}
       />
 
-      {/* Header */}
       <WorkoutSessionHeader
         workoutTitle={workoutName}
         totalTime={totalWorkoutTime}
@@ -562,17 +471,15 @@ export default function ActiveWorkoutScreen() {
         onEndWorkout={handleEndWorkout}
       />
 
-      {/* Main Content */}
       <ScrollView
-        style={{ flex: 1 }}
+        className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: 16 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 }}
       >
         {currentExercise && (
           <>
-            {/* Current Exercise Section */}
             <CurrentExerciseSection
-              exerciseName={currentExercise.exerciseName || "Exercice"}
+              exerciseName={currentExercise.exerciseName || t.currentExercise}
               currentSetIndex={currentSetIndex}
               totalSets={currentExercise.sets.length}
               plannedSetData={currentExercise.sets}
@@ -586,7 +493,6 @@ export default function ActiveWorkoutScreen() {
               isLastSet={isLastSet}
             />
 
-            {/* Other Exercises Section */}
             <OtherExercisesSection
               exercises={exercisesState.map((s) => s.exerciseData)}
               currentExerciseIndex={currentExerciseIndex}
@@ -597,53 +503,28 @@ export default function ActiveWorkoutScreen() {
           </>
         )}
 
-        <View style={{ height: 32 }} />
+        <View className="h-8" />
       </ScrollView>
 
-      {/* Completion Modal */}
       <Modal
         visible={showCompletionModal}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setShowCompletionModal(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "flex-end",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: WorkoutTheme.backgroundSecondary,
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              maxHeight: "90%",
-              paddingHorizontal: 16,
-              paddingVertical: 20,
-            }}
-          >
-            {/* Header */}
-            <View
-              style={{
-                alignItems: "center",
-                marginBottom: 24,
-              }}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={64}
-                color={WorkoutTheme.status.success}
-              />
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: WorkoutTheme.text.primary,
-                  marginTop: 16,
-                }}
-              >
+        <View className="flex-1 justify-end bg-overlay">
+          <View className="max-h-[90%] rounded-t-hero bg-surface px-5 pb-8 pt-3">
+            <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
+
+            <View className="mb-6 items-center">
+              <View className="h-20 w-20 items-center justify-center rounded-full bg-success-tint">
+                <Ionicons
+                  name="checkmark"
+                  size={40}
+                  color={WorkoutTheme.status.success}
+                />
+              </View>
+              <Text className="mt-4 text-2xl font-semibold text-ink">
                 {t.workoutCompleted}
               </Text>
             </View>
@@ -651,131 +532,47 @@ export default function ActiveWorkoutScreen() {
             <ScrollView
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              contentContainerClassName="gap-5"
             >
-              {/* Title Input */}
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "700",
-                    color: WorkoutTheme.text.secondary,
-                    marginBottom: 8,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {t.titleLabel}
-                </Text>
-                <TextInput
-                  style={{
-                    backgroundColor: WorkoutTheme.backgroundTertiary,
-                    borderWidth: 1,
-                    borderColor: WorkoutTheme.border,
-                    borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 12,
-                    fontSize: 14,
-                    color: WorkoutTheme.text.primary,
-                  }}
+              <FormField label={t.titleLabel}>
+                <TextField
                   placeholder={t.workoutNameLabel}
-                  placeholderTextColor={WorkoutTheme.text.tertiary}
                   value={completionTitle}
                   onChangeText={setCompletionTitle}
                   editable={!isSubmitting}
                 />
-              </View>
+              </FormField>
 
-              {/* Description Input */}
-              <View style={{ marginBottom: 24 }}>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "700",
-                    color: WorkoutTheme.text.secondary,
-                    marginBottom: 8,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {t.descriptionOptional}
-                </Text>
-                <TextInput
-                  style={{
-                    backgroundColor: WorkoutTheme.backgroundTertiary,
-                    borderWidth: 1,
-                    borderColor: WorkoutTheme.border,
-                    borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 12,
-                    fontSize: 14,
-                    color: WorkoutTheme.text.primary,
-                    minHeight: 80,
-                    textAlignVertical: "top",
-                  }}
+              <FormField label={t.descriptionOptional}>
+                <TextField
+                  multiline
                   placeholder={t.addDescriptionPlaceholder}
-                  placeholderTextColor={WorkoutTheme.text.tertiary}
                   value={completionDescription}
                   onChangeText={setCompletionDescription}
-                  multiline
                   editable={!isSubmitting}
                 />
-              </View>
+              </FormField>
 
-              {/* Buttons */}
-              <View style={{ gap: 12, marginBottom: 16 }}>
-                <TouchableOpacity
+              <View className="gap-3">
+                <Button
+                  icon="checkmark"
+                  label={t.save}
+                  loading={isSubmitting}
                   onPress={handleSubmitCompletion}
+                />
+                <Button
+                  variant="danger"
+                  icon="trash-outline"
+                  label={t.dontSave}
                   disabled={isSubmitting}
-                  style={{
-                    backgroundColor: WorkoutTheme.accent.purple,
-                    borderRadius: 10,
-                    paddingVertical: 14,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                  }}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark" size={18} color="white" />
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "700",
-                          color: "white",
-                        }}
-                      >
-                        {t.save}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
+                  onPress={handleDiscardWorkout}
+                />
+                <Button
+                  variant="secondary"
+                  label={t.back}
+                  disabled={isSubmitting}
                   onPress={() => setShowCompletionModal(false)}
-                  disabled={isSubmitting}
-                  style={{
-                    backgroundColor: WorkoutTheme.backgroundTertiary,
-                    borderRadius: 10,
-                    paddingVertical: 12,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: WorkoutTheme.border,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: WorkoutTheme.text.secondary,
-                    }}
-                  >
-                    {t.back}
-                  </Text>
-                </TouchableOpacity>
+                />
               </View>
             </ScrollView>
           </View>

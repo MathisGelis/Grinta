@@ -1,18 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { Post } from "@/services/posts.service";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { format } from "@/i18n/translations";
+import { LOCALES } from "@/i18n/labels";
 export default function UserPostScreen() {
+  const { t, lang } = useTranslation();
   const params = useLocalSearchParams<{ post?: string }>();
   const serializedPost = Array.isArray(params.post)
     ? params.post[0]
@@ -49,18 +48,18 @@ export default function UserPostScreen() {
 
       setWorkoutPreview({
         id: workoutId,
-        title: data.workoutTitle ?? data.workout?.title ?? "Workout terminé",
+        title: data.workoutTitle ?? data.workout?.title ?? t.completedWorkoutTitle,
         description: data.workoutDescription ?? data.workout?.description,
         durationSeconds: data.workoutDurationSeconds,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("Erreur lors du chargement du post:", message);
-      Alert.alert("Erreur", `Impossible de charger ce post.\n${message}`);
+      Alert.alert(t.error, `${t.cannotLoadPost}\n${message}`);
     } finally {
       setLoading(false);
     }
-  }, [serializedPost]);
+  }, [t, serializedPost]);
 
   useEffect(() => {
     fetchPost();
@@ -68,52 +67,52 @@ export default function UserPostScreen() {
 
   if (loading) {
     return (
-      <View style={styles.containerCentered}>
-        <ActivityIndicator size="large" color="#7B5CF0" />
+      <View className="flex-1 items-center justify-center px-5">
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
       </View>
     );
   }
 
   if (!post) {
     return (
-      <View style={styles.containerCentered}>
-        <Text style={styles.emptyText}>Impossible de charger ce post.</Text>
-        <TouchableOpacity
-          style={styles.backButton}
+      <View className="flex-1 items-center justify-center px-5">
+        <Text className="text-ink text-lg text-center mb-5">{t.cannotLoadPost}</Text>
+        <PressableScale
+          className="bg-accent px-5 py-3 rounded-full"
           onPress={() => router.back()}
         >
-          <Text style={styles.backButtonText}>Retour</Text>
-        </TouchableOpacity>
+          <Text className="text-ink font-bold">{t.back}</Text>
+        </PressableScale>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Publication</Text>
-        <View style={{ width: 40 }} />
+    <View className="flex-1">
+      <View className="flex-row items-center justify-between px-4 pt-16 pb-4">
+        <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
+          <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
+        </PressableScale>
+        <Text className="text-ink text-lg font-bold flex-1 text-center">{t.postTitle}</Text>
+        <View className="w-10" />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
       >
-        <View style={styles.card}>
-          <View style={styles.userRow}>
-            <View style={styles.avatarWrap}>
-              <Text style={styles.avatarText}>
+        <View className="bg-surface rounded-tile p-[18px] border border-raised">
+          <View className="flex-row items-center mb-[18px]">
+            <View className="w-12 h-12 rounded-card bg-accent-tint items-center justify-center mr-3">
+              <Text className="text-ink text-lg font-bold">
                 {post.displayName?.[0]?.toUpperCase() ?? "?"}
               </Text>
             </View>
 
-            <View style={{ flex: 1 }}>
-              <Text style={styles.userName}>{post.displayName}</Text>
-              <Text style={styles.dateText}>
-                {new Date(post.createdAt).toLocaleDateString("fr-FR", {
+            <View className="flex-1">
+              <Text className="text-ink text-lg font-bold">{post.displayName}</Text>
+              <Text className="text-ink-muted text-xs mt-0.5">
+                {new Date(post.createdAt).toLocaleDateString(LOCALES[lang], {
                   day: "2-digit",
                   month: "long",
                   year: "numeric",
@@ -122,31 +121,32 @@ export default function UserPostScreen() {
             </View>
           </View>
 
-          <View style={styles.contentBlock}>
-            <Text style={styles.contentLabel}>Détails du post</Text>
-            <Text style={styles.metaText}>
-              Posté le {new Date(post.createdAt).toLocaleString("fr-FR")}
+          <View className="bg-background rounded-tile p-3.5 mb-[18px]">
+            <Text className="text-ink-soft text-xs font-semibold mb-2 uppercase">{t.postDetails}</Text>
+            <Text className="text-ink text-[15px] mb-1.5">
+              {format(t.postedOn, { date: new Date(post.createdAt).toLocaleString(LOCALES[lang]) })}
             </Text>
           </View>
 
           {workoutPreview ? (
-            <View style={styles.previewSection}>
-              <Text style={styles.previewLabel}>Workout associé</Text>
-              <View style={styles.workoutPreviewCard}>
-                <View style={styles.workoutIconWrap}>
-                  <Ionicons name="checkmark-circle" size={26} color="#34D399" />
+            <View className="mt-2">
+              <Text className="text-ink-soft text-xs font-semibold mb-2.5 uppercase">{t.linkedWorkout}</Text>
+              <View className="bg-background rounded-tile p-3.5 flex-row items-center">
+                <View className="w-11 h-11 rounded-full bg-success-tint items-center justify-center mr-3">
+                  <Ionicons name="checkmark-circle" size={26} color={WorkoutTheme.status.success} />
                 </View>
-                <View style={styles.workoutPreviewContent}>
-                  <Text style={styles.workoutTitle}>
+                <View className="flex-1">
+      <ScreenBackground />
+                  <Text className="text-ink text-base font-bold">
                     {workoutPreview.title}
                   </Text>
                   {!!workoutPreview.description && (
-                    <Text style={styles.workoutDescription}>
+                    <Text className="text-ink-soft text-[13px] mt-1">
                       {workoutPreview.description}
                     </Text>
                   )}
                   {workoutPreview.durationSeconds !== undefined && (
-                    <Text style={styles.workoutDuration}>
+                    <Text className="text-ink-muted text-xs mt-1.5">
                       {Math.round(workoutPreview.durationSeconds / 60)} min
                     </Text>
                   )}
@@ -154,9 +154,9 @@ export default function UserPostScreen() {
               </View>
             </View>
           ) : (
-            <View style={styles.placeholderCard}>
-              <Text style={styles.placeholderText}>
-                Aucun workout associé à ce post.
+            <View className="bg-background rounded-tile p-[18px] items-center justify-center">
+              <Text className="text-ink-muted text-sm">
+                {t.noLinkedWorkout}
               </Text>
             </View>
           )}
@@ -165,165 +165,3 @@ export default function UserPostScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
-  containerCentered: {
-    flex: 1,
-    backgroundColor: "#121212",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 64,
-    paddingBottom: 16,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    flex: 1,
-    textAlign: "center",
-  },
-  card: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-  },
-  userRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 18,
-  },
-  avatarWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  avatarText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  userName: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  dateText: {
-    color: "#8e8e93",
-    fontSize: 12,
-    marginTop: 2,
-  },
-  contentBlock: {
-    backgroundColor: "#151515",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 18,
-  },
-  contentLabel: {
-    color: "#b9b7c8",
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 8,
-    textTransform: "uppercase",
-  },
-  metaText: {
-    color: "#fff",
-    fontSize: 15,
-    marginBottom: 6,
-  },
-  previewSection: {
-    marginTop: 8,
-  },
-  previewLabel: {
-    color: "#b9b7c8",
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 10,
-    textTransform: "uppercase",
-  },
-  workoutPreviewCard: {
-    backgroundColor: "#151515",
-    borderRadius: 14,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  workoutIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#1a2f1a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  workoutPreviewContent: {
-    flex: 1,
-  },
-  workoutTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  workoutDescription: {
-    color: "#b9b7c8",
-    fontSize: 13,
-    marginTop: 4,
-  },
-  workoutDuration: {
-    color: "#8e8e93",
-    fontSize: 12,
-    marginTop: 6,
-  },
-  placeholderCard: {
-    backgroundColor: "#151515",
-    borderRadius: 14,
-    padding: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  placeholderText: {
-    color: "#8e8e93",
-    fontSize: 14,
-  },
-  emptyText: {
-    color: "#fff",
-    fontSize: 18,
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  backButton: {
-    backgroundColor: "#7B5CF0",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  backButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-});

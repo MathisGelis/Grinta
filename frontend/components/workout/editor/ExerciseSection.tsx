@@ -1,11 +1,13 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import ExerciseSetupItem, {
   ExerciseSetupData,
 } from "@/components/workout/exercises/ExerciseSetupItem";
 
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 interface ExerciseSectionProps {
   exercises: ExerciseSetupData[];
   onAdd: () => void;
@@ -19,31 +21,28 @@ export default function ExerciseSection({
   onUpdate,
   onRemove,
 }: ExerciseSectionProps) {
+  const { t } = useTranslation();
   return (
-    <View className="mt-5">
-      {/* Header */}
-      <View className="flex-row justify-between items-center mb-3">
-        <Text
-          className="text-sm font-bold"
-          style={{ color: WorkoutTheme.text.primary }}
-        >
-          Exercices ({exercises.length})
+    <View className="gap-4">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-xl font-semibold text-ink">
+          {t.exercises}{" "}
+          <Text className="text-base font-normal text-ink-muted">
+            {exercises.length}
+          </Text>
         </Text>
-        <TouchableOpacity
+        <PressableScale
           onPress={onAdd}
-          className="px-2.5 py-2 ml-2 items-center justify-center"
+          accessibilityRole="button"
+          accessibilityLabel={t.addExerciseTitle}
+          className="h-11 w-11 items-center justify-center rounded-full bg-accent"
         >
-          <Ionicons
-            name="add-circle"
-            size={24}
-            color={WorkoutTheme.accent.purple}
-          />
-        </TouchableOpacity>
+          <Ionicons name="add" size={24} color={WorkoutTheme.text.primary} />
+        </PressableScale>
       </View>
 
-      {/* Liste ou état vide */}
       {exercises.length > 0 ? (
-        <View>
+        <View className="gap-3">
           {exercises.map((exercise) => (
             <ExerciseSetupItem
               key={exercise.id}
@@ -54,29 +53,19 @@ export default function ExerciseSection({
           ))}
         </View>
       ) : (
-        <View
-          className="rounded-xl py-8 items-center gap-3 border"
-          style={{
-            backgroundColor: WorkoutTheme.backgroundSecondary,
-            borderColor: WorkoutTheme.border,
-          }}
-        >
-          <Ionicons
-            name="barbell"
-            size={40}
-            color={WorkoutTheme.text.tertiary}
-          />
-          <Text
-            className="text-sm font-semibold"
-            style={{ color: WorkoutTheme.text.secondary }}
-          >
-            Aucun exercice ajouté
+        <View className="items-center gap-3 rounded-card bg-surface p-8">
+          <View className="h-14 w-14 items-center justify-center rounded-full bg-raised">
+            <Ionicons
+              name="barbell"
+              size={26}
+              color={WorkoutTheme.text.tertiary}
+            />
+          </View>
+          <Text className="text-base font-semibold text-ink-soft">
+            {t.noExercisesAdded}
           </Text>
-          <Text
-            className="text-xs"
-            style={{ color: WorkoutTheme.text.tertiary }}
-          >
-            Appuyez sur le bouton + pour ajouter un exercice
+          <Text className="text-center text-sm text-ink-muted">
+            {t.tapToAddExercise}
           </Text>
         </View>
       )}

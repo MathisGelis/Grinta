@@ -1,14 +1,5 @@
 import React, { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { SelectList } from "react-native-dropdown-select-list";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
@@ -20,20 +11,28 @@ import {
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
 
-const DIFFICULTY_OPTIONS = [
-  { key: "BEGINNER", value: "Débutant" },
-  { key: "INTERMEDIATE", value: "Intermédiaire" },
-  { key: "ADVANCED", value: "Avancé" },
-];
-
-const LOCATION_OPTIONS = [
-  { key: "GYM", value: "Salle de sport" },
-  { key: "HOME", value: "Domicile" },
-  { key: "OUTDOORS", value: "Extérieur" },
-  { key: "ANY", value: "Tous lieux" },
-];
-
+import Button from "@/components/ui/Button";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { FormField, TextField } from "@/components/ui/FormField";
+import { selectStyles } from "@/components/ui/selectStyles";
+import { useTranslation } from "@/contexts/LanguageContext";
+import {
+  DIFFICULTY_KEYS,
+  LOCATION_KEYS,
+  difficultyLabel,
+  locationLabel,
+} from "@/i18n/labels";
 export default function CreateProgrammScreen() {
+  const { t } = useTranslation();
+  const DIFFICULTY_OPTIONS = DIFFICULTY_KEYS.map((key) => ({
+    key,
+    value: difficultyLabel(t, key),
+  }));
+  const LOCATION_OPTIONS = LOCATION_KEYS.map((key) => ({
+    key,
+    value: locationLabel(t, key),
+  }));
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("BEGINNER");
@@ -59,8 +58,7 @@ export default function CreateProgrammScreen() {
               description: detail.description,
               totalExercises: detail.totalExercises,
             };
-          } catch (error) {
-            console.warn("Fallback workout id used", error);
+          } catch {
             return workout;
           }
         }),
@@ -80,12 +78,12 @@ export default function CreateProgrammScreen() {
 
   const submitProgramme = useCallback(async () => {
     if (!title.trim()) {
-      Alert.alert("Erreur", "Le titre du programme est requis.");
+      Alert.alert(t.error, t.programmeTitleRequired);
       return;
     }
 
     if (days.length === 0) {
-      Alert.alert("Erreur", "Ajoutez au moins un jour au programme.");
+      Alert.alert(t.error, t.addAtLeastOneDay);
       return;
     }
 
@@ -104,124 +102,76 @@ export default function CreateProgrammScreen() {
         })),
       });
 
-      Alert.alert("Succès", "Programme créé avec succès", [
+      Alert.alert(t.success, t.programmeCreated, [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Erreur lors de la création";
-      Alert.alert("Erreur", message);
+        error instanceof Error ? error.message : t.creationError;
+      Alert.alert(t.error, message);
     } finally {
       setLoading(false);
     }
-  }, [days, description, difficulty, locationType, title]);
+  }, [t, days, description, difficulty, locationType, title]);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0F0F0F]">
+    <View className="flex-1">
+      <ScreenBackground />
+      <ScreenHeader title={t.newProgramme} />
       <ScrollView
-        className="flex-1 px-4 py-4"
+        className="flex-1"
         showsVerticalScrollIndicator={false}
+        contentContainerClassName="gap-5 px-5 pb-10"
+        keyboardShouldPersistTaps="handled"
       >
-        <Text className="mb-2 text-2xl font-bold text-white">
-          Créer un programme
-        </Text>
-        <Text className="mb-4 text-sm text-[#C7C7C7]">
-          Définis le titre, la difficulté, le lieu et l’ordre des jours de ton
-          programme.
+        <Text className="text-sm text-ink-muted">
+          {t.programmeIntro}
         </Text>
 
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-            Titre *
-          </Text>
-          <TextInput
+        <FormField label={t.titleLabel} required>
+          <TextField
             value={title}
             onChangeText={setTitle}
-            placeholder="Ex: Programme force 4 semaines"
-            placeholderTextColor="#808080"
-            className="rounded-xl border border-[#2F2F2F] bg-[#171717] px-3 py-3 text-white"
+            placeholder={t.programmeTitlePlaceholder}
           />
-        </View>
+        </FormField>
 
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-            Description
-          </Text>
-          <TextInput
+        <FormField label={t.descriptionLabel}>
+          <TextField
+            multiline
             value={description}
             onChangeText={setDescription}
-            multiline
-            numberOfLines={4}
-            placeholder="Objectif, fréquence, notes…"
-            placeholderTextColor="#808080"
-            className="rounded-xl border border-[#2F2F2F] bg-[#171717] px-3 py-3 text-white"
-            style={{ minHeight: 90, textAlignVertical: "top" }}
+            placeholder={t.programmeDescPlaceholder}
           />
-        </View>
+        </FormField>
 
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-            Difficulté *
-          </Text>
+        <FormField label={t.difficultyLabel} required>
           <SelectList
             setSelected={(value: string) => setDifficulty(value)}
             data={DIFFICULTY_OPTIONS}
             save="key"
             search={false}
-            placeholder="Choisir une difficulté"
+            placeholder={t.chooseDifficulty}
             defaultOption={DIFFICULTY_OPTIONS.find(
               (option) => option.key === difficulty,
             )}
-            inputStyles={{ color: "#FFFFFF" }}
-            boxStyles={{
-              backgroundColor: "#171717",
-              borderColor: "#2F2F2F",
-              borderRadius: 12,
-            }}
-            dropdownStyles={{
-              backgroundColor: "#171717",
-              borderColor: "#2F2F2F",
-              borderRadius: 12,
-            }}
-            dropdownItemStyles={{
-              backgroundColor: "#171717",
-              borderBottomColor: "#2F2F2F",
-            }}
-            dropdownTextStyles={{ color: "#FFFFFF" }}
+            {...selectStyles}
           />
-        </View>
+        </FormField>
 
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-            Lieu *
-          </Text>
+        <FormField label={t.locationLabel} required>
           <SelectList
             setSelected={(value: string) => setLocationType(value)}
             data={LOCATION_OPTIONS}
             save="key"
             search={false}
-            placeholder="Choisir un lieu"
+            placeholder={t.chooseLocation}
             defaultOption={LOCATION_OPTIONS.find(
               (option) => option.key === locationType,
             )}
-            inputStyles={{ color: "#FFFFFF" }}
-            boxStyles={{
-              backgroundColor: "#171717",
-              borderColor: "#2F2F2F",
-              borderRadius: 12,
-            }}
-            dropdownStyles={{
-              backgroundColor: "#171717",
-              borderColor: "#2F2F2F",
-              borderRadius: 12,
-            }}
-            dropdownItemStyles={{
-              backgroundColor: "#171717",
-              borderBottomColor: "#2F2F2F",
-            }}
-            dropdownTextStyles={{ color: "#FFFFFF" }}
+            {...selectStyles}
           />
-        </View>
+        </FormField>
 
         <ProgrammeDayEditor
           days={days}
@@ -229,22 +179,12 @@ export default function CreateProgrammScreen() {
           availableWorkouts={availableWorkouts}
         />
 
-        <TouchableOpacity
+        <Button
+          label={t.createProgramme}
+          loading={loading}
           onPress={submitProgramme}
-          disabled={loading}
-          className="mt-2 rounded-2xl bg-[#8B5CF6] px-4 py-3"
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text className="text-center text-base font-semibold text-white">
-              Créer le programme
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        <View className="h-6" />
+        />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

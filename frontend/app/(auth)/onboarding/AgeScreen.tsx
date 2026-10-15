@@ -1,14 +1,18 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { DrumRollPicker } from "@/components/DrumRollPicker";
 
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 const MIN_AGE = 10;
 const MAX_AGE = 80;
 const ages = Array.from({ length: MAX_AGE - MIN_AGE + 1 }, (_, i) => MIN_AGE + i);
 const DEFAULT_AGE = 25;
 
 export default function AgeScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ gender: string }>();
   const [ageIndex, setAgeIndex] = useState(DEFAULT_AGE - MIN_AGE);
 
@@ -20,11 +24,12 @@ export default function AgeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>How old are you ?</Text>
-      <Text style={styles.subtitle}>This helps us create your personalized plan</Text>
+    <View className="flex-1 pt-20 px-8">
+      <ScreenBackground />
+      <Text className="text-[28px] font-bold text-ink mb-3">{t.howOldAreYou}</Text>
+      <Text className="text-[15px] text-ink-muted mb-10">{t.personalizedPlanHint}</Text>
 
-      <View style={styles.pickerWrapper}>
+      <View className="flex-1 justify-center">
         <DrumRollPicker
           items={ages}
           selectedIndex={ageIndex}
@@ -32,68 +37,14 @@ export default function AgeScreen() {
         />
       </View>
 
-      <View style={styles.nav}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-          <Text style={styles.nextText}>Next  ›</Text>
-        </TouchableOpacity>
+      <View className="flex-row items-center justify-between pb-12 pt-4">
+        <PressableScale className="w-[52px] h-[52px] rounded-[26px] bg-raised items-center justify-center" onPress={() => router.back()}>
+          <Text className="text-ink text-xl">←</Text>
+        </PressableScale>
+        <PressableScale className="bg-accent py-4 px-10 rounded-full" onPress={handleNext}>
+          <Text className="text-ink text-base font-bold">{t.nextBtn}</Text>
+        </PressableScale>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-    paddingTop: 80,
-    paddingHorizontal: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#888",
-    marginBottom: 40,
-  },
-  pickerWrapper: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  nav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 48,
-    paddingTop: 16,
-  },
-  backBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backArrow: {
-    color: "#fff",
-    fontSize: 20,
-  },
-  nextBtn: {
-    backgroundColor: "#7B5CF0",
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 40,
-  },
-  nextText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
