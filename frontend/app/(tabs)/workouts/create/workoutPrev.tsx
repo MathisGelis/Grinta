@@ -3,10 +3,8 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   ScrollView,
   Image,
-  StyleSheet,
   Alert,
   ActivityIndicator,
 } from "react-native";
@@ -27,6 +25,7 @@ import {
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
 
+import PressableScale from "@/components/ui/PressableScale";
 export default function CreateWorkoutScreen() {
   const { t } = useTranslation();
   const [name, setName] = useState("");
@@ -51,16 +50,12 @@ export default function CreateWorkoutScreen() {
   };
 
   const handleSelectExercise = (exercise: Exercise) => {
-    // Check if exercise already exists
     const exerciseExists = selectedExercises.some(
       (ex) => ex.id === exercise.id,
     );
 
     if (exerciseExists) {
-      Alert.alert(
-        t.duplicateExercise,
-        `"${exercise.name}" ${t.alreadyAdded}`,
-      );
+      Alert.alert(t.duplicateExercise, `"${exercise.name}" ${t.alreadyAdded}`);
       return;
     }
 
@@ -97,9 +92,6 @@ export default function CreateWorkoutScreen() {
     }, 0);
   };
 
-  /**
-   * Transforme les ExerciseSetupData en format API (CreateWorkoutRequest)
-   */
   const transformExercisesToAPI = (): CreateWorkoutRequest => {
     return {
       title: name.trim(),
@@ -107,7 +99,7 @@ export default function CreateWorkoutScreen() {
       exercises: selectedExercises.map((exercise) => ({
         exerciseId: exercise.id,
         sets: exercise.sets,
-        plannedRestSeconds: 60, // Temps de repos par défaut entre les séries
+        plannedRestSeconds: 60,
       })),
     };
   };
@@ -140,8 +132,7 @@ export default function CreateWorkoutScreen() {
         },
       ]);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : t.creationError;
+      const message = err instanceof Error ? err.message : t.creationError;
       Alert.alert(t.error, message);
       console.error("Erreur de création:", err);
     } finally {
@@ -150,12 +141,13 @@ export default function CreateWorkoutScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.container}>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Name */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t.workoutNameLabel}</Text>
-          <View style={styles.inputBox}>
+    <SafeAreaView edges={["top"]} className="flex-1 pb-5">
+      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+        <View className="mt-5">
+          <Text className="text-sm font-bold text-ink mb-2">
+            {t.workoutNameLabel}
+          </Text>
+          <View className="flex-row items-center bg-surface rounded-xl px-3 border border-line gap-2 h-12">
             <Ionicons
               name="barbell"
               size={18}
@@ -164,84 +156,91 @@ export default function CreateWorkoutScreen() {
             <TextInput
               placeholder={t.workoutNamePlaceholder}
               placeholderTextColor={WorkoutTheme.text.tertiary}
-              style={styles.input}
+              className="flex-1 text-ink text-sm"
               value={name}
               onChangeText={setName}
             />
           </View>
         </View>
 
-        {/* Description */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t.descriptionLabel}</Text>
+        <View className="mt-5">
+          <Text className="text-sm font-bold text-ink mb-2">
+            {t.descriptionLabel}
+          </Text>
           <TextInput
             placeholder={t.descriptionPlaceholder}
             placeholderTextColor={WorkoutTheme.text.tertiary}
             multiline
             numberOfLines={4}
-            style={[styles.inputBox, styles.multilineInput]}
+            className="flex-row items-start bg-surface rounded-xl px-3 border border-line gap-2 h-[100px] py-3 pt-3"
             value={description}
             onChangeText={setDescription}
           />
         </View>
 
-        {/* Image */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t.photoLabel}</Text>
-          <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+        <View className="mt-5">
+          <Text className="text-sm font-bold text-ink mb-2">
+            {t.photoLabel}
+          </Text>
+          <PressableScale
+            onPress={pickImage}
+            className="rounded-xl overflow-hidden bg-surface border-[2px] border-line border-dashed h-40"
+          >
             {image ? (
-              <Image source={{ uri: image }} style={styles.imagePreview} />
+              <Image source={{ uri: image }} className="w-full h-full" />
             ) : (
-              <View style={styles.imagePickerEmpty}>
+              <View className="w-full h-full justify-center items-center gap-2">
                 <Ionicons
                   name="image-outline"
                   size={40}
                   color={WorkoutTheme.accent.purple}
                 />
-                <Text style={styles.imagePickerText}>{t.addPhoto}</Text>
+                <Text className="text-ink-soft text-[13px] font-medium">
+                  {t.addPhoto}
+                </Text>
               </View>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </View>
 
-        {/* Estimated Time */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t.estimatedDuration}</Text>
-          <View style={styles.inputBox}>
+        <View className="mt-5">
+          <Text className="text-sm font-bold text-ink mb-2">
+            {t.estimatedDuration}
+          </Text>
+          <View className="flex-row items-center bg-surface rounded-xl px-3 border border-line gap-2 h-12">
             <Ionicons
               name="time"
               size={18}
               color={WorkoutTheme.accent.purple}
             />
             <TextInput
-              placeholder="Ex: 45"
+              placeholder="45"
               placeholderTextColor={WorkoutTheme.text.tertiary}
-              style={styles.input}
+              className="flex-1 text-ink text-sm"
               value={estimatedTime}
               onChangeText={setEstimatedTime}
               keyboardType="number-pad"
               maxLength={3}
             />
-            <Text style={styles.inputSuffix}>min</Text>
+            <Text className="text-ink-soft text-xs font-semibold">min</Text>
           </View>
         </View>
 
-        {/* Exercises */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.label}>
-              Exercices ({selectedExercises.length})
+        <View className="mt-5">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-sm font-bold text-ink mb-2">
+              {t.exercises} ({selectedExercises.length})
             </Text>
-            <TouchableOpacity
+            <PressableScale
               onPress={() => setShowExerciseSelector(true)}
-              style={styles.addButton}
+              className="px-2.5 py-2 ml-2 items-center justify-center"
             >
               <Ionicons
                 name="add-circle"
                 size={24}
                 color={WorkoutTheme.accent.purple}
               />
-            </TouchableOpacity>
+            </PressableScale>
           </View>
 
           {selectedExercises.length > 0 ? (
@@ -256,68 +255,74 @@ export default function CreateWorkoutScreen() {
               ))}
             </View>
           ) : (
-            <View style={styles.emptyState}>
+            <View className="bg-surface rounded-xl py-8 items-center gap-3 border border-line">
               <Ionicons
                 name="barbell"
                 size={40}
                 color={WorkoutTheme.text.tertiary}
               />
-              <Text style={styles.emptyStateText}>{t.noExercisesAdded}</Text>
-              <Text style={styles.emptyStateSubtext}>
+              <Text className="text-sm font-semibold text-ink-soft">
+                {t.noExercisesAdded}
+              </Text>
+              <Text className="text-xs text-ink-muted">
                 {t.tapToAddExercise}
               </Text>
             </View>
           )}
         </View>
 
-        {/* Summary Stats */}
         {selectedExercises.length > 0 && (
-          <View style={styles.statsSection}>
-            <Text style={styles.statsTitle}>{t.estimatedStats}</Text>
-            <View style={styles.statsGrid}>
-              <View style={styles.statItem}>
+          <View className="mt-6 mb-5">
+            <Text className="text-sm font-bold text-ink mb-3">
+              {t.estimatedStats}
+            </Text>
+            <View className="flex-row gap-2">
+              <View className="flex-1 bg-surface rounded-xl px-3 py-3.5 items-center border border-line gap-1.5">
                 <Ionicons
                   name="barbell"
                   size={20}
                   color={WorkoutTheme.accent.purple}
                 />
-                <Text style={styles.statValue}>
+                <Text className="text-base font-bold text-accent">
                   {calculateTotalWeight().toFixed(0)}kg
                 </Text>
-                <Text style={styles.statLabel}>{t.totalWeight}</Text>
+                <Text className="text-[11px] text-ink-soft">
+                  {t.totalWeight}
+                </Text>
               </View>
-              <View style={styles.statItem}>
+              <View className="flex-1 bg-surface rounded-xl px-3 py-3.5 items-center border border-line gap-1.5">
                 <Ionicons
                   name="repeat"
                   size={20}
                   color={WorkoutTheme.accent.purple}
                 />
-                <Text style={styles.statValue}>
+                <Text className="text-base font-bold text-accent">
                   {selectedExercises.reduce(
                     (sum, ex) => sum + ex.sets.length,
                     0,
                   )}
                 </Text>
-                <Text style={styles.statLabel}>{t.sets}</Text>
+                <Text className="text-[11px] text-ink-soft">{t.sets}</Text>
               </View>
-              <View style={styles.statItem}>
+              <View className="flex-1 bg-surface rounded-xl px-3 py-3.5 items-center border border-line gap-1.5">
                 <Ionicons
                   name="timer"
                   size={20}
                   color={WorkoutTheme.accent.purple}
                 />
-                <Text style={styles.statValue}>{estimatedTime}m</Text>
-                <Text style={styles.statLabel}>{t.duration}</Text>
+                <Text className="text-base font-bold text-accent">
+                  {estimatedTime}m
+                </Text>
+                <Text className="text-[11px] text-ink-soft">{t.duration}</Text>
               </View>
             </View>
           </View>
         )}
 
-        {/* Create Button */}
-        <TouchableOpacity
+        <PressableScale
           onPress={createWorkout}
           disabled={loading}
-          style={[styles.createButton, loading && styles.createButtonDisabled]}
+          className={`bg-accent rounded-xl py-3.5 mt-4 flex-row justify-center items-center gap-2 ${loading ? "opacity-[0.6]" : ""}`}
         >
           {loading ? (
             <ActivityIndicator size="small" color={WorkoutTheme.text.primary} />
@@ -328,15 +333,16 @@ export default function CreateWorkoutScreen() {
                 size={20}
                 color={WorkoutTheme.text.primary}
               />
-              <Text style={styles.createButtonText}>{t.createWorkoutBtn}</Text>
+              <Text className="text-ink text-base font-bold">
+                {t.createWorkoutBtn}
+              </Text>
             </>
           )}
-        </TouchableOpacity>
+        </PressableScale>
 
-        <View style={{ height: 20 }} />
+        <View className="h-5" />
       </ScrollView>
 
-      {/* Exercise Selector Modal */}
       <ExerciseSearch
         visible={showExerciseSelector}
         onClose={() => setShowExerciseSelector(false)}
@@ -346,171 +352,3 @@ export default function CreateWorkoutScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-    paddingBottom: 20,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    borderBottomWidth: 1,
-    borderBottomColor: WorkoutTheme.border,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: WorkoutTheme.text.primary,
-  },
-  scroll: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  section: {
-    marginTop: 20,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: WorkoutTheme.text.primary,
-    marginBottom: 8,
-  },
-  inputBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: WorkoutTheme.border,
-    gap: 8,
-    height: 48,
-  },
-  input: {
-    flex: 1,
-    color: WorkoutTheme.text.primary,
-    fontSize: 14,
-  },
-  inputSuffix: {
-    color: WorkoutTheme.text.secondary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  multilineInput: {
-    height: 100,
-    paddingVertical: 12,
-    alignItems: "flex-start",
-    paddingTop: 12,
-  },
-  imagePicker: {
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    borderWidth: 2,
-    borderColor: WorkoutTheme.border,
-    borderStyle: "dashed",
-    height: 160,
-  },
-  imagePreview: {
-    width: "100%",
-    height: "100%",
-  },
-  imagePickerEmpty: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  imagePickerText: {
-    color: WorkoutTheme.text.secondary,
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  addButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginLeft: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyState: {
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    borderRadius: 12,
-    paddingVertical: 32,
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: WorkoutTheme.border,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: WorkoutTheme.text.secondary,
-  },
-  emptyStateSubtext: {
-    fontSize: 12,
-    color: WorkoutTheme.text.tertiary,
-  },
-  statsSection: {
-    marginTop: 24,
-    marginBottom: 20,
-  },
-  statsTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: WorkoutTheme.text.primary,
-    marginBottom: 12,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statItem: {
-    flex: 1,
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: WorkoutTheme.border,
-    gap: 6,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: WorkoutTheme.accent.purple,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: WorkoutTheme.text.secondary,
-  },
-  createButton: {
-    backgroundColor: WorkoutTheme.accent.purple,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 16,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  createButtonDisabled: {
-    opacity: 0.6,
-  },
-  createButtonText: {
-    color: WorkoutTheme.text.primary,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-});

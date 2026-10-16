@@ -4,7 +4,6 @@ import {
   Text,
   Animated,
   FlatList,
-  TouchableOpacity,
   Alert,
   ScrollView,
 } from "react-native";
@@ -17,19 +16,17 @@ import {
   deleteExercise,
   getAllExercises,
   getUserCreatedExerciseIds,
-  EQUIPMENT_LABELS,
-  MUSCLE_LABELS,
-  EXERCISE_TYPE_LABELS,
 } from "@/services/exercises.service";
 import { TokenService } from "@/services/token.service";
 import { useFocusEffect, router } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
 import Modal from "react-native-modal";
 
-const MUSCLE_FILTER_OPTIONS = Object.entries(MUSCLE_LABELS).map(
-  ([key, label]) => ({ key, label }),
-);
-
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import IconButton from "@/components/ui/IconButton";
+import Chip from "@/components/ui/Chip";
+import Button from "@/components/ui/Button";
 export default function ExercisesScreen() {
   const { t } = useTranslation();
   const { keyboardY, bottomOffset } = useKeyboardOffset();
@@ -57,14 +54,13 @@ export default function ExercisesScreen() {
       setFilteredExercises(allExercises);
       setUserCreatedIds(createdIds);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : t.loadingError;
+      const message = err instanceof Error ? err.message : t.loadingError;
       setError(message);
       console.error("Erreur:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -127,9 +123,7 @@ export default function ExercisesScreen() {
               await loadExercises();
             } catch (err) {
               const message =
-                err instanceof Error
-                  ? err.message
-                  : t.deletionError;
+                err instanceof Error ? err.message : t.deletionError;
               Alert.alert(t.error, message);
             }
           },
@@ -167,41 +161,44 @@ export default function ExercisesScreen() {
 
   const renderExerciseCard = (item: Exercise, canDelete: boolean) => {
     return (
-      <View className="mb-4 rounded-2xl border border-[#2A2A2A] bg-[#151515] p-4">
+      <View className="mb-3 rounded-card bg-surface p-5">
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-lg font-semibold text-white">
-              {item.name}
-            </Text>
-            <Text className="mt-1 text-xs uppercase tracking-[0.2em] text-[#9B8ACF]">
-              {EXERCISE_TYPE_LABELS[item.exercise_type] ??
+            <Text className="text-xs text-ink-muted">
+              {t.exerciseTypeNames[item.exercise_type] ??
                 item.exercise_type.replace(/_/g, " ")}
             </Text>
-            <View className="mt-3 flex-row flex-wrap gap-2">
-              <View className="rounded-full border border-[#7C5DB7] bg-[#241A36] px-3 py-1.5">
-                <Text className="text-xs font-semibold text-[#D6C8FF]">
-                  Muscle :{" "}
-                  {MUSCLE_LABELS[item.primary_muscle] ??
+            <Text className="mt-1 text-xl font-semibold text-ink">
+              {item.name}
+            </Text>
+            <View className="mt-4 flex-row flex-wrap gap-2">
+              <View className="h-8 justify-center rounded-full bg-accent-tint px-3">
+                <Text className="text-xs font-medium text-accent-text">
+                  {t.muscleNames[item.primary_muscle] ??
                     item.primary_muscle.replace(/_/g, " ")}
                 </Text>
               </View>
-              <View className="rounded-full border border-gray-500 bg-[#2A2A2A] bg- px-3 py-1.5">
-                <Text className="text-xs font-semibold text-gray-500">
-                  Équipement :{" "}
-                  {EQUIPMENT_LABELS[item.equipment_type] ??
+              <View className="h-8 justify-center rounded-full bg-raised px-3">
+                <Text className="text-xs font-medium text-ink-light">
+                  {t.equipmentNames[item.equipment_type] ??
                     item.equipment_type.replace(/_/g, " ")}
                 </Text>
               </View>
             </View>
           </View>
           {canDelete && (
-            <TouchableOpacity
+            <PressableScale
               onPress={() => handleDeleteExercise(item)}
-              className="rounded-full bg-[#2B1B33] p-3"
-              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={t.deleteExercise}
+              className="h-10 w-10 items-center justify-center rounded-full bg-danger-tint"
             >
-              <Ionicons name="trash-outline" size={18} color="#F5A0A0" />
-            </TouchableOpacity>
+              <Ionicons
+                name="trash-outline"
+                size={18}
+                color={WorkoutTheme.status.danger}
+              />
+            </PressableScale>
           )}
         </View>
       </View>
@@ -209,31 +206,28 @@ export default function ExercisesScreen() {
   };
 
   return (
-    <SafeAreaView
-      edges={["bottom", "left", "right"]}
-      className="flex-1 bg-[#0F0F0F] px-4"
-    >
+    <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 px-4">
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">{t.loadingExercises}</Text>
+          <Text className="text-ink-muted">{t.loadingExercises}</Text>
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-red-500">{error}</Text>
+          <Text className="text-danger">{error}</Text>
         </View>
       ) : filteredExercises.length === 0 ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">{t.noExerciseFound}</Text>
+          <Text className="text-ink-muted">{t.noExerciseFound}</Text>
         </View>
       ) : (
         <FlatList
           data={sections}
           keyExtractor={(item) => item.title}
-          contentContainerStyle={{ paddingBottom: bottomOffset + 20 }}
+          contentContainerStyle={{ paddingBottom: bottomOffset + 80 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <View className="pb-3">
-              <Text className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-[#B8B8B8]">
+            <View className="pb-4">
+              <Text className="mb-3 text-lg font-semibold text-ink">
                 {item.title}
               </Text>
               {item.items.map((exercise: Exercise) => (
@@ -254,17 +248,21 @@ export default function ExercisesScreen() {
         animationIn="slideInUp"
         animationOut="slideOutDown"
         useNativeDriverForBackdrop
+        useNativeDriver
+        hideModalContentWhileAnimating
         style={{ justifyContent: "flex-end", margin: 0 }}
       >
-        <View className="rounded-t-3xl bg-[#121212] p-4 pb-6">
-          <View className="mb-4 h-1.5 w-16 self-center rounded-full bg-[#3A3A3A]" />
-          <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-xl font-semibold text-white">
+        <View className="rounded-t-hero bg-surface p-5 pb-8">
+          <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-raised" />
+          <View className="mb-5 flex-row items-center justify-between">
+            <Text className="text-xl font-semibold text-ink">
               {t.filterExercises}
             </Text>
-            <TouchableOpacity onPress={() => setIsFilterModalVisible(false)}>
-              <Ionicons name="close" size={22} color="#B8B8B8" />
-            </TouchableOpacity>
+            <IconButton
+              icon="close"
+              label={t.closeLabel}
+              onPress={() => setIsFilterModalVisible(false)}
+            />
           </View>
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -272,99 +270,71 @@ export default function ExercisesScreen() {
             scrollEnabled
             className="max-h-[70%]"
           >
-            <Text className="mb-2 text-sm font-semibold text-[#CFC6FF]">
+            <Text className="mb-3 text-base font-semibold text-ink">
               {t.equipment}
             </Text>
-            <View className="mb-4 flex-row flex-wrap gap-2">
-              {Object.entries(EQUIPMENT_LABELS).map(([key, label]) => {
-                const active = selectedEquipment === key;
-                return (
-                  <TouchableOpacity
-                    key={key}
-                    onPress={() => setSelectedEquipment(active ? null : key)}
-                    className={`rounded-full border px-3 py-2 ${active ? "border-[#7C5DB7] bg-[#241A36]" : "border-[#2F2F2F] bg-[#1A1A1A]"}`}
-                  >
-                    <Text
-                      className={`text-sm ${active ? "text-[#E9E0FF]" : "text-[#B8B8B8]"}`}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+            <View className="mb-6 flex-row flex-wrap gap-2">
+              {Object.entries(t.equipmentNames).map(([key, label]) => (
+                <Chip
+                  key={key}
+                  label={label}
+                  active={selectedEquipment === key}
+                  onPress={() =>
+                    setSelectedEquipment(selectedEquipment === key ? null : key)
+                  }
+                />
+              ))}
             </View>
 
-            <Text className="mb-2 text-sm font-semibold text-[#CFC6FF]">
+            <Text className="mb-3 text-base font-semibold text-ink">
               {t.primaryMuscle}
             </Text>
-            <View className="mb-4 flex-row flex-wrap gap-2">
-              {MUSCLE_FILTER_OPTIONS.map((item) => {
-                const active = selectedMuscle === item.key;
-                return (
-                  <TouchableOpacity
-                    key={item.key}
-                    onPress={() => setSelectedMuscle(active ? null : item.key)}
-                    className={`rounded-full border px-3 py-2 ${active ? "border-[#7C5DB7] bg-[#241A36]" : "border-[#2F2F2F] bg-[#1A1A1A]"}`}
-                  >
-                    <Text
-                      className={`text-sm ${active ? "text-[#E9E0FF]" : "text-[#B8B8B8]"}`}
-                    >
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+            <View className="mb-6 flex-row flex-wrap gap-2">
+              {Object.entries(t.muscleNames).map(([key, label]) => (
+                <Chip
+                  key={key}
+                  label={label}
+                  active={selectedMuscle === key}
+                  onPress={() =>
+                    setSelectedMuscle(selectedMuscle === key ? null : key)
+                  }
+                />
+              ))}
             </View>
 
-            <Text className="mb-2 text-sm font-semibold text-[#CFC6FF]">
+            <Text className="mb-3 text-base font-semibold text-ink">
               {t.exerciseType}
             </Text>
-            <View className="mb-4 flex-row flex-wrap gap-2">
-              {EXERCISE_TYPE_LABELS &&
-                Object.entries(EXERCISE_TYPE_LABELS).map(([key, label]) => {
-                  const active = selectedExerciseType === key;
-                  return (
-                    <TouchableOpacity
-                      key={key}
-                      onPress={() =>
-                        setSelectedExerciseType(active ? null : key)
-                      }
-                      className={`rounded-full border px-3 py-2 ${active ? "border-[#7C5DB7] bg-[#241A36]" : "border-[#2F2F2F] bg-[#1A1A1A]"}`}
-                    >
-                      <Text
-                        className={`text-sm ${active ? "text-[#E9E0FF]" : "text-[#B8B8B8]"}`}
-                      >
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+            <View className="mb-2 flex-row flex-wrap gap-2">
+              {Object.entries(t.exerciseTypeNames).map(([key, label]) => (
+                  <Chip
+                    key={key}
+                    label={label}
+                    active={selectedExerciseType === key}
+                    onPress={() =>
+                      setSelectedExerciseType(
+                        selectedExerciseType === key ? null : key,
+                      )
+                    }
+                  />
+                ))}
             </View>
           </ScrollView>
-          <View className="mt-3 flex-row gap-3">
-            <TouchableOpacity
+          <View className="mt-4 flex-row gap-3">
+            <Button
+              className="flex-1"
+              variant="secondary"
+              label={t.reset}
               onPress={resetFilters}
-              className="flex-1 rounded-xl border border-[#2F2F2F] bg-[#1A1A1A] py-3"
-            >
-              <Text className="text-center text-sm font-semibold text-[#E5E5E5]">
-                {t.reset}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={applyFilters}
-              className="flex-1 rounded-xl bg-[#7C5DB7] py-3"
-            >
-              <Text className="text-center text-sm font-semibold text-white">
-                {t.apply}
-              </Text>
-            </TouchableOpacity>
+            />
+            <Button className="flex-1" label={t.apply} onPress={applyFilters} />
           </View>
         </View>
       </Modal>
       <Animated.View
-        className="absolute left-0 right-0 px-4"
+        className="absolute left-0 right-0 px-5"
         style={{
-          bottom: bottomOffset + 8,
+          bottom: bottomOffset + 12,
           transform: [{ translateY: keyboardY }],
         }}
       >

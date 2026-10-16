@@ -77,8 +77,7 @@ export async function getPlannedWorkouts(
     }));
     await saveItem(PLANNED_WORKOUTS_CACHE_KEY, JSON.stringify(normalized));
     return normalized;
-  } catch (error) {
-    console.log("Erreur lors de la récupération des workouts planifiés:", error);
+  } catch {
     const cachedData = await getItem(PLANNED_WORKOUTS_CACHE_KEY);
     if (cachedData) {
       const parsed = JSON.parse(cachedData) as PlannedWorkout[];
@@ -92,15 +91,6 @@ export async function getPlannedWorkouts(
     }
 
     return [];
-  }
-}
-
-export async function clearPlannedWorkoutsCache(): Promise<void> {
-  try {
-    const { removeItem } = await import("@/core/services/storage");
-    await removeItem(PLANNED_WORKOUTS_CACHE_KEY);
-  } catch (error) {
-    console.error("Erreur lors du nettoyage du cache:", error);
   }
 }
 

@@ -1,10 +1,14 @@
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, Alert } from "react-native";
 import { CompletedWorkout } from "@/services/workout.service";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { PostsService } from "@/services/posts.service";
+import SectionHeader from "@/components/ui/SectionHeader";
 import { useTranslation } from "@/contexts/LanguageContext";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import { format } from "@/i18n/translations";
 type RecentWorkoutProps = {
   recentWorkouts: CompletedWorkout[];
 };
@@ -15,14 +19,14 @@ export default function RecentWorkout({ recentWorkouts }: RecentWorkoutProps) {
   const handlePublishWorkout = (workout: CompletedWorkout) => {
     const isPublished = publishedIds.has(workout.id);
     Alert.alert(
-      isPublished ? "Retirer la publication" : "Publier",
+      isPublished ? t.removePublication : t.publish,
       isPublished
-        ? `Retirer "${workout.title}" du feed ?`
-        : `Publier "${workout.title}" dans le feed ?`,
+        ? format(t.unpublishConfirm, { title: workout.title })
+        : format(t.publishConfirm, { title: workout.title }),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: isPublished ? "Retirer" : "Publier",
+          text: isPublished ? t.remove : t.publish,
           onPress: async () => {
             try {
               if (isPublished) {
@@ -36,7 +40,7 @@ export default function RecentWorkout({ recentWorkouts }: RecentWorkoutProps) {
                 setPublishedIds((prev) => new Set(prev).add(workout.id));
               }
             } catch {
-              Alert.alert("Erreur", "Impossible de modifier la publication.");
+              Alert.alert(t.error, t.cannotUpdatePublication);
             }
           },
         },
@@ -47,48 +51,43 @@ export default function RecentWorkout({ recentWorkouts }: RecentWorkoutProps) {
   return (
     <>
       {recentWorkouts.length > 0 && (
-        <>
-          <View className="mx-4 mt-4 mb-3 flex-row items-center justify-between">
-            <Text className="text-[18px] font-bold text-white">
-              {t.newWorkouts}
-            </Text>
-          </View>
-
-          {recentWorkouts.map((w) => (
-            <View
-              key={w.id}
-              className="mb-2 mx-4 flex-row items-center gap-3 rounded-2xl bg-[#1a1a1a] px-4 py-4"
-            >
-              <View className="h-10 w-10 items-center justify-center rounded-xl bg-[#1a2f1a]">
-                <Ionicons name="checkmark-circle" size={24} color="#34D399" />
-              </View>
-              <View className="flex-1">
-                <Text className="mb-0.5 text-[15px] font-semibold text-white">
-                  {w.title}
-                </Text>
-                <Text className="text-[12px] text-[#888]">
-                  {Math.round(w.totalDurationSeconds / 60)} min
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => handlePublishWorkout(w)}
-                className={`h-9 w-9 items-center justify-center rounded-xl ${
-                  publishedIds.has(w.id) ? "bg-[#1a2a1a]" : "bg-[#1a1a2a]"
-                }`}
+        <View className="gap-4">
+          <SectionHeader title={t.newWorkouts} />
+          <View className="gap-3">
+            {recentWorkouts.map((w) => (
+              <View
+                key={w.id}
+                className="flex-row items-center gap-3 rounded-card bg-surface p-4"
               >
-                <Ionicons
-                  name={
-                    publishedIds.has(w.id)
-                      ? "cloud-done"
-                      : "cloud-upload-outline"
-                  }
-                  size={18}
-                  color={publishedIds.has(w.id) ? "#34D399" : "#888"}
-                />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </>
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-success-tint">
+                  <Ionicons name="checkmark" size={22} color={WorkoutTheme.status.success} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-ink" numberOfLines={1}>
+                    {w.title}
+                  </Text>
+                  <Text className="mt-0.5 text-xs text-ink-muted">
+                    {Math.round(w.totalDurationSeconds / 60)} min
+                  </Text>
+                </View>
+                <PressableScale
+                  onPress={() => handlePublishWorkout(w)}
+                  accessibilityRole="button"
+                  accessibilityLabel={publishedIds.has(w.id) ? t.removePublication : t.publish}
+                  className={`h-11 w-11 items-center justify-center rounded-full ${
+                    publishedIds.has(w.id) ? "bg-success-tint" : "bg-raised"
+                  }`}
+                >
+                  <Ionicons
+                    name={publishedIds.has(w.id) ? "cloud-done" : "cloud-upload-outline"}
+                    size={20}
+                    color={publishedIds.has(w.id) ? WorkoutTheme.status.success : WorkoutTheme.text.tertiary}
+                  />
+                </PressableScale>
+              </View>
+            ))}
+          </View>
+        </View>
       )}
     </>
   );

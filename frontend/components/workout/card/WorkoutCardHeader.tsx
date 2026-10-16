@@ -1,8 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 
+import PressableScale from "@/components/ui/PressableScale";
+import { format } from "@/i18n/translations";
+import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutCardHeaderProps {
   title: string;
   isExpanded: boolean;
@@ -15,6 +18,23 @@ interface WorkoutCardHeaderProps {
   hasWorkout?: boolean;
 }
 
+function StatPill({
+  icon,
+  color,
+  label,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  label: string;
+}) {
+  return (
+    <View className="h-8 flex-row items-center gap-1.5 rounded-full bg-raised px-3">
+      <Ionicons name={icon} size={14} color={color} />
+      <Text className="text-xs font-medium text-ink">{label}</Text>
+    </View>
+  );
+}
+
 export default function WorkoutCardHeader({
   title,
   isExpanded,
@@ -23,117 +43,52 @@ export default function WorkoutCardHeader({
   stats,
   hasWorkout,
 }: WorkoutCardHeaderProps) {
+  const { t } = useTranslation();
   return (
-    <View className="h-200 justify-between w-full">
-      {/* Dark overlay */}
-      <View style={styles.darkOverlay} />
-
-      {/* Header info */}
-      <View style={styles.headerContent}>
-        <Text style={styles.workoutName} numberOfLines={2}>
+    <PressableScale
+      onPress={onToggleExpand}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: isExpanded }}
+      accessibilityLabel={title}
+      className="w-full gap-4 p-5"
+    >
+      <View className="flex-row items-center justify-between gap-3">
+        <Text
+          className="flex-1 text-xl font-semibold text-ink"
+          numberOfLines={2}
+        >
           {title}
         </Text>
-      </View>
-
-      {/* Bottom bar with stats */}
-      <View style={styles.bottomBar}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statBadge}>
-            <Ionicons
-              name="repeat"
-              size={14}
-              color={WorkoutTheme.accent.purple}
-            />
-            <Text style={styles.statBadgeText}>{stats.totalSets} séries</Text>
-          </View>
-          {hasWorkout && (
-            <View style={styles.statBadge}>
-              <Ionicons
-                name="barbell"
-                size={14}
-                color={WorkoutTheme.status.success}
-              />
-              <Text style={styles.statBadgeText}>{stats.totalWeight} kg</Text>
-            </View>
-          )}
-          {totalExercises && totalExercises > 0 && (
-            <View style={styles.statBadge}>
-              <Ionicons
-                name="fitness"
-                size={14}
-                color={WorkoutTheme.status.info}
-              />
-              <Text style={styles.statBadgeText}>
-                {totalExercises} exercices
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Menu toggle button */}
-        <TouchableOpacity onPress={onToggleExpand} style={styles.menuButton}>
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-raised">
           <Ionicons
             name={isExpanded ? "chevron-up" : "chevron-down"}
             size={20}
-            color={WorkoutTheme.accent.purple}
+            color={WorkoutTheme.text.primary}
           />
-        </TouchableOpacity>
+        </View>
       </View>
-    </View>
+
+      <View className="flex-row flex-wrap gap-2">
+        <StatPill
+          icon="repeat"
+          color={WorkoutTheme.accent.purple}
+          label={format(t.setsCount, { n: stats.totalSets })}
+        />
+        {hasWorkout && (
+          <StatPill
+            icon="barbell"
+            color={WorkoutTheme.status.success}
+            label={`${stats.totalWeight} kg`}
+          />
+        )}
+        {!!totalExercises && totalExercises > 0 && (
+          <StatPill
+            icon="fitness"
+            color={WorkoutTheme.status.info}
+            label={format(t.exercisesCount, { n: totalExercises })}
+          />
+        )}
+      </View>
+    </PressableScale>
   );
 }
-
-const styles = StyleSheet.create({
-  imageBackground: {
-    height: 200,
-    justifyContent: "space-between",
-  },
-  darkOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-  },
-  headerContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-    flex: 1,
-    justifyContent: "flex-start",
-  },
-  workoutName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "white",
-    textShadowColor: "rgba(0, 0, 0, 0.7)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  bottomBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statBadgeText: {
-    color: WorkoutTheme.text.primary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  menuButton: {
-    padding: 8,
-  },
-});

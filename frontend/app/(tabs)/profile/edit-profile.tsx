@@ -1,20 +1,16 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { UserService, CurrentUser } from "@/services/user.service";
 import { saveItem } from "@/core/services/storage";
 
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function EditProfileScreen() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -30,17 +26,17 @@ export default function EditProfileScreen() {
         setUniqueName(me.uniqueName);
         setEmail(me.email);
       })
-      .catch(() => Alert.alert("Erreur", "Impossible de charger le profil"))
+      .catch(() => Alert.alert(t.error, t.cannotLoadProfile))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const handleSave = async () => {
     if (!displayName.trim()) {
-      Alert.alert("Erreur", "Le nom ne peut pas être vide");
+      Alert.alert(t.error, t.nameEmptyError);
       return;
     }
     if (!uniqueName.trim() || uniqueName.trim().length < 3) {
-      Alert.alert("Erreur", "Le pseudo doit contenir au moins 3 caractères");
+      Alert.alert(t.error, t.usernameTooShort);
       return;
     }
     if (!user) return;
@@ -59,11 +55,11 @@ export default function EditProfileScreen() {
 
       await UserService.updateProfile(user.id, updates);
       await saveItem("user_name", displayName.trim());
-      Alert.alert("Succès", "Profil mis à jour", [
+      Alert.alert(t.success, t.profileUpdatedMsg, [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Impossible de sauvegarder");
+      Alert.alert(t.error, err.message || t.cannotSaveProfile);
     } finally {
       setSaving(false);
     }
@@ -78,171 +74,85 @@ export default function EditProfileScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator size="large" color="#7B5CF0" />
+      <View className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1">
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
         contentContainerStyle={{ paddingBottom: 60 }}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <ScreenHeader title={t.editProfile} />
 
-        {/* Avatar */}
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarRing}>
-            <View style={styles.avatarInner}>
-              <Text style={styles.avatarInitials}>{initials}</Text>
+        <View className="items-center mb-10">
+          <View className="w-24 h-24 rounded-[48px] p-[3px] bg-accent">
+            <View className="flex-1 rounded-[48px] bg-accent-tint items-center justify-center">
+              <Text className="text-ink text-[28px] font-bold">{initials}</Text>
             </View>
           </View>
-          <View style={styles.cameraBtn}>
-            <Ionicons name="camera" size={16} color="#fff" />
+          <View className="w-8 h-8 rounded-full bg-accent items-center justify-center -mt-4">
+            <Ionicons name="camera" size={16} color={WorkoutTheme.text.primary} />
           </View>
         </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nom</Text>
+        <View className="px-6">
+          <View className="mb-7">
+            <Text className="text-accent text-xs mb-2.5">{t.name}</Text>
             <TextInput
-              style={styles.input}
+              className="text-ink text-base py-1.5"
               value={displayName}
               onChangeText={setDisplayName}
-              placeholder="Votre nom"
-              placeholderTextColor="#555"
+              placeholder={t.yourName}
+              placeholderTextColor={WorkoutTheme.text.disabled}
             />
-            <View style={styles.underline} />
+            <View className="h-[1px] bg-raised mt-1.5" />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Pseudo</Text>
-            <View style={styles.pseudoRow}>
-              <Text style={styles.atSign}>@</Text>
+          <View className="mb-7">
+            <Text className="text-accent text-xs mb-2.5">{t.usernameLabel}</Text>
+            <View className="flex-row items-center">
+              <Text className="text-accent text-base font-bold mr-1">@</Text>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                className="text-ink text-base py-1.5 flex-1"
                 value={uniqueName}
                 onChangeText={(text) => setUniqueName(text.replace(/[^a-zA-Z0-9_]/g, ""))}
-                placeholder="votre_pseudo"
-                placeholderTextColor="#555"
+                placeholder={t.usernamePlaceholder}
+                placeholderTextColor={WorkoutTheme.text.disabled}
                 autoCapitalize="none"
               />
             </View>
-            <View style={styles.underline} />
-            <Text style={styles.hint}>Min. 3 caractères, lettres, chiffres et _ uniquement</Text>
+            <View className="h-[1px] bg-raised mt-1.5" />
+            <Text className="text-ink-faint text-[11px] mt-1.5">{t.usernameHint}</Text>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+          <View className="mb-7">
+            <Text className="text-accent text-xs mb-2.5">{t.email}</Text>
             <TextInput
-              style={styles.input}
+              className="text-ink text-base py-1.5"
               value={email}
               onChangeText={setEmail}
-              placeholder="votre@email.com"
-              placeholderTextColor="#555"
+              placeholder={t.emailPlaceholder}
+              placeholderTextColor={WorkoutTheme.text.disabled}
               autoCapitalize="none"
               keyboardType="email-address"
             />
-            <View style={styles.underline} />
+            <View className="h-[1px] bg-raised mt-1.5" />
           </View>
         </View>
 
-        {/* Save button */}
-        <TouchableOpacity
-          style={styles.saveBtn}
+        <PressableScale
+          className="mx-6 mt-4 h-[54px] bg-accent rounded-full items-center justify-center"
           onPress={handleSave}
           disabled={saving}
         >
-          <Text style={styles.saveBtnText}>{saving ? "Sauvegarde..." : "Sauvegarder"}</Text>
-        </TouchableOpacity>
+          <Text className="text-ink text-base font-bold">{saving ? t.saving : t.save}</Text>
+        </PressableScale>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 64,
-    paddingBottom: 24,
-    justifyContent: "space-between",
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
-
-  avatarSection: { alignItems: "center", marginBottom: 40 },
-  avatarRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    padding: 3,
-    backgroundColor: "#7B5CF0",
-  },
-  avatarInner: {
-    flex: 1,
-    borderRadius: 48,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitials: { color: "#fff", fontSize: 28, fontWeight: "700" },
-  cameraBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#7B5CF0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: -16,
-  },
-
-  form: { paddingHorizontal: 24 },
-  inputGroup: { marginBottom: 28 },
-  label: { color: "#7B5CF0", fontSize: 12, marginBottom: 10 },
-  input: { color: "#fff", fontSize: 16, paddingVertical: 6 },
-  underline: { height: 1, backgroundColor: "#2a2a2a", marginTop: 6 },
-  hint: { color: "#555", fontSize: 11, marginTop: 6 },
-
-  pseudoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  atSign: {
-    color: "#7B5CF0",
-    fontSize: 16,
-    fontWeight: "700",
-    marginRight: 4,
-  },
-
-  saveBtn: {
-    marginHorizontal: 24,
-    marginTop: 16,
-    height: 54,
-    backgroundColor: "#7B5CF0",
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saveBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-});

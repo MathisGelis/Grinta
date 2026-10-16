@@ -1,16 +1,7 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, ScrollView, Alert } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { WorkoutTheme } from "@/constants/Colors";
+import { useTranslation } from "@/contexts/LanguageContext";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
 import { Exercise } from "@/services/exercises.service";
 import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
@@ -23,7 +14,11 @@ import WorkoutFormFields from "@/components/workout/editor/WorkoutFormFields";
 import ExerciseSection from "@/components/workout/editor/ExerciseSection";
 import WorkoutStats from "@/components/workout/editor/WorkoutStats";
 
+import Button from "@/components/ui/Button";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 export default function CreateWorkoutScreen() {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState<string | null>(null);
@@ -41,8 +36,8 @@ export default function CreateWorkoutScreen() {
 
     if (exerciseExists) {
       Alert.alert(
-        "Exercice en doublon",
-        `"${exercise.name}" est déjà ajouté à la séance.`,
+        t.duplicateExercise,
+        `"${exercise.name}" ${t.alreadyAdded}`,
       );
       return;
     }
@@ -78,11 +73,11 @@ export default function CreateWorkoutScreen() {
 
   const createWorkout = async () => {
     if (!name.trim()) {
-      Alert.alert("Erreur", "Veuillez entrer un nom de séance");
+      Alert.alert(t.error, t.errorWorkoutName);
       return;
     }
     if (selectedExercises.length === 0) {
-      Alert.alert("Erreur", "Veuillez ajouter au moins un exercice");
+      Alert.alert(t.error, t.errorNoExercises);
       return;
     }
 
@@ -90,13 +85,13 @@ export default function CreateWorkoutScreen() {
     try {
       const token = await TokenService.get();
       await createPlannedWorkout(transformExercisesToAPI(), token || undefined);
-      Alert.alert("Succès", "Séance créée avec succès!", [
+      Alert.alert(t.success, t.workoutCreated, [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Erreur lors de la création";
-      Alert.alert("Erreur", message);
+        err instanceof Error ? err.message : t.creationError;
+      Alert.alert(t.error, message);
       console.error("Erreur de création:", err);
     } finally {
       setLoading(false);
@@ -104,12 +99,15 @@ export default function CreateWorkoutScreen() {
   };
 
   return (
-    <SafeAreaView
-      edges={["top"]}
-      className="flex-1 pb-5"
-      style={{ backgroundColor: WorkoutTheme.background }}
-    >
-      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+    <View className="flex-1">
+      <ScreenBackground />
+      <ScreenHeader title={t.newSession} />
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="gap-5 px-5 pb-10"
+        keyboardShouldPersistTaps="handled"
+      >
         <WorkoutFormFields
           name={name}
           onNameChange={setName}
@@ -135,36 +133,12 @@ export default function CreateWorkoutScreen() {
           />
         )}
 
-        {/* Bouton de création */}
-        <TouchableOpacity
+        <Button
+          icon="checkmark-done"
+          label={t.createWorkoutBtn}
+          loading={loading}
           onPress={createWorkout}
-          disabled={loading}
-          className="rounded-xl py-3.5 mt-4 flex-row justify-center items-center gap-2"
-          style={[
-            { backgroundColor: WorkoutTheme.accent.purple },
-            loading && { opacity: 0.6 },
-          ]}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={WorkoutTheme.text.primary} />
-          ) : (
-            <>
-              <Ionicons
-                name="checkmark-done"
-                size={20}
-                color={WorkoutTheme.text.primary}
-              />
-              <Text
-                className="text-base font-bold"
-                style={{ color: WorkoutTheme.text.primary }}
-              >
-                Créer la séance
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        <View className="h-5" />
+        />
       </ScrollView>
 
       <ExerciseSearch
@@ -173,6 +147,6 @@ export default function CreateWorkoutScreen() {
         onSelectExercise={handleSelectExercise}
         existingExerciseIds={selectedExercises.map((ex) => ex.id)}
       />
-    </SafeAreaView>
+    </View>
   );
 }

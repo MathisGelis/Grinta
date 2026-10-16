@@ -11,7 +11,7 @@ export interface CompletedExercise {
   timerSeconds: number;
 }
 
-export interface CompletedWorkoutRequest {
+interface CompletedWorkoutRequest {
   title: string;
   completionDate: string;
   totalDurationSeconds: number;
@@ -19,12 +19,6 @@ export interface CompletedWorkoutRequest {
   exercises: CompletedExercise[];
 }
 
-/**
- * Enregistre un workout complété
- * @param workoutData - Données du workout complété
- * @param token - Token d'authentification
- * @returns Réponse du serveur
- */
 export async function createCompletedWorkout(
   workoutData: CompletedWorkoutRequest,
   token?: string

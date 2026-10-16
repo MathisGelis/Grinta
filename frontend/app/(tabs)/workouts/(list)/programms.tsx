@@ -7,7 +7,9 @@ import { useFocusEffect, router } from "expo-router";
 import { getProgramms, SmallProgramm } from "@/services/programms.service";
 import ProgrammCard from "@/components/workout/programmes/ProgrammCard";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function ProgramsScreen() {
+  const { t } = useTranslation();
   const { keyboardY, bottomOffset } = useKeyboardOffset();
   const [programms, setProgramms] = useState<SmallProgramm[]>([]);
   const [filteredProgramms, setFilteredProgramms] = useState<SmallProgramm[]>(
@@ -23,13 +25,13 @@ export default function ProgramsScreen() {
       setFilteredProgramms(programms);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Erreur lors du chargement";
+        err instanceof Error ? err.message : t.loadingError;
       setError(message);
       console.error("Erreur:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const handleSearchResults = (filteredNames: string[]) => {
     const filtered = programms.filter((p) => filteredNames.includes(p.title));
@@ -46,24 +48,24 @@ export default function ProgramsScreen() {
   return (
     <SafeAreaView
       edges={["bottom", "left", "right"]}
-      className="flex-1 bg-[#0F0F0F]"
+      className="flex-1"
     >
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">Chargement des exercices...</Text>
+          <Text className="text-ink-muted">{t.loadingProgrammes}</Text>
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-red-500">{error}</Text>
+          <Text className="text-danger">{error}</Text>
         </View>
       ) : filteredProgramms.length === 0 ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">Aucun programme trouvé.</Text>
+          <Text className="text-ink-muted">{t.noProgrammeFound}</Text>
         </View>
       ) : (
         <ScrollView
           className="px-4 pb-24 pt-4"
-          contentContainerStyle={{ paddingBottom: bottomOffset + 20 }}
+          contentContainerStyle={{ paddingBottom: bottomOffset + 80 }}
           showsVerticalScrollIndicator={false}
         >
           {filteredProgramms.map((programm) => (
@@ -89,9 +91,9 @@ export default function ProgramsScreen() {
         </ScrollView>
       )}
       <Animated.View
-        className="absolute left-0 right-0 px-4"
+        className="absolute left-0 right-0 px-5"
         style={{
-          bottom: bottomOffset + 8,
+          bottom: bottomOffset + 12,
           transform: [{ translateY: keyboardY }],
         }}
       >
@@ -99,7 +101,7 @@ export default function ProgramsScreen() {
           items={programms.map((p) => p.title)}
           onResults={handleSearchResults}
           onAdd={() => router.push("/(tabs)/workouts/create/programm")}
-          placeholder="Rechercher un programme…"
+          placeholder={t.searchProgrammePlaceholder}
         />
       </Animated.View>
     </SafeAreaView>

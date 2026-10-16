@@ -1,42 +1,25 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, Alert, ActivityIndicator } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TokenService } from "@/services/token.service";
 import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
 import { StatsService } from "@/services/stats.service";
 import { useTranslation } from "@/contexts/LanguageContext";
 
-function formatJoinDate(dateStr: string): string {
+import { WorkoutTheme } from "@/constants/Colors";
+import Screen from "@/components/ui/Screen";
+import Stat from "@/components/ui/Stat";
+import Button from "@/components/ui/Button";
+import PressableScale from "@/components/ui/PressableScale";
+function formatJoinDate(dateStr: string, months: string[]): string {
   const d = new Date(dateStr);
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
   return `${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
+  
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -74,7 +57,6 @@ export default function ProfileScreen() {
       ]);
       setProfile(profileData);
     } catch {
-      // silently fail
     } finally {
       setLoading(false);
     }
@@ -98,7 +80,7 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const userName = user?.displayName ?? "Athlete";
+  const userName = user?.displayName ?? t.athlete;
   const initials = userName
     .split(" ")
     .map((w) => w[0])
@@ -106,228 +88,107 @@ export default function ProfileScreen() {
     .toUpperCase()
     .slice(0, 2);
 
-  const joinedDate = user?.createdAt ? formatJoinDate(user.createdAt) : "";
+  const joinedDate = user?.createdAt ? formatJoinDate(user.createdAt, t.months) : "";
   const workoutsCount = profile?.workoutsCount ?? 0;
   const followersCount = profile?.followersCount ?? 0;
   const followingCount = profile?.followingCount ?? 0;
 
   return (
-    <View style={styles.container}>
-      {/* Pinned above the content so it can never ride up under the clock. */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.headerTitle}>{t.profile}</Text>
-      </View>
+    <Screen>
+      {loading ? (
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      ) : (
+        <>
+          <View className="items-center gap-1">
+            <View className="mb-2 h-24 w-24 items-center justify-center rounded-full bg-accent">
+              <Text className="text-3xl font-semibold text-ink">{initials}</Text>
+            </View>
+            <Text className="text-xl font-semibold text-ink">{userName}</Text>
+            {user?.uniqueName ? (
+              <Text className="text-sm font-medium text-accent">@{user.uniqueName}</Text>
+            ) : null}
+            {joinedDate ? (
+              <Text className="text-xs text-ink-muted">
+                {t.joined} {joinedDate}
+              </Text>
+            ) : null}
+          </View>
 
-      {/* Fixed height, no scroll: spacing below is tuned so everything fits
-          between the header and the tab bar. */}
-      <View style={[styles.content, { paddingBottom: insets.bottom + 100 }]}>
-        {loading ? (
-          <ActivityIndicator size="large" color="#7B5CF0" />
-        ) : (
-          <>
-            {/* Avatar */}
-            <View style={styles.avatarSection}>
-              <View style={styles.avatarRing}>
-                <View style={styles.avatarInner}>
-                  <Text style={styles.avatarInitials}>{initials}</Text>
+          <View className="flex-row gap-3">
+            <PressableScale
+              className="flex-1 items-center rounded-tile bg-surface p-4"
+              accessibilityRole="button"
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/profile/followers",
+                  params: { userId: user?.id, tab: "followers" },
+                } as any)
+              }
+            >
+              <Stat value={followersCount} label={t.followersLabel} className="items-center" />
+            </PressableScale>
+            <PressableScale
+              className="flex-1 items-center rounded-tile bg-surface p-4"
+              accessibilityRole="button"
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/profile/followers",
+                  params: { userId: user?.id, tab: "following" },
+                } as any)
+              }
+            >
+              <Stat value={followingCount} label={t.followingLabel} className="items-center" />
+            </PressableScale>
+            <View className="flex-1 items-center rounded-tile bg-surface p-4">
+              <Stat value={workoutsCount} label={t.workoutsLabel} className="items-center" />
+            </View>
+          </View>
+
+          <PressableScale
+            accessibilityRole="button"
+            className="flex-row items-center justify-between rounded-card border border-warning/30 bg-surface p-5"
+          >
+            <View className="flex-1 pr-3">
+              <Text className="text-base font-semibold text-ink">{t.upgradeToPro}</Text>
+              <Text className="mt-0.5 text-sm text-ink-muted" numberOfLines={1}>
+                {t.unlockAll}
+              </Text>
+            </View>
+            <View className="h-12 w-12 items-center justify-center rounded-full bg-warning/15">
+              <MaterialCommunityIcons
+                name="crown"
+                size={20}
+                color={WorkoutTheme.status.warning}
+              />
+            </View>
+          </PressableScale>
+
+          <View className="gap-3">
+            {MENU_ITEMS.map((item) => (
+              <PressableScale
+                key={item.id}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
+                className="flex-row items-center gap-3 rounded-full bg-surface p-2 pr-5"
+                onPress={() => item.route && router.push(item.route as any)}
+              >
+                <View className="h-11 w-11 items-center justify-center rounded-full bg-accent-tint">
+                  <Ionicons name={item.icon} size={20} color={WorkoutTheme.accent.purple} />
                 </View>
-              </View>
-              <Text style={styles.userName}>{userName}</Text>
-              {user?.uniqueName ? (
-                <Text style={styles.pseudoText}>@{user.uniqueName}</Text>
-              ) : null}
-              {joinedDate ? (
-                <Text style={styles.joinedText}>
-                  {t.joined} {joinedDate}
-                </Text>
-              ) : null}
-            </View>
+                <Text className="flex-1 text-base font-medium text-ink">{item.label}</Text>
+                <Ionicons name="chevron-forward" size={18} color={WorkoutTheme.text.tertiary} />
+              </PressableScale>
+            ))}
+          </View>
 
-            {/* Stats row */}
-            <View style={styles.statsRow}>
-              <TouchableOpacity
-                style={styles.statItem}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/profile/followers",
-                    params: { userId: user?.id, tab: "followers" },
-                  } as any)
-                }
-              >
-                <Text style={styles.statNum}>{followersCount}</Text>
-                <Text style={styles.statLabel}>Followers</Text>
-              </TouchableOpacity>
-              <View style={styles.statDivider} />
-              <TouchableOpacity
-                style={styles.statItem}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/profile/followers",
-                    params: { userId: user?.id, tab: "following" },
-                  } as any)
-                }
-              >
-                <Text style={styles.statNum}>{followingCount}</Text>
-                <Text style={styles.statLabel}>Following</Text>
-              </TouchableOpacity>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNum}>{workoutsCount}</Text>
-                <Text style={styles.statLabel}>{t.workoutsLabel}</Text>
-              </View>
-            </View>
-
-            {/* PRO card */}
-            <TouchableOpacity style={styles.proCard}>
-              <View>
-                <Text style={styles.proTitle}>{t.upgradeToPro}</Text>
-                <Text style={styles.proSub}>{t.unlockAll}</Text>
-              </View>
-              <View style={styles.proBadge}>
-                <MaterialCommunityIcons
-                  name="crown"
-                  size={18}
-                  color="#F59E0B"
-                />
-              </View>
-            </TouchableOpacity>
-
-            {/* Menu */}
-            <View style={styles.menuSection}>
-              {MENU_ITEMS.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.menuItem}
-                  onPress={() => item.route && router.push(item.route as any)}
-                >
-                  <View style={styles.menuIconWrap}>
-                    <Ionicons name={item.icon} size={20} color="#7B5CF0" />
-                  </View>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
-                  <Ionicons name="chevron-forward" size={18} color="#555" />
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Sign Out */}
-            <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-              <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
-              <Text style={styles.signOutText}>{t.signOut}</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </View>
+          <Button
+            variant="danger"
+            icon="log-out-outline"
+            label={t.signOut}
+            onPress={handleSignOut}
+          />
+        </>
+      )}
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingHorizontal: 24, paddingBottom: 8 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
-
-  content: { flex: 1, justifyContent: "center" },
-  avatarSection: {
-    alignItems: "center",
-    paddingTop: 4,
-    paddingBottom: 16,
-  },
-  avatarRing: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    padding: 3,
-    backgroundColor: "#7B5CF0",
-    marginBottom: 10,
-  },
-  avatarInner: {
-    flex: 1,
-    borderRadius: 42,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitials: { color: "#fff", fontSize: 26, fontWeight: "700" },
-  userName: { color: "#fff", fontSize: 20, fontWeight: "700", marginBottom: 2 },
-  pseudoText: {
-    color: "#7B5CF0",
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  joinedText: { color: "#888", fontSize: 13 },
-
-  statsRow: {
-    flexDirection: "row",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    marginHorizontal: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  statItem: { flex: 1, alignItems: "center" },
-  statNum: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 4 },
-  statLabel: { color: "#888", fontSize: 12 },
-  statDivider: { width: 1, backgroundColor: "#2a2a2a" },
-
-  proCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    marginHorizontal: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#F59E0B44",
-  },
-  proTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 4 },
-  proSub: { color: "#888", fontSize: 13 },
-  proBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F59E0B22",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  menuSection: {
-    marginHorizontal: 16,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 12,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2a2a2a",
-    gap: 14,
-  },
-  menuIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuLabel: { flex: 1, color: "#fff", fontSize: 15, fontWeight: "500" },
-
-  signOutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    marginHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-  },
-  signOutText: { color: "#FF6B6B", fontSize: 15, fontWeight: "600" },
-});

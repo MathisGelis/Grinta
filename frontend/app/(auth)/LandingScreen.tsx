@@ -1,81 +1,34 @@
 import { router } from "expo-router";
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import Button from "@/components/ui/Button";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function LandingScreen() {
+  const { t } = useTranslation();
   return (
-    <View style={styles.container}>
-      {/* Logo */}
-      <Text style={styles.logo}>Grinta</Text>
-      <Text style={styles.tagline}>Your fitness journey starts here.</Text>
+    <View className="flex-1 items-center justify-center px-6">
+      <ScreenBackground />
 
-      {/* Buttons */}
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push("/(auth)/LoginScreen")}
-        >
-          <Text style={styles.primaryButtonText}>Login</Text>
-        </TouchableOpacity>
+      <Text
+        className="mb-3 text-[56px] font-semibold italic text-ink"
+        style={{ letterSpacing: -1 }}
+      >
+        Grinta
+      </Text>
+      <Text className="mb-16 text-center text-base text-ink-muted">
+        {t.appTagline}
+      </Text>
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
+      <View className="w-full gap-3">
+        <Button label={t.login} onPress={() => router.push("/(auth)/LoginScreen")} />
+        <Button
+          variant="secondary"
+          label={t.createAccount}
           onPress={() => router.push("/(auth)/RegisterScreen")}
-        >
-          <Text style={styles.secondaryButtonText}>Create account</Text>
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#121212",
-    paddingHorizontal: 32,
-  },
-  logo: {
-    fontSize: 48,
-    fontWeight: "bold",
-    color: "#A56BFF",
-    marginBottom: 12,
-    letterSpacing: 1,
-  },
-  tagline: {
-    fontSize: 16,
-    color: "#888",
-    marginBottom: 64,
-    textAlign: "center",
-  },
-  buttonsContainer: {
-    width: "100%",
-    gap: 14,
-  },
-  primaryButton: {
-    backgroundColor: "#A56BFF",
-    paddingVertical: 16,
-    borderRadius: 40,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  secondaryButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 16,
-    borderRadius: 40,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#A56BFF",
-  },
-  secondaryButtonText: {
-    color: "#A56BFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});

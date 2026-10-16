@@ -1,52 +1,26 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { saveItem } from "@/core/services/storage";
 import { router } from "expo-router";
 
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function WelcomeScreen() {
+  const { t } = useTranslation();
   const handleStart = () => {
     saveItem("hasSeenWelcome", "true");
     router.push("/(auth)/LandingScreen");
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Grinta 💪</Text>
-      <Text style={styles.subtitle}>Let&apos;s get you started.</Text>
-      <TouchableOpacity style={styles.button} onPress={handleStart}>
-        <Text style={styles.buttonText}>Continue</Text>
-      </TouchableOpacity>
+    <View className="flex-1 justify-center items-center p-5">
+      <ScreenBackground />
+      <Text className="text-[28px] text-ink font-bold mb-2.5">{t.welcomeToGrinta}</Text>
+      <Text className="text-base text-ink-soft mb-[30px]">{t.letsGetStarted}</Text>
+      <PressableScale className="bg-accent p-3.5 rounded-[10px]" onPress={handleStart}>
+        <Text className="text-ink text-base font-bold">{t.continueBtn}</Text>
+      </PressableScale>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#121212",
-    padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    color: "#fff",
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#bbb",
-    marginBottom: 30,
-  },
-  button: {
-    backgroundColor: "#7B61FF",
-    padding: 14,
-    borderRadius: 10,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});

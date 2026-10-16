@@ -1,49 +1,45 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Switch, StyleSheet, Linking } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { View, Text, Switch, Linking } from "react-native";
+
+
 import { useTranslation } from "@/contexts/LanguageContext";
 
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { WorkoutTheme } from "@/constants/Colors";
 export default function SettingsNotificationsScreen() {
   const { t } = useTranslation();
   const [workoutReminders, setWorkoutReminders] = useState(true);
   const [programNotifs, setProgramNotifs] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.notificationsSettings}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View className="flex-1">
+      <ScreenHeader title={t.notificationsSettings} />
 
-      <View style={styles.menuSection}>
-        <View style={[styles.menuItem, styles.menuItemBorder]}>
-          <Text style={styles.menuLabel}>{t.workoutReminders}</Text>
+      <View className="mx-5 bg-surface rounded-card overflow-hidden">
+        <View className="flex-row items-center px-5 py-[18px]">
+          <Text className="flex-1 text-ink text-[15px]">{t.workoutReminders}</Text>
           <Switch
             value={workoutReminders}
             onValueChange={setWorkoutReminders}
-            trackColor={{ false: "#3a3a3a", true: "#7B5CF0" }}
-            thumbColor="#fff"
+            trackColor={{ false: WorkoutTheme.border, true: WorkoutTheme.accent.purple }}
+            thumbColor={WorkoutTheme.text.primary}
           />
         </View>
-        <View style={styles.menuItem}>
-          <Text style={styles.menuLabel}>{t.programNotifications}</Text>
+        <View className="flex-row items-center px-5 py-[18px]">
+          <Text className="flex-1 text-ink text-[15px]">{t.programNotifications}</Text>
           <Switch
             value={programNotifs}
             onValueChange={setProgramNotifs}
-            trackColor={{ false: "#3a3a3a", true: "#7B5CF0" }}
-            thumbColor="#fff"
+            trackColor={{ false: WorkoutTheme.border, true: WorkoutTheme.accent.purple }}
+            thumbColor={WorkoutTheme.text.primary}
           />
         </View>
       </View>
 
-      <Text style={styles.footer}>
+      <Text className="text-ink-faint text-[13px] text-center mt-8 px-8 leading-[20px]">
         {t.phoneSettingsNote}{" "}
         <Text
-          style={styles.footerLink}
+          className="text-accent"
           onPress={() => Linking.openSettings()}
         >
           {t.phoneSettingsLink}
@@ -52,47 +48,3 @@ export default function SettingsNotificationsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 64,
-    paddingBottom: 24,
-    justifyContent: "space-between",
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  menuSection: {
-    marginHorizontal: 16,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-  },
-  menuItemBorder: { borderBottomWidth: 1, borderBottomColor: "#2a2a2a" },
-  menuLabel: { flex: 1, color: "#fff", fontSize: 15 },
-  footer: {
-    color: "#666",
-    fontSize: 13,
-    textAlign: "center",
-    marginTop: 32,
-    paddingHorizontal: 32,
-    lineHeight: 20,
-  },
-  footerLink: { color: "#7B5CF0" },
-});

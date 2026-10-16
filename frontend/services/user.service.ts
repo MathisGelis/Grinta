@@ -22,7 +22,7 @@ export interface CurrentUser {
   createdAt: string;
 }
 
-export interface UpdateUserData {
+interface UpdateUserData {
   displayName?: string;
   uniqueName?: string;
   email?: string;
@@ -38,13 +38,6 @@ export interface SearchUser {
   image_url: string;
 }
 
-export type User = {
-  id: string;
-  uniqueName: string;
-  displayName: string;
-  followerscount: string;
-};
-
 export const UserService = {
   async updateProfile(userId: string, data: UpdateUserData) {
     const token = await TokenService.get();
@@ -58,8 +51,6 @@ export const UserService = {
     return full;
   },
 
-  /** Resolves the id from the token rather than storage: user_id is only
-   *  written at registration, so it is missing for anyone who just logged in. */
   async deleteAccount(): Promise<void> {
     const token = await TokenService.get();
     const me = await api.get<{ id: string }>("/auth/me", token ?? undefined);

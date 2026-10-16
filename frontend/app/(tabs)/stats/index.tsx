@@ -1,38 +1,24 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import React, { useState, useCallback, useMemo } from "react";
+import { useFocusEffect } from "expo-router";
+import { View, Text, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { StatsService, Consistency } from "@/services/stats.service";
 import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
 import { PostsService } from "@/services/posts.service";
 
-function getWeekDates(weekOffset: number) {
-  const today = new Date();
-  const dayOfWeek = today.getDay();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7) + weekOffset * 7);
-  const dates: Date[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    dates.push(d);
-  }
-  return dates;
-}
-
-function getTodayIndex() {
-  const day = new Date().getDay();
-  return day === 0 ? 6 : day - 1;
-}
-
+import { WorkoutTheme } from "@/constants/Colors";
+import Screen from "@/components/ui/Screen";
+import Card from "@/components/ui/Card";
+import Stat from "@/components/ui/Stat";
+import SectionHeader from "@/components/ui/SectionHeader";
+import IconButton from "@/components/ui/IconButton";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import StatsCalendar, {
+  CalendarView,
+  dayKey,
+} from "@/components/stats/StatsCalendar";
+import { format } from "@/i18n/translations";
 function formatDuration(seconds: number): string {
   const mins = Math.round(seconds / 60);
   return `${mins} min`;
@@ -40,8 +26,10 @@ function formatDuration(seconds: number): string {
 
 export default function StatsScreen() {
   const { t } = useTranslation();
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [selectedDay, setSelectedDay] = useState(getTodayIndex());
+  const [view, setView] = useState<CalendarView>("week");
+  const [tab, setTab] = useState<"sessions" | "data">("sessions");
+  const [anchor, setAnchor] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
   const [consistency, setConsistency] = useState<Consistency | null>(null);
   const [completedWorkouts, setCompletedWorkouts] = useState<
@@ -49,13 +37,19 @@ export default function StatsScreen() {
   >([]);
   const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
 
-  const weekDates = getWeekDates(weekOffset);
-  const displayMonth = weekDates[0];
-  const monthLabel = `${t.months[displayMonth.getMonth()]} ${displayMonth.getFullYear()}`;
+  const shiftPeriod = (direction: -1 | 1) => {
+    setAnchor((d) => {
+      if (view === "week") {
+        const next = new Date(d);
+        next.setDate(d.getDate() + direction * 7);
+        return next;
+      }
+      return new Date(d.getFullYear(), d.getMonth() + direction, 1);
+    });
+  };
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
       const [consistencyData, workoutsData] = await Promise.all([
         StatsService.getConsistency(),
         WorkoutService.getCompleted(),
@@ -63,26 +57,29 @@ export default function StatsScreen() {
       setConsistency(consistencyData);
       setCompletedWorkouts(workoutsData);
     } catch {
-      // silently fail, show zeros
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData]),
+  );
 
   const currentStreak = consistency?.currentStreakDays ?? 0;
 
-  const selectedDate = weekDates[selectedDay];
-  const selectedDateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+  const workoutDays = useMemo(
+    () =>
+      new Set(completedWorkouts.map((w) => dayKey(new Date(w.completionDate)))),
+    [completedWorkouts],
+  );
 
-  const dayWorkouts = completedWorkouts.filter((w) => {
-    const d = new Date(w.completionDate);
-    const wStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    return wStr === selectedDateStr;
-  });
+  const selectedDateStr = dayKey(selectedDate);
+  const dayWorkouts = completedWorkouts.filter(
+    (w) => dayKey(new Date(w.completionDate)) === selectedDateStr,
+  );
 
   const dayCalories = dayWorkouts.reduce((sum, w) => {
     const mins = w.totalDurationSeconds / 60;
@@ -116,8 +113,8 @@ export default function StatsScreen() {
     Alert.alert(
       isPublished ? t.unpublish : t.publish,
       isPublished
-        ? `Retirer "${workout.title}" du feed ?`
-        : `Publier "${workout.title}" dans le feed ?`,
+        ? format(t.unpublishConfirm, { title: workout.title })
+        : format(t.publishConfirm, { title: workout.title }),
       [
         { text: t.cancel, style: "cancel" },
         {
@@ -149,279 +146,141 @@ export default function StatsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t.statistics}</Text>
-        </View>
+    <Screen>
+      <StatsCalendar
+        view={view}
+        onViewChange={(next) => {
+          setView(next);
+          setAnchor(selectedDate);
+        }}
+        anchor={anchor}
+        selected={selectedDate}
+        onSelect={setSelectedDate}
+        onShift={shiftPeriod}
+        workoutDays={workoutDays}
+      />
 
-        {/* Calendar */}
-        <View style={styles.calendarCard}>
-          <View style={styles.monthRow}>
-            <TouchableOpacity onPress={() => setWeekOffset((w) => w - 1)}>
-              <Ionicons name="chevron-back" size={20} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.monthLabel}>{monthLabel}</Text>
-            <TouchableOpacity onPress={() => setWeekOffset((w) => w + 1)}>
-              <Ionicons name="chevron-forward" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.daysRow}>
-            {t.days.map((day, i) => {
-              const date = weekDates[i];
-              const isToday = weekOffset === 0 && i === getTodayIndex();
-              return (
-                <TouchableOpacity
-                  key={i}
-                  style={[
-                    styles.dayPill,
-                    selectedDay === i && styles.dayPillActive,
-                    isToday && selectedDay !== i && styles.dayPillToday,
-                  ]}
-                  onPress={() => setSelectedDay(i)}
-                >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      selectedDay === i && styles.dayTextActive,
-                    ]}
-                  >
-                    {day}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dayNum,
-                      selectedDay === i && styles.dayTextActive,
-                    ]}
-                  >
-                    {date.getDate()}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+      <Text className="text-center text-lg font-semibold text-ink">
+        {`${t.days[(selectedDate.getDay() + 6) % 7]} ${selectedDate.getDate()} ${t.months[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`}
+      </Text>
 
-        {loading ? (
-          <ActivityIndicator
-            size="large"
-            color="#7B5CF0"
-            style={{ marginTop: 40 }}
-          />
-        ) : (
-          <>
-            {/* Calorie ring */}
-            <View style={styles.bigRingSection}>
-              <View style={styles.bigRingOuter}>
-                <View style={styles.bigRingInner}>
-                  <Text style={styles.bigRingValue}>{dayCalories}</Text>
-                  <Text style={styles.bigRingLabel}>{t.calShort}</Text>
-                </View>
-              </View>
-              <Text style={styles.bigRingCaption}>{t.dailyCaloriesBurned}</Text>
-            </View>
+      <SegmentedControl<"sessions" | "data">
+        variant="glass"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "sessions", label: t.sessions },
+          { value: "data", label: t.dataLabel },
+        ]}
+      />
 
-            {/* 3 stat rings */}
-            <View style={styles.smallRingsRow}>
-              <View style={styles.smallRingItem}>
-                <View style={[styles.ringOuter, { borderColor: "#7B5CF0" }]}>
-                  <Text style={styles.ringValue}>{currentStreak}d</Text>
-                </View>
-                <Text style={styles.ringLabel}>{t.streak}</Text>
-              </View>
-              <View style={styles.smallRingItem}>
-                <View style={[styles.ringOuter, { borderColor: "#EC4899" }]}>
-                  <Text style={styles.ringValue}>{totalWorkouts}</Text>
-                </View>
-                <Text style={styles.ringLabel}>{t.total}</Text>
-              </View>
-              <View style={styles.smallRingItem}>
-                <View style={[styles.ringOuter, { borderColor: "#34D399" }]}>
-                  <Text style={styles.ringValue}>{dayWorkouts.length}</Text>
-                </View>
-                <Text style={styles.ringLabel}>{t.completedLabel}</Text>
-              </View>
-            </View>
+      {loading ? (
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      ) : (
+        <>
+          {tab === "data" && (
+            <>
+              <Card size="hero" tone="accent" className="gap-1">
+                <Text className="text-sm text-ink/70">
+                  {t.dailyCaloriesBurned}
+                </Text>
+                <Stat value={dayCalories} unit={t.calShort} size="xl" />
+              </Card>
 
-            {/* Finished Workouts */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t.finishedWorkout}</Text>
-              {dayWorkouts.length === 0 && (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>{t.restDay} 💤</Text>
-                </View>
-              )}
-              {dayWorkouts.map((w) => (
-                <View key={w.id} style={styles.workoutCard}>
-                  <View style={styles.checkBox}>
-                    <Ionicons name="checkmark" size={16} color="#fff" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.workoutName}>{w.title}</Text>
-                    <Text style={styles.workoutMeta}>
-                      {formatWorkoutDate(w.completionDate)} ·{" "}
-                      {formatDuration(w.totalDurationSeconds)}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => handlePublishWorkout(w)}
-                    style={[
-                      styles.publishBtn,
-                      publishedIds.has(w.id) && styles.publishBtnActive,
-                    ]}
-                  >
+              <View className="flex-row gap-3">
+                <Card size="tile" className="flex-1 gap-4">
+                  <View className="h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
                     <Ionicons
-                      name={
-                        publishedIds.has(w.id)
-                          ? "cloud-done"
-                          : "cloud-upload-outline"
-                      }
+                      name="flame"
                       size={18}
-                      color={publishedIds.has(w.id) ? "#34D399" : "#888"}
+                      color={WorkoutTheme.accent.purple}
                     />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteWorkout(w)}
-                    style={styles.deleteBtn}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
-                  </TouchableOpacity>
+                  </View>
+                  <Stat value={currentStreak} unit="d" label={t.streak} />
+                </Card>
+                <Card size="tile" className="flex-1 gap-4">
+                  <View className="h-10 w-10 items-center justify-center rounded-full bg-info-tint">
+                    <Ionicons
+                      name="barbell"
+                      size={18}
+                      color={WorkoutTheme.status.info}
+                    />
+                  </View>
+                  <Stat value={totalWorkouts} label={t.total} />
+                </Card>
+                <Card size="tile" className="flex-1 gap-4">
+                  <View className="h-10 w-10 items-center justify-center rounded-full bg-success-tint">
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={WorkoutTheme.status.success}
+                    />
+                  </View>
+                  <Stat value={dayWorkouts.length} label={t.completedLabel} />
+                </Card>
+              </View>
+            </>
+          )}
+
+          {tab === "sessions" && (
+            <>
+              <View className="gap-4">
+                <SectionHeader title={t.finishedWorkout} />
+                {dayWorkouts.length === 0 && (
+                  <Card className="items-center">
+                    <Text className="text-sm text-ink-muted">
+                      {t.restDay} 💤
+                    </Text>
+                  </Card>
+                )}
+                <View className="gap-3">
+                  {dayWorkouts.map((w) => (
+                    <View
+                      key={w.id}
+                      className="flex-row items-center gap-3 rounded-card bg-surface p-4"
+                    >
+                      <View className="h-12 w-12 items-center justify-center rounded-full bg-accent">
+                        <Ionicons
+                          name="checkmark"
+                          size={20}
+                          color={WorkoutTheme.text.primary}
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text
+                          className="text-base font-semibold text-ink"
+                          numberOfLines={1}
+                        >
+                          {w.title}
+                        </Text>
+                        <Text className="mt-0.5 text-xs text-ink-muted">
+                          {formatWorkoutDate(w.completionDate)} ·{" "}
+                          {formatDuration(w.totalDurationSeconds)}
+                        </Text>
+                      </View>
+                      <IconButton
+                        icon={
+                          publishedIds.has(w.id)
+                            ? "cloud-done"
+                            : "cloud-upload-outline"
+                        }
+                        label={publishedIds.has(w.id) ? t.unpublish : t.publish}
+                        onPress={() => handlePublishWorkout(w)}
+                        className="opacity-90"
+                      />
+                      <IconButton
+                        icon="trash-outline"
+                        label={t.remove}
+                        onPress={() => handleDeleteWorkout(w)}
+                      />
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-          </>
-        )}
-      </ScrollView>
-    </View>
+              </View>
+            </>
+          )}
+        </>
+      )}
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 16 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
-
-  calendarCard: {
-    marginHorizontal: 16,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 24,
-  },
-  monthRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  monthLabel: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  daysRow: { flexDirection: "row", justifyContent: "space-between" },
-  dayPill: {
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 20,
-    minWidth: 36,
-  },
-  dayPillActive: { backgroundColor: "#7B5CF0" },
-  dayPillToday: { borderWidth: 1, borderColor: "#7B5CF055" },
-  dayText: { color: "#666", fontSize: 10, marginBottom: 4 },
-  dayNum: { color: "#666", fontSize: 13, fontWeight: "600" },
-  dayTextActive: { color: "#fff" },
-
-  bigRingSection: { alignItems: "center", marginBottom: 32 },
-  bigRingOuter: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 14,
-    borderColor: "#7B5CF0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  bigRingInner: { alignItems: "center" },
-  bigRingValue: { color: "#fff", fontSize: 40, fontWeight: "700" },
-  bigRingLabel: { color: "#888", fontSize: 16 },
-  bigRingCaption: { color: "#555", fontSize: 13 },
-
-  smallRingsRow: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    marginBottom: 32,
-    paddingHorizontal: 8,
-  },
-  smallRingItem: { alignItems: "center", gap: 8 },
-  ringOuter: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ringValue: { color: "#fff", fontSize: 13, fontWeight: "700" },
-  ringLabel: { color: "#888", fontSize: 12 },
-
-  section: { paddingHorizontal: 16 },
-  sectionTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 16,
-  },
-  workoutCard: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-    gap: 12,
-  },
-  checkBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: "#7B5CF0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  workoutName: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  workoutMeta: { color: "#666", fontSize: 12 },
-  emptyCard: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    padding: 24,
-    alignItems: "center",
-  },
-  emptyText: { color: "#555", fontSize: 14 },
-  publishBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#1a1a2a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  publishBtnActive: {
-    backgroundColor: "#1a2a1a",
-  },
-  deleteBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#2a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

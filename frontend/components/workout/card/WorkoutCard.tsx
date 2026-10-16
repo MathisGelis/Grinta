@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Alert, ActivityIndicator } from "react-native";
 import { WorkoutTheme } from "@/constants/Colors";
 import { TokenService } from "@/services/token.service";
 import {
@@ -16,6 +16,8 @@ import WorkoutTabs from "@/components/workout/card/WorkoutTabs";
 import WorkoutInfosTab from "@/components/workout/card/WorkoutInfosTab";
 import WorkoutStatsTab from "@/components/workout/card/WorkoutStatsTab";
 
+import { useTranslation } from "@/contexts/LanguageContext";
+import { format } from "@/i18n/translations";
 interface WorkoutCardProps {
   workout: {
     id: string;
@@ -34,6 +36,7 @@ export default function WorkoutCard({
   onUpdate,
   onPress,
 }: WorkoutCardProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<"infos" | "stats">("infos");
   const [isEditing, setIsEditing] = useState(false);
@@ -41,7 +44,6 @@ export default function WorkoutCard({
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Workout data
   const [fullWorkout, setFullWorkout] = useState<fullPlannedWorkout | null>(
     null,
   );
@@ -86,7 +88,6 @@ export default function WorkoutCard({
       const token = await TokenService.get();
       const data = await getWorkoutById(workout.id, token || undefined);
 
-      // Ensure exercises array exists
       if (!data.exercises) {
         data.exercises = [];
       }
@@ -113,12 +114,12 @@ export default function WorkoutCard({
       return data;
     } catch (error) {
       console.error("Erreur lors du chargement du workout:", error);
-      Alert.alert("Erreur", "Impossible de charger les détails de la séance");
+      Alert.alert(t.error, t.cannotLoadWorkoutDetails);
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [workout.id, exercisesMap]);
+  }, [t, workout.id, exercisesMap]);
 
   useEffect(() => {
     if (isExpanded && !fullWorkout) {
@@ -169,7 +170,6 @@ export default function WorkoutCard({
     try {
       const token = await TokenService.get();
 
-      // Prepare update request
       const updateData: UpdateWorkoutRequest = {
         title: editedTitle !== workout.title ? editedTitle : undefined,
         description:
@@ -183,7 +183,6 @@ export default function WorkoutCard({
         })),
       };
 
-      // Remove undefined values
       Object.keys(updateData).forEach(
         (key) =>
           updateData[key as keyof UpdateWorkoutRequest] === undefined &&
@@ -200,11 +199,11 @@ export default function WorkoutCard({
         onUpdate(updatedWorkout);
       }
 
-      Alert.alert("Succès", "La séance a été mise à jour avec succès.");
+      Alert.alert(t.success, t.workoutUpdated);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Erreur lors de la sauvegarde";
-      Alert.alert("Erreur", message);
+        error instanceof Error ? error.message : t.cannotSaveProfile;
+      Alert.alert(t.error, message);
       console.error("Erreur de sauvegarde:", error);
     } finally {
       setIsSaving(false);
@@ -213,20 +212,20 @@ export default function WorkoutCard({
 
   const handleDelete = () => {
     Alert.alert(
-      "Supprimer la séance",
-      `Êtes-vous sûr de vouloir supprimer "${workout.title}" ?`,
+      t.deleteWorkoutTitle,
+      format(t.deleteWorkoutConfirm, { title: workout.title }),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: "Supprimer",
+          text: t.delete,
           onPress: async () => {
             try {
               const token = await TokenService.get();
               await deletePlannedWorkout(workout.id, token || undefined);
               if (onDelete) onDelete();
-              Alert.alert("Succès", "La séance a été supprimée.");
+              Alert.alert(t.success, t.workoutDeleted);
             } catch {
-              Alert.alert("Erreur", "Impossible de supprimer la séance.");
+              Alert.alert(t.error, t.cannotDeleteWorkout);
             }
           },
           style: "destructive",
@@ -257,9 +256,8 @@ export default function WorkoutCard({
   const stats = calculateStats();
 
   return (
-    <View style={[styles.container, { marginBottom: 16 }]}>
-      <View style={styles.card}>
-        {/* Header */}
+    <View className="w-full">
+      <View className="rounded-card overflow-hidden bg-surface">
         <WorkoutCardHeader
           title={editedTitle}
           isExpanded={isExpanded}
@@ -274,11 +272,10 @@ export default function WorkoutCard({
           hasWorkout={!!fullWorkout}
         />
 
-        {/* Expanded Content */}
         {isExpanded && (
-          <View style={styles.expandedContent}>
+          <View className="bg-surface">
             {isLoading ? (
-              <View style={styles.loadingContainer}>
+              <View className="h-[300px] justify-center items-center">
                 <ActivityIndicator
                   size="large"
                   color={WorkoutTheme.accent.purple}
@@ -286,10 +283,8 @@ export default function WorkoutCard({
               </View>
             ) : (
               <>
-                {/* Tabs */}
                 <WorkoutTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-                {/* Tab Content */}
                 {activeTab === "infos" && (
                   <WorkoutInfosTab
                     isEditing={isEditing}
@@ -327,24 +322,3 @@ export default function WorkoutCard({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-  },
-  card: {
-    borderRadius: 16,
-    overflow: "hidden",
-    backgroundColor: WorkoutTheme.backgroundTertiary,
-  },
-  expandedContent: {
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    borderTopWidth: 1,
-    borderTopColor: WorkoutTheme.border,
-  },
-  loadingContainer: {
-    height: 300,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Lang, Strings, translations } from "@/i18n/translations";
+import { setCurrentStrings } from "@/i18n/current";
 
 interface LanguageContextType {
   lang: Lang;
@@ -16,6 +17,10 @@ const LanguageContext = createContext<LanguageContextType>({
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
+
+  useEffect(() => {
+    setCurrentStrings(translations[lang]);
+  }, [lang]);
 
   useEffect(() => {
     AsyncStorage.getItem("app_language").then((stored) => {

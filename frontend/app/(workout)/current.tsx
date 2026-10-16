@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
-  Alert,
-} from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, TextInput, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -22,7 +14,8 @@ import { TokenService } from "@/services/token.service";
 import Modal from "react-native-modal";
 import { useTranslation } from "@/contexts/LanguageContext";
 
-/** Rough work time per set, used only for the "~x min" estimate. */
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
 const SECONDS_PER_SET = 45;
 
 function formatRest(seconds: number) {
@@ -60,7 +53,7 @@ export default function CurrentWorkoutScreen() {
         setLoadingDetail(false);
       }
     },
-    [],
+    [t],
   );
 
   const loadWorkouts = useCallback(async () => {
@@ -70,7 +63,6 @@ export default function CurrentWorkoutScreen() {
       const plannedWorkouts = await getPlannedWorkouts(token || undefined);
       setWorkouts(plannedWorkouts);
 
-      // Select first workout by default
       if (plannedWorkouts.length > 0) {
         setSelectedWorkoutId(plannedWorkouts[0].id);
         loadWorkoutDetail(plannedWorkouts[0].id, token || undefined);
@@ -81,9 +73,8 @@ export default function CurrentWorkoutScreen() {
     } finally {
       setLoading(false);
     }
-  }, [loadWorkoutDetail]);
+  }, [t, loadWorkoutDetail]);
 
-  // Load all workouts
   useEffect(() => {
     loadWorkouts();
   }, [loadWorkouts]);
@@ -110,12 +101,10 @@ export default function CurrentWorkoutScreen() {
     router.back();
   };
 
-  // Filter workouts based on search query
   const filteredWorkouts = workouts.filter((workout) =>
     workout.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // What you actually want to know before starting: how much work is ahead.
   const summary = useMemo(() => {
     if (!selectedWorkout) return null;
     let sets = 0;
@@ -140,10 +129,11 @@ export default function CurrentWorkoutScreen() {
   if (loading) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
+        className="flex-1"
       >
+      <ScreenBackground />
         <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          className="flex-1 justify-center items-center"
         >
           <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
         </View>
@@ -154,53 +144,29 @@ export default function CurrentWorkoutScreen() {
   return (
     <SafeAreaView
       edges={["top"]}
-      style={{ flex: 1, backgroundColor: WorkoutTheme.backgroundSecondary }}
+      className="flex-1"
     >
-      {/* Header */}
+      <ScreenBackground />
       <View
-        style={{
-          paddingHorizontal: 16,
-          paddingTop: 4,
-          paddingBottom: 12,
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
+        className="px-4 pt-1 pb-3 flex-row justify-between items-center"
       >
         <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "700",
-            color: WorkoutTheme.text.primary,
-            letterSpacing: -0.3,
-          }}
+          className="text-[22px] font-bold text-ink tracking-[-0.3px]"
         >
           {t.selectWorkout}
         </Text>
-        <TouchableOpacity
+        <PressableScale
           onPress={closeScreen}
           hitSlop={8}
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: WorkoutTheme.backgroundTertiary,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className="w-8 h-8 rounded-full bg-raised items-center justify-center"
         >
           <Ionicons name="close" size={18} color={WorkoutTheme.text.primary} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       {workouts.length === 0 ? (
         <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            paddingHorizontal: 32,
-          }}
+          className="flex-1 justify-center items-center px-8"
         >
           <Ionicons
             name="barbell-outline"
@@ -208,22 +174,12 @@ export default function CurrentWorkoutScreen() {
             color={WorkoutTheme.text.tertiary}
           />
           <Text
-            style={{
-              fontSize: 16,
-              color: WorkoutTheme.text.secondary,
-              marginTop: 16,
-              textAlign: "center",
-            }}
+            className="text-base text-ink-soft mt-4 text-center"
           >
             {t.noWorkoutCreated}
           </Text>
           <Text
-            style={{
-              fontSize: 14,
-              color: WorkoutTheme.text.tertiary,
-              marginTop: 8,
-              textAlign: "center",
-            }}
+            className="text-sm text-ink-muted mt-2 text-center"
           >
             {t.createWorkoutHint}
           </Text>
@@ -231,42 +187,24 @@ export default function CurrentWorkoutScreen() {
       ) : (
         <>
           <ScrollView
-            style={{ flex: 1 }}
+            className="flex-1"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
           >
             {selectedWorkout && (
               <>
-                <TouchableOpacity
+                <PressableScale
                   onPress={() => setPickerVisible(true)}
-                  activeOpacity={0.7}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
+                  className="flex-row items-center gap-2"
                 >
                   <Text
                     numberOfLines={1}
-                    style={{
-                      flex: 1,
-                      fontSize: 26,
-                      fontWeight: "700",
-                      color: WorkoutTheme.text.primary,
-                      letterSpacing: -0.5,
-                    }}
+                    className="flex-1 text-[26px] font-bold text-ink tracking-[-0.5px]"
                   >
                     {selectedWorkout.title}
                   </Text>
                   <View
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: 15,
-                      backgroundColor: WorkoutTheme.backgroundTertiary,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+                    className="w-[30px] h-[30px] rounded-full bg-raised items-center justify-center"
                   >
                     <Ionicons
                       name="chevron-down"
@@ -274,32 +212,18 @@ export default function CurrentWorkoutScreen() {
                       color={WorkoutTheme.text.secondary}
                     />
                   </View>
-                </TouchableOpacity>
+                </PressableScale>
                 {selectedWorkout.description ? (
                   <Text
-                    style={{
-                      fontSize: 14,
-                      color: WorkoutTheme.text.secondary,
-                      marginTop: 4,
-                    }}
+                    className="text-sm text-ink-soft mt-1"
                   >
                     {selectedWorkout.description}
                   </Text>
                 ) : null}
 
-                {/* Summary strip */}
                 {summary && (
                   <View
-                    style={{
-                      flexDirection: "row",
-                      marginTop: 16,
-                      marginBottom: 20,
-                      borderRadius: 14,
-                      backgroundColor: WorkoutTheme.backgroundTertiary,
-                      borderWidth: 1,
-                      borderColor: WorkoutTheme.border,
-                      paddingVertical: 12,
-                    }}
+                    className="flex-row mt-4 mb-5 rounded-full bg-raised border border-line py-3"
                   >
                     {[
                       { value: `${summary.exercises}`, label: t.exercises },
@@ -323,22 +247,12 @@ export default function CurrentWorkoutScreen() {
                         }}
                       >
                         <Text
-                          style={{
-                            fontSize: 17,
-                            fontWeight: "700",
-                            color: WorkoutTheme.text.primary,
-                          }}
+                          className="text-[17px] font-bold text-ink"
                         >
                           {stat.value}
                         </Text>
                         <Text
-                          style={{
-                            fontSize: 10,
-                            marginTop: 2,
-                            letterSpacing: 0.4,
-                            textTransform: "uppercase",
-                            color: WorkoutTheme.text.tertiary,
-                          }}
+                          className="text-[10px] mt-0.5 tracking-[0.4px] uppercase text-ink-muted"
                         >
                           {stat.label}
                         </Text>
@@ -354,53 +268,29 @@ export default function CurrentWorkoutScreen() {
                     style={{ marginTop: 24 }}
                   />
                 ) : (
-                  <View style={{ gap: 10 }}>
+                  <View className="gap-2.5">
                     {selectedWorkout.exercises.map((exercise, index) => (
                       <View
                         key={exercise.exerciseId}
-                        style={{
-                          backgroundColor: WorkoutTheme.backgroundTertiary,
-                          borderRadius: 14,
-                          borderWidth: 1,
-                          borderColor: WorkoutTheme.border,
-                          padding: 14,
-                        }}
+                        className="bg-raised rounded-tile border border-line p-3.5"
                       >
                         <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 10,
-                          }}
+                          className="flex-row items-center gap-2.5"
                         >
                           <Text
-                            style={{
-                              fontSize: 12,
-                              fontWeight: "700",
-                              color: WorkoutTheme.text.tertiary,
-                              width: 18,
-                            }}
+                            className="text-xs font-bold text-ink-muted w-[18px]"
                           >
                             {index + 1}
                           </Text>
                           <Text
                             numberOfLines={1}
-                            style={{
-                              flex: 1,
-                              fontSize: 15,
-                              fontWeight: "600",
-                              color: WorkoutTheme.text.primary,
-                            }}
+                            className="flex-1 text-[15px] font-semibold text-ink"
                           >
                             {exercise.exerciseName}
                           </Text>
                           {exercise.plannedRestSeconds ? (
                             <View
-                              style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
+                              className="flex-row items-center gap-1"
                             >
                               <Ionicons
                                 name="time-outline"
@@ -408,11 +298,7 @@ export default function CurrentWorkoutScreen() {
                                 color={WorkoutTheme.text.tertiary}
                               />
                               <Text
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: "600",
-                                  color: WorkoutTheme.text.tertiary,
-                                }}
+                                className="text-xs font-semibold text-ink-muted"
                               >
                                 {formatRest(exercise.plannedRestSeconds)}
                               </Text>
@@ -420,39 +306,23 @@ export default function CurrentWorkoutScreen() {
                           ) : null}
                         </View>
 
-                        {/* Sets as inline chips: one line instead of one row each */}
                         <View
-                          style={{
-                            flexDirection: "row",
-                            flexWrap: "wrap",
-                            gap: 6,
-                            marginTop: 10,
-                            marginLeft: 28,
-                          }}
+                          className="flex-row flex-wrap gap-1.5 mt-2.5 ml-7"
                         >
                           {exercise.sets.map((set, setIndex) => (
                             <View
                               key={setIndex}
-                              style={{
-                                paddingHorizontal: 9,
-                                paddingVertical: 5,
-                                borderRadius: 7,
-                                backgroundColor: WorkoutTheme.background,
-                              }}
+                              className="px-[9px] py-[5px] rounded-[7px] bg-background"
                             >
                               <Text
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: "600",
-                                  color: WorkoutTheme.text.primary,
-                                }}
+                                className="text-xs font-semibold text-ink"
                               >
                                 {set.weight > 0
                                   ? `${set.reps} × ${set.weight}`
-                                  : `${set.reps} reps`}
+                                  : `${set.reps} ${t.repsUnit}`}
                                 {set.weight > 0 ? (
                                   <Text
-                                    style={{ color: WorkoutTheme.text.tertiary }}
+                                    className="text-ink-muted"
                                   >
                                     {" "}
                                     kg
@@ -470,8 +340,6 @@ export default function CurrentWorkoutScreen() {
             )}
           </ScrollView>
 
-          {/* Picker as a sheet: a horizontal pill row stops working once
-              there are more than a handful of workouts. */}
           <Modal
             isVisible={pickerVisible}
             onBackdropPress={() => setPickerVisible(false)}
@@ -479,6 +347,8 @@ export default function CurrentWorkoutScreen() {
             swipeDirection="down"
             propagateSwipe
             useNativeDriverForBackdrop
+        useNativeDriver
+        hideModalContentWhileAnimating
             style={{ justifyContent: "flex-end", margin: 0 }}
           >
             <View
@@ -492,26 +362,11 @@ export default function CurrentWorkoutScreen() {
               }}
             >
               <View
-                style={{
-                  height: 4,
-                  width: 44,
-                  borderRadius: 2,
-                  alignSelf: "center",
-                  backgroundColor: WorkoutTheme.border,
-                  marginBottom: 14,
-                }}
+                className="h-1 w-11 rounded-sm self-center bg-line mb-3.5"
               />
 
               <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: WorkoutTheme.backgroundTertiary,
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  marginHorizontal: 16,
-                  marginBottom: 12,
-                }}
+                className="flex-row items-center bg-raised rounded-[10px] px-3 mx-4 mb-3"
               >
                 <Ionicons
                   name="search"
@@ -519,13 +374,7 @@ export default function CurrentWorkoutScreen() {
                   color={WorkoutTheme.text.tertiary}
                 />
                 <TextInput
-                  style={{
-                    flex: 1,
-                    paddingVertical: 11,
-                    paddingHorizontal: 8,
-                    fontSize: 14,
-                    color: WorkoutTheme.text.primary,
-                  }}
+                  className="flex-1 py-[11px] px-2 text-sm text-ink"
                   placeholder={t.searchWorkout}
                   placeholderTextColor={WorkoutTheme.text.tertiary}
                   value={searchQuery}
@@ -533,13 +382,13 @@ export default function CurrentWorkoutScreen() {
                   autoCorrect={false}
                 />
                 {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery("")}>
+                  <PressableScale onPress={() => setSearchQuery("")}>
                     <Ionicons
                       name="close-circle"
                       size={16}
                       color={WorkoutTheme.text.tertiary}
                     />
-                  </TouchableOpacity>
+                  </PressableScale>
                 )}
               </View>
 
@@ -552,9 +401,8 @@ export default function CurrentWorkoutScreen() {
                   const active = selectedWorkoutId === workout.id;
 
                   return (
-                    <TouchableOpacity
+                    <PressableScale
                       key={workout.id}
-                      activeOpacity={0.8}
                       onPress={() => {
                         setPickerVisible(false);
                         if (!active) handleSelectWorkout(workout.id);
@@ -573,37 +421,24 @@ export default function CurrentWorkoutScreen() {
                           : WorkoutTheme.border,
                       }}
                     >
-                      <View style={{ flex: 1 }}>
+                      <View className="flex-1">
                         <Text
                           numberOfLines={1}
-                          style={{
-                            fontSize: 15,
-                            fontWeight: "600",
-                            color: WorkoutTheme.text.primary,
-                          }}
+                          className="text-[15px] font-semibold text-ink"
                         >
                           {workout.title}
                         </Text>
                         {workout.description ? (
                           <Text
                             numberOfLines={1}
-                            style={{
-                              fontSize: 12,
-                              marginTop: 3,
-                              color: WorkoutTheme.text.tertiary,
-                            }}
+                            className="text-xs mt-[3px] text-ink-muted"
                           >
                             {workout.description}
                           </Text>
                         ) : null}
                       </View>
                       <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: "700",
-                          marginRight: 10,
-                          color: WorkoutTheme.text.tertiary,
-                        }}
+                        className="text-xs font-bold mr-2.5 text-ink-muted"
                       >
                         {workout.totalExercises} {t.exercisesShort}
                       </Text>
@@ -614,18 +449,13 @@ export default function CurrentWorkoutScreen() {
                           color={WorkoutTheme.accent.purple}
                         />
                       )}
-                    </TouchableOpacity>
+                    </PressableScale>
                   );
                 })}
 
                 {filteredWorkouts.length === 0 && (
                   <Text
-                    style={{
-                      fontSize: 14,
-                      textAlign: "center",
-                      paddingVertical: 28,
-                      color: WorkoutTheme.text.tertiary,
-                    }}
+                    className="text-sm text-center py-7 text-ink-muted"
                   >
                     {t.noWorkoutFound}
                   </Text>
@@ -634,7 +464,6 @@ export default function CurrentWorkoutScreen() {
             </View>
           </Modal>
 
-          {/* Pinned: the primary action should never require scrolling */}
           <View
             style={{
               paddingHorizontal: 16,
@@ -645,10 +474,9 @@ export default function CurrentWorkoutScreen() {
               backgroundColor: WorkoutTheme.backgroundSecondary,
             }}
           >
-            <TouchableOpacity
+            <PressableScale
               onPress={startWorkout}
               disabled={!selectedWorkout || loadingDetail}
-              activeOpacity={0.85}
               style={{
                 backgroundColor: WorkoutTheme.accent.purple,
                 opacity: !selectedWorkout || loadingDetail ? 0.5 : 1,
@@ -666,7 +494,7 @@ export default function CurrentWorkoutScreen() {
               >
                 {t.startWorkout}
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </>
       )}

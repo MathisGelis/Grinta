@@ -1,89 +1,36 @@
-import React, { useEffect, useRef, useState } from "react";
-import { View, TouchableOpacity, Text, Animated } from "react-native";
+import React from "react";
+import { View } from "react-native";
 import { router, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "@/contexts/LanguageContext";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+
+type Route = "/workouts" | "/workouts/programms" | "/workouts/exercises";
 
 export function WorkoutsNavBar() {
   const { t } = useTranslation();
-  // Not <SafeAreaView>: that renders a native view which gets its insets
-  // asynchronously, so the bar paints once at the very top before dropping
-  // into place. The context insets are seeded synchronously by the
-  // SafeAreaProvider in app/_layout.tsx.
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const animatedValue = useRef(new Animated.Value(0)).current;
-  const [tabWidth, setTabWidth] = useState(0);
 
-  const NAV_TABS = [
-    { label: t.sessions, route: "/workouts" },
-    { label: t.programmes, route: "/workouts/programms" },
-    { label: t.exercises, route: "/workouts/exercises" },
-  ] as const;
-
-  const getActiveIndex = () => {
-    if (pathname.includes("exercises")) return 2;
-    if (pathname.includes("programms")) return 1;
-    return 0;
-  };
-
-  const activeIndex = getActiveIndex();
-
-  useEffect(() => {
-    Animated.timing(animatedValue, {
-      toValue: activeIndex,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [activeIndex, animatedValue]);
-
-  const translateX = animatedValue.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [0, tabWidth, tabWidth * 2],
-  });
+  const active: Route = pathname.includes("exercises")
+    ? "/workouts/exercises"
+    : pathname.includes("programms")
+      ? "/workouts/programms"
+      : "/workouts";
 
   return (
-    <View style={{ paddingTop: insets.top }} className="bg-[#0F0F0F]">
-      <Text className="text-2xl font-bold text-white px-4 mb-3">
-        {t.myWorkouts}
-      </Text>
-      <View
-        className="flex flex-row bg-[#2e2e2e] rounded-full p-1 items-center justify-center mx-4 mb-4"
-        onLayout={(e) => {
-          const totalWidth = e.nativeEvent.layout.width;
-          setTabWidth(totalWidth / NAV_TABS.length);
-        }}
-      >
-        <Animated.View
-          style={{
-            position: "absolute",
-            left: 4,
-            width: `${96 / NAV_TABS.length}%`,
-            height: "100%",
-            transform: [{ translateX }],
-          }}
-          className="bg-violet-600 rounded-full"
-        />
-
-        {NAV_TABS.map(({ label, route }, index) => {
-          const isActive = activeIndex === index;
-          return (
-            <TouchableOpacity
-              key={route}
-              onPress={() => router.navigate(route)}
-              className="flex-1 py-2 px-3 rounded-full z-10"
-            >
-              <Text
-                className={`text-center font-semibold text-sm ${
-                  isActive ? "text-white" : "text-gray-400"
-                }`}
-              >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+    <View style={{ paddingTop: insets.top + 12 }} className="px-5 pb-4">
+      <SegmentedControl<Route>
+        variant="glass"
+        id="workouts-nav"
+        value={active}
+        onChange={(route) => router.navigate(route)}
+        options={[
+          { value: "/workouts", label: t.sessions },
+          { value: "/workouts/programms", label: t.programmes },
+          { value: "/workouts/exercises", label: t.exercises },
+        ]}
+      />
     </View>
   );
 }

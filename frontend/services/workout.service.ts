@@ -9,21 +9,10 @@ export interface CompletedWorkout {
   exercises: any[];
 }
 
-export interface PlannedWorkout {
-  id: string;
-  title: string;
-  exercises: any[];
-}
-
 export const WorkoutService = {
   async getCompleted(): Promise<CompletedWorkout[]> {
     const token = await TokenService.get();
     return api.get<CompletedWorkout[]>("/workouts/completed", token ?? undefined);
-  },
-
-  async getPlanned(): Promise<PlannedWorkout[]> {
-    const token = await TokenService.get();
-    return api.get<PlannedWorkout[]>("/workouts/planned", token ?? undefined);
   },
 
   async deleteCompleted(id: string): Promise<void> {

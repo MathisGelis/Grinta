@@ -7,17 +7,17 @@ import {
   Dimensions,
 } from "react-native";
 
+import { WorkoutTheme } from "@/constants/Colors";
 const { width, height } = Dimensions.get("window");
 
 export default function OnboardingSlide({ item }: { item: any }) {
   return (
     <View style={[styles.container, { width }]}>
-      <Image source={item.image} style={styles.image} resizeMode="cover" />
-      {/* Dark gradient overlay at the bottom */}
-      <View style={styles.overlay} />
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subtitle}>{item.subtitle}</Text>
+      <Image source={item.image} className="w-full h-full absolute" resizeMode="cover" />
+      <View className="absolute bottom-0 left-0 right-0 h-[50%] bg-scrim" />
+      <View className="absolute bottom-9 left-6 right-6">
+        <Text className="text-[22px] text-ink opacity-[0.9] mb-1">{item.title}</Text>
+        <Text className="text-2xl text-ink font-bold">{item.subtitle}</Text>
       </View>
     </View>
   );
@@ -26,37 +26,7 @@ export default function OnboardingSlide({ item }: { item: any }) {
 const styles = StyleSheet.create({
   container: {
     height: height * 0.75,
-    backgroundColor: "#121212",
+    backgroundColor: WorkoutTheme.background,
     overflow: "hidden",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
-  },
-  overlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "50%",
-    backgroundColor: "rgba(0,0,0,0.55)",
-  },
-  textContainer: {
-    position: "absolute",
-    bottom: 36,
-    left: 24,
-    right: 24,
-  },
-  title: {
-    fontSize: 22,
-    color: "#fff",
-    opacity: 0.9,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "bold",
   },
 });

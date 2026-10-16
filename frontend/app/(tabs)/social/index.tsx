@@ -1,20 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, Text, ScrollView, TextInput, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { ConnectionsService, UserListItem, FollowRequest } from "@/services/connections.service";
 import { UserService } from "@/services/user.service";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function SocialScreen() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserListItem[]>([]);
@@ -41,7 +36,6 @@ export default function SocialScreen() {
       setFollowingIds(new Set(followingData.map((u) => u.id)));
       setRequests(requestsData);
     } catch {
-      // silently fail
     } finally {
       setLoading(false);
     }
@@ -79,7 +73,7 @@ export default function SocialScreen() {
         setPendingIds((prev) => new Set([...prev, targetId]));
       }
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Impossible de follow");
+      Alert.alert(t.error, err.message || t.cannotFollow);
     }
   };
 
@@ -92,7 +86,7 @@ export default function SocialScreen() {
         return next;
       });
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Impossible d'unfollow");
+      Alert.alert(t.error, err.message || t.cannotUnfollow);
     }
   };
 
@@ -101,7 +95,7 @@ export default function SocialScreen() {
       await ConnectionsService.acceptRequest(requestId);
       setRequests((prev) => prev.filter((r) => r.request_id !== requestId));
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Erreur");
+      Alert.alert(t.error, err.message || t.error);
     }
   };
 
@@ -110,38 +104,36 @@ export default function SocialScreen() {
       await ConnectionsService.rejectRequest(requestId);
       setRequests((prev) => prev.filter((r) => r.request_id !== requestId));
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Erreur");
+      Alert.alert(t.error, err.message || t.error);
     }
   };
 
   const displayList = searchQuery.trim() ? searchResults : recommendations;
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Social</Text>
-        <View style={{ width: 40 }} />
+    <View className="flex-1">
+      <View className="flex-row items-center justify-between px-4 pt-16 pb-3">
+        <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
+          <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
+        </PressableScale>
+        <Text className="text-ink text-lg font-bold">{t.socialTitle}</Text>
+        <View className="w-10" />
       </View>
 
-      {/* Search */}
-      <View style={styles.searchWrap}>
-        <Ionicons name="search" size={18} color="#555" />
+      <View className="flex-row items-center mx-4 bg-surface rounded-tile px-3 py-2.5 mb-4 gap-2">
+        <Ionicons name="search" size={18} color={WorkoutTheme.text.disabled} />
         <TextInput
-          style={styles.searchInput}
-          placeholder="Rechercher..."
-          placeholderTextColor="#555"
+          className="flex-1 text-ink text-[15px]"
+          placeholder={t.searchEllipsis}
+          placeholderTextColor={WorkoutTheme.text.disabled}
           value={searchQuery}
           onChangeText={setSearchQuery}
           autoCapitalize="none"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <Ionicons name="close-circle" size={18} color="#555" />
-          </TouchableOpacity>
+          <PressableScale onPress={() => setSearchQuery("")}>
+            <Ionicons name="close-circle" size={18} color={WorkoutTheme.text.disabled} />
+          </PressableScale>
         )}
       </View>
 
@@ -149,88 +141,86 @@ export default function SocialScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
       >
-        {/* Pending requests */}
         {!searchQuery.trim() && requests.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Demandes ({requests.length})</Text>
+            <Text className="text-ink-muted text-[13px] font-semibold uppercase tracking-[0.5px] mb-2.5 mt-1">{t.requestsLabel} ({requests.length})</Text>
             {requests.map((req) => (
-              <View key={req.request_id} style={styles.userCard}>
-                <TouchableOpacity
-                  style={styles.userInfo}
+              <View key={req.request_id} className="flex-row items-center bg-surface rounded-tile p-3 mb-2 gap-2.5">
+                <PressableScale
+                  className="flex-row items-center flex-1 gap-2.5"
                   onPress={() => router.push({ pathname: "/(tabs)/social/user-profile", params: { userId: req.user_id } } as any)}
                 >
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
+                  <View className="w-10 h-10 rounded-full bg-accent-tint items-center justify-center">
+                    <Text className="text-ink text-base font-bold">
                       {req.user_displayName?.[0]?.toUpperCase() ?? "?"}
                     </Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.displayName}>{req.user_displayName}</Text>
-                    <Text style={styles.uniqueName}>@{req.user_uniqueName}</Text>
+                  <View className="flex-1">
+                    <Text className="text-ink text-sm font-semibold">{req.user_displayName}</Text>
+                    <Text className="text-ink-muted text-xs mt-[1px]">@{req.user_uniqueName}</Text>
                   </View>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(req.request_id)}>
-                  <Ionicons name="checkmark" size={16} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(req.request_id)}>
-                  <Ionicons name="close" size={16} color="#fff" />
-                </TouchableOpacity>
+                </PressableScale>
+                <PressableScale className="w-[30px] h-[30px] rounded-[15px] bg-success items-center justify-center" onPress={() => handleAccept(req.request_id)}>
+                  <Ionicons name="checkmark" size={16} color={WorkoutTheme.text.primary} />
+                </PressableScale>
+                <PressableScale className="w-[30px] h-[30px] rounded-[15px] bg-danger items-center justify-center" onPress={() => handleReject(req.request_id)}>
+                  <Ionicons name="close" size={16} color={WorkoutTheme.text.primary} />
+                </PressableScale>
               </View>
             ))}
           </>
         )}
 
-        {/* Main list */}
         {!searchQuery.trim() && (
-          <Text style={styles.sectionTitle}>Suggestions</Text>
+          <Text className="text-ink-muted text-[13px] font-semibold uppercase tracking-[0.5px] mb-2.5 mt-1">{t.suggestions}</Text>
         )}
         {searchQuery.trim() && (
-          <Text style={styles.sectionTitle}>Résultats</Text>
+          <Text className="text-ink-muted text-[13px] font-semibold uppercase tracking-[0.5px] mb-2.5 mt-1">{t.resultsLabel}</Text>
         )}
 
         {loading || searching ? (
-          <ActivityIndicator size="small" color="#7B5CF0" style={{ marginTop: 24 }} />
+          <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: 24 }} />
         ) : displayList.length === 0 ? (
-          <View style={styles.empty}>
+          <View className="items-center mt-12 gap-2.5">
             <Ionicons
               name={searchQuery.trim() ? "search-outline" : "people-outline"}
               size={36}
-              color="#444"
+              color={WorkoutTheme.text.disabled}
             />
-            <Text style={styles.emptyText}>
-              {searchQuery.trim() ? "Aucun résultat" : "Aucune suggestion"}
+            <Text className="text-ink-faint text-sm">
+              {searchQuery.trim() ? t.noResultsLabel : t.noSuggestionsLabel}
             </Text>
           </View>
         ) : (
           displayList.map((u) => (
-            <View key={u.id} style={styles.userCard}>
-              <TouchableOpacity
-                style={styles.userInfo}
+            <View key={u.id} className="flex-row items-center bg-surface rounded-tile p-3 mb-2 gap-2.5">
+              <PressableScale
+                className="flex-row items-center flex-1 gap-2.5"
                 onPress={() => router.push({ pathname: "/(tabs)/social/user-profile", params: { userId: u.id } } as any)}
               >
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
+                <View className="w-10 h-10 rounded-full bg-accent-tint items-center justify-center">
+                  <Text className="text-ink text-base font-bold">
                     {u.displayName?.[0]?.toUpperCase() ?? "?"}
                   </Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.displayName}>{u.displayName}</Text>
-                  <Text style={styles.uniqueName}>@{u.uniqueName}</Text>
+                <View className="flex-1">
+                  <Text className="text-ink text-sm font-semibold">{u.displayName}</Text>
+                  <Text className="text-ink-muted text-xs mt-[1px]">@{u.uniqueName}</Text>
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
               {u.id !== userId && (
                 followingIds.has(u.id) ? (
-                  <TouchableOpacity style={styles.followingBtn} onPress={() => handleUnfollow(u.id)}>
-                    <Text style={styles.followingBtnText}>Suivi</Text>
-                  </TouchableOpacity>
+                  <PressableScale className="bg-transparent px-3.5 py-1.5 rounded-tile border border-line" onPress={() => handleUnfollow(u.id)}>
+                    <Text className="text-ink-muted text-xs font-semibold">{t.followingStatus}</Text>
+                  </PressableScale>
                 ) : pendingIds.has(u.id) ? (
-                  <View style={styles.pendingBtn}>
-                    <Text style={styles.pendingBtnText}>Envoyé</Text>
+                  <View className="bg-transparent px-3.5 py-1.5 rounded-tile border border-line">
+                    <Text className="text-ink-faint text-xs font-semibold">{t.sentShort}</Text>
                   </View>
                 ) : (
-                  <TouchableOpacity style={styles.followBtn} onPress={() => handleFollow(u.id)}>
-                    <Text style={styles.followBtnText}>Suivre</Text>
-                  </TouchableOpacity>
+                  <PressableScale className="bg-accent px-3.5 py-1.5 rounded-full" onPress={() => handleFollow(u.id)}>
+                    <Text className="text-ink text-xs font-semibold">{t.followAction}</Text>
+                  </PressableScale>
                 )
               )}
             </View>
@@ -240,120 +230,3 @@ export default function SocialScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 64,
-    paddingBottom: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
-
-  searchWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 16,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-    gap: 8,
-  },
-  searchInput: { flex: 1, color: "#fff", fontSize: 15 },
-
-  sectionTitle: {
-    color: "#888",
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 10,
-    marginTop: 4,
-  },
-
-  userCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 8,
-    gap: 10,
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: 10,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  displayName: { color: "#fff", fontSize: 14, fontWeight: "600" },
-  uniqueName: { color: "#888", fontSize: 12, marginTop: 1 },
-
-  followBtn: {
-    backgroundColor: "#7B5CF0",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  followBtnText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  followingBtn: {
-    backgroundColor: "transparent",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  followingBtnText: { color: "#888", fontSize: 12, fontWeight: "600" },
-  pendingBtn: {
-    backgroundColor: "transparent",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  pendingBtnText: { color: "#555", fontSize: 12, fontWeight: "600" },
-
-  acceptBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#34D399",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rejectBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#FF6B6B",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  empty: { alignItems: "center", marginTop: 48, gap: 10 },
-  emptyText: { color: "#555", fontSize: 14 },
-});

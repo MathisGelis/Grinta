@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import {
@@ -6,6 +6,9 @@ import {
   ConnectionsService,
 } from "@/services/connections.service";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function RequestedUsers({
   requests,
   setRequests,
@@ -13,12 +16,13 @@ export default function RequestedUsers({
   requests: FollowRequest[];
   setRequests: React.Dispatch<React.SetStateAction<FollowRequest[]>>;
 }) {
+  const { t } = useTranslation();
   const handleAccept = async (requestId: string) => {
     try {
       await ConnectionsService.acceptRequest(requestId);
       setRequests((prev) => prev.filter((r) => r.request_id !== requestId));
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Erreur");
+      Alert.alert(t.error, err.message || t.error);
     }
   };
 
@@ -27,22 +31,22 @@ export default function RequestedUsers({
       await ConnectionsService.rejectRequest(requestId);
       setRequests((prev) => prev.filter((r) => r.request_id !== requestId));
     } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Erreur");
+      Alert.alert(t.error, err.message || t.error);
     }
   };
   return (
     <>
       {requests.length > 0 ? (
-        <View className="mx-4 mb-4">
-          <Text className="mb-2.5 mt-1 text-[13px] font-semibold uppercase tracking-[0.5px] text-[#888]">
-            Demandes ({requests.length})
+        <View className="gap-3">
+          <Text className="text-lg font-semibold text-ink">
+            {t.requestsLabel} ({requests.length})
           </Text>
           {requests.map((req) => (
             <View
               key={req.request_id}
-              className="mb-2 flex-row items-center gap-[10px] rounded-[14px] bg-[#1a1a1a] p-3"
+              className="flex-row items-center gap-3 rounded-card bg-surface p-3 pr-4"
             >
-              <TouchableOpacity
+              <PressableScale
                 className="flex-1 flex-row items-center gap-[10px]"
                 onPress={() =>
                   router.push({
@@ -51,32 +55,32 @@ export default function RequestedUsers({
                   } as any)
                 }
               >
-                <View className="h-10 w-10 items-center justify-center rounded-full bg-[#2a1f4a]">
-                  <Text className="text-base font-bold text-white">
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-accent-tint">
+                  <Text className="text-base font-bold text-ink">
                     {req.user_displayName?.[0]?.toUpperCase() ?? "?"}
                   </Text>
                 </View>
                 <View className="flex-1">
-                  <Text className="text-sm font-semibold text-white">
+                  <Text className="text-sm font-semibold text-ink">
                     {req.user_displayName}
                   </Text>
-                  <Text className="mt-0.5 text-[12px] text-[#888]">
+                  <Text className="mt-0.5 text-[12px] text-ink-muted">
                     @{req.user_uniqueName}
                   </Text>
                 </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="h-[30px] w-[30px] items-center justify-center rounded-full bg-[#34D399]"
+              </PressableScale>
+              <PressableScale
+                className="h-11 w-11 items-center justify-center rounded-full bg-success"
                 onPress={() => handleAccept(req.request_id)}
               >
-                <Ionicons name="checkmark" size={16} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="h-[30px] w-[30px] items-center justify-center rounded-full bg-[#FF6B6B]"
+                <Ionicons name="checkmark" size={20} color={WorkoutTheme.text.primary} />
+              </PressableScale>
+              <PressableScale
+                className="h-11 w-11 items-center justify-center rounded-full bg-danger"
                 onPress={() => handleReject(req.request_id)}
               >
-                <Ionicons name="close" size={16} color="#fff" />
-              </TouchableOpacity>
+                <Ionicons name="close" size={20} color={WorkoutTheme.text.primary} />
+              </PressableScale>
             </View>
           ))}
         </View>

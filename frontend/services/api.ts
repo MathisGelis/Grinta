@@ -1,3 +1,4 @@
+import { getStrings } from "@/i18n/current";
 const DEV_API = "https://grinta-backend.duckdns.org";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API;
 
@@ -23,7 +24,7 @@ async function request<T>(
     });
   } catch (error) {
     throw new Error(
-      `Impossible de joindre l'API (${BASE_URL}${endpoint}): ${error instanceof Error ? error.message : String(error)}`
+      `${getStrings().apiUnreachable} (${BASE_URL}${endpoint}): ${error instanceof Error ? error.message : String(error)}`
     );
   }
 
@@ -45,9 +46,9 @@ async function request<T>(
       : typeof raw === "string"
       ? raw
       : typeof raw === "object" && raw !== null
-      ? (typeof raw.message === "string" ? raw.message : raw.error ?? data?.error ?? "Erreur serveur")
-      : data?.error ?? "Erreur serveur";
-    throw new Error(msg || `Erreur ${response.status}`);
+      ? (typeof raw.message === "string" ? raw.message : raw.error ?? data?.error ?? getStrings().serverError)
+      : data?.error ?? getStrings().serverError;
+    throw new Error(msg || `${getStrings().serverError} ${response.status}`);
   }
 
   return data as T;

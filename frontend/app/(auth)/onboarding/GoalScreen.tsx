@@ -1,19 +1,24 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { DrumRollPicker } from "@/components/DrumRollPicker";
 import { UserService } from "@/services/user.service";
 import { saveItem, getItem } from "@/core/services/storage";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 const GOALS = [
-  "Gain Weight",
-  "Lose weight",
-  "Get fitter",
-  "Gain more flexible",
-  "Learn the basic",
-];
+  { id: "Gain Weight", label: "goalGainWeight" },
+  { id: "Lose weight", label: "goalLoseWeight" },
+  { id: "Get fitter", label: "goalGetFitter" },
+  { id: "Gain more flexible", label: "goalFlexibility" },
+  { id: "Learn the basic", label: "goalLearnBasics" },
+] as const;
 
 export default function GoalScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{
     gender: string;
     age: string;
@@ -36,7 +41,7 @@ export default function GoalScreen() {
         });
       }
       await saveItem("user_gender", params.gender);
-      await saveItem("user_goal", GOALS[goalIndex]);
+      await saveItem("user_goal", GOALS[goalIndex].id);
     } catch {
     } finally {
       setLoading(false);
@@ -45,90 +50,35 @@ export default function GoalScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>What&apos;s your goal?</Text>
-      <Text style={styles.subtitle}>This helps us create your personalized plan</Text>
+    <View className="flex-1 pt-20 px-8">
+      <ScreenBackground />
+      <Text className="text-[28px] font-bold text-ink mb-3">{t.whatsYourGoal}</Text>
+      <Text className="text-[15px] text-ink-muted mb-10">{t.personalizedPlanHint}</Text>
 
-      <View style={styles.pickerWrapper}>
+      <View className="flex-1 justify-center">
         <DrumRollPicker
-          items={GOALS}
+          items={GOALS.map((g) => t[g.label])}
           selectedIndex={goalIndex}
           onSelect={setGoalIndex}
         />
       </View>
 
-      <View style={styles.nav}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.nextBtn}
+      <View className="flex-row items-center justify-between pb-12 pt-4">
+        <PressableScale className="w-[52px] h-[52px] rounded-[26px] bg-raised items-center justify-center" onPress={() => router.back()}>
+          <Text className="text-ink text-xl">←</Text>
+        </PressableScale>
+        <PressableScale
+          className="bg-accent py-4 px-10 rounded-full min-w-[130px] items-center"
           onPress={handleFinish}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={WorkoutTheme.text.primary} />
           ) : (
-            <Text style={styles.nextText}>Next  ›</Text>
+            <Text className="text-ink text-base font-bold">{t.nextBtn}</Text>
           )}
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-    paddingTop: 80,
-    paddingHorizontal: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#888",
-    marginBottom: 40,
-  },
-  pickerWrapper: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  nav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 48,
-    paddingTop: 16,
-  },
-  backBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backArrow: {
-    color: "#fff",
-    fontSize: 20,
-  },
-  nextBtn: {
-    backgroundColor: "#7B5CF0",
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 40,
-    minWidth: 130,
-    alignItems: "center",
-  },
-  nextText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});

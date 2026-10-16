@@ -1,9 +1,6 @@
 import "../global.css";
-import {
-  ThemeProvider,
-  DarkTheme,
-  DefaultTheme,
-} from "expo-router/react-navigation";
+import "@/components/ui/interop";
+import { ThemeProvider, DarkTheme } from "expo-router/react-navigation";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -11,27 +8,34 @@ import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from "react-native-safe-area-context";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { WorkoutTheme } from "@/constants/Colors";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+const AppTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: WorkoutTheme.accent.purple,
+    background: WorkoutTheme.background,
+    card: WorkoutTheme.backgroundSecondary,
+    text: WorkoutTheme.text.primary,
+    border: WorkoutTheme.border,
+  },
+};
 
+export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* Without this, React Navigation falls back to zero insets for the
-          first frame on a cold start, so headers using SafeAreaView flash
-          up under the notch before dropping into place. */}
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: WorkoutTheme.background }}
+    >
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <LanguageProvider>
-          <ThemeProvider
-            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-          >
+          <ThemeProvider value={AppTheme}>
             <Stack
               screenOptions={{
                 headerShown: false,
                 animation: "none",
-                contentStyle: { backgroundColor: "#F8F8F8" },
+                contentStyle: { backgroundColor: WorkoutTheme.background },
               }}
             >
               <Stack.Screen name="index" />
@@ -39,7 +43,7 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="+not-found" />
             </Stack>
-            <StatusBar style="light" backgroundColor="black" />
+            <StatusBar style="light" />
           </ThemeProvider>
         </LanguageProvider>
       </SafeAreaProvider>

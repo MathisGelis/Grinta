@@ -1,16 +1,11 @@
 import React, { useRef, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Dimensions,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
 const { width } = Dimensions.get("window");
 const TICK_SPACING = 16;
 const MIN_WEIGHT = 30;
@@ -29,6 +24,7 @@ const getTickHeight = (value: number) => {
 };
 
 export default function WeightScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ gender: string; age: string }>();
   const scrollRef = useRef<ScrollView>(null);
   const [weight, setWeight] = useState(DEFAULT_WEIGHT);
@@ -55,18 +51,17 @@ export default function WeightScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>What&apos;s your weight?</Text>
-      <Text style={styles.subtitle}>You can always change this later</Text>
+    <View className="flex-1 pt-20 px-8">
+      <ScreenBackground />
+      <Text className="text-[28px] font-bold text-ink mb-3">{t.whatsYourWeight}</Text>
+      <Text className="text-[15px] text-ink-muted mb-12">{t.changeLaterHint}</Text>
 
-      <View style={styles.valueContainer}>
-        <Text style={styles.value}>{weight}</Text>
-        <Text style={styles.unit}>kg</Text>
+      <View className="flex-row items-end justify-center mb-8">
+        <Text className="text-[72px] font-bold text-ink leading-[80px]">{weight}</Text>
+        <Text className="text-2xl text-ink-muted mb-3 ml-2">kg</Text>
       </View>
 
-      {/* Ruler */}
-      <View style={styles.rulerWrapper}>
-        {/* Fixed center indicator */}
+      <View className="h-16 justify-center relative">
         <View style={styles.indicator} pointerEvents="none" />
 
         <ScrollView
@@ -91,123 +86,46 @@ export default function WeightScreen() {
             const tickH = getTickHeight(w);
             const color =
               dist === 0
-                ? "#A56BFF"
+                ? WorkoutTheme.accent.purple
                 : dist <= 5
-                  ? "#7B5CF0"
+                  ? WorkoutTheme.accent.purple
                   : dist <= 12
-                    ? "#555"
-                    : "#333";
+                    ? WorkoutTheme.text.disabled
+                    : WorkoutTheme.border;
             return (
               <View
                 key={w}
-                style={[
-                  styles.tick,
-                  {
+                className="w-0.5 rounded-[1px]" style={{
                     height: tickH,
                     backgroundColor: color,
                     marginHorizontal: TICK_SPACING / 2 - 1,
-                  },
-                ]}
+                  }}
               />
             );
           })}
         </ScrollView>
       </View>
 
-      <View style={styles.nav}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-          <Text style={styles.nextText}>Next ›</Text>
-        </TouchableOpacity>
+      <View className="flex-row items-center justify-between pb-12 pt-12">
+        <PressableScale className="w-[52px] h-[52px] rounded-[26px] bg-raised items-center justify-center" onPress={() => router.back()}>
+          <Text className="text-ink text-xl">←</Text>
+        </PressableScale>
+        <PressableScale className="bg-accent py-4 px-10 rounded-full" onPress={handleNext}>
+          <Text className="text-ink text-base font-bold">{t.nextBtn}</Text>
+        </PressableScale>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-    paddingTop: 80,
-    paddingHorizontal: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#888",
-    marginBottom: 48,
-  },
-  valueContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    marginBottom: 32,
-  },
-  value: {
-    fontSize: 72,
-    fontWeight: "bold",
-    color: "#fff",
-    lineHeight: 80,
-  },
-  unit: {
-    fontSize: 24,
-    color: "#888",
-    marginBottom: 12,
-    marginLeft: 8,
-  },
-  rulerWrapper: {
-    height: 64,
-    justifyContent: "center",
-    position: "relative",
-  },
   indicator: {
     position: "absolute",
     left: width / 2 - 1,
     top: 0,
     bottom: 0,
     width: 2,
-    backgroundColor: "#A56BFF",
+    backgroundColor: WorkoutTheme.accent.purple,
     zIndex: 10,
-  },
-  tick: {
-    width: 2,
-    borderRadius: 1,
-  },
-  nav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 48,
-    paddingTop: 48,
-  },
-  backBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backArrow: {
-    color: "#fff",
-    fontSize: 20,
-  },
-  nextBtn: {
-    backgroundColor: "#7B5CF0",
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 40,
-  },
-  nextText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
   },
 });

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Glass from "@/components/ui/Glass";
+import PressableScale from "@/components/ui/PressableScale";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { resumeSession } from "@/hooks/useActiveSession";
@@ -16,10 +19,9 @@ export default function ActiveSessionBanner({
   session: ActiveSession | null;
 }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [elapsed, setElapsed] = useState(0);
 
-  // The ticking clock lives here rather than in the hook so the once-a-second
-  // re-render stays inside the banner instead of redrawing the whole tab bar.
   useEffect(() => {
     if (!session) return;
     setElapsed(elapsedSince(session));
@@ -31,83 +33,51 @@ export default function ActiveSessionBanner({
   if (!session) return null;
 
   return (
-    <TouchableOpacity
-      onPress={() => resumeSession(session)}
-      activeOpacity={0.85}
-      style={{
-        position: "absolute",
-        left: 16,
-        right: 16,
-        bottom: 96,
-        backgroundColor: WorkoutTheme.backgroundTertiary,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: WorkoutTheme.accent.purple,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        flexDirection: "row",
-        alignItems: "center",
-        shadowColor: WorkoutTheme.accent.purple,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 8,
-      }}
+    <View
+      pointerEvents="box-none"
+      className="absolute inset-x-0 bottom-0 px-5"
+      style={{ paddingBottom: insets.bottom + 8 + 68 + 12 }}
     >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 18,
-          backgroundColor: "rgba(124, 93, 183, 0.2)",
-          justifyContent: "center",
-          alignItems: "center",
-          marginRight: 12,
-        }}
+      <PressableScale
+        onPress={() => resumeSession(session)}
+        accessibilityRole="button"
+        accessibilityLabel={t.workoutInProgress}
       >
-        <Ionicons name="barbell" size={18} color={WorkoutTheme.accent.purple} />
-      </View>
-
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 11,
-            fontWeight: "700",
-            color: WorkoutTheme.text.secondary,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
-          }}
+        <Glass
+          intensity={40}
+          className="flex-row items-center rounded-full py-2.5 pl-2.5 pr-4"
+          style={{ borderCurve: "continuous" }}
         >
-          {t.workoutInProgress}
-        </Text>
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: 14,
-            fontWeight: "700",
-            color: WorkoutTheme.text.primary,
-            marginTop: 2,
-          }}
-        >
-          {session.workoutName}
-        </Text>
-      </View>
+          <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-accent">
+            <Ionicons
+              name="barbell"
+              size={18}
+              color={WorkoutTheme.text.primary}
+            />
+          </View>
 
-      <Text
-        style={{
-          fontSize: 13,
-          fontWeight: "700",
-          color: WorkoutTheme.accent.purple,
-          marginRight: 8,
-        }}
-      >
-        {formatSessionTime(elapsed)}
-      </Text>
-      <Ionicons
-        name="chevron-up"
-        size={20}
-        color={WorkoutTheme.text.secondary}
-      />
-    </TouchableOpacity>
+          <View className="flex-1">
+            <Text className="text-xs text-ink-muted">
+              {t.workoutInProgress}
+            </Text>
+            <Text numberOfLines={1} className="text-sm font-semibold text-ink">
+              {session.workoutName}
+            </Text>
+          </View>
+
+          <Text
+            className="mr-2 text-sm font-semibold text-accent"
+            style={{ fontVariant: ["tabular-nums"] }}
+          >
+            {formatSessionTime(elapsed)}
+          </Text>
+          <Ionicons
+            name="chevron-up"
+            size={18}
+            color={WorkoutTheme.text.tertiary}
+          />
+        </Glass>
+      </PressableScale>
+    </View>
   );
 }
