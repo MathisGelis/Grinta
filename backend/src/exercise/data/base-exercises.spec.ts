@@ -23,6 +23,13 @@ const PINNED_IMAGES =
   'https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/';
 
 describe('base-exercises.json', () => {
+  it('gives every exercise its own name', () => {
+    // The seed upserts by name: a shared name keeps only its last variant.
+    const names = exercises.map((e) => e.name);
+
+    expect(new Set(names).size).toBe(names.length);
+  });
+
   it('only uses values the entity enums accept', () => {
     const muscles = new Set<string>(Object.values(DetailedMuscleGroup));
 

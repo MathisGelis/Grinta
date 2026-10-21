@@ -142,7 +142,7 @@
     "image_urls": []
   },
   {
-    "name": "Back Extension",
+    "name": "Back Extension (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lower_back",
     "secondary_muscles": [
@@ -161,7 +161,7 @@
     "image_urls": []
   },
   {
-    "name": "Back Extension",
+    "name": "Back Extension (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "lower_back",
     "secondary_muscles": [
@@ -205,7 +205,7 @@
     ]
   },
   {
-    "name": "Baesyan Curl",
+    "name": "Baesyan Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -221,7 +221,7 @@
     "image_urls": []
   },
   {
-    "name": "Baesyan Curl",
+    "name": "Baesyan Curl (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -279,7 +279,7 @@
     ]
   },
   {
-    "name": "Behind the Back Bicep Wrist Curl",
+    "name": "Behind the Back Bicep Wrist Curl (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "forearms",
     "secondary_muscles": [],
@@ -298,7 +298,7 @@
     ]
   },
   {
-    "name": "Behind the Back Bicep Wrist Curl",
+    "name": "Behind the Back Bicep Wrist Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "forearms",
     "secondary_muscles": [],
@@ -354,7 +354,7 @@
     ]
   },
   {
-    "name": "Bench Press",
+    "name": "Bench Press (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -373,7 +373,7 @@
     "image_urls": []
   },
   {
-    "name": "Bench Press",
+    "name": "Bench Press (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -395,7 +395,7 @@
     ]
   },
   {
-    "name": "Bench Press",
+    "name": "Bench Press (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -460,7 +460,7 @@
     ]
   },
   {
-    "name": "Bench Press (Decline)",
+    "name": "Bench Press (Decline, Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "lower_chest",
     "secondary_muscles": [
@@ -482,7 +482,7 @@
     ]
   },
   {
-    "name": "Bench Press (Decline)",
+    "name": "Bench Press (Decline, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "lower_chest",
     "secondary_muscles": [
@@ -504,7 +504,7 @@
     ]
   },
   {
-    "name": "Bench Press (Decline)",
+    "name": "Bench Press (Decline, Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "lower_chest",
     "secondary_muscles": [
@@ -526,7 +526,7 @@
     ]
   },
   {
-    "name": "Bench Press (Incline)",
+    "name": "Bench Press (Incline, Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "upper_chest",
     "secondary_muscles": [
@@ -548,7 +548,7 @@
     ]
   },
   {
-    "name": "Bench Press (Incline)",
+    "name": "Bench Press (Incline, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "upper_chest",
     "secondary_muscles": [
@@ -570,7 +570,7 @@
     ]
   },
   {
-    "name": "Bench Press (Incline)",
+    "name": "Bench Press (Incline, Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "upper_chest",
     "secondary_muscles": [
@@ -592,7 +592,7 @@
     ]
   },
   {
-    "name": "Bent Over Row",
+    "name": "Bent Over Row (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -612,7 +612,7 @@
     "image_urls": []
   },
   {
-    "name": "Bent Over Row",
+    "name": "Bent Over Row (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -635,7 +635,7 @@
     ]
   },
   {
-    "name": "Bent Over Row",
+    "name": "Bent Over Row (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -658,7 +658,7 @@
     ]
   },
   {
-    "name": "Bicep Curl",
+    "name": "Bicep Curl (Band)",
     "equipment_type": "band",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -677,7 +677,7 @@
     "image_urls": []
   },
   {
-    "name": "Bicep Curl",
+    "name": "Bicep Curl (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -699,7 +699,7 @@
     ]
   },
   {
-    "name": "Bicep Curl",
+    "name": "Bicep Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -721,7 +721,7 @@
     ]
   },
   {
-    "name": "Bicep Curl",
+    "name": "Bicep Curl (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -740,7 +740,7 @@
     "image_urls": []
   },
   {
-    "name": "Bicep Curl",
+    "name": "Bicep Curl (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -760,7 +760,7 @@
     ]
   },
   {
-    "name": "Bicep Curl",
+    "name": "Bicep Curl (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -797,7 +797,7 @@
     ]
   },
   {
-    "name": "Bicep Curl (EZ Bar)",
+    "name": "Bicep Curl (EZ Bar, Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -815,7 +815,7 @@
     "image_urls": []
   },
   {
-    "name": "Bicep Curl (Incline)",
+    "name": "Bicep Curl (Incline, Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -831,7 +831,7 @@
     "image_urls": []
   },
   {
-    "name": "Bicep Curl (Incline)",
+    "name": "Bicep Curl (Incline, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -869,7 +869,7 @@
     ]
   },
   {
-    "name": "Bicep Curl (Standing)",
+    "name": "Bicep Curl (Standing, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -890,7 +890,7 @@
     ]
   },
   {
-    "name": "Bicep Curl (Standing)",
+    "name": "Bicep Curl (Standing, Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -994,7 +994,7 @@
     ]
   },
   {
-    "name": "Box Squat",
+    "name": "Box Squat (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -1017,7 +1017,7 @@
     ]
   },
   {
-    "name": "Box Squat",
+    "name": "Box Squat (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -1116,7 +1116,7 @@
     ]
   },
   {
-    "name": "Calf Extension",
+    "name": "Calf Extension (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1135,7 +1135,7 @@
     ]
   },
   {
-    "name": "Calf Extension",
+    "name": "Calf Extension (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1154,7 +1154,7 @@
     ]
   },
   {
-    "name": "Calf Press",
+    "name": "Calf Press (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1172,7 +1172,7 @@
     ]
   },
   {
-    "name": "Calf Press",
+    "name": "Calf Press (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1190,7 +1190,7 @@
     ]
   },
   {
-    "name": "Calf Raise",
+    "name": "Calf Raise (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1209,7 +1209,7 @@
     ]
   },
   {
-    "name": "Calf Raise",
+    "name": "Calf Raise (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1228,7 +1228,7 @@
     ]
   },
   {
-    "name": "Calf Raise",
+    "name": "Calf Raise (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1247,7 +1247,7 @@
     ]
   },
   {
-    "name": "Calf Raise",
+    "name": "Calf Raise (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1266,7 +1266,7 @@
     ]
   },
   {
-    "name": "Calf Raise",
+    "name": "Calf Raise (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1285,7 +1285,7 @@
     ]
   },
   {
-    "name": "Calf Raise",
+    "name": "Calf Raise (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1301,7 +1301,7 @@
     "image_urls": []
   },
   {
-    "name": "Calf Raise (Seated)",
+    "name": "Calf Raise (Seated, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1319,7 +1319,7 @@
     ]
   },
   {
-    "name": "Calf Raise (Seated)",
+    "name": "Calf Raise (Seated, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "calves",
     "secondary_muscles": [],
@@ -1403,7 +1403,7 @@
     ]
   },
   {
-    "name": "Chest Fly",
+    "name": "Chest Fly (Band)",
     "equipment_type": "band",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -1424,7 +1424,7 @@
     ]
   },
   {
-    "name": "Chest Fly",
+    "name": "Chest Fly (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -1445,7 +1445,7 @@
     ]
   },
   {
-    "name": "Chest Fly",
+    "name": "Chest Fly (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -1466,7 +1466,7 @@
     ]
   },
   {
-    "name": "Chest Fly",
+    "name": "Chest Fly (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -1487,7 +1487,7 @@
     ]
   },
   {
-    "name": "Chest Fly",
+    "name": "Chest Fly (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -1619,7 +1619,7 @@
     "image_urls": []
   },
   {
-    "name": "Chest Press",
+    "name": "Chest Press (Band)",
     "equipment_type": "band",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -1637,7 +1637,7 @@
     "image_urls": []
   },
   {
-    "name": "Chest Press",
+    "name": "Chest Press (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -1658,7 +1658,7 @@
     ]
   },
   {
-    "name": "Chest Press",
+    "name": "Chest Press (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -1679,7 +1679,7 @@
     ]
   },
   {
-    "name": "Chest Press (Decline)",
+    "name": "Chest Press (Decline, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lower_chest",
     "secondary_muscles": [
@@ -1700,7 +1700,7 @@
     ]
   },
   {
-    "name": "Chest Press (Decline)",
+    "name": "Chest Press (Decline, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lower_chest",
     "secondary_muscles": [
@@ -1721,7 +1721,7 @@
     ]
   },
   {
-    "name": "Chest Press (Incline)",
+    "name": "Chest Press (Incline, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "upper_chest",
     "secondary_muscles": [
@@ -1742,7 +1742,7 @@
     ]
   },
   {
-    "name": "Chest Press (Incline)",
+    "name": "Chest Press (Incline, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "upper_chest",
     "secondary_muscles": [
@@ -1962,7 +1962,7 @@
     ]
   },
   {
-    "name": "Crunch",
+    "name": "Crunch (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "upper_abs",
     "secondary_muscles": [],
@@ -1980,7 +1980,7 @@
     ]
   },
   {
-    "name": "Crunch",
+    "name": "Crunch (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "upper_abs",
     "secondary_muscles": [],
@@ -1998,7 +1998,7 @@
     ]
   },
   {
-    "name": "Crunch",
+    "name": "Crunch (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "upper_abs",
     "secondary_muscles": [],
@@ -2013,7 +2013,7 @@
     "image_urls": []
   },
   {
-    "name": "Crunch",
+    "name": "Crunch (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
     "secondary_muscles": [],
@@ -2050,7 +2050,7 @@
     ]
   },
   {
-    "name": "Cycling",
+    "name": "Cycling (Stationary Bike)",
     "equipment_type": "machine",
     "primary_muscle": "cardio",
     "secondary_muscles": [
@@ -2073,7 +2073,7 @@
     ]
   },
   {
-    "name": "Cycling",
+    "name": "Cycling (Outdoor)",
     "equipment_type": "none",
     "primary_muscle": "cardio",
     "secondary_muscles": [
@@ -2153,7 +2153,7 @@
     "image_urls": []
   },
   {
-    "name": "Deadlift",
+    "name": "Deadlift (Band)",
     "equipment_type": "band",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -2173,7 +2173,7 @@
     "image_urls": []
   },
   {
-    "name": "Deadlift",
+    "name": "Deadlift (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -2196,7 +2196,7 @@
     ]
   },
   {
-    "name": "Deadlift",
+    "name": "Deadlift (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -2216,7 +2216,7 @@
     "image_urls": []
   },
   {
-    "name": "Deadlift",
+    "name": "Deadlift (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -2359,7 +2359,7 @@
     ]
   },
   {
-    "name": "Dip (Seated)",
+    "name": "Dip (Seated, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "triceps",
     "secondary_muscles": [
@@ -2380,7 +2380,7 @@
     ]
   },
   {
-    "name": "Dip (Seated)",
+    "name": "Dip (Seated, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "triceps",
     "secondary_muscles": [
@@ -2553,7 +2553,7 @@
     ]
   },
   {
-    "name": "Farmers Walk",
+    "name": "Farmers Walk (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "forearms",
     "secondary_muscles": [
@@ -2575,7 +2575,7 @@
     ]
   },
   {
-    "name": "Farmers Walk",
+    "name": "Farmers Walk (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "forearms",
     "secondary_muscles": [
@@ -2597,7 +2597,7 @@
     ]
   },
   {
-    "name": "Floor Press",
+    "name": "Floor Press (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -2619,7 +2619,7 @@
     ]
   },
   {
-    "name": "Floor Press",
+    "name": "Floor Press (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "middle_chest",
     "secondary_muscles": [
@@ -2696,7 +2696,7 @@
     "image_urls": []
   },
   {
-    "name": "Front Lever Hold",
+    "name": "Front Lever Hold (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -2715,7 +2715,7 @@
     "image_urls": []
   },
   {
-    "name": "Front Lever Hold",
+    "name": "Front Lever Hold (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -2735,7 +2735,7 @@
     "image_urls": []
   },
   {
-    "name": "Front Lever Raise",
+    "name": "Front Lever Raise (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -2754,7 +2754,7 @@
     "image_urls": []
   },
   {
-    "name": "Front Lever Raise",
+    "name": "Front Lever Raise (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -2774,7 +2774,7 @@
     "image_urls": []
   },
   {
-    "name": "Front Raise",
+    "name": "Front Raise (Band)",
     "equipment_type": "band",
     "primary_muscle": "front_delts",
     "secondary_muscles": [],
@@ -2790,7 +2790,7 @@
     "image_urls": []
   },
   {
-    "name": "Front Raise",
+    "name": "Front Raise (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [],
@@ -2805,7 +2805,7 @@
     "image_urls": []
   },
   {
-    "name": "Front Raise",
+    "name": "Front Raise (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "front_delts",
     "secondary_muscles": [],
@@ -2824,7 +2824,7 @@
     ]
   },
   {
-    "name": "Front Raise",
+    "name": "Front Raise (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [],
@@ -2843,7 +2843,7 @@
     ]
   },
   {
-    "name": "Front Raise",
+    "name": "Front Raise (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "front_delts",
     "secondary_muscles": [],
@@ -2959,7 +2959,7 @@
     "image_urls": []
   },
   {
-    "name": "Glute Kickback",
+    "name": "Glute Kickback (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "glutes",
     "secondary_muscles": [],
@@ -2977,7 +2977,7 @@
     ]
   },
   {
-    "name": "Glute Kickback",
+    "name": "Glute Kickback (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "glutes",
     "secondary_muscles": [],
@@ -2992,7 +2992,7 @@
     "image_urls": []
   },
   {
-    "name": "Glute Kickback",
+    "name": "Glute Kickback (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "glutes",
     "secondary_muscles": [],
@@ -3065,7 +3065,7 @@
     "image_urls": []
   },
   {
-    "name": "Hack Squat",
+    "name": "Hack Squat (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -3085,7 +3085,7 @@
     ]
   },
   {
-    "name": "Hack Squat",
+    "name": "Hack Squat (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -3105,7 +3105,7 @@
     ]
   },
   {
-    "name": "Hack Squat",
+    "name": "Hack Squat (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -3143,7 +3143,7 @@
     "image_urls": []
   },
   {
-    "name": "Hammer Curl",
+    "name": "Hammer Curl (Band)",
     "equipment_type": "band",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -3161,7 +3161,7 @@
     "image_urls": []
   },
   {
-    "name": "Hammer Curl",
+    "name": "Hammer Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -3182,7 +3182,7 @@
     ]
   },
   {
-    "name": "Hammer Curl",
+    "name": "Hammer Curl (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -3200,7 +3200,7 @@
     "image_urls": []
   },
   {
-    "name": "Hammer Curl",
+    "name": "Hammer Curl (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -3258,7 +3258,7 @@
     ]
   },
   {
-    "name": "Hamstring Leg Curl (Lying)",
+    "name": "Hamstring Leg Curl (Lying, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "hamstrings",
     "secondary_muscles": [],
@@ -3277,7 +3277,7 @@
     ]
   },
   {
-    "name": "Hamstring Leg Curl (Lying)",
+    "name": "Hamstring Leg Curl (Lying, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "hamstrings",
     "secondary_muscles": [],
@@ -3296,7 +3296,7 @@
     ]
   },
   {
-    "name": "Hamstring Leg Curl (Seated)",
+    "name": "Hamstring Leg Curl (Seated, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "hamstrings",
     "secondary_muscles": [],
@@ -3314,7 +3314,7 @@
     ]
   },
   {
-    "name": "Hamstring Leg Curl (Seated)",
+    "name": "Hamstring Leg Curl (Seated, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "hamstrings",
     "secondary_muscles": [],
@@ -3332,7 +3332,7 @@
     ]
   },
   {
-    "name": "Hamstring Leg Curl (Standing)",
+    "name": "Hamstring Leg Curl (Standing, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "hamstrings",
     "secondary_muscles": [],
@@ -3350,7 +3350,7 @@
     ]
   },
   {
-    "name": "Hamstring Leg Curl (Standing)",
+    "name": "Hamstring Leg Curl (Standing, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "hamstrings",
     "secondary_muscles": [],
@@ -3541,7 +3541,7 @@
     "image_urls": []
   },
   {
-    "name": "Hip Abduction",
+    "name": "Hip Abduction (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "abductors",
     "secondary_muscles": [],
@@ -3559,7 +3559,7 @@
     ]
   },
   {
-    "name": "Hip Abduction",
+    "name": "Hip Abduction (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "abductors",
     "secondary_muscles": [],
@@ -3577,7 +3577,7 @@
     ]
   },
   {
-    "name": "Hip Adduction",
+    "name": "Hip Adduction (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "adductors",
     "secondary_muscles": [],
@@ -3595,7 +3595,7 @@
     ]
   },
   {
-    "name": "Hip Adduction",
+    "name": "Hip Adduction (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "adductors",
     "secondary_muscles": [],
@@ -3613,7 +3613,7 @@
     ]
   },
   {
-    "name": "Hip Thrust",
+    "name": "Hip Thrust (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -3634,7 +3634,7 @@
     ]
   },
   {
-    "name": "Hip Thrust",
+    "name": "Hip Thrust (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -3652,7 +3652,7 @@
     "image_urls": []
   },
   {
-    "name": "Hip Thrust",
+    "name": "Hip Thrust (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -3670,7 +3670,7 @@
     "image_urls": []
   },
   {
-    "name": "Hip Thrust",
+    "name": "Hip Thrust (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -3687,7 +3687,7 @@
     "image_urls": []
   },
   {
-    "name": "Hip Thrust",
+    "name": "Hip Thrust (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -3804,7 +3804,7 @@
     "image_urls": []
   },
   {
-    "name": "Iso-Lateral Row",
+    "name": "Iso-Lateral Row (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -3824,7 +3824,7 @@
     ]
   },
   {
-    "name": "Iso-Lateral Row",
+    "name": "Iso-Lateral Row (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -3983,7 +3983,7 @@
     ]
   },
   {
-    "name": "Kneeling Pulldown",
+    "name": "Kneeling Pulldown (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4001,7 +4001,7 @@
     "image_urls": []
   },
   {
-    "name": "Kneeling Pulldown",
+    "name": "Kneeling Pulldown (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4144,7 +4144,7 @@
     ]
   },
   {
-    "name": "Lat Pulldown",
+    "name": "Lat Pulldown (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4162,7 +4162,7 @@
     "image_urls": []
   },
   {
-    "name": "Lat Pulldown",
+    "name": "Lat Pulldown (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4183,7 +4183,7 @@
     ]
   },
   {
-    "name": "Lat Pulldown",
+    "name": "Lat Pulldown (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4201,7 +4201,7 @@
     "image_urls": []
   },
   {
-    "name": "Lat Pulldown",
+    "name": "Lat Pulldown (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4279,7 +4279,7 @@
     ]
   },
   {
-    "name": "Lat Pullover",
+    "name": "Lat Pullover (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4300,7 +4300,7 @@
     ]
   },
   {
-    "name": "Lat Pullover",
+    "name": "Lat Pullover (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4318,7 +4318,7 @@
     "image_urls": []
   },
   {
-    "name": "Lat Pullover",
+    "name": "Lat Pullover (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -4456,7 +4456,7 @@
     ]
   },
   {
-    "name": "Lateral Raise (Seated)",
+    "name": "Lateral Raise (Seated, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "side_delts",
     "secondary_muscles": [
@@ -4476,7 +4476,7 @@
     ]
   },
   {
-    "name": "Lateral Raise (Seated)",
+    "name": "Lateral Raise (Seated, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "side_delts",
     "secondary_muscles": [],
@@ -4491,7 +4491,7 @@
     "image_urls": []
   },
   {
-    "name": "Lateral Raise (Standing)",
+    "name": "Lateral Raise (Standing, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "side_delts",
     "secondary_muscles": [
@@ -4511,7 +4511,7 @@
     ]
   },
   {
-    "name": "Lateral Raise (Standing)",
+    "name": "Lateral Raise (Standing, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "side_delts",
     "secondary_muscles": [],
@@ -4544,7 +4544,7 @@
     "image_urls": []
   },
   {
-    "name": "Leg Press",
+    "name": "Leg Press (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -4565,7 +4565,7 @@
     ]
   },
   {
-    "name": "Leg Press",
+    "name": "Leg Press (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -4586,7 +4586,7 @@
     ]
   },
   {
-    "name": "Leg Press Horizontal",
+    "name": "Leg Press Horizontal (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -4604,7 +4604,7 @@
     "image_urls": []
   },
   {
-    "name": "Leg Press Horizontal",
+    "name": "Leg Press Horizontal (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -4678,7 +4678,7 @@
     ]
   },
   {
-    "name": "Lunge",
+    "name": "Lunge (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -4700,29 +4700,7 @@
     ]
   },
   {
-    "name": "Lunge",
-    "equipment_type": "dumbbell",
-    "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
-    "exercise_type": "weight_reps",
-    "description": "A forward step into a split stance that works the quads, glutes and balance.",
-    "instructions": [
-      "Hold a dumbbell in each hand at your sides.",
-      "Step forward and lower your back knee toward the floor until both knees are bent to about 90 degrees.",
-      "Keep your torso upright and your front knee in line with your toes.",
-      "Push through the front heel to return to the start, then alternate legs."
-    ],
-    "image_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Dumbbell_Lunges/0.jpg",
-    "image_urls": [
-      "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Dumbbell_Lunges/0.jpg",
-      "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Dumbbell_Lunges/1.jpg"
-    ]
-  },
-  {
-    "name": "Lunge",
+    "name": "Lunge (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -5036,7 +5014,7 @@
     "image_urls": []
   },
   {
-    "name": "Overhead Press",
+    "name": "Overhead Press (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -5058,7 +5036,7 @@
     ]
   },
   {
-    "name": "Overhead Press",
+    "name": "Overhead Press (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -5077,7 +5055,7 @@
     "image_urls": []
   },
   {
-    "name": "Overhead Press",
+    "name": "Overhead Press (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -5099,7 +5077,7 @@
     ]
   },
   {
-    "name": "Overhead Press",
+    "name": "Overhead Press (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -5121,7 +5099,7 @@
     ]
   },
   {
-    "name": "Overhead Press",
+    "name": "Overhead Press (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -5178,7 +5156,7 @@
     ]
   },
   {
-    "name": "Overhead Tricep Extension (Seated)",
+    "name": "Overhead Tricep Extension (Seated, Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "triceps",
     "secondary_muscles": [],
@@ -5193,7 +5171,7 @@
     "image_urls": []
   },
   {
-    "name": "Overhead Tricep Extension (Seated)",
+    "name": "Overhead Tricep Extension (Seated, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "triceps",
     "secondary_muscles": [],
@@ -5211,7 +5189,7 @@
     ]
   },
   {
-    "name": "Overhead Tricep Extension (Standing)",
+    "name": "Overhead Tricep Extension (Standing, Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "triceps",
     "secondary_muscles": [],
@@ -5229,7 +5207,7 @@
     ]
   },
   {
-    "name": "Overhead Tricep Extension (Standing)",
+    "name": "Overhead Tricep Extension (Standing, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "triceps",
     "secondary_muscles": [],
@@ -5299,7 +5277,7 @@
     ]
   },
   {
-    "name": "Palms Up Wrist Curl",
+    "name": "Palms Up Wrist Curl (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "forearms",
     "secondary_muscles": [],
@@ -5317,7 +5295,7 @@
     ]
   },
   {
-    "name": "Palms Up Wrist Curl",
+    "name": "Palms Up Wrist Curl (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "forearms",
     "secondary_muscles": [],
@@ -5594,7 +5572,7 @@
     ]
   },
   {
-    "name": "Preacher Curl",
+    "name": "Preacher Curl (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -5612,7 +5590,7 @@
     ]
   },
   {
-    "name": "Preacher Curl",
+    "name": "Preacher Curl (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -5630,7 +5608,7 @@
     ]
   },
   {
-    "name": "Preacher Curl",
+    "name": "Preacher Curl (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -5648,7 +5626,7 @@
     ]
   },
   {
-    "name": "Preacher Curl",
+    "name": "Preacher Curl (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -5743,7 +5721,7 @@
     ]
   },
   {
-    "name": "Pull Up (Assisted)",
+    "name": "Pull Up (Assisted, Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -5764,7 +5742,7 @@
     ]
   },
   {
-    "name": "Pull Up (Assisted)",
+    "name": "Pull Up (Assisted, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
     "secondary_muscles": [
@@ -5927,7 +5905,7 @@
     "image_urls": []
   },
   {
-    "name": "Quad Leg Extension",
+    "name": "Quad Leg Extension (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
     "secondary_muscles": [],
@@ -5945,7 +5923,7 @@
     ]
   },
   {
-    "name": "Quad Leg Extension",
+    "name": "Quad Leg Extension (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
     "secondary_muscles": [],
@@ -5986,7 +5964,7 @@
     ]
   },
   {
-    "name": "Rear Delt Reverse Fly",
+    "name": "Rear Delt Reverse Fly (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "rear_delts",
     "secondary_muscles": [],
@@ -6005,7 +5983,7 @@
     ]
   },
   {
-    "name": "Rear Delt Reverse Fly",
+    "name": "Rear Delt Reverse Fly (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "rear_delts",
     "secondary_muscles": [],
@@ -6020,7 +5998,7 @@
     "image_urls": []
   },
   {
-    "name": "Rear Delt Reverse Fly",
+    "name": "Rear Delt Reverse Fly (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "rear_delts",
     "secondary_muscles": [],
@@ -6039,7 +6017,7 @@
     ]
   },
   {
-    "name": "Rear Delt Reverse Fly",
+    "name": "Rear Delt Reverse Fly (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "rear_delts",
     "secondary_muscles": [],
@@ -6074,7 +6052,7 @@
     "image_urls": []
   },
   {
-    "name": "Reverse Crunch",
+    "name": "Reverse Crunch (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "upper_abs",
     "secondary_muscles": [
@@ -6094,7 +6072,7 @@
     ]
   },
   {
-    "name": "Reverse Crunch",
+    "name": "Reverse Crunch (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
     "secondary_muscles": [
@@ -6114,7 +6092,7 @@
     ]
   },
   {
-    "name": "Reverse Curl",
+    "name": "Reverse Curl (Band)",
     "equipment_type": "band",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -6132,7 +6110,7 @@
     "image_urls": []
   },
   {
-    "name": "Reverse Curl",
+    "name": "Reverse Curl (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -6153,7 +6131,7 @@
     ]
   },
   {
-    "name": "Reverse Curl",
+    "name": "Reverse Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -6174,7 +6152,7 @@
     ]
   },
   {
-    "name": "Reverse Curl",
+    "name": "Reverse Curl (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -6195,7 +6173,7 @@
     ]
   },
   {
-    "name": "Reverse Curl",
+    "name": "Reverse Curl (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -6213,7 +6191,7 @@
     "image_urls": []
   },
   {
-    "name": "Reverse Curl",
+    "name": "Reverse Curl (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -6231,7 +6209,7 @@
     "image_urls": []
   },
   {
-    "name": "Reverse Curl",
+    "name": "Reverse Curl (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -6266,7 +6244,7 @@
     "image_urls": []
   },
   {
-    "name": "Reverse Curl (EZ Bar)",
+    "name": "Reverse Curl (EZ Bar, Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
     "secondary_muscles": [
@@ -6376,7 +6354,7 @@
     "image_urls": []
   },
   {
-    "name": "Reverse Hyperextension",
+    "name": "Reverse Hyperextension (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -6399,7 +6377,7 @@
     ]
   },
   {
-    "name": "Reverse Hyperextension",
+    "name": "Reverse Hyperextension (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "glutes",
     "secondary_muscles": [
@@ -6418,7 +6396,7 @@
     "image_urls": []
   },
   {
-    "name": "Reverse Lunge",
+    "name": "Reverse Lunge (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -6441,30 +6419,7 @@
     ]
   },
   {
-    "name": "Reverse Lunge",
-    "equipment_type": "barbell",
-    "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
-    "exercise_type": "weight_reps",
-    "description": "A lunge stepping backward, which is easier on the knees than a forward lunge.",
-    "instructions": [
-      "Place a barbell on your upper back before stepping back.",
-      "Stand tall with your feet hip-width apart.",
-      "Step back with one leg and lower until both knees are bent to about 90 degrees.",
-      "Push through your front heel to return to standing.",
-      "Alternate legs or complete all reps on one side first."
-    ],
-    "image_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Elevated_Back_Lunge/0.jpg",
-    "image_urls": [
-      "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Elevated_Back_Lunge/0.jpg",
-      "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Elevated_Back_Lunge/1.jpg"
-    ]
-  },
-  {
-    "name": "Reverse Lunge",
+    "name": "Reverse Lunge (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -6523,7 +6478,7 @@
     ]
   },
   {
-    "name": "Romanian Deadlift",
+    "name": "Romanian Deadlift (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "hamstrings",
     "secondary_muscles": [
@@ -6546,7 +6501,7 @@
     ]
   },
   {
-    "name": "Romanian Deadlift",
+    "name": "Romanian Deadlift (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "hamstrings",
     "secondary_muscles": [
@@ -6738,7 +6693,7 @@
     ]
   },
   {
-    "name": "Shoulder Press",
+    "name": "Shoulder Press (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -6760,7 +6715,7 @@
     ]
   },
   {
-    "name": "Shoulder Press",
+    "name": "Shoulder Press (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -6782,7 +6737,7 @@
     ]
   },
   {
-    "name": "Shoulder Press",
+    "name": "Shoulder Press (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -6800,7 +6755,7 @@
     "image_urls": []
   },
   {
-    "name": "Shoulder Press",
+    "name": "Shoulder Press (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -6822,7 +6777,7 @@
     ]
   },
   {
-    "name": "Shoulder Press",
+    "name": "Shoulder Press (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -6864,7 +6819,7 @@
     "image_urls": []
   },
   {
-    "name": "Shrug",
+    "name": "Shrug (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "traps",
     "secondary_muscles": [],
@@ -6883,7 +6838,7 @@
     ]
   },
   {
-    "name": "Shrug",
+    "name": "Shrug (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "traps",
     "secondary_muscles": [],
@@ -6902,7 +6857,7 @@
     ]
   },
   {
-    "name": "Shrug",
+    "name": "Shrug (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "traps",
     "secondary_muscles": [],
@@ -6921,7 +6876,7 @@
     ]
   },
   {
-    "name": "Shrug",
+    "name": "Shrug (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "traps",
     "secondary_muscles": [],
@@ -6940,7 +6895,7 @@
     ]
   },
   {
-    "name": "Shrug",
+    "name": "Shrug (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "traps",
     "secondary_muscles": [],
@@ -6959,7 +6914,7 @@
     ]
   },
   {
-    "name": "Shrug",
+    "name": "Shrug (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "traps",
     "secondary_muscles": [],
@@ -6975,7 +6930,7 @@
     "image_urls": []
   },
   {
-    "name": "Side Bend",
+    "name": "Side Bend (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "obliques",
     "secondary_muscles": [
@@ -6997,7 +6952,7 @@
     ]
   },
   {
-    "name": "Side Bend",
+    "name": "Side Bend (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "obliques",
     "secondary_muscles": [
@@ -7130,7 +7085,7 @@
     ]
   },
   {
-    "name": "Skullcrusher",
+    "name": "Skullcrusher (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "triceps",
     "secondary_muscles": [],
@@ -7149,7 +7104,7 @@
     ]
   },
   {
-    "name": "Skullcrusher",
+    "name": "Skullcrusher (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "triceps",
     "secondary_muscles": [],
@@ -7212,7 +7167,7 @@
     ]
   },
   {
-    "name": "Spider Curl",
+    "name": "Spider Curl (Band)",
     "equipment_type": "band",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -7228,7 +7183,7 @@
     "image_urls": []
   },
   {
-    "name": "Spider Curl",
+    "name": "Spider Curl (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -7244,7 +7199,7 @@
     "image_urls": []
   },
   {
-    "name": "Spider Curl",
+    "name": "Spider Curl (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -7263,7 +7218,7 @@
     ]
   },
   {
-    "name": "Spider Curl",
+    "name": "Spider Curl (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
@@ -7364,7 +7319,7 @@
     "image_urls": []
   },
   {
-    "name": "Squat",
+    "name": "Squat (Band)",
     "equipment_type": "band",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7387,7 +7342,7 @@
     ]
   },
   {
-    "name": "Squat",
+    "name": "Squat (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7410,7 +7365,7 @@
     ]
   },
   {
-    "name": "Squat",
+    "name": "Squat (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7433,7 +7388,7 @@
     ]
   },
   {
-    "name": "Squat",
+    "name": "Squat (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7453,7 +7408,7 @@
     "image_urls": []
   },
   {
-    "name": "Squat",
+    "name": "Squat (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7473,7 +7428,7 @@
     "image_urls": []
   },
   {
-    "name": "Squat",
+    "name": "Squat (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7496,7 +7451,7 @@
     ]
   },
   {
-    "name": "Squat",
+    "name": "Squat (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7663,7 +7618,7 @@
     "image_urls": []
   },
   {
-    "name": "Sumo Squat",
+    "name": "Sumo Squat (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7686,7 +7641,7 @@
     ]
   },
   {
-    "name": "Sumo Squat",
+    "name": "Sumo Squat (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7709,7 +7664,7 @@
     ]
   },
   {
-    "name": "Sumo Squat",
+    "name": "Sumo Squat (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -7729,7 +7684,7 @@
     "image_urls": []
   },
   {
-    "name": "Sumo Squat",
+    "name": "Sumo Squat (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -8020,7 +7975,7 @@
     ]
   },
   {
-    "name": "Triceps Kickback",
+    "name": "Triceps Kickback (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "triceps",
     "secondary_muscles": [],
@@ -8036,7 +7991,7 @@
     "image_urls": []
   },
   {
-    "name": "Triceps Kickback",
+    "name": "Triceps Kickback (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "triceps",
     "secondary_muscles": [],
@@ -8150,7 +8105,7 @@
     ]
   },
   {
-    "name": "Upright Row",
+    "name": "Upright Row (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -8172,7 +8127,7 @@
     ]
   },
   {
-    "name": "Upright Row",
+    "name": "Upright Row (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -8194,7 +8149,7 @@
     ]
   },
   {
-    "name": "Upright Row",
+    "name": "Upright Row (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -8216,7 +8171,7 @@
     ]
   },
   {
-    "name": "Upright Row",
+    "name": "Upright Row (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "front_delts",
     "secondary_muscles": [
@@ -8281,7 +8236,7 @@
     ]
   },
   {
-    "name": "Walking Lunge",
+    "name": "Walking Lunge (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
     "secondary_muscles": [
@@ -8303,7 +8258,7 @@
     ]
   },
   {
-    "name": "Walking Lunge",
+    "name": "Walking Lunge (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "quads",
     "secondary_muscles": [
