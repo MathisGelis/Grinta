@@ -1,5 +1,39 @@
 # Changelog backend
 
+## Non publié : stats par exercice et badges de record personnel
+
+### Ce qui change
+
+- **Stats par exercice, tenues à jour automatiquement.** Chaque séance terminée met à jour, pour chacun de ses exercices : dernière performance (série la plus lourde de la dernière séance, et toutes ses séries), records (charge maximale et répétitions faites à cette charge, 1RM estimé, meilleur volume sur une séance, maximum de répétitions sans charge) et totaux (séances, séries, répétitions, volume).
+  - `GET /exercises/stats` : tous les exercices pratiqués, le plus récent d'abord.
+  - `GET /exercises/:id/stats` : un exercice. 404 tant qu'aucune séance terminée ne le contient.
+- **Badges de record personnel.** Une séance qui bat, sur un exercice, la meilleure valeur de toutes les autres séances gagne un badge par record battu, sur quatre types : `heaviest_weight`, `best_estimated_1rm`, `best_session_volume`, `most_reps` (séries sans charge).
+  - `GET /badges` liste les badges de l'utilisateur, filtrables par `exerciseId`, `type` et `limit`.
+  - `POST /workouts/completed` et `PATCH /workouts/completed/:id` renvoient en plus `badges`, les records établis par la séance, pour que l'app affiche « Nouveau record ! » sans requête supplémentaire. Le frontend actuel ignore la réponse, l'ajout ne le casse pas.
+- **Enregistrement d'une séance transactionnel.** La séance, les stats et les badges sont écrits dans une seule transaction : si une étape échoue, rien n'est enregistré (vérifié en rendant l'écriture des stats impossible : 500 générique, aucune séance créée).
+- **`PATCH /exercises/:id/stats` supprimé.** Les stats sont maintenant dérivées des séances, et ce sont elles qui servent de référence aux badges : une valeur saisie à la main fausserait les records et permettrait de s'attribuer des badges. Le frontend ne l'appelait pas, et jusqu'à la Phase 1 la route répondait toujours 400.
+
+### Règles des badges, à valider
+
+- **Pas de badge sur la première séance d'un exercice**, ni sur la première série chargée après des séances au poids du corps : il faut une valeur à battre. Sinon chaque nouvel exercice donnerait des badges.
+- **Une égalité ne compte pas** : il faut strictement dépasser l'ancien record.
+- **La comparaison porte sur toutes les autres séances, quelle que soit leur date.** Une séance saisie après coup qui bat tout ce qui existe obtient le badge ; elle devient le record, mais pas la « dernière performance », qui suit la date de la séance.
+- **Un badge appartient à sa séance.** Modifier la séance réévalue ses badges (corriger un 1000 kg en 100 kg retire le record), la supprimer les supprime. Les badges des *autres* séances ne changent pas : un badge dit que la séance battait toutes les autres au moment où elle a été enregistrée.
+- **Plusieurs badges par séance sont possibles** : une séance plus lourde donne souvent à la fois `heaviest_weight` et `best_estimated_1rm`. C'est l'app qui choisit comment les regrouper.
+
+### Pourquoi les stats sont recalculées plutôt qu'incrémentées
+
+À chaque création, modification ou suppression, les stats des exercices concernés sont recalculées à partir de tout leur historique. Ajouter la séance aux totaux existants coûterait une requête de moins, mais une séance corrigée ou supprimée laisserait des stats fausses pour toujours. Coût mesuré, voir PERFORMANCE.md : 2 requêtes de plus par enregistrement de séance.
+
+### Déploiement
+
+1. Rien à faire pour le schéma tant que `synchronize: true` est actif : les nouvelles colonnes de `user_exercise_stats` et la table `badges` sont créées au démarrage. Sur une base sans `synchronize`, lancer `npm run migration:run:prod` (migration `AddExerciseStatsAndBadges`, idempotente et réversible ; `down()` supprime les badges, les stats sont reconstructibles).
+2. **Une fois, après le déploiement** : `npm run backfill:exercise-stats:prod` sur la VM, pour calculer les stats des séances passées. Sans ça, un utilisateur n'a de stats que pour les exercices des séances terminées après la mise en production. Le script n'attribue aucun badge rétroactif : les badges commencent avec les séances enregistrées après déploiement. Il peut être relancé sans risque (mesuré : 41 s pour 2 000 utilisateurs et 69 000 séances, résultat identique à celui tenu par l'API).
+
+### Limite connue
+
+Deux séances du même utilisateur enregistrées au même instant (deux appareils) peuvent laisser des stats qui ignorent l'une d'elles, chaque transaction ne voyant pas la séance de l'autre. La séance suivante, ou le script de rattrapage, corrige. Les badges d'une séance, eux, dépendent seulement de ce qui était enregistré avant elle.
+
 ## Non publié : Phase 3, nouveaux endpoints de statistiques
 
 Les six endpoints proposés par le CLAUDE.md sont ajoutés au module `stats`. Tous sont authentifiés, typés (DTO de requête validés, DTO de réponse documentés dans Swagger) et ne renvoient que les données de l'appelant. Le SQL réduit l'historique aux quelques lignes utiles (un utilisateur, un exercice, une fenêtre, ou un agrégat par exercice, type ou jour) et `StatsCalculatorService` porte tout le calcul, couvert par des tests unitaires.

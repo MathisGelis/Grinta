@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { Exercise } from 'src/exercise/entities/exercise.entity';
 import { AuthUser } from 'src/auth/auth-user.interface';
+import { ExerciseStatsService } from 'src/exercise/exercise-stats.service';
+import { BadgesService } from 'src/badges/badges.service';
+import { BadgeDto } from 'src/badges/dto/badge.dto';
 import { CreateCompletedWorkoutDto } from './dto/create-completed-workout.dto';
 import { CreatePlannedWorkoutDto } from './dto/create-planned-workout.dto';
 import {
@@ -27,11 +30,13 @@ export class WorkoutService {
 
     @InjectRepository(CompletedWorkout)
     private completedRepo: Repository<CompletedWorkout>,
-    @InjectRepository(CompletedWorkoutExercise)
-    private completedExRepo: Repository<CompletedWorkoutExercise>,
 
     @InjectRepository(Exercise)
     private exerciseRepo: Repository<Exercise>,
+
+    private readonly dataSource: DataSource,
+    private readonly exerciseStats: ExerciseStatsService,
+    private readonly badges: BadgesService,
   ) {}
 
   async createPlannedWorkout(user: AuthUser, dto: CreatePlannedWorkoutDto) {
@@ -55,27 +60,43 @@ export class WorkoutService {
     return this.plannedRepo.save(workout);
   }
 
+  /**
+   * Saves the session, then in the same transaction refreshes the user's stats
+   * for every exercise it contains and awards the personal record badges it
+   * earned, returned under `badges`. If any step fails nothing is saved.
+   */
   async createCompletedWorkout(user: AuthUser, dto: CreateCompletedWorkoutDto) {
-    const workout = this.completedRepo.create({
-      user: { id: user.id },
-      title: dto.title,
-      completionDate: new Date(dto.completionDate),
-      totalDurationSeconds: dto.totalDurationSeconds,
-      description: dto.description,
-    });
-
     const byId = await this.resolveExercises(
       dto.exercises.map((exDto) => exDto.exerciseId),
     );
 
-    workout.exercises = dto.exercises.map((exDto) =>
-      this.completedExRepo.create({
-        exercise: byId.get(exDto.exerciseId),
-        sets: exDto.sets,
-        timerSeconds: exDto.timerSeconds,
-      }),
-    );
-    return this.completedRepo.save(workout);
+    return this.dataSource.transaction(async (manager) => {
+      const workout = manager.create(CompletedWorkout, {
+        user: { id: user.id },
+        title: dto.title,
+        completionDate: new Date(dto.completionDate),
+        totalDurationSeconds: dto.totalDurationSeconds,
+        description: dto.description,
+      });
+
+      workout.exercises = dto.exercises.map((exDto) =>
+        manager.create(CompletedWorkoutExercise, {
+          exercise: byId.get(exDto.exerciseId),
+          sets: exDto.sets,
+          timerSeconds: exDto.timerSeconds,
+        }),
+      );
+      const saved = await manager.save(workout);
+      const badges = await this.syncProgress(
+        manager,
+        user.id,
+        saved,
+        [...byId.keys()],
+        { replaceExisting: false },
+      );
+
+      return Object.assign(saved, { badges });
+    });
   }
 
   async updatePlannedWorkout(
@@ -110,38 +131,54 @@ export class WorkoutService {
     return this.plannedRepo.save(workout);
   }
 
+  /**
+   * Stats are recomputed for the exercises before and after the edit, and the
+   * badges of this workout are re-evaluated: fixing a mistyped weight removes
+   * the record it had wrongly set.
+   */
   async updateCompletedWorkout(
     user: AuthUser,
     workoutId: string,
     dto: UpdateCompletedWorkoutDto,
   ) {
-    const workout = await this.completedRepo.findOne({
-      where: { id: workoutId, user: { id: user.id } },
-      relations: ['exercises', 'exercises.exercise'],
-    });
-
-    if (!workout) throw new NotFoundException('Completed workout not found');
-
     const { exercises, completionDate, ...scalarFields } = dto;
+    const byId = exercises
+      ? await this.resolveExercises(exercises.map((exDto) => exDto.exerciseId))
+      : null;
 
-    Object.assign(workout, omitUndefined(scalarFields));
-    if (completionDate) workout.completionDate = new Date(completionDate);
+    return this.dataSource.transaction(async (manager) => {
+      const workout = await manager.findOne(CompletedWorkout, {
+        where: { id: workoutId, user: { id: user.id } },
+        relations: ['exercises', 'exercises.exercise'],
+      });
 
-    if (exercises) {
-      const byId = await this.resolveExercises(
-        exercises.map((exDto) => exDto.exerciseId),
+      if (!workout) throw new NotFoundException('Completed workout not found');
+      const previousExerciseIds = workout.exercises.map((e) => e.exercise.id);
+
+      Object.assign(workout, omitUndefined(scalarFields));
+      if (completionDate) workout.completionDate = new Date(completionDate);
+
+      if (exercises && byId) {
+        await manager.remove(workout.exercises);
+        workout.exercises = exercises.map((exDto) =>
+          manager.create(CompletedWorkoutExercise, {
+            exercise: byId.get(exDto.exerciseId),
+            sets: exDto.sets,
+            timerSeconds: exDto.timerSeconds,
+          }),
+        );
+      }
+      const saved = await manager.save(workout);
+      const badges = await this.syncProgress(
+        manager,
+        user.id,
+        saved,
+        [...previousExerciseIds, ...saved.exercises.map((e) => e.exercise.id)],
+        { replaceExisting: true },
       );
 
-      await this.completedExRepo.remove(workout.exercises);
-      workout.exercises = exercises.map((exDto) =>
-        this.completedExRepo.create({
-          exercise: byId.get(exDto.exerciseId),
-          sets: exDto.sets,
-          timerSeconds: exDto.timerSeconds,
-        }),
-      );
-    }
-    return this.completedRepo.save(workout);
+      return Object.assign(saved, { badges });
+    });
   }
 
   // The list screens only need the number of exercises, so it is counted in
@@ -222,14 +259,48 @@ export class WorkoutService {
     return { message: 'Planned workout deleted successfully' };
   }
 
+  /**
+   * The workout's badges go with it (ON DELETE CASCADE) and the stats of its
+   * exercises are rebuilt from the remaining sessions.
+   */
   async deleteCompletedWorkout(user: AuthUser, workoutId: string) {
-    const workout = await this.completedRepo.findOne({
-      where: { id: workoutId, user: { id: user.id } },
-    });
+    return this.dataSource.transaction(async (manager) => {
+      const workout = await manager.findOne(CompletedWorkout, {
+        where: { id: workoutId, user: { id: user.id } },
+        relations: ['exercises'],
+      });
 
-    if (!workout) throw new NotFoundException('Completed workout not found');
-    await this.completedRepo.remove(workout);
-    return { message: 'Completed workout deleted successfully' };
+      if (!workout) throw new NotFoundException('Completed workout not found');
+      await manager.delete(CompletedWorkout, { id: workout.id });
+      await this.exerciseStats.recompute(
+        manager,
+        user.id,
+        workout.exercises.map((e) => e.exercise.id),
+      );
+      return { message: 'Completed workout deleted successfully' };
+    });
+  }
+
+  private async syncProgress(
+    manager: EntityManager,
+    userId: string,
+    workout: CompletedWorkout,
+    exerciseIds: string[],
+    options: { replaceExisting: boolean },
+  ): Promise<BadgeDto[]> {
+    const histories = await this.exerciseStats.recompute(
+      manager,
+      userId,
+      exerciseIds,
+    );
+
+    return this.badges.awardForWorkout(
+      manager,
+      userId,
+      workout,
+      histories,
+      options,
+    );
   }
 
   /**

@@ -11,6 +11,8 @@ import {
   CompletedWorkoutExercise,
 } from './entities/completed-workout.entity';
 import { Exercise } from '../exercise/entities/exercise.entity';
+import { ExerciseModule } from '../exercise/exercise.module';
+import { BadgesModule } from '../badges/badges.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { Exercise } from '../exercise/entities/exercise.entity';
       CompletedWorkoutExercise,
       Exercise,
     ]),
+    ExerciseModule,
+    BadgesModule,
   ],
   providers: [WorkoutService],
   controllers: [WorkoutsController],

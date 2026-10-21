@@ -24,7 +24,9 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:show": "npm run typeorm -- migration:show",
-    "migration:run:prod": "typeorm migration:run -d dist/data-source.js"
+    "migration:run:prod": "typeorm migration:run -d dist/data-source.js",
+    "backfill:exercise-stats": "ts-node -r tsconfig-paths/register src/scripts/backfill-exercise-stats.ts",
+    "backfill:exercise-stats:prod": "node dist/scripts/backfill-exercise-stats.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

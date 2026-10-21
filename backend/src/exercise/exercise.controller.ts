@@ -11,7 +11,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ExerciseService } from './exercise.service';
-import { UpdateUserExerciseStatsDto } from './dto/update-user-exercise-stats.dto';
+import { ExerciseStatsService } from './exercise-stats.service';
+import { ExerciseStatsDto } from './dto/exercise-stats.dto';
 import { Auth } from '../auth/auth.decorators';
 import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
@@ -22,7 +23,10 @@ import { GetExercisesQueryDto } from './dto/get-exercises.query.dto';
 @ApiTags('exercises')
 @Controller('exercises')
 export class ExerciseController {
-  constructor(private readonly exerciseService: ExerciseService) {}
+  constructor(
+    private readonly exerciseService: ExerciseService,
+    private readonly exerciseStats: ExerciseStatsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all exercises' })
@@ -34,6 +38,25 @@ export class ExerciseController {
   })
   async findAll(@Query() query: GetExercisesQueryDto) {
     return this.exerciseService.findAll(query);
+  }
+
+  // Declared before ':id', otherwise 'stats' would be read as an exercise id.
+  @Auth()
+  @Get('stats')
+  @ApiOperation({
+    summary: 'Stats of every exercise the current user has trained',
+    description:
+      'Most recently trained first. Updated automatically each time a ' +
+      'completed workout is saved, edited or deleted.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Stats returned',
+    type: ExerciseStatsDto,
+    isArray: true,
+  })
+  listMyStats(@Req() req: AuthenticatedRequest) {
+    return this.exerciseStats.listForUser(req.user.id);
   }
 
   @Get(':id')
@@ -71,31 +94,22 @@ export class ExerciseController {
   @Auth()
   @Get(':id/stats')
   @ApiOperation({
-    summary: 'Get user stats for an exercise',
+    summary: 'Stats of the current user for one exercise',
     description:
-      'Returns PR, last reps and last weight for the authenticated user',
+      'Last performance (top set and every set of the most recent session), ' +
+      'personal records and totals. Updated automatically each time a ' +
+      'completed workout is saved, edited or deleted.',
   })
-  @ApiResponse({ status: 200, description: 'Stats returned' })
-  @ApiResponse({ status: 404, description: 'Exercise or stats not found' })
+  @ApiResponse({
+    status: 200,
+    description: 'Stats returned',
+    type: ExerciseStatsDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No completed workout contains this exercise yet',
+  })
   async getStats(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    return this.exerciseService.getUserStats(req.user, id);
-  }
-
-  @Auth()
-  @Patch(':id/stats')
-  @ApiOperation({
-    summary: 'Update user stats for an exercise',
-    description:
-      'Update PR, last reps or last weight for the authenticated user',
-  })
-  @ApiResponse({ status: 200, description: 'Stats updated successfully' })
-  @ApiResponse({ status: 404, description: 'Exercise not found' })
-  @ApiResponse({ status: 400, description: 'Invalid payload' })
-  async updateStats(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
-    @Body() dto: UpdateUserExerciseStatsDto,
-  ) {
-    return this.exerciseService.updateUserStats(req.user, id, dto);
+    return this.exerciseStats.getForUser(req.user.id, id);
   }
 }

@@ -126,6 +126,20 @@ Aucun nouvel index : `EXPLAIN` montre `IDX_completed_workouts_user_date` puis `I
 
 `records` est le seul endpoint qui relit tout l'historique de l'utilisateur à chaque appel, son temps croît donc linéairement avec le nombre de workouts : 43 ms à 300 workouts, de l'ordre de 400 ms à 3 000 (extrapolation linéaire, non mesurée). Le résultat ne change que lorsqu'un workout est ajouté, modifié ou supprimé : si cela devient visible, le mettre en cache par utilisateur ou le tenir à jour à l'écriture règle le problème.
 
+## Stats par exercice et badges
+
+Mesuré sur le même jeu de données, compte de 300 séances, séance de 6 exercices que le compte a déjà pratiqués souvent (environ 50 séances d'historique chacun), médiane de 20 appels :
+
+| Endpoint | Requêtes | p50 (ms) | Note |
+| --- | ---: | ---: | --- |
+| `POST /workouts/completed` avant | 5 | 13,6 | |
+| `POST /workouts/completed` après | 7 | 19,8 | + chargement de l'historique des exercices, + upsert groupé des stats ; + 1 insertion quand des badges sont gagnés |
+| `GET /exercises/stats` | 1 | 11 | 57 ko pour une centaine d'exercices, dont les séries de la dernière séance |
+| `GET /exercises/:id/stats` | 1 | 4 | |
+| `GET /badges` | 1 | 3 | index `badges (userId, achievedAt)` |
+
+En production, le surcoût de l'enregistrement d'une séance est surtout les 2 allers-retours supplémentaires vers Supabase. Les stats de tous les exercices de la séance sont écrites en une seule requête (`INSERT ... ON CONFLICT DO UPDATE`), pas une par exercice. Le rechargement de l'historique passe par `IDX_completed_workouts_user_date` puis `IDX_completed_workout_exercises_workout` : son coût croît avec le nombre de séances de l'utilisateur, quelques millisecondes à 300 séances.
+
 ## Défaut découvert, à décider
 
 **L'ordre des exercices d'un workout n'est pas garanti.** Aucune colonne de position n'existe sur `completed_workout_exercises` ni `planned_workout_exercises` : l'ordre renvoyé est celui des lignes en base, que Postgres ne promet pas (il peut changer après une mise à jour, un vacuum ou un changement de plan). Pour un workout, la séquence des exercices a un sens pour l'utilisateur. Correction proposée : colonne `position` entière, renseignée à partir de l'index dans le tableau reçu, tri sur cette colonne, migration avec remplissage des lignes existantes.
