@@ -17,7 +17,7 @@ import { Auth } from '../auth/auth.decorators';
 import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
-import { ExerciseListDto } from './dto/exercise-list.dto';
+import { ExerciseDetailDto, ExerciseListDto } from './dto/exercise-list.dto';
 import { GetExercisesQueryDto } from './dto/get-exercises.query.dto';
 
 @ApiTags('exercises')
@@ -29,7 +29,11 @@ export class ExerciseController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all exercises' })
+  @ApiOperation({
+    summary: 'Get all exercises',
+    description:
+      'Light list for browsing: use GET /exercises/:id for the description, instructions and photos.',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of exercises returned',
@@ -60,8 +64,16 @@ export class ExerciseController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get an exercise by ID' })
-  @ApiResponse({ status: 200, description: 'Exercise found' })
+  @ApiOperation({
+    summary: 'Get an exercise by ID',
+    description:
+      'Includes the description, the step-by-step instructions and the start and end position photos.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Exercise found',
+    type: ExerciseDetailDto,
+  })
   @ApiResponse({ status: 404, description: 'Exercise not found' })
   async findOne(@Param('id') id: string) {
     return this.exerciseService.findOne(id);

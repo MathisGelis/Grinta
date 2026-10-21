@@ -14,8 +14,25 @@ export class ExerciseService {
     private readonly exerciseRepository: Repository<Exercise>,
   ) {}
 
+  /**
+   * The catalogue list leaves out description, instructions and image_urls:
+   * with them the response grows from about 100 KB to 260 KB for the base
+   * catalogue, and the app downloads and caches the whole list. They are
+   * returned by GET /exercises/:id, where the exercise is shown in detail.
+   */
   async findAll(query: GetExercisesQueryDto): Promise<Exercise[]> {
-    const qb = this.exerciseRepository.createQueryBuilder('exercise');
+    const qb = this.exerciseRepository
+      .createQueryBuilder('exercise')
+      .select([
+        'exercise.id',
+        'exercise.name',
+        'exercise.equipment_type',
+        'exercise.primary_muscle',
+        'exercise.secondary_muscles',
+        'exercise.exercise_type',
+        'exercise.image_url',
+        'exercise.createdAt',
+      ]);
 
     if (query.equipmentType)
       qb.andWhere('exercise.equipment_type = :equipmentType', {

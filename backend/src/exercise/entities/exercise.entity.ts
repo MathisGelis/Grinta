@@ -47,9 +47,38 @@ export class Exercise {
   @ApiProperty({ enum: ExerciseType })
   exercise_type: ExerciseType;
 
+  /** Thumbnail, the first frame of image_urls for the base catalogue. */
   @Column({ type: 'text', nullable: true })
   @ApiProperty({ required: false })
   image_url?: string;
+
+  @Column({ type: 'text', nullable: true })
+  @ApiProperty({
+    required: false,
+    description: 'What the exercise is and what it works',
+  })
+  description?: string | null;
+
+  @Column({ type: 'text', array: true, nullable: true })
+  @ApiProperty({
+    type: [String],
+    required: false,
+    description: 'How to perform the exercise, one step per item, in order',
+  })
+  instructions?: string[] | null;
+
+  /**
+   * Start and end positions of the movement. Shown in turn they animate the
+   * exercise, which is how the app can play it like a GIF.
+   */
+  @Column({ type: 'text', array: true, nullable: true })
+  @ApiProperty({
+    type: [String],
+    required: false,
+    description:
+      'Start and end position photos; alternate them to animate the movement',
+  })
+  image_urls?: string[] | null;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   @ApiProperty()

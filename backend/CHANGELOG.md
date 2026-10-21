@@ -1,5 +1,37 @@
 # Changelog backend
 
+## Non publié : description, consignes et photos des exercices
+
+### Ce qui change
+
+- **Les 430 entrées de `base-exercises.json` ont une description et des consignes.** La description dit en une ou deux phrases ce qu'est l'exercice et ce qu'il travaille. Les consignes donnent les étapes, dans l'ordre. Quand le geste dépend de l'équipement (barre, haltères, poulie, machine...), une étape de mise en place propre à la variante est ajoutée. Les textes sont en anglais, comme les noms des exercices, que le frontend n'a jamais traduits.
+- **274 entrées ont deux photos** : position de départ puis position d'arrivée (`image_urls`), la première servant aussi de miniature (`image_url`, champ que le frontend lit déjà). Elles viennent de [free-exercise-db](https://github.com/yuhonas/free-exercise-db), sous Unlicense (domaine public, licence vérifiée dans le dépôt source). Les URL sont épinglées sur un commit de la source, et les 460 ont été vérifiées : toutes répondent en `image/jpeg`.
+- **Une photo n'est associée que si elle montre le même mouvement avec un équipement compatible.** Chaque appariement a été relu contre les consignes de la source, et 20 ont été écartés car ils montraient une autre posture, une autre prise ou un autre exercice de même nom. Exemples : le « Wind Sprints » de la source est un exercice d'abdos suspendu, et sa « Rear Pull-Up » tire derrière la nuque. Une mauvaise photo est pire que pas de photo.
+- **API** : nouvelles colonnes `description`, `instructions` et `image_urls` sur `exercises` (migration `AddExerciseContent`, idempotente et réversible).
+  - `GET /exercises/:id` renvoie tout.
+  - `GET /exercises` reste léger (97 ko au lieu de 260 ko pour le catalogue, que l'app télécharge et met en cache en entier) : les champs lourds sont réservés au détail. L'écran de l'exercice doit donc appeler `GET /exercises/:id`.
+- **Bug corrigé : les muscles secondaires n'étaient jamais enregistrés.** Le JSON utilisait la clé `secondary_muscle` alors que l'entité attend `secondary_muscles`, et le seed copie les clés telles quelles. Après le seed, 234 exercices ont leurs muscles secondaires, contre 0 avant, ce qui corrige aussi les statistiques par muscle (`muscle-distribution`, `balance`, `muscle-frequency`) qui les ignoraient.
+- Test d'intégrité du JSON (enums, présence des textes, paires de photos épinglées) et README de provenance dans `src/exercise/data/`.
+
+### Pourquoi pas de GIF
+
+Aucune source de GIF d'exercices sous licence libre n'a été trouvée. Les GIF des bases commerciales (ExerciseDB, etc.) sont soumis à copyright et ne peuvent pas être redistribués sans licence. Les deux photos départ/arrivée en tiennent lieu : affichées en alternance (toutes les 0,6 à 0,8 s, par exemple), elles animent le mouvement dans l'app. Si de vrais GIF sont nécessaires, deux options : les générer à partir de ces paires et les héberger (Supabase Storage), ou souscrire une licence chez un fournisseur.
+
+### Déploiement
+
+1. Schéma : créé au démarrage tant que `synchronize: true` est actif, sinon `npm run migration:run:prod`.
+2. Contenu : relancer `npm run seed` sur la VM. Le seed met à jour les exercices existants par leur nom, sans toucher aux exercices créés par les utilisateurs. Il est idempotent.
+
+### Problème découvert, à décider : 136 variantes d'exercices n'arrivent jamais en base
+
+Le JSON contient **430 entrées pour 294 noms** : « Squat » existe en 7 équipements, « Bicep Curl » en 6, « Deadlift » en 4. Or `Exercise.name` est unique en base et le seed met à jour par nom : chaque variante écrase la précédente, et seule la dernière du fichier survit (le seed affiche « 294 new, 136 updated » sur une base vide). Conséquences concrètes, vérifiées sur une base de test :
+
+- « Deadlift » en base est la variante **Smith machine**, sans photo. Le soulevé de terre à la barre n'existe pas dans le catalogue.
+- « Squat » en base est la variante **poids du corps**. Le squat à la barre n'existe pas.
+- Sur les 274 entrées illustrées, seules 178 arrivent en base.
+
+Correction proposée, à valider car elle change des noms visibles dans l'app : suffixer l'équipement dans le nom des variantes, sur le modèle de Hevy ou Strong (« Deadlift (Barbell) », « Deadlift (Smith Machine) »). Il faut l'accompagner d'une migration qui renomme d'abord la ligne existante d'après son `equipment_type` (elle porte l'équipement de la variante qui a survécu), pour que les séances qui la référencent restent attachées au bon exercice. Le seed crée ensuite les variantes manquantes.
+
 ## Non publié : stats par exercice et badges de record personnel
 
 ### Ce qui change
