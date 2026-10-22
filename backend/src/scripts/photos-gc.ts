@@ -45,9 +45,11 @@ async function run() {
 
   await dataSource.initialize();
   const rows: Array<{ url: string }> = await dataSource.query(
-    `SELECT "avatarUrl" AS url FROM users WHERE "avatarUrl" IS NOT NULL
-     UNION ALL SELECT "photoUrl" FROM completed_workouts WHERE "photoUrl" IS NOT NULL
-     UNION ALL SELECT "photoThumbnailUrl" FROM completed_workouts WHERE "photoThumbnailUrl" IS NOT NULL`,
+    `SELECT url FROM users, unnest(ARRAY["avatarUrl", "avatarThumbnailUrl"]) AS url
+      WHERE url IS NOT NULL
+     UNION ALL
+     SELECT url FROM completed_workouts, unnest(ARRAY["photoUrl", "photoThumbnailUrl"]) AS url
+      WHERE url IS NOT NULL`,
   );
 
   await dataSource.destroy();

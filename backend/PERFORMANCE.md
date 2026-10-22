@@ -177,12 +177,35 @@ Réponses comparées champ par champ entre les deux versions sur 31 endpoints : 
 - **Compression des réponses** (brotli si le client l'accepte, sinon gzip, au-dessus de 1 ko). Les photos, déjà compressées, ne sont pas touchées. Si nginx compresse déjà, il ne recompresse pas une réponse qui a un `Content-Encoding`.
 - **Pagination facultative de l'historique** : `GET /workouts/completed?limit=20&before=<id de la dernière séance reçue>`, par keyset sur (`completionDate`, `createdAt`, `id`), servi par l'index existant. Sans paramètre, la réponse est la même qu'avant.
 
-### Reste à décider ou à faire
+### Deuxième passe, après arbitrage
 
-- **`GET /posts/feed/top`** recompte à chaque appel les likes et commentaires de tous les posts du mois (8 000 posts et 97 000 likes ici). Une réécriture en `GROUP BY` ne change rien : c'est le volume à compter qui coûte. Options : compteurs dénormalisés sur `posts`, ou résultat mis en cache quelques minutes.
-- **Chaque enregistrement de séance relit tout l'historique des exercices concernés** pour recalculer stats et badges (73 ko pour le compte de test, et ça croît avec l'historique). C'est le prix du choix « recalculer plutôt qu'incrémenter » (voir « Stats par exercice et badges »).
-- **`GET /stats/records`** : 163 ko lus pour 12 ko de réponse compressée, le nom et le muscle de l'exercice étant répétés sur chaque ligne « meilleure série par nombre de répétitions ».
-- **Frontend** : `explore/workout-detail.tsx` retélécharge le catalogue complet à chaque ouverture au lieu d'utiliser le cache local ; l'historique peut passer à la pagination.
+- **Compteurs `likesCount` et `commentsCount` sur `posts`** (migration `AddPostCounters`, qui les remplit). Ils sont tenus à jour par `PostsService` dans la transaction du like, du commentaire, de sa suppression ou de son masquage automatique, et ne bougent que si une ligne a réellement été insérée, supprimée ou masquée. Un double appui, des likes simultanés ou des signalements simultanés ne les font donc pas dériver. Vérifié sur base réelle avec des requêtes concurrentes : compteurs égaux au comptage des lignes, et aucun écart sur les 24 000 posts après remplissage.
+  - Tous les fils, le détail d'un post et le profil lisent les compteurs au lieu de compter.
+  - `GET /posts/feed/top` passe de 180 à 30 ms de base. Il parcourt encore les posts du mois, mais sans rien compter.
+  - Bug trouvé en route : `returning(['postId'])` de TypeORM ignore sans erreur une clé étrangère qui n'est pas une propriété de l'entité. Le `RETURNING` est maintenant écrit en SQL, et l'incrément utilise un `WHERE id = :postId` explicite, car `increment()` ignore un critère `undefined` et mettrait alors à jour tous les posts.
+  - Contrôle de cohérence à lancer en cas de doute (doit renvoyer 0) :
+
+    ```sql
+    SELECT count(*) FROM posts p
+     WHERE "likesCount" <> (SELECT count(*) FROM post_likes l WHERE l."postId" = p.id)
+        OR "commentsCount" <> (SELECT count(*) FROM post_comments c WHERE c."postId" = p.id AND NOT c."isHidden");
+    ```
+
+    Le `UPDATE` de la migration `AddPostCounters` les recalcule.
+- **Stats d'une nouvelle séance ajoutées sans relire l'historique.** Les stats stockées contiennent déjà toutes les meilleures valeurs qu'une nouvelle séance doit battre. `addSession` et `recordsAgainst` donnent exactement le même résultat que le recalcul complet : vérifié sur 5 000 historiques aléatoires (dates égales, séances vides, poids du corps, exercice en double dans une séance) et sur base réelle avec 48 séances, dont 8 simultanées sur le même exercice.
+  - Les lignes de stats sont verrouillées (`FOR UPDATE`) pendant l'ajout, donc deux séances enregistrées en même temps s'ajoutent l'une après l'autre. Le recalcul complet n'avait pas cette garantie.
+  - La modification et la suppression d'une séance gardent le recalcul complet.
+  - `POST /workouts/completed` : 17 → 1 ms de base, 32 → 6 ko lus, et le coût ne croît plus avec l'historique.
+- **Miniature d'avatar de 128 px** (`avatarThumbnailUrl`, environ 5 ko pour une vraie photo contre 50), renvoyée par les listes avec repli sur l'avatar complet si l'utilisateur n'en a pas encore.
+
+### Reste
+
+- **`GET /stats/records`** : 163 ko lus pour 12 ko de réponse compressée, car le nom et le muscle de l'exercice sont répétés sur chaque ligne « meilleure série par nombre de répétitions ».
+- **`GET /posts/feed/top`** croît toujours avec le nombre de posts du mois (30 ms pour 10 000). Au-delà de quelques centaines de milliers, il faudra un classement précalculé.
+- **Frontend** :
+  - `explore/workout-detail.tsx` retélécharge le catalogue complet à chaque ouverture ;
+  - l'historique peut passer à la pagination ;
+  - les listes doivent afficher les miniatures.
 
 ## Migrations et `synchronize`
 

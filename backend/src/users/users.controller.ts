@@ -67,9 +67,12 @@ export class UsersController {
   @ApiOperation({
     summary: 'Set the profile photo of the current user',
     description:
-      'Multipart upload in the `photo` field. The photo is cropped to a 512 px square, re-encoded as WebP and stripped of its metadata (EXIF, GPS). Replaces and deletes the previous one. The URL is public: anyone it is shared with can open it.',
+      'Multipart upload in the `photo` field. The photo is cropped to a 512 px square, plus a 128 px thumbnail for lists, re-encoded as WebP and stripped of its metadata (EXIF, GPS). Replaces and deletes the previous one. The URL is public: anyone it is shared with can open it.',
   })
-  @ApiResponse({ status: 200, description: '{ avatarUrl }' })
+  @ApiResponse({
+    status: 200,
+    description: '{ avatarUrl, avatarThumbnailUrl }',
+  })
   @ApiResponse({ status: 400, description: 'No photo, or not an image' })
   @ApiResponse({ status: 413, description: 'Over 10 MB or 50 megapixels' })
   @ApiResponse({ status: 415, description: 'Not JPEG, PNG or WebP' })
@@ -83,7 +86,10 @@ export class UsersController {
   @Auth()
   @Delete('me/avatar')
   @ApiOperation({ summary: 'Remove the profile photo of the current user' })
-  @ApiResponse({ status: 200, description: '{ avatarUrl: null }' })
+  @ApiResponse({
+    status: 200,
+    description: '{ avatarUrl: null, avatarThumbnailUrl: null }',
+  })
   removeAvatar(@Req() req: AuthenticatedRequest) {
     return this.usersService.removeAvatar(req.user.id);
   }
@@ -93,7 +99,7 @@ export class UsersController {
   @ApiOperation({
     summary: 'Find a user by ID',
     description:
-      'Returns the full account for the authenticated user and only the public identity (id, displayName, uniqueName, isPublic, avatarUrl) for anyone else.',
+      'Returns the full account for the authenticated user and only the public identity (id, displayName, uniqueName, isPublic, avatarUrl, avatarThumbnailUrl) for anyone else.',
   })
   @ApiResponse({ status: 200, description: 'User found' })
   @ApiResponse({ status: 404, description: 'User not found' })

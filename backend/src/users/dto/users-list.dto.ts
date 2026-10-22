@@ -10,6 +10,10 @@ export class UserListDto {
   @ApiProperty()
   displayName: string;
 
-  @ApiProperty({ type: String, nullable: true })
-  avatarUrl?: string | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: '128 px profile photo, or the full one if it has none',
+  })
+  avatarThumbnailUrl: string | null;
 }

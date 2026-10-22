@@ -1,6 +1,7 @@
 import { User } from 'src/users/entities/users.entity';
 import { CompletedWorkout } from 'src/workouts/entities/completed-workout.entity';
 import {
+  Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
@@ -36,6 +37,18 @@ export class Post {
     cascade: true,
   })
   comments: PostComment[];
+
+  /**
+   * Likes and visible comments, kept up to date by PostsService in the same
+   * transaction as the like or comment, so the feeds read a column instead of
+   * counting rows for every post. The top feed of the month used to count the
+   * likes of every post of the month on each call.
+   */
+  @Column({ type: 'int', default: 0 })
+  likesCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  commentsCount: number;
 
   @CreateDateColumn()
   createdAt: Date;

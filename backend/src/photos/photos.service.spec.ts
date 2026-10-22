@@ -24,10 +24,12 @@ describe('PhotosService', () => {
       .mockResolvedValueOnce('/uploads/workouts/photo.webp')
       .mockResolvedValueOnce('/uploads/workouts/thumb.webp');
 
-    await expect(service.uploadWithThumbnail(file)).resolves.toEqual({
-      photoUrl: '/uploads/workouts/photo.webp',
-      photoThumbnailUrl: '/uploads/workouts/thumb.webp',
-    });
+    await expect(service.uploadWithThumbnail('workout', file)).resolves.toEqual(
+      {
+        url: '/uploads/workouts/photo.webp',
+        thumbnailUrl: '/uploads/workouts/thumb.webp',
+      },
+    );
     const [[, photo], [, thumbnail]] = storage.save.mock.calls as Array<
       [string, Buffer]
     >;
@@ -41,16 +43,16 @@ describe('PhotosService', () => {
       .mockResolvedValueOnce('/uploads/workouts/photo.webp')
       .mockRejectedValueOnce(new Error('disk full'));
 
-    await expect(service.uploadWithThumbnail(file)).rejects.toThrow(
+    await expect(service.uploadWithThumbnail('workout', file)).rejects.toThrow(
       'disk full',
     );
     expect(storage.remove).toHaveBeenCalledWith('/uploads/workouts/photo.webp');
   });
 
   it('refuses a request without a photo', async () => {
-    await expect(service.uploadWithThumbnail(undefined)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      service.uploadWithThumbnail('workout', undefined),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(storage.save).not.toHaveBeenCalled();
   });
 });

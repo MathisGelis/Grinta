@@ -78,13 +78,22 @@ describe('UsersService access control', () => {
       uniqueName: 'owner',
       isPublic: true,
       avatarUrl: null,
+      avatarThumbnailUrl: null,
     });
   });
 });
 
 describe('UsersService profile photo', () => {
-  const oldUrl = '/uploads/avatars/11111111-1111-4111-8111-111111111111.webp';
-  const newUrl = '/uploads/avatars/22222222-2222-4222-8222-222222222222.webp';
+  const old = {
+    avatarUrl: '/uploads/avatars/11111111-1111-4111-8111-111111111111.webp',
+    avatarThumbnailUrl:
+      '/uploads/avatars/33333333-3333-4333-8333-333333333333.webp',
+  };
+  const fresh = {
+    avatarUrl: '/uploads/avatars/22222222-2222-4222-8222-222222222222.webp',
+    avatarThumbnailUrl:
+      '/uploads/avatars/44444444-4444-4444-8444-444444444444.webp',
+  };
   const file = { buffer: Buffer.from('jpeg') } as Express.Multer.File;
   const manager = { findOne: jest.fn(), update: jest.fn() };
   const userRepository = {
@@ -94,16 +103,16 @@ describe('UsersService profile photo', () => {
       ),
     },
   };
-  const photos = {
-    upload: jest.fn(),
-    remove: jest.fn(),
-  };
+  const photos = { uploadWithThumbnail: jest.fn(), removeAll: jest.fn() };
   let service: UsersService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    photos.upload.mockResolvedValue(newUrl);
-    manager.findOne.mockResolvedValue({ id: 'user-1', avatarUrl: oldUrl });
+    photos.uploadWithThumbnail.mockResolvedValue({
+      url: fresh.avatarUrl,
+      thumbnailUrl: fresh.avatarThumbnailUrl,
+    });
+    manager.findOne.mockResolvedValue({ id: 'user-1', ...old });
     service = new UsersService(
       userRepository as never,
       {} as never,
@@ -114,40 +123,51 @@ describe('UsersService profile photo', () => {
     );
   });
 
-  it('stores the new photo under a row lock, then deletes the old file', async () => {
-    await expect(service.setAvatar('user-1', file)).resolves.toEqual({
-      avatarUrl: newUrl,
-    });
-    expect(photos.upload).toHaveBeenCalledWith('avatar', file);
+  it('stores the new photo and thumbnail under a row lock, then deletes the old files', async () => {
+    await expect(service.setAvatar('user-1', file)).resolves.toEqual(fresh);
+    expect(photos.uploadWithThumbnail).toHaveBeenCalledWith('avatar', file);
     expect(manager.findOne).toHaveBeenCalledWith(expect.anything(), {
       where: { id: 'user-1' },
       lock: { mode: 'pessimistic_write' },
     });
-    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'user-1', {
-      avatarUrl: newUrl,
-    });
-    expect(photos.remove).toHaveBeenCalledTimes(1);
-    expect(photos.remove).toHaveBeenCalledWith(oldUrl);
+    expect(manager.update).toHaveBeenCalledWith(
+      expect.anything(),
+      'user-1',
+      fresh,
+    );
+    expect(photos.removeAll).toHaveBeenCalledTimes(1);
+    expect(photos.removeAll).toHaveBeenCalledWith([
+      old.avatarUrl,
+      old.avatarThumbnailUrl,
+    ]);
   });
 
-  it('deletes the new file and keeps the old one when the account is gone', async () => {
+  it('deletes the new files and keeps the old ones when the account is gone', async () => {
     manager.findOne.mockResolvedValue(null);
 
     await expect(service.setAvatar('user-1', file)).rejects.toBeInstanceOf(
       NotFoundException,
     );
     expect(manager.update).not.toHaveBeenCalled();
-    expect(photos.remove).toHaveBeenCalledTimes(1);
-    expect(photos.remove).toHaveBeenCalledWith(newUrl);
+    expect(photos.removeAll).toHaveBeenCalledTimes(1);
+    expect(photos.removeAll).toHaveBeenCalledWith([
+      fresh.avatarUrl,
+      fresh.avatarThumbnailUrl,
+    ]);
   });
 
-  it('removes the photo from the account, then its file', async () => {
-    await expect(service.removeAvatar('user-1')).resolves.toEqual({
-      avatarUrl: null,
-    });
-    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'user-1', {
-      avatarUrl: null,
-    });
-    expect(photos.remove).toHaveBeenCalledWith(oldUrl);
+  it('removes the photo and thumbnail from the account, then their files', async () => {
+    const none = { avatarUrl: null, avatarThumbnailUrl: null };
+
+    await expect(service.removeAvatar('user-1')).resolves.toEqual(none);
+    expect(manager.update).toHaveBeenCalledWith(
+      expect.anything(),
+      'user-1',
+      none,
+    );
+    expect(photos.removeAll).toHaveBeenCalledWith([
+      old.avatarUrl,
+      old.avatarThumbnailUrl,
+    ]);
   });
 });

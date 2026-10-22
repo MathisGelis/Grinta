@@ -8,8 +8,9 @@ import { readPhotoStorageConfig } from './photos.config';
 
 const FOLDERS: Record<PhotoKind, string> = {
   avatar: 'avatars',
+  avatar_thumbnail: 'avatars',
   workout: 'workouts',
-  thumbnail: 'workouts',
+  workout_thumbnail: 'workouts',
 };
 
 // The only file names the storage ever writes. Matching a stored URL against

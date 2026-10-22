@@ -25,9 +25,30 @@ Mesures détaillées dans PERFORMANCE.md, section « Egress et taille des répon
 - Outillage de mesure : `perf/db-egress-proxy.mjs` compte les octets envoyés par Postgres, et `perf/bench.mjs` affiche aussi la taille compressée des réponses.
 - Nouvelle dépendance : `compression`.
 
+### Deuxième passe : compteurs, stats incrémentales, miniature d'avatar
+
+- **Compteurs de likes et de commentaires sur les posts** (migration `AddPostCounters`, qui les remplit à partir des lignes existantes).
+  - Tenus à jour dans la même transaction que le like, le commentaire, sa suppression ou son masquage après 5 signalements.
+  - Les fils, le détail d'un post et le profil les lisent au lieu de recompter.
+  - `GET /posts/feed/top` passe de 180 à 30 ms de base sur 10 000 posts dans le mois.
+  - Les compteurs restent exacts avec des likes, un double appui ou des signalements simultanés (vérifié sur base réelle).
+- **Enregistrement d'une séance sans relire l'historique.**
+  - La séance est ajoutée aux stats stockées et comparée aux records stockés : 6 ko lus au lieu de 32 et 1 ms de base au lieu de 17, pour un compte de 350 séances. Le coût ne croît plus avec l'historique.
+  - Résultat identique au recalcul complet, prouvé sur 5 000 historiques aléatoires.
+  - Les stats sont verrouillées pendant l'ajout, donc deux séances enregistrées en même temps ne s'écrasent plus.
+  - La modification et la suppression recalculent toujours tout.
+- **Miniature d'avatar de 128 px** : `PUT /users/me/avatar` renvoie `{ avatarUrl, avatarThumbnailUrl }`. Migration `AddAvatarThumbnails`.
+  - Les listes renvoient maintenant `avatarThumbnailUrl` à la place de `avatarUrl` : recherche, followers, following, demandes d'abonnement, recommandations, likes, commentaires, fils, auteur d'un post. Si l'utilisateur n'a pas encore de miniature, c'est l'avatar complet.
+  - Le profil et `GET /users/:id` renvoient les deux.
+  - Ces champs n'ont jamais été publiés, rien ne casse côté app.
+- **Bug évité avant publication** : la première version des compteurs ne décrémentait pas à la suppression ou au masquage d'un commentaire. TypeORM ignore sans erreur une clé étrangère passée à `returning([...])`. Le scénario de bout en bout l'a détecté, il est corrigé et documenté dans PERFORMANCE.md.
+
 ### Déploiement
 
-Rien d'obligatoire au-delà de `npm ci` et du redémarrage. Optionnel côté nginx :
+1. `npm run migration:run:prod` **obligatoire**. Avec `synchronize: true` seul, les colonnes de compteurs seraient créées à 0 et les compteurs resteraient faux. La migration les remplit, même si `synchronize` a déjà créé les colonnes. Elle prend environ 2 s pour 24 000 posts et 290 000 likes.
+2. `npm ci` et redémarrage.
+
+Optionnel côté nginx :
 
 - servir `/uploads/` directement (`location /uploads/ { alias <UPLOADS_DIR>/; expires max; add_header X-Content-Type-Options nosniff; }`), ce qui décharge Node des photos ;
 - si nginx a déjà `gzip on` avec `gzip_proxied any`, il laisse passer les réponses déjà compressées par l'API.

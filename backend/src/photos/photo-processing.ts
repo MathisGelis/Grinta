@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import sharp from 'sharp';
 
-export type PhotoKind = 'avatar' | 'workout' | 'thumbnail';
+export type PhotoKind =
+  | 'avatar'
+  | 'avatar_thumbnail'
+  | 'workout'
+  | 'workout_thumbnail';
 
 /**
  * Largest picture accepted, in pixels. A 48 MP phone photo fits; the limit is
@@ -19,6 +23,8 @@ const ACCEPTED_FORMATS = new Set(['jpeg', 'png', 'webp']);
 const OUTPUT: Record<PhotoKind, sharp.ResizeOptions & { quality: number }> = {
   // Square, cropped around the centre: the app shows avatars in a circle.
   avatar: { width: 512, height: 512, fit: 'cover', quality: 80 },
+  // What lists show (followers, comments, feeds): about 5 KB instead of 50.
+  avatar_thumbnail: { width: 128, height: 128, fit: 'cover', quality: 75 },
   // Kept whole, only scaled down so a phone photo stays a few hundred kB.
   workout: {
     width: 1600,
@@ -30,7 +36,7 @@ const OUTPUT: Record<PhotoKind, sharp.ResizeOptions & { quality: number }> = {
   // What lists and feeds show. Every photo displayed is a download, so this
   // version, about a fifth of the full one, is what keeps the bandwidth of
   // a scrolling feed down; the full photo is for the workout screen only.
-  thumbnail: {
+  workout_thumbnail: {
     width: 600,
     height: 600,
     fit: 'inside',

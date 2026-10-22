@@ -52,7 +52,7 @@ describe('processPhoto', () => {
         .toBuffer(),
       'workout',
     );
-    const thumbnail = await processPhoto(photo, 'thumbnail');
+    const thumbnail = await processPhoto(photo, 'workout_thumbnail');
     const metadata = await sharp(thumbnail).metadata();
 
     expect([metadata.format, metadata.width, metadata.height]).toEqual([

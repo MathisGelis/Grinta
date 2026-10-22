@@ -50,6 +50,11 @@ export class User {
   @ApiProperty({ type: String, required: false, nullable: true })
   avatarUrl?: string | null;
 
+  /** 128 px copy of the profile photo, for lists. */
+  @Column({ type: 'text', nullable: true })
+  @ApiProperty({ type: String, required: false, nullable: true })
+  avatarThumbnailUrl?: string | null;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   @ApiProperty()
   createdAt: Date;

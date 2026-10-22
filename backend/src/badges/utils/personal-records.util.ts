@@ -29,38 +29,75 @@ export function detectPersonalRecords(
   const current = sessions.filter((s) => s.workoutId === workoutId);
 
   if (!current.length) return [];
-  const mine = summarizeSession(current.flatMap((s) => s.sets));
   const others = sessions
     .filter((s) => s.workoutId !== workoutId)
     .map((s) => summarizeSession(s.sets));
   const best = (pick: (s: SessionSummary) => number) =>
     Math.max(0, ...others.map(pick));
+
+  return recordsAgainst(summarizeSession(current.flatMap((s) => s.sets)), {
+    heaviestWeight: best((s) => s.heaviestWeight),
+    bestEstimatedOneRepMax: best((s) => s.bestEstimatedOneRepMax),
+    volume: best((s) => s.volume),
+    maxUnloadedReps: best((s) => s.maxUnloadedReps),
+  });
+}
+
+/** Best value of every record over the other sessions, 0 when there is none. */
+export type PreviousBests = Pick<
+  SessionSummary,
+  'heaviestWeight' | 'bestEstimatedOneRepMax' | 'volume' | 'maxUnloadedReps'
+>;
+
+/**
+ * The previous bests of the stored stats, which are the maxima over every
+ * session saved so far, so a new session can be judged without its history.
+ */
+export function previousBestsOf(stored: {
+  prWeight: number | null;
+  bestEstimatedOneRepMax: number | null;
+  bestSessionVolume: number | null;
+  maxReps: number | null;
+}): PreviousBests {
+  return {
+    heaviestWeight: stored.prWeight ?? 0,
+    bestEstimatedOneRepMax: stored.bestEstimatedOneRepMax ?? 0,
+    volume: stored.bestSessionVolume ?? 0,
+    maxUnloadedReps: stored.maxReps ?? 0,
+  };
+}
+
+/** Records a session sets against the best values of the other sessions. */
+export function recordsAgainst(
+  mine: SessionSummary,
+  previous: PreviousBests,
+): PersonalRecord[] {
   const candidates: PersonalRecord[] = [
     {
       type: BadgeType.HEAVIEST_WEIGHT,
       value: mine.heaviestWeight,
-      previousValue: best((s) => s.heaviestWeight),
+      previousValue: previous.heaviestWeight,
       weight: mine.heaviestWeight,
       reps: mine.repsAtHeaviest,
     },
     {
       type: BadgeType.BEST_ESTIMATED_1RM,
       value: mine.bestEstimatedOneRepMax,
-      previousValue: best((s) => s.bestEstimatedOneRepMax),
+      previousValue: previous.bestEstimatedOneRepMax,
       weight: mine.bestSet?.weight ?? null,
       reps: mine.bestSet?.reps ?? null,
     },
     {
       type: BadgeType.BEST_SESSION_VOLUME,
       value: mine.volume,
-      previousValue: best((s) => s.volume),
+      previousValue: previous.volume,
       weight: null,
       reps: null,
     },
     {
       type: BadgeType.MOST_REPS,
       value: mine.maxUnloadedReps,
-      previousValue: best((s) => s.maxUnloadedReps),
+      previousValue: previous.maxUnloadedReps,
       weight: 0,
       reps: mine.maxUnloadedReps,
     },

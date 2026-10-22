@@ -6,36 +6,28 @@ import { PhotoStorage } from './photo-storage';
 export class PhotosService {
   constructor(private readonly storage: PhotoStorage) {}
 
-  /** Validates, normalises and stores an uploaded photo, returns its URL. */
-  async upload(
-    kind: PhotoKind,
-    file: Express.Multer.File | undefined,
-  ): Promise<string> {
-    return this.storage.save(
-      kind,
-      await processPhoto(this.contentOf(file), kind),
-    );
-  }
-
   /**
-   * Stores a workout photo and its thumbnail. The thumbnail is made from the
+   * Validates, normalises and stores an uploaded photo with the thumbnail
+   * that lists display, and returns both URLs. The thumbnail is made from the
    * already reduced photo rather than from the upload, which avoids decoding
    * the original twice.
    */
   async uploadWithThumbnail(
+    kind: 'avatar' | 'workout',
     file: Express.Multer.File | undefined,
-  ): Promise<{ photoUrl: string; photoThumbnailUrl: string }> {
-    const photo = await processPhoto(this.contentOf(file), 'workout');
-    const thumbnail = await processPhoto(photo, 'thumbnail');
-    const photoUrl = await this.storage.save('workout', photo);
+  ): Promise<{ url: string; thumbnailUrl: string }> {
+    const thumbnailKind: PhotoKind = `${kind}_thumbnail`;
+    const photo = await processPhoto(this.contentOf(file), kind);
+    const thumbnail = await processPhoto(photo, thumbnailKind);
+    const url = await this.storage.save(kind, photo);
 
     try {
       return {
-        photoUrl,
-        photoThumbnailUrl: await this.storage.save('thumbnail', thumbnail),
+        url,
+        thumbnailUrl: await this.storage.save(thumbnailKind, thumbnail),
       };
     } catch (error) {
-      await this.storage.remove(photoUrl);
+      await this.storage.remove(url);
       throw error;
     }
   }

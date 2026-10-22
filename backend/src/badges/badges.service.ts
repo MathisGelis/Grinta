@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { ExerciseHistory } from '../exercise/exercise-stats.service';
+import {
+  ExerciseHistory,
+  ExerciseRecords,
+} from '../exercise/exercise-stats.service';
 import { percentChange, round } from '../stats/utils/stats.util';
 import { BadgeDto } from './dto/badge.dto';
 import { ListBadgesQueryDto } from './dto/list-badges-query.dto';
@@ -34,14 +37,33 @@ export class BadgesService {
   ): Promise<BadgeDto[]> {
     if (replaceExisting)
       await manager.delete(Badge, { workout: { id: workout.id } });
+    return this.awardRecords(
+      manager,
+      userId,
+      workout,
+      [...histories.values()].map((history) => ({
+        exerciseId: history.exerciseId,
+        exerciseName: history.exerciseName,
+        records: detectPersonalRecords(history.sessions, workout.id),
+      })),
+    );
+  }
+
+  /** Saves the badges of records already detected for a workout. */
+  async awardRecords(
+    manager: EntityManager,
+    userId: string,
+    workout: { id: string; completionDate: Date },
+    exercises: ExerciseRecords[],
+  ): Promise<BadgeDto[]> {
     const badges: Badge[] = [];
 
-    for (const history of histories.values())
-      for (const record of detectPersonalRecords(history.sessions, workout.id))
+    for (const exercise of exercises)
+      for (const record of exercise.records)
         badges.push(
           manager.create(Badge, {
             user: { id: userId },
-            exercise: { id: history.exerciseId, name: history.exerciseName },
+            exercise: { id: exercise.exerciseId, name: exercise.exerciseName },
             workout: { id: workout.id },
             type: record.type,
             value: record.value,

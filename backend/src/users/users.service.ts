@@ -18,6 +18,8 @@ import { Post } from 'src/posts/entities/post.entity';
 import { ConnectionsService } from 'src/connections/connections.service';
 import { PhotosService } from 'src/photos/photos.service';
 
+type AvatarUrls<T = string> = { avatarUrl: T; avatarThumbnailUrl: T };
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -88,6 +90,7 @@ export class UsersService {
       uniqueName: user.uniqueName,
       isPublic: user.isPublic,
       avatarUrl: user.avatarUrl ?? null,
+      avatarThumbnailUrl: user.avatarThumbnailUrl ?? null,
     };
   }
 
@@ -152,28 +155,37 @@ export class UsersService {
   async setAvatar(
     userId: string,
     file: Express.Multer.File | undefined,
-  ): Promise<{ avatarUrl: string }> {
-    const avatarUrl = await this.photos.upload('avatar', file);
-    let previous: string | null | undefined;
+  ): Promise<AvatarUrls> {
+    const { url, thumbnailUrl } = await this.photos.uploadWithThumbnail(
+      'avatar',
+      file,
+    );
+    const urls = { avatarUrl: url, avatarThumbnailUrl: thumbnailUrl };
+    let previous: string[];
 
     try {
-      previous = await this.swapAvatar(userId, avatarUrl);
+      previous = await this.swapAvatar(userId, urls);
     } catch (error) {
-      await this.photos.remove(avatarUrl);
+      await this.photos.removeAll([url, thumbnailUrl]);
       throw error;
     }
-    await this.photos.remove(previous);
-    return { avatarUrl };
+    await this.photos.removeAll(previous);
+    return urls;
   }
 
-  async removeAvatar(userId: string): Promise<{ avatarUrl: null }> {
-    await this.photos.remove(await this.swapAvatar(userId, null));
-    return { avatarUrl: null };
+  async removeAvatar(userId: string): Promise<AvatarUrls<null>> {
+    const urls = { avatarUrl: null, avatarThumbnailUrl: null };
+
+    await this.photos.removeAll(await this.swapAvatar(userId, urls));
+    return urls;
   }
 
-  // Sets the avatar under a row lock and returns the URL it replaced, so two
-  // concurrent uploads each get a different previous file to delete.
-  private swapAvatar(userId: string, avatarUrl: string | null) {
+  // Sets the avatar under a row lock and returns the URLs it replaced, so two
+  // concurrent uploads each get different previous files to delete.
+  private swapAvatar(
+    userId: string,
+    urls: AvatarUrls<string | null>,
+  ): Promise<string[]> {
     return this.userRepository.manager.transaction(async (manager) => {
       const user = await manager.findOne(User, {
         where: { id: userId },
@@ -181,17 +193,21 @@ export class UsersService {
       });
 
       if (!user) throw new NotFoundException('User not found');
-      await manager.update(User, userId, { avatarUrl });
-      return user.avatarUrl;
+      await manager.update(User, userId, urls);
+      return [user.avatarUrl, user.avatarThumbnailUrl].filter(
+        (url): url is string => !!url,
+      );
     });
   }
 
   // Every stored photo of an account, read before it is deleted.
   private async findPhotoUrls(userId: string): Promise<string[]> {
     const rows: Array<{ url: string }> = await this.userRepository.query(
-      `SELECT "avatarUrl" AS url FROM users WHERE id = $1 AND "avatarUrl" IS NOT NULL
+      `SELECT url FROM users, unnest(ARRAY["avatarUrl", "avatarThumbnailUrl"]) AS url
+        WHERE id = $1 AND url IS NOT NULL
        UNION ALL
-       SELECT unnest(ARRAY["photoUrl", "photoThumbnailUrl"]) FROM completed_workouts WHERE "userId" = $1 AND "photoUrl" IS NOT NULL`,
+       SELECT url FROM completed_workouts, unnest(ARRAY["photoUrl", "photoThumbnailUrl"]) AS url
+        WHERE "userId" = $1 AND url IS NOT NULL`,
       [userId],
     );
 
@@ -249,6 +265,7 @@ export class UsersService {
       displayName: user.displayName,
       uniqueName: user.uniqueName,
       avatarUrl: user.avatarUrl ?? null,
+      avatarThumbnailUrl: user.avatarThumbnailUrl ?? null,
       ...counts,
       followStatus,
       posts,
@@ -284,8 +301,8 @@ export class UsersService {
         'post.id AS id',
         'post."createdAt" AS "createdAt"',
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
+        'post."likesCount" AS "likesCount"',
+        'post."commentsCount" AS "commentsCount"',
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id
@@ -328,10 +345,10 @@ export class UsersService {
     return this.userRepository
       .createQueryBuilder('user')
       .select([
-        'user.id',
-        'user.uniqueName',
-        'user.displayName',
-        'user.avatarUrl',
+        'user.id AS id',
+        'user.uniqueName AS "uniqueName"',
+        'user.displayName AS "displayName"',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
       ])
       .where('user.id != :currentUserId', { currentUserId })
       .andWhere(
@@ -357,6 +374,6 @@ export class UsersService {
       .setParameter('prefix', `${normalized}%`)
       .setParameter('search', normalized)
       .limit(10)
-      .getMany();
+      .getRawMany();
   }
 }

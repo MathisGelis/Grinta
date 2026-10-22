@@ -6,9 +6,17 @@ import { ExerciseStatsDto } from './dto/exercise-stats.dto';
 import { Exercise } from './entities/exercise.entity';
 import { UserExerciseStats } from './entities/user-exercise-stats.entity';
 import {
+  detectPersonalRecords,
+  PersonalRecord,
+  previousBestsOf,
+  recordsAgainst,
+} from '../badges/utils/personal-records.util';
+import {
+  addSession,
   buildExerciseStats,
   ExerciseSession,
-  ExerciseStatsSnapshot,
+  StoredExerciseStats,
+  summarizeSession,
 } from './utils/exercise-history.util';
 
 /** Every session of one exercise for one user. */
@@ -17,6 +25,30 @@ export interface ExerciseHistory {
   exerciseName: string;
   sessions: ExerciseSession[];
 }
+
+/** Records one workout set on one exercise. */
+export interface ExerciseRecords {
+  exerciseId: string;
+  exerciseName: string;
+  records: PersonalRecord[];
+}
+
+type StatsRow = {
+  exercise_id: string;
+  PR: number | null;
+  pr_reps: number | null;
+  best_estimated_1rm: number | null;
+  best_session_volume: number | null;
+  max_reps: number | null;
+  last_reps: number | null;
+  last_weight: number | null;
+  last_sets: SetPair[] | null;
+  last_performed_at: Date | null;
+  total_sessions: number;
+  total_sets: number;
+  total_reps: number;
+  total_volume: number;
+};
 
 @Injectable()
 export class ExerciseStatsService {
@@ -41,18 +73,112 @@ export class ExerciseStatsService {
 
     if (!ids.length) return new Map();
     const histories = await this.loadHistories(manager, userId, ids);
-    const snapshots = ids.map((id) => ({
+    const snapshots: Array<{
+      id: string;
+      snapshot: StoredExerciseStats | null;
+    }> = ids.map((id) => ({
       id,
       snapshot: buildExerciseStats(histories.get(id)?.sessions ?? []),
     }));
     const upserts = snapshots.filter(
-      (s): s is { id: string; snapshot: ExerciseStatsSnapshot } =>
+      (s): s is { id: string; snapshot: StoredExerciseStats } =>
         s.snapshot !== null,
     );
     const vanished = snapshots.filter((s) => !s.snapshot).map((s) => s.id);
 
-    // One statement for every exercise, keyed on the (user, exercise) unique
-    // constraint, instead of a read then a write per exercise.
+    await this.upsert(manager, userId, upserts);
+    if (vanished.length)
+      await manager
+        .createQueryBuilder()
+        .delete()
+        .from(UserExerciseStats)
+        .where('user_id = :userId AND exercise_id IN (:...vanished)', {
+          userId,
+          vanished,
+        })
+        .execute();
+    return histories;
+  }
+
+  /**
+   * Adds a workout that was just saved to the stats of its exercises and
+   * returns the records it set, without reading the history again: the stored
+   * stats already hold every best value a new session has to beat (see the
+   * equivalence tests of addSession and recordsAgainst). The stats rows are
+   * locked first, so two workouts saved at the same time are added one after
+   * the other instead of overwriting each other's totals. An exercise without
+   * stats yet is rebuilt from its history, which is then this workout alone
+   * unless the stats were never filled for it.
+   */
+  async addWorkout(
+    manager: EntityManager,
+    userId: string,
+    workout: { id: string; completionDate: Date },
+    exercises: Array<{ id: string; name: string; sets?: SetPair[] | null }>,
+  ): Promise<ExerciseRecords[]> {
+    const byExercise = new Map<string, { name: string; sets: SetPair[] }>();
+
+    // An exercise listed twice in one workout is one session.
+    for (const e of exercises) {
+      const entry = byExercise.get(e.id) ?? { name: e.name, sets: [] };
+
+      entry.sets.push(...(e.sets ?? []));
+      byExercise.set(e.id, entry);
+    }
+    const ids = [...byExercise.keys()];
+
+    if (!ids.length) return [];
+    const rows: StatsRow[] = await manager.query(
+      `SELECT * FROM user_exercise_stats
+        WHERE user_id = $1 AND exercise_id = ANY($2::uuid[])
+        FOR UPDATE`,
+      [userId, ids],
+    );
+    const stored = new Map(
+      rows
+        .filter((row) => row.last_performed_at)
+        .map((row) => [row.exercise_id, fromRow(row)]),
+    );
+    const result: ExerciseRecords[] = [];
+    const upserts: Array<{ id: string; snapshot: StoredExerciseStats }> = [];
+
+    for (const [id, { name, sets }] of byExercise) {
+      const previous = stored.get(id);
+
+      if (!previous) continue;
+      upserts.push({
+        id,
+        snapshot: addSession(previous, sets, workout.completionDate),
+      });
+      result.push({
+        exerciseId: id,
+        exerciseName: name,
+        records: recordsAgainst(
+          summarizeSession(sets),
+          previousBestsOf(previous),
+        ),
+      });
+    }
+    await this.upsert(manager, userId, upserts);
+    const missing = ids.filter((id) => !stored.has(id));
+    const histories = await this.recompute(manager, userId, missing);
+
+    for (const history of histories.values())
+      result.push({
+        exerciseId: history.exerciseId,
+        exerciseName: history.exerciseName,
+        records: detectPersonalRecords(history.sessions, workout.id),
+      });
+    return result;
+  }
+
+  // One statement for every exercise, keyed on the (user, exercise) unique
+  // constraint, instead of a read then a write per exercise.
+  private async upsert(
+    manager: EntityManager,
+    userId: string,
+    upserts: Array<{ id: string; snapshot: StoredExerciseStats }>,
+  ) {
     if (upserts.length)
       await manager
         .createQueryBuilder()
@@ -85,17 +211,6 @@ export class ExerciseStatsService {
           ['user_id', 'exercise_id'],
         )
         .execute();
-    if (vanished.length)
-      await manager
-        .createQueryBuilder()
-        .delete()
-        .from(UserExerciseStats)
-        .where('user_id = :userId AND exercise_id IN (:...vanished)', {
-          userId,
-          vanished,
-        })
-        .execute();
-    return histories;
   }
 
   async getForUser(
@@ -180,7 +295,25 @@ export class ExerciseStatsService {
   }
 }
 
-function toColumns(snapshot: ExerciseStatsSnapshot) {
+function fromRow(row: StatsRow): StoredExerciseStats {
+  return {
+    totalSessions: row.total_sessions,
+    totalSets: row.total_sets,
+    totalReps: row.total_reps,
+    totalVolume: row.total_volume,
+    prWeight: row.PR,
+    prReps: row.pr_reps,
+    bestEstimatedOneRepMax: row.best_estimated_1rm,
+    bestSessionVolume: row.best_session_volume,
+    maxReps: row.max_reps,
+    lastPerformedAt: row.last_performed_at!,
+    lastSets: row.last_sets ?? [],
+    lastWeight: row.last_weight ?? 0,
+    lastReps: row.last_reps ?? 0,
+  };
+}
+
+function toColumns(snapshot: StoredExerciseStats) {
   return {
     PR: snapshot.prWeight,
     pr_reps: snapshot.prReps,

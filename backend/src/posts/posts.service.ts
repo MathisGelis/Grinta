@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { clampLimit } from '../common/utils/limit';
 import { ModerationService } from '../moderation/moderation.service';
 import { CommentReport } from './entities/comment-report.entity';
@@ -15,6 +15,11 @@ import { Post } from './entities/post.entity';
 import { ReportReason } from './enums/report-reason.enum';
 
 const AUTO_HIDE_THRESHOLD = 5;
+
+// Columns returned by the DELETE and UPDATE ... RETURNING on post_comments.
+// Written as SQL: given as names, TypeORM keeps only entity properties and
+// silently drops the "postId" foreign key.
+type CommentRow = { isHidden: boolean; postId: string };
 
 @Injectable()
 export class PostsService {
@@ -81,7 +86,7 @@ export class PostsService {
         'u.id AS "userId"',
         'u."displayName" AS "displayName"',
         'u."uniqueName" AS "uniqueName"',
-        'u."avatarUrl" AS "avatarUrl"',
+        'COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"',
         'w.id AS "workoutId"',
         'w.title AS "workoutTitle"',
         'w."photoUrl" AS "workoutPhotoUrl"',
@@ -89,8 +94,8 @@ export class PostsService {
         'w.description AS "workoutDescription"',
         'w."completionDate" AS "workoutCompletionDate"',
         'w."totalDurationSeconds" AS "workoutDurationSeconds"',
-        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
+        'post."likesCount" AS "likesCount"',
+        'post."commentsCount" AS "commentsCount"',
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id AND ml."userId" = :userId
@@ -117,30 +122,46 @@ export class PostsService {
         'w."photoUrl" AS "workoutPhotoUrl"',
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'w."completionDate" AS "workoutCompletionDate"',
-        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
+        'post."likesCount" AS "likesCount"',
+        'post."commentsCount" AS "commentsCount"',
       ])
       .orderBy('post."createdAt"', 'DESC')
       .limit(clampLimit(limit))
       .getRawMany();
   }
 
+  /**
+   * The like and the post's counter change in one transaction, and the
+   * counter moves only when a row was really inserted or deleted, so a double
+   * tap or two concurrent requests cannot make it drift.
+   */
   async toggleLike(userId: string, postId: string) {
     await this.assertPostVisible(userId, postId);
-    const existing = await this.likeRepository.findOne({
-      where: { user: { id: userId }, post: { id: postId } },
-    });
+    return this.postRepository.manager.transaction(async (manager) => {
+      const removed = await manager
+        .createQueryBuilder()
+        .delete()
+        .from(PostLike)
+        .where('"userId" = :userId AND "postId" = :postId', { userId, postId })
+        .execute();
 
-    if (existing) {
-      await this.likeRepository.delete(existing.id);
+      if (removed.affected) {
+        await this.bumpCounter(manager, postId, 'likesCount', -1);
+        return { liked: false };
+      }
+      const inserted = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(PostLike)
+        .values({ user: { id: userId }, post: { id: postId } })
+        .orIgnore()
+        .returning('id')
+        .execute();
 
-      return { liked: false };
-    }
-    await this.likeRepository.save({
-      user: { id: userId },
-      post: { id: postId },
+      if ((inserted.raw as unknown[]).length)
+        await this.bumpCounter(manager, postId, 'likesCount', 1);
+      return { liked: true };
     });
-    return { liked: true };
   }
 
   async getLikesList(viewerId: string, postId: string) {
@@ -154,7 +175,7 @@ export class PostsService {
         'user.id AS id',
         'user.displayName AS "displayName"',
         'user.uniqueName AS "uniqueName"',
-        'user.avatarUrl AS "avatarUrl"',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         'like.createdAt AS "createdAt"',
       ])
       .orderBy('like.createdAt', 'DESC')
@@ -164,10 +185,15 @@ export class PostsService {
   async commentPost(userId: string, postId: string, content: string) {
     await this.assertPostVisible(userId, postId);
     await this.assertCleanText(content);
-    return this.commentRepository.save({
-      user: { id: userId },
-      post: { id: postId },
-      content,
+    return this.postRepository.manager.transaction(async (manager) => {
+      const comment = await manager.save(PostComment, {
+        user: { id: userId },
+        post: { id: postId },
+        content,
+      });
+
+      await this.bumpCounter(manager, postId, 'commentsCount', 1);
+      return comment;
     });
   }
 
@@ -197,7 +223,20 @@ export class PostsService {
     const isPostOwner = comment.post.user.id === userId;
 
     if (!isOwner && !isPostOwner) throw new ForbiddenException('Not allowed');
-    await this.commentRepository.delete(commentId);
+    await this.postRepository.manager.transaction(async (manager) => {
+      // A hidden comment was already taken off the counter when it was hidden.
+      const deleted = await manager
+        .createQueryBuilder()
+        .delete()
+        .from(PostComment)
+        .where('id = :commentId', { commentId })
+        .returning('"isHidden", "postId"')
+        .execute();
+      const row = (deleted.raw as CommentRow[])[0];
+
+      if (row && !row.isHidden)
+        await this.bumpCounter(manager, row.postId, 'commentsCount', -1);
+    });
     return { message: 'Comment deleted' };
   }
 
@@ -215,7 +254,7 @@ export class PostsService {
         'comment.createdAt AS "createdAt"',
         'user.id AS "userId"',
         'user.displayName AS "displayName"',
-        'user.avatarUrl AS "avatarUrl"',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
       ])
       .orderBy('comment.createdAt', 'DESC')
       .getRawMany();
@@ -247,7 +286,7 @@ export class PostsService {
     let hidden = updated?.isHidden ?? false;
 
     if (updated && !hidden && updated.reportCount >= AUTO_HIDE_THRESHOLD) {
-      await this.commentRepository.update(commentId, { isHidden: true });
+      await this.hideComment(commentId);
       hidden = true;
     }
     return {
@@ -274,10 +313,10 @@ export class PostsService {
         'post.id AS id',
         'post.createdAt AS "createdAt"',
         'postUser.displayName AS "displayName"',
-        'postUser.avatarUrl AS "avatarUrl"',
+        'COALESCE(postUser.avatarThumbnailUrl, postUser.avatarUrl) AS "avatarThumbnailUrl"',
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
+        'post."likesCount" AS "likesCount"',
+        'post."commentsCount" AS "commentsCount"',
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id
@@ -317,15 +356,11 @@ export class PostsService {
         'post.id AS id',
         'post."createdAt" AS "createdAt"',
         'u."displayName" AS "displayName"',
-        'u."avatarUrl" AS "avatarUrl"',
+        'COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"',
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
-        `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
-        `(
-          (SELECT COUNT(*) FROM post_likes l WHERE l."postId" = post.id)
-          +
-          (SELECT COUNT(*) FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false)
-        )::int AS score`,
+        'post."likesCount" AS "likesCount"',
+        'post."commentsCount" AS "commentsCount"',
+        '(post."likesCount" + post."commentsCount") AS score',
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id
@@ -337,6 +372,39 @@ export class PostsService {
       .limit(clampLimit(limit))
       .setParameter('userId', userId)
       .getRawMany();
+  }
+
+  // Hides a visible comment and takes it off its post's counter; a comment
+  // already hidden by a concurrent report is left as it is.
+  private hideComment(commentId: string) {
+    return this.postRepository.manager.transaction(async (manager) => {
+      const hidden = await manager
+        .createQueryBuilder()
+        .update(PostComment)
+        .set({ isHidden: true })
+        .where('id = :commentId AND "isHidden" = false', { commentId })
+        .returning('"postId"')
+        .execute();
+      const row = (hidden.raw as CommentRow[])[0];
+
+      if (row) await this.bumpCounter(manager, row.postId, 'commentsCount', -1);
+    });
+  }
+
+  // An explicit WHERE: increment() drops an undefined criterion and would
+  // then update every post.
+  private bumpCounter(
+    manager: EntityManager,
+    postId: string,
+    counter: 'likesCount' | 'commentsCount',
+    delta: 1 | -1,
+  ) {
+    return manager
+      .createQueryBuilder()
+      .update(Post)
+      .set({ [counter]: () => `"${counter}" + ${delta}` })
+      .where('id = :postId', { postId })
+      .execute();
   }
 
   /**

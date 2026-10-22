@@ -154,3 +154,67 @@ export function buildExerciseStats(
     lastReps: last.summary.topSet?.reps ?? 0,
   };
 }
+
+/** What is stored per user and exercise: a snapshot without the last workout id. */
+export type StoredExerciseStats = Omit<ExerciseStatsSnapshot, 'lastWorkoutId'>;
+
+const positiveOrNull = (value: number) => (value > 0 ? value : null);
+
+/**
+ * The stats once a new session is added to the stored ones, without reading
+ * the history again. Gives the same result as buildExerciseStats over the
+ * whole history for a session created after every other one, which is the
+ * case of a workout being saved: on equal completion dates the newest
+ * creation wins, as in compareSessionsDesc. A session without a valid set
+ * changes nothing, as buildExerciseStats ignores it.
+ */
+export function addSession(
+  stored: StoredExerciseStats,
+  sets: SetPair[] | null | undefined,
+  completedAt: Date,
+): StoredExerciseStats {
+  const session = summarizeSession(sets);
+
+  if (!session.sets) return stored;
+  const storedPr = stored.prWeight ?? 0;
+  const prWeight = Math.max(storedPr, session.heaviestWeight);
+  const prReps = Math.max(
+    storedPr === prWeight ? (stored.prReps ?? 0) : 0,
+    session.heaviestWeight === prWeight ? session.repsAtHeaviest : 0,
+  );
+  const isLast = +completedAt >= +stored.lastPerformedAt;
+
+  return {
+    totalSessions: stored.totalSessions + 1,
+    totalSets: stored.totalSets + session.sets,
+    totalReps: stored.totalReps + session.reps,
+    totalVolume: round(stored.totalVolume + session.volume),
+    prWeight: positiveOrNull(prWeight),
+    prReps: prWeight > 0 ? prReps : null,
+    bestEstimatedOneRepMax: positiveOrNull(
+      Math.max(
+        stored.bestEstimatedOneRepMax ?? 0,
+        session.bestEstimatedOneRepMax,
+      ),
+    ),
+    bestSessionVolume: positiveOrNull(
+      Math.max(stored.bestSessionVolume ?? 0, session.volume),
+    ),
+    maxReps: positiveOrNull(
+      Math.max(stored.maxReps ?? 0, session.maxUnloadedReps),
+    ),
+    ...(isLast
+      ? {
+          lastPerformedAt: completedAt,
+          lastSets: validSets(sets),
+          lastWeight: session.topSet?.weight ?? 0,
+          lastReps: session.topSet?.reps ?? 0,
+        }
+      : {
+          lastPerformedAt: stored.lastPerformedAt,
+          lastSets: stored.lastSets,
+          lastWeight: stored.lastWeight,
+          lastReps: stored.lastReps,
+        }),
+  };
+}

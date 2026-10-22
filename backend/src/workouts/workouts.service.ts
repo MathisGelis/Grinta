@@ -92,12 +92,21 @@ export class WorkoutService {
         }),
       );
       const saved = await manager.save(workout);
-      const badges = await this.syncProgress(
+      const records = await this.exerciseStats.addWorkout(
         manager,
         user.id,
         saved,
-        [...byId.keys()],
-        { replaceExisting: false },
+        saved.exercises.map((e) => ({
+          id: e.exercise.id,
+          name: e.exercise.name,
+          sets: e.sets,
+        })),
+      );
+      const badges = await this.badges.awardRecords(
+        manager,
+        user.id,
+        saved,
+        records,
       );
 
       return Object.assign(saved, { badges });
@@ -328,7 +337,11 @@ export class WorkoutService {
     });
 
     if (!owned) throw new NotFoundException('Completed workout not found');
-    const urls = await this.photos.uploadWithThumbnail(file);
+    const { url, thumbnailUrl } = await this.photos.uploadWithThumbnail(
+      'workout',
+      file,
+    );
+    const urls = { photoUrl: url, photoThumbnailUrl: thumbnailUrl };
     let previous: string[];
 
     try {

@@ -74,6 +74,7 @@ describe('WorkoutService completed workouts and progress', () => {
   const exercise = (id: string) => ({ id, name: id.toUpperCase() });
   const badge = { id: 'badge-1', type: 'heaviest_weight' };
   const histories = new Map();
+  const records = [{ exerciseId: 'a', exerciseName: 'A', records: [] }];
   let manager: {
     create: jest.Mock;
     save: jest.Mock;
@@ -82,8 +83,8 @@ describe('WorkoutService completed workouts and progress', () => {
     delete: jest.Mock;
   };
   let exerciseRepo: { find: jest.Mock };
-  let exerciseStats: { recompute: jest.Mock };
-  let badges: { awardForWorkout: jest.Mock };
+  let exerciseStats: { recompute: jest.Mock; addWorkout: jest.Mock };
+  let badges: { awardForWorkout: jest.Mock; awardRecords: jest.Mock };
   let photos: { removeAll: jest.Mock };
   let service: WorkoutService;
 
@@ -98,8 +99,14 @@ describe('WorkoutService completed workouts and progress', () => {
       delete: jest.fn(),
     };
     exerciseRepo = { find: jest.fn() };
-    exerciseStats = { recompute: jest.fn().mockResolvedValue(histories) };
-    badges = { awardForWorkout: jest.fn().mockResolvedValue([badge]) };
+    exerciseStats = {
+      recompute: jest.fn().mockResolvedValue(histories),
+      addWorkout: jest.fn().mockResolvedValue(records),
+    };
+    badges = {
+      awardForWorkout: jest.fn().mockResolvedValue([badge]),
+      awardRecords: jest.fn().mockResolvedValue([badge]),
+    };
     photos = { removeAll: jest.fn() };
     const dataSource = {
       transaction: (run: (m: typeof manager) => unknown) => run(manager),
@@ -117,7 +124,7 @@ describe('WorkoutService completed workouts and progress', () => {
     );
   });
 
-  it('refreshes the stats of each exercise once and returns the earned badges', async () => {
+  it('adds the workout to the stats without rereading the history and returns the earned badges', async () => {
     exerciseRepo.find.mockResolvedValue([exercise('a'), exercise('b')]);
 
     const result = await service.createCompletedWorkout(user, {
@@ -131,16 +138,22 @@ describe('WorkoutService completed workouts and progress', () => {
       ],
     });
 
-    expect(exerciseStats.recompute).toHaveBeenCalledWith(manager, 'user-1', [
-      'a',
-      'b',
-    ]);
-    expect(badges.awardForWorkout).toHaveBeenCalledWith(
+    expect(exerciseStats.recompute).not.toHaveBeenCalled();
+    expect(exerciseStats.addWorkout).toHaveBeenCalledWith(
       manager,
       'user-1',
       expect.objectContaining({ id: 'w-1' }),
-      histories,
-      { replaceExisting: false },
+      [
+        { id: 'a', name: 'A', sets: [{ reps: 5, weight: 100 }] },
+        { id: 'b', name: 'B', sets: [{ reps: 8, weight: 40 }] },
+        { id: 'a', name: 'A', sets: [{ reps: 5, weight: 90 }] },
+      ],
+    );
+    expect(badges.awardRecords).toHaveBeenCalledWith(
+      manager,
+      'user-1',
+      expect.objectContaining({ id: 'w-1' }),
+      records,
     );
     expect(result).toMatchObject({ id: 'w-1', badges: [badge] });
   });
@@ -262,7 +275,10 @@ describe('WorkoutService completed workout photo', () => {
     query.where.mockReturnValue(query);
     query.getOne.mockResolvedValue({ id: 'w-1', ...old });
     completedRepo.exists.mockResolvedValue(true);
-    photos.uploadWithThumbnail.mockResolvedValue({ ...fresh });
+    photos.uploadWithThumbnail.mockResolvedValue({
+      url: fresh.photoUrl,
+      thumbnailUrl: fresh.photoThumbnailUrl,
+    });
     service = new WorkoutService(
       {} as never,
       {} as never,
@@ -293,7 +309,7 @@ describe('WorkoutService completed workout photo', () => {
     await expect(
       service.setCompletedWorkoutPhoto(user, 'w-1', file),
     ).resolves.toEqual(fresh);
-    expect(photos.uploadWithThumbnail).toHaveBeenCalledWith(file);
+    expect(photos.uploadWithThumbnail).toHaveBeenCalledWith('workout', file);
     expect(query.setLock).toHaveBeenCalledWith('pessimistic_write');
     expect(query.where).toHaveBeenCalledWith(expect.any(String), {
       workoutId: 'w-1',

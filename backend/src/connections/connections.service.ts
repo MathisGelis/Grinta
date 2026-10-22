@@ -135,8 +135,11 @@ export class ConnectionsService {
         'user.id',
         'user.displayName',
         'user.uniqueName',
-        'user.avatarUrl',
       ])
+      .addSelect(
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl)',
+        'user_avatarThumbnailUrl',
+      )
       .orderBy('request.createdAt', 'DESC')
       .getRawMany();
   }
@@ -150,7 +153,7 @@ export class ConnectionsService {
           'user.id AS id',
           'user.uniqueName AS "uniqueName"',
           'user.displayName AS "displayName"',
-          'user.avatarUrl AS "avatarUrl"',
+          'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         ])
         .where('connection.followingId = :userId', { userId })
         .getRawMany() ?? []
@@ -166,7 +169,7 @@ export class ConnectionsService {
           'user.id AS id',
           'user.uniqueName AS "uniqueName"',
           'user.displayName AS "displayName"',
-          'user.avatarUrl AS "avatarUrl"',
+          'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         ])
         .where('connection.followerId = :userId', { userId })
         .getRawMany() ?? []
@@ -183,7 +186,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'user.avatarUrl AS "avatarUrl"',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         'COUNT(*)::int AS score',
       ])
       .where('c1.follower = :currentUserId', { currentUserId })
@@ -212,7 +215,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'user.avatarUrl AS "avatarUrl"',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         'COUNT(c.id)::int AS followersCount',
       ])
       .groupBy('user.id')
@@ -232,7 +235,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'user.avatarUrl AS "avatarUrl"',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
       ])
       .orderBy('RANDOM()')
       .limit(limit);
