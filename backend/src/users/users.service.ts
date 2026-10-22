@@ -191,7 +191,7 @@ export class UsersService {
     const rows: Array<{ url: string }> = await this.userRepository.query(
       `SELECT "avatarUrl" AS url FROM users WHERE id = $1 AND "avatarUrl" IS NOT NULL
        UNION ALL
-       SELECT "photoUrl" FROM completed_workouts WHERE "userId" = $1 AND "photoUrl" IS NOT NULL`,
+       SELECT unnest(ARRAY["photoUrl", "photoThumbnailUrl"]) FROM completed_workouts WHERE "userId" = $1 AND "photoUrl" IS NOT NULL`,
       [userId],
     );
 
@@ -278,10 +278,12 @@ export class UsersService {
   private findProfilePosts(currentUserId: string, targetUserId: string) {
     return this.postRepository
       .createQueryBuilder('post')
+      .leftJoin('post.workout', 'w')
       .where('post."userId" = :targetUserId', { targetUserId })
       .select([
         'post.id AS id',
         'post."createdAt" AS "createdAt"',
+        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
         `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
         `EXISTS (

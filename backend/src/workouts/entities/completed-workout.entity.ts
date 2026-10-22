@@ -45,6 +45,11 @@ export class CompletedWorkout {
   @ApiProperty({ type: String, required: false, nullable: true })
   photoUrl?: string | null;
 
+  /** Smaller copy of the photo (600 px), for lists and feeds. */
+  @Column({ type: 'text', nullable: true })
+  @ApiProperty({ type: String, required: false, nullable: true })
+  photoThumbnailUrl?: string | null;
+
   @OneToMany(() => CompletedWorkoutExercise, (cwe) => cwe.workout, {
     cascade: true,
   })

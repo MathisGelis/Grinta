@@ -38,6 +38,31 @@ describe('processPhoto', () => {
     ]);
   });
 
+  it('makes a 600 px thumbnail several times lighter than the photo', async () => {
+    const photo = await processPhoto(
+      await picture(4000, 3000)
+        .composite([
+          {
+            input: Buffer.from(
+              '<svg width="4000" height="3000"><circle cx="2000" cy="1500" r="1200" fill="#2050d0"/><rect x="300" y="300" width="900" height="500" fill="#f0c020"/></svg>',
+            ),
+          },
+        ])
+        .jpeg()
+        .toBuffer(),
+      'workout',
+    );
+    const thumbnail = await processPhoto(photo, 'thumbnail');
+    const metadata = await sharp(thumbnail).metadata();
+
+    expect([metadata.format, metadata.width, metadata.height]).toEqual([
+      'webp',
+      600,
+      450,
+    ]);
+    expect(thumbnail.length * 3).toBeLessThan(photo.length);
+  });
+
   it('never enlarges a small workout photo', async () => {
     const output = await processPhoto(
       await picture(400, 300).webp().toBuffer(),

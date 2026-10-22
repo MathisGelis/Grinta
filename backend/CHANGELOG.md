@@ -5,16 +5,22 @@
 ### Ce qui change
 
 - **Photo de profil.** `PUT /users/me/avatar` (multipart, champ `photo`) enregistre la photo et renvoie `{ avatarUrl }`. `DELETE /users/me/avatar` la retire. Une nouvelle photo remplace l'ancienne, dont le fichier est supprimé.
-- **Photo de séance.** `PUT /workouts/completed/:id/photo` et `DELETE /workouts/completed/:id/photo`, même fonctionnement, propriétaire seulement (404 sinon, comme les autres routes de modification). Une photo par séance. La séance est créée d'abord, la photo envoyée ensuite : le JSON de `POST /workouts/completed` ne change pas.
+- **Photo de séance.** `PUT /workouts/completed/:id/photo` et `DELETE /workouts/completed/:id/photo`, même fonctionnement, propriétaire seulement (404 sinon, comme les autres routes de modification). Une photo par séance. La séance est créée d'abord, la photo envoyée ensuite : le JSON de `POST /workouts/completed` ne change pas. La réponse contient `{ photoUrl, photoThumbnailUrl }`.
+- **Miniature de la photo de séance, pour limiter la bande passante.** Chaque photo affichée est un téléchargement, et c'est le défilement des fils qui en consomme le plus. Chaque envoi produit donc aussi une miniature de 600 px.
+  - Taille mesurée : environ 22 ko, contre 108 ko pour une photo de salle réaliste (5 fois moins) et 568 ko dans le pire cas (25 fois moins).
+  - Coût : 80 à 115 ms de plus par envoi. La miniature est tirée de la photo déjà réduite, l'original n'est décodé qu'une fois.
+  - Les listes et les fils ne renvoient que la miniature. La photo complète n'est renvoyée que là où elle s'affiche en grand : détail de la séance, détail d'un post, et `GET /posts/mine`.
+  - Ordre de grandeur, avec 20 nouvelles photos vues par jour dans le fil : environ 13 Mo par mois et par utilisateur actif, au lieu d'environ 150 Mo.
 - **Où les URL apparaissent.**
   - `avatarUrl` : le compte (`GET /users/:id`, y compris l'identité publique vue par les autres), le profil, la recherche, les followers et following, les demandes d'abonnement, les recommandations, les posts (détail, fils, likes, commentaires).
-  - `photoUrl` : l'historique (`GET /workouts/completed`) et le détail d'une séance.
-  - `workoutPhotoUrl` : le détail d'un post et `GET /posts/mine`.
+  - `photoUrl` et `photoThumbnailUrl` : l'historique (`GET /workouts/completed`, où l'app doit afficher la miniature) et le détail d'une séance.
+  - `workoutPhotoUrl` et `workoutPhotoThumbnailUrl` : le détail d'un post et `GET /posts/mine`.
+  - `workoutPhotoThumbnailUrl` seule : les fils (`/posts/feed/following`, `/posts/feed/top`) et les posts du profil.
   - Le champ `image_url` documenté dans `UserListDto`, jamais rempli, est remplacé par `avatarUrl`.
 - **Les deux URL ne se modifient que par ces routes.** `PATCH /users/:id` et `PATCH /workouts/completed/:id` refusent `avatarUrl` et `photoUrl` (400), sinon on pourrait faire pointer son avatar vers n'importe quelle image.
-- **Les fichiers suivent les données** : supprimer une séance supprime sa photo, supprimer son compte supprime son avatar et les photos de ses séances.
+- **Les fichiers suivent les données** : supprimer une séance supprime sa photo et sa miniature, supprimer son compte supprime son avatar et les photos de ses séances.
 - **« Bench Press (Barbell) »** : le développé couché à plat à la barre, avec description, consignes et les deux photos de free-exercise-db (relues : barre bras tendus, puis barre à la poitrine). Le catalogue passe à 429 exercices, dont 273 illustrés. Aucun renommage : le seed crée simplement la ligne.
-- Migration `AddPhotos` (colonnes `users.avatarUrl` et `completed_workouts.photoUrl`, idempotente et réversible) et nouvelle dépendance `sharp` 0.34 (traitement d'image, Node 18.17 ou plus récent).
+- Migrations `AddPhotos` (colonnes `users.avatarUrl` et `completed_workouts.photoUrl`) et `AddPhotoThumbnails` (`completed_workouts.photoThumbnailUrl`), idempotentes et réversibles. Nouvelle dépendance `sharp` 0.34 (traitement d'image, Node 18.17 ou plus récent).
 
 ### Sécurité des envois
 
@@ -42,6 +48,7 @@
 
 - **Stockage sur le disque de la VM.** Il fonctionne dès le déploiement, sans service ni clé supplémentaires. Contreparties : c'est la seule copie des photos (le dossier doit être sauvegardé), l'espace disque de la VM s'épuise, aucune mise en cache CDN, et l'API ne peut pas tourner sur plusieurs machines.
   - Alternative : Supabase Storage, déjà disponible avec le projet Supabase de la base. Stockage durable et CDN, au prix d'une clé de service sur la VM et d'un bucket à créer.
+  - Argument pour garder le disque : sur le plan gratuit de Supabase, c'est l'egress (5 Go/mois) qui serait limitant, avant le stockage et la base. Les photos servies par la VM n'en consomment pas.
   - Seule la classe `PhotoStorage` changerait. Les URL déjà stockées se réécrivent en une requête (`replace` du préfixe) après copie des fichiers.
 - **Les URL des photos sont publiques**, sans jeton : elles sont imprévisibles (UUID v4) mais quiconque obtient l'URL voit la photo. C'est le fonctionnement habituel des applications sociales, et `<Image>` en React Native n'envoie pas d'en-tête d'authentification. L'avatar est visible de tous, compte privé compris.
 - **La photo de séance a la visibilité de la séance**, et `GET /workouts/completed/:id` reste ouvert à tout utilisateur authentifié (règle du projet) : la photo d'une séance d'un compte privé est lisible par qui connaît l'id de la séance. Restreindre cette route aux abonnés réglerait les deux.
@@ -50,14 +57,14 @@
 
 Photo de téléphone de 12 Mpx (3,1 Mo, contenu bruité, le cas le plus défavorable), sur 4 cœurs : avatar en 127 ms (47 ko), photo de séance en 559 ms (569 ko ; une vraie photo se compresse mieux). Le travail de `sharp` tourne hors de la boucle d'événements de Node : les autres requêtes ne sont pas bloquées pendant un envoi.
 
-Vérifié de bout en bout sur une base créée avec le code précédent : migration puis seed (« 429 new »), aucune dérive de schéma, revert de la migration, 53 vérifications HTTP. Ce scénario a trouvé un bug : `user."avatarUrl"` dans une requête casse, car `user` est un mot réservé de Postgres ; corrigé en `user.avatarUrl`, que TypeORM entoure de guillemets.
+Vérifié de bout en bout sur une base créée avec le code précédent : migration puis seed (« 429 new »), aucune dérive de schéma, revert de la migration, 56 vérifications HTTP (dont miniature servie en 450 x 600, présente dans les fils sans la photo complète, supprimée avec la photo). Ce scénario a trouvé un bug : `user."avatarUrl"` dans une requête casse, car `user` est un mot réservé de Postgres ; corrigé en `user.avatarUrl`, que TypeORM entoure de guillemets.
 
 ### Côté frontend, à faire
 
 L'app ne fait encore rien de ces routes :
 
 - **Envoi** : `FormData` avec le champ `photo`. Le helper `request` de `services/api.ts` force `Content-Type: application/json` et doit être contourné pour ces appels, le `boundary` étant fixé par `fetch`.
-- **Affichage** : `avatarUrl` et `photoUrl` sont des chemins relatifs (`/uploads/...`) tant que `UPLOADS_PUBLIC_URL` n'est pas défini, à préfixer par l'URL de l'API.
+- **Affichage** : utiliser `photoThumbnailUrl` / `workoutPhotoThumbnailUrl` dans les listes et les fils, `photoUrl` seulement sur l'écran de la séance. `avatarUrl` et les URL de photos sont des chemins relatifs (`/uploads/...`) tant que `UPLOADS_PUBLIC_URL` n'est pas défini, à préfixer par l'URL de l'API.
 - **HEIC** : sur iPhone, convertir en JPEG avant l'envoi (`expo-image-manipulator`, par exemple), sinon le backend répond 415.
 - **Écran de séance** : le sélecteur de photo existant (`WorkoutImagePicker`) n'envoie aujourd'hui l'image nulle part.
 

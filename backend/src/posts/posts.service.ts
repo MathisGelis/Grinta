@@ -85,6 +85,7 @@ export class PostsService {
         'w.id AS "workoutId"',
         'w.title AS "workoutTitle"',
         'w."photoUrl" AS "workoutPhotoUrl"',
+        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'w.description AS "workoutDescription"',
         'w."completionDate" AS "workoutCompletionDate"',
         'w."totalDurationSeconds" AS "workoutDurationSeconds"',
@@ -114,6 +115,7 @@ export class PostsService {
         'w.id AS "workoutId"',
         'w.title AS "workoutTitle"',
         'w."photoUrl" AS "workoutPhotoUrl"',
+        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'w."completionDate" AS "workoutCompletionDate"',
         `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
         `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
@@ -259,6 +261,7 @@ export class PostsService {
     return this.postRepository
       .createQueryBuilder('post')
       .innerJoin('post.user', 'postUser')
+      .leftJoin('post.workout', 'w')
       .innerJoin(
         'connections',
         'c',
@@ -272,6 +275,7 @@ export class PostsService {
         'post.createdAt AS "createdAt"',
         'postUser.displayName AS "displayName"',
         'postUser.avatarUrl AS "avatarUrl"',
+        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
         `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
         `EXISTS (
@@ -294,6 +298,7 @@ export class PostsService {
     return this.postRepository
       .createQueryBuilder('post')
       .innerJoin('post.user', 'u')
+      .leftJoin('post.workout', 'w')
       .where(
         `
           post."createdAt" >= :startOfMonth
@@ -313,6 +318,7 @@ export class PostsService {
         'post."createdAt" AS "createdAt"',
         'u."displayName" AS "displayName"',
         'u."avatarUrl" AS "avatarUrl"',
+        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
         `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
         `(

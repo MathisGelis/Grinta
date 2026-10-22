@@ -21,6 +21,8 @@ import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { PhotosService } from 'src/photos/photos.service';
 
+type WorkoutPhotoUrls<T = string> = { photoUrl: T; photoThumbnailUrl: T };
+
 @Injectable()
 export class WorkoutService {
   constructor(
@@ -214,6 +216,7 @@ export class WorkoutService {
         'w."completionDate" AS "completionDate"',
         'w."totalDurationSeconds" AS "totalDurationSeconds"',
         'w."photoUrl" AS "photoUrl"',
+        'w."photoThumbnailUrl" AS "photoThumbnailUrl"',
       ])
       .addSelect(
         '(SELECT COUNT(*)::int FROM completed_workout_exercises e WHERE e."workoutId" = w.id)',
@@ -268,7 +271,7 @@ export class WorkoutService {
    * once the transaction has committed.
    */
   async deleteCompletedWorkout(user: AuthUser, workoutId: string) {
-    const photoUrl = await this.dataSource.transaction(async (manager) => {
+    const photos = await this.dataSource.transaction(async (manager) => {
       const workout = await manager.findOne(CompletedWorkout, {
         where: { id: workoutId, user: { id: user.id } },
         relations: ['exercises'],
@@ -281,10 +284,10 @@ export class WorkoutService {
         user.id,
         workout.exercises.map((e) => e.exercise.id),
       );
-      return workout.photoUrl;
+      return [workout.photoUrl, workout.photoThumbnailUrl];
     });
 
-    await this.photos.remove(photoUrl);
+    await this.photos.removeAll(photos);
     return { message: 'Completed workout deleted successfully' };
   }
 
@@ -292,52 +295,50 @@ export class WorkoutService {
    * Replaces the photo of a completed workout of the user. Ownership is
    * checked before the upload is processed, so a request on someone else's
    * workout costs no image work, and again under the row lock that swaps the
-   * URL. The previous file is deleted only once nothing points to it.
+   * URLs. The previous files are deleted only once nothing points to them.
    */
   async setCompletedWorkoutPhoto(
     user: AuthUser,
     workoutId: string,
     file: Express.Multer.File | undefined,
-  ): Promise<{ photoUrl: string }> {
+  ): Promise<WorkoutPhotoUrls> {
     const owned = await this.completedRepo.exists({
       where: { id: workoutId, user: { id: user.id } },
     });
 
     if (!owned) throw new NotFoundException('Completed workout not found');
-    const photoUrl = await this.photos.upload('workout', file);
-    let previous: string | null | undefined;
+    const urls = await this.photos.uploadWithThumbnail(file);
+    let previous: string[];
 
     try {
-      previous = await this.swapCompletedWorkoutPhoto(
-        user,
-        workoutId,
-        photoUrl,
-      );
+      previous = await this.swapCompletedWorkoutPhoto(user, workoutId, urls);
     } catch (error) {
-      await this.photos.remove(photoUrl);
+      await this.photos.removeAll(Object.values(urls));
       throw error;
     }
-    await this.photos.remove(previous);
-    return { photoUrl };
+    await this.photos.removeAll(previous);
+    return urls;
   }
 
   async removeCompletedWorkoutPhoto(
     user: AuthUser,
     workoutId: string,
-  ): Promise<{ photoUrl: null }> {
-    await this.photos.remove(
-      await this.swapCompletedWorkoutPhoto(user, workoutId, null),
+  ): Promise<WorkoutPhotoUrls<null>> {
+    const urls = { photoUrl: null, photoThumbnailUrl: null };
+
+    await this.photos.removeAll(
+      await this.swapCompletedWorkoutPhoto(user, workoutId, urls),
     );
-    return { photoUrl: null };
+    return urls;
   }
 
-  // Sets the photo under a row lock and returns the URL it replaced, so two
-  // concurrent uploads each get a different previous file to delete.
+  // Sets the photo under a row lock and returns the URLs it replaced, so two
+  // concurrent uploads each get different previous files to delete.
   private swapCompletedWorkoutPhoto(
     user: AuthUser,
     workoutId: string,
-    photoUrl: string | null,
-  ) {
+    urls: WorkoutPhotoUrls<string | null>,
+  ): Promise<string[]> {
     return this.dataSource.transaction(async (manager) => {
       const workout = await manager
         .createQueryBuilder(CompletedWorkout, 'w')
@@ -349,8 +350,10 @@ export class WorkoutService {
         .getOne();
 
       if (!workout) throw new NotFoundException('Completed workout not found');
-      await manager.update(CompletedWorkout, workout.id, { photoUrl });
-      return workout.photoUrl;
+      await manager.update(CompletedWorkout, workout.id, urls);
+      return [workout.photoUrl, workout.photoThumbnailUrl].filter(
+        (url): url is string => !!url,
+      );
     });
   }
 

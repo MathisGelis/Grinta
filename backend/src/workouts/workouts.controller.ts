@@ -125,9 +125,9 @@ export class WorkoutsController {
   @ApiOperation({
     summary: 'Set the photo of a completed workout',
     description:
-      'Owner only. Multipart upload in the `photo` field. The photo is scaled down to 1600 px at most, re-encoded as WebP and stripped of its metadata (EXIF, GPS). Replaces and deletes the previous one. Visible to whoever can read the workout, and the URL itself is public.',
+      'Owner only. Multipart upload in the `photo` field. The photo is scaled down to 1600 px at most, re-encoded as WebP and stripped of its metadata (EXIF, GPS), and a 600 px thumbnail is made for lists and feeds. Replaces and deletes the previous one. Visible to whoever can read the workout, and the URL itself is public.',
   })
-  @ApiResponse({ status: 200, description: '{ photoUrl }' })
+  @ApiResponse({ status: 200, description: '{ photoUrl, photoThumbnailUrl }' })
   @ApiResponse({ status: 400, description: 'No photo, or not an image' })
   @ApiResponse({ status: 404, description: 'Not a workout of the user' })
   @ApiResponse({ status: 413, description: 'Over 10 MB or 50 megapixels' })
@@ -142,7 +142,10 @@ export class WorkoutsController {
 
   @Delete('completed/:id/photo')
   @ApiOperation({ summary: 'Remove the photo of a completed workout' })
-  @ApiResponse({ status: 200, description: '{ photoUrl: null }' })
+  @ApiResponse({
+    status: 200,
+    description: '{ photoUrl: null, photoThumbnailUrl: null }',
+  })
   @ApiResponse({ status: 404, description: 'Not a workout of the user' })
   removeCompletedPhoto(
     @Req() req: AuthenticatedRequest,

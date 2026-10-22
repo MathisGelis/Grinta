@@ -84,7 +84,7 @@ describe('WorkoutService completed workouts and progress', () => {
   let exerciseRepo: { find: jest.Mock };
   let exerciseStats: { recompute: jest.Mock };
   let badges: { awardForWorkout: jest.Mock };
-  let photos: { remove: jest.Mock };
+  let photos: { removeAll: jest.Mock };
   let service: WorkoutService;
 
   beforeEach(() => {
@@ -100,7 +100,7 @@ describe('WorkoutService completed workouts and progress', () => {
     exerciseRepo = { find: jest.fn() };
     exerciseStats = { recompute: jest.fn().mockResolvedValue(histories) };
     badges = { awardForWorkout: jest.fn().mockResolvedValue([badge]) };
-    photos = { remove: jest.fn() };
+    photos = { removeAll: jest.fn() };
     const dataSource = {
       transaction: (run: (m: typeof manager) => unknown) => run(manager),
     };
@@ -211,10 +211,11 @@ describe('WorkoutService completed workouts and progress', () => {
     expect(exerciseStats.recompute).not.toHaveBeenCalled();
   });
 
-  it('on delete, rebuilds the stats of the exercises it contained and deletes its photo', async () => {
+  it('on delete, rebuilds the stats of the exercises it contained and deletes its photos', async () => {
     manager.findOne.mockResolvedValue({
       id: 'w-1',
       photoUrl: '/uploads/workouts/photo.webp',
+      photoThumbnailUrl: '/uploads/workouts/thumb.webp',
       exercises: [{ exercise: exercise('a') }, { exercise: exercise('b') }],
     });
 
@@ -228,31 +229,40 @@ describe('WorkoutService completed workouts and progress', () => {
       'b',
     ]);
     expect(badges.awardForWorkout).not.toHaveBeenCalled();
-    expect(photos.remove).toHaveBeenCalledWith('/uploads/workouts/photo.webp');
+    expect(photos.removeAll).toHaveBeenCalledWith([
+      '/uploads/workouts/photo.webp',
+      '/uploads/workouts/thumb.webp',
+    ]);
   });
 });
 
 describe('WorkoutService completed workout photo', () => {
   const user = { id: 'user-1', email: 'u@example.com' };
   const file = { buffer: Buffer.from('jpeg') } as Express.Multer.File;
-  const oldUrl = '/uploads/workouts/old.webp';
-  const newUrl = '/uploads/workouts/new.webp';
+  const old = {
+    photoUrl: '/uploads/workouts/old.webp',
+    photoThumbnailUrl: '/uploads/workouts/old-thumb.webp',
+  };
+  const fresh = {
+    photoUrl: '/uploads/workouts/new.webp',
+    photoThumbnailUrl: '/uploads/workouts/new-thumb.webp',
+  };
   const query = { setLock: jest.fn(), where: jest.fn(), getOne: jest.fn() };
   const manager = {
     createQueryBuilder: jest.fn(() => query),
     update: jest.fn(),
   };
   const completedRepo = { exists: jest.fn() };
-  const photos = { upload: jest.fn(), remove: jest.fn() };
+  const photos = { uploadWithThumbnail: jest.fn(), removeAll: jest.fn() };
   let service: WorkoutService;
 
   beforeEach(() => {
     jest.clearAllMocks();
     query.setLock.mockReturnValue(query);
     query.where.mockReturnValue(query);
-    query.getOne.mockResolvedValue({ id: 'w-1', photoUrl: oldUrl });
+    query.getOne.mockResolvedValue({ id: 'w-1', ...old });
     completedRepo.exists.mockResolvedValue(true);
-    photos.upload.mockResolvedValue(newUrl);
+    photos.uploadWithThumbnail.mockResolvedValue({ ...fresh });
     service = new WorkoutService(
       {} as never,
       {} as never,
@@ -276,44 +286,55 @@ describe('WorkoutService completed workout photo', () => {
     expect(completedRepo.exists).toHaveBeenCalledWith({
       where: { id: 'w-1', user: { id: 'user-1' } },
     });
-    expect(photos.upload).not.toHaveBeenCalled();
+    expect(photos.uploadWithThumbnail).not.toHaveBeenCalled();
   });
 
-  it('stores the new photo under a row lock, then deletes the old file', async () => {
+  it('stores the new photo and thumbnail under a row lock, then deletes the old files', async () => {
     await expect(
       service.setCompletedWorkoutPhoto(user, 'w-1', file),
-    ).resolves.toEqual({ photoUrl: newUrl });
-    expect(photos.upload).toHaveBeenCalledWith('workout', file);
+    ).resolves.toEqual(fresh);
+    expect(photos.uploadWithThumbnail).toHaveBeenCalledWith(file);
     expect(query.setLock).toHaveBeenCalledWith('pessimistic_write');
     expect(query.where).toHaveBeenCalledWith(expect.any(String), {
       workoutId: 'w-1',
       userId: 'user-1',
     });
-    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'w-1', {
-      photoUrl: newUrl,
-    });
-    expect(photos.remove).toHaveBeenCalledTimes(1);
-    expect(photos.remove).toHaveBeenCalledWith(oldUrl);
+    expect(manager.update).toHaveBeenCalledWith(
+      expect.anything(),
+      'w-1',
+      fresh,
+    );
+    expect(photos.removeAll).toHaveBeenCalledTimes(1);
+    expect(photos.removeAll).toHaveBeenCalledWith([
+      old.photoUrl,
+      old.photoThumbnailUrl,
+    ]);
   });
 
-  it('deletes the new file when the workout disappeared during the upload', async () => {
+  it('deletes the new files when the workout disappeared during the upload', async () => {
     query.getOne.mockResolvedValue(null);
 
     await expect(
       service.setCompletedWorkoutPhoto(user, 'w-1', file),
     ).rejects.toThrow('Completed workout not found');
     expect(manager.update).not.toHaveBeenCalled();
-    expect(photos.remove).toHaveBeenCalledTimes(1);
-    expect(photos.remove).toHaveBeenCalledWith(newUrl);
+    expect(photos.removeAll).toHaveBeenCalledTimes(1);
+    expect(photos.removeAll).toHaveBeenCalledWith([
+      fresh.photoUrl,
+      fresh.photoThumbnailUrl,
+    ]);
   });
 
-  it('removes the photo from the workout, then its file', async () => {
+  it('removes the photo and thumbnail from the workout, then their files', async () => {
+    const none = { photoUrl: null, photoThumbnailUrl: null };
+
     await expect(
       service.removeCompletedWorkoutPhoto(user, 'w-1'),
-    ).resolves.toEqual({ photoUrl: null });
-    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'w-1', {
-      photoUrl: null,
-    });
-    expect(photos.remove).toHaveBeenCalledWith(oldUrl);
+    ).resolves.toEqual(none);
+    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'w-1', none);
+    expect(photos.removeAll).toHaveBeenCalledWith([
+      old.photoUrl,
+      old.photoThumbnailUrl,
+    ]);
   });
 });
