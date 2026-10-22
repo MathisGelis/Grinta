@@ -103,11 +103,11 @@ Les réponses des endpoints modifiés ont été comparées octet pour octet, anc
 
 ## Volontairement non modifié
 
-- **Sous-requêtes des feeds.** Le CLAUDE.md suggère un `LEFT JOIN` + `GROUP BY` ou des colonnes dénormalisées. Avec les index, `feed/following` coûte 1,5 ms de base et `feed/top` 4,2 ms, pour 24 000 posts et 291 000 likes. Une dénormalisation ajouterait une écriture et un risque d'incohérence pour un gain sous la milliseconde. **Seuil de réévaluation** : `feed/top` doit calculer le score de tous les posts publics du mois avant de trier, son coût croît donc avec le nombre de posts du mois, pas avec la limite. À surveiller via le log de requêtes lentes ; si le mois dépasse environ 100 000 posts, passer à un score précalculé.
-- **`eager: true` sur `Programme.days`.** `GET /programmes` fait 1 requête et 7 ms pour 3 programmes de 7 jours. Rien à corriger.
+- **Sous-requêtes des feeds.** Le CLAUDE.md suggère un `LEFT JOIN` + `GROUP BY` ou des colonnes dénormalisées. Avec les index, `feed/following` coûte 1,5 ms de base et `feed/top` 4,2 ms, pour 24 000 posts et 291 000 likes. Une dénormalisation ajouterait une écriture et un risque d'incohérence pour un gain sous la milliseconde. **Seuil de réévaluation** : `feed/top` doit calculer le score de tous les posts publics du mois avant de trier, son coût croît donc avec le nombre de posts du mois, pas avec la limite. À surveiller via le log de requêtes lentes ; si le mois dépasse environ 100 000 posts, passer à un score précalculé. **Corrigé depuis, voir « Egress et taille des réponses » : ce seuil était beaucoup trop optimiste.** Avec 10 000 posts dans le mois (le même jeu de données mesuré en fin de mois), `feed/top` coûte 150 à 800 ms selon l'état du cache de Postgres.
+- **`eager: true` sur `Programme.days`.** `GET /programmes` fait 1 requête et 7 ms pour 3 programmes de 7 jours. Rien à corriger. (La liste compte maintenant les jours en SQL, voir « Egress et taille des réponses ».)
 - **Stats calculées en mémoire.** `summary`, `muscle-distribution` et `balance` chargent les workouts d'une semaine ou d'un mois (environ 15 à 30 pour le compte de test) et coûtent 6 à 13 ms de bout en bout. Les descendre en SQL n'est justifié que pour les agrégats sur tout l'historique, ce que font les nouveaux endpoints de la Phase 3.
 - **`GET /users/search`** : 12 à 18 ms pour 2 000 utilisateurs. `similarity()` n'est pas indexable, donc le coût croît linéairement avec le nombre d'utilisateurs (de l'ordre de la demi-seconde vers 50 000). La correction (index GIN `gin_trgm_ops` sur `LOWER("uniqueName")` et prédicat réécrit avec l'opérateur `%`) change le seuil de similarité effectif et donc les résultats : à décider avant de le faire.
-- **Pagination.** Non ajoutée : elle change le contrat de l'API et le frontend n'envoie aucun paramètre. Pour mémoire, `GET /workouts/completed` pèse 56 ko pour 300 workouts et croît linéairement. Proposition opt-in compatible : `?limit=` et `?before=<completionDate>` avec le tri déterministe ajouté ici, l'absence de paramètre gardant le comportement actuel.
+- **Pagination.** Non ajoutée à l'époque (ajoutée depuis pour l'historique, en option, voir « Egress et taille des réponses ») : elle change le contrat de l'API et le frontend n'envoie aucun paramètre. Pour mémoire, `GET /workouts/completed` pèse 56 ko pour 300 workouts et croît linéairement. Proposition opt-in compatible : `?limit=` et `?before=<completionDate>` avec le tri déterministe ajouté ici, l'absence de paramètre gardant le comportement actuel.
 - **Insertions de TypeORM** : déjà groupées en un seul `INSERT` pour les exercices d'un workout, rien de plus à gagner.
 
 ## Nouveaux endpoints Stats (Phase 3)
@@ -143,6 +143,46 @@ En production, le surcoût de l'enregistrement d'une séance est surtout les 2 a
 ## Défaut découvert, à décider
 
 **L'ordre des exercices d'un workout n'est pas garanti.** Aucune colonne de position n'existe sur `completed_workout_exercises` ni `planned_workout_exercises` : l'ordre renvoyé est celui des lignes en base, que Postgres ne promet pas (il peut changer après une mise à jour, un vacuum ou un changement de plan). Pour un workout, la séquence des exercices a un sens pour l'utilisateur. Correction proposée : colonne `position` entière, renseignée à partir de l'index dans le tableau reçu, tri sur cette colonne, migration avec remplissage des lignes existantes.
+
+## Egress et taille des réponses
+
+Sur le plan gratuit de Supabase, la ressource qui s'épuise en premier est l'egress (5 Go par mois), qui compte aussi les résultats des requêtes envoyés par Postgres à l'API. Cette passe mesure donc, en plus du temps, les octets envoyés par Postgres pour chaque requête HTTP (`perf/db-egress-proxy.mjs`, un proxy TCP entre l'API et la base, lu par `perf/bench.mjs` via `DB_EGRESS_URL`) et la taille de chaque réponse sur le réseau quand le client accepte la compression, comme un téléphone.
+
+Même jeu de données que plus haut, exercices dotés d'un contenu de taille réelle (environ 1 ko de description, consignes et URL de photos). Avant et après mesurés sur deux copies de la même base, chacune ayant subi exactement un passage précédent du banc.
+
+| Endpoint | Postgres → API avant | après | Réponse sur le réseau avant | après |
+| --- | ---: | ---: | ---: | ---: |
+| `GET /stats/comparisons` | 1 370 ko | 443 ko | 1,3 ko | 0,5 ko |
+| `GET /stats/muscle-frequency` | 789 ko | 250 ko | 4,9 ko | 0,6 ko |
+| `GET /stats/summary` | 619 ko | 195 ko | 0,9 ko | 0,9 ko |
+| `GET /stats/muscle-distribution`, `balance` | 432 ko | 132 ko | 1,7 ko | 0,4 ko |
+| `GET /stats/workout/:id` | 325 ko | 123 ko | 1,8 ko | 0,6 ko |
+| `GET /programmes` | 85 ko | 3 ko | 4,5 ko | 0,9 ko |
+| `GET /exercises` | 45 ko | 0 (cache) | 58 ko | 4,9 ko |
+| `GET /workouts/completed` (300 séances) | 43 ko | 43 ko | 76 ko | 12 ko |
+| `GET /workouts/completed?limit=20` | | 2,4 ko | | 0,6 ko |
+| `GET /workouts/completed/:id`, `planned/:id` | 11 ko | 5 ko | 9 ko | 0,8 ko |
+| `POST /workouts/completed` (même historique) | 77 ko | 73 ko | | |
+
+Temps : A/B entrelacé sur la même base, les deux versions côte à côte. `/stats/summary` passe de 41 à 20 ms (moins de lignes à transférer et à hydrater). La compression coûte 2 à 4 ms de CPU sur les réponses de plusieurs dizaines de ko (`/workouts/completed` : 13,5 → 17,4 ms en local), contre 60 ko de moins à transmettre, soit des dizaines de millisecondes sur un réseau mobile. Les petites réponses (moins de 1 ko) ne sont pas compressées.
+
+Réponses comparées champ par champ entre les deux versions sur 31 endpoints : identiques, sauf les champs qui dépendent de l'heure (`rangeEnd`, `elapsedPct`), l'ordre des programmes à semaine égale (arbitraire avant, par id maintenant) et le détail des séances et des plans, qui n'embarque plus la description, les consignes et les photos de chaque exercice.
+
+### Ce qui a été fait
+
+- **Colonnes de contenu des exercices en `select: false`.** Régression introduite avec les descriptions, consignes et photos : les exercices sont joints (`eager`) dans chaque séance, plan et programme et dans les stats, et chaque jointure ramenait environ 1 ko de texte par exercice et par séance. Seul `GET /exercises/:id` les lit maintenant.
+- **Stats : seules les colonnes lues par le calcul sont chargées** (`WORKOUT_STATS_SELECT`). TypeORM charge une séance et ses exercices en une jointure, une ligne par exercice : chaque colonne inutile (description de la séance, URL de photo de l'exercice, dates) voyageait une fois par exercice de chaque séance de la période.
+- **`GET /programmes` compte les jours en SQL** au lieu de charger chaque jour et son plan pour en faire `length`.
+- **Catalogue d'exercices en mémoire** (`GET /exercises`) : identique pour tous, il change seulement à la création, modification ou suppression d'un exercice, qui vident le cache. Durée de vie de 5 minutes, qui borne le retard d'un autre processus si PM2 tourne en mode cluster. Un `npm run seed` est visible au plus 5 minutes après, ou tout de suite après `pm2 restart`.
+- **Compression des réponses** (brotli si le client l'accepte, sinon gzip, au-dessus de 1 ko). Les photos, déjà compressées, ne sont pas touchées. Si nginx compresse déjà, il ne recompresse pas une réponse qui a un `Content-Encoding`.
+- **Pagination facultative de l'historique** : `GET /workouts/completed?limit=20&before=<id de la dernière séance reçue>`, par keyset sur (`completionDate`, `createdAt`, `id`), servi par l'index existant. Sans paramètre, la réponse est la même qu'avant.
+
+### Reste à décider ou à faire
+
+- **`GET /posts/feed/top`** recompte à chaque appel les likes et commentaires de tous les posts du mois (8 000 posts et 97 000 likes ici). Une réécriture en `GROUP BY` ne change rien : c'est le volume à compter qui coûte. Options : compteurs dénormalisés sur `posts`, ou résultat mis en cache quelques minutes.
+- **Chaque enregistrement de séance relit tout l'historique des exercices concernés** pour recalculer stats et badges (73 ko pour le compte de test, et ça croît avec l'historique). C'est le prix du choix « recalculer plutôt qu'incrémenter » (voir « Stats par exercice et badges »).
+- **`GET /stats/records`** : 163 ko lus pour 12 ko de réponse compressée, le nom et le muscle de l'exercice étant répétés sur chaque ligne « meilleure série par nombre de répétitions ».
+- **Frontend** : `explore/workout-detail.tsx` retélécharge le catalogue complet à chaque ouverture au lieu d'utiliser le cache local ; l'historique peut passer à la pagination.
 
 ## Migrations et `synchronize`
 
@@ -184,4 +224,4 @@ psql -v main_email=perf_main@example.com -f perf/seed-perf.sql <base>
 node perf/bench.mjs --label after --out perf/results.json
 ```
 
-`perf/bench.mjs` lit `API_URL`, `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` et `RUNS`. Ne jamais lancer ces scripts contre une base réelle : ils écrivent des milliers de lignes.
+`perf/bench.mjs` lit `API_URL`, `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `RUNS` et `DB_EGRESS_URL`. Pour mesurer les octets envoyés par Postgres, lancer `perf/db-egress-proxy.mjs` (il écoute sur 5434 et relaie vers `PGHOST`/`PGPORT`), démarrer l'API avec `DB_PORT=5434`, puis le banc avec `DB_EGRESS_URL=http://localhost:5435`. Ne jamais lancer ces scripts contre une base réelle : ils écrivent des milliers de lignes.

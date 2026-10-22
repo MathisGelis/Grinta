@@ -1,5 +1,37 @@
 # Changelog backend
 
+## Non publié : optimisations de bande passante, de stockage et de temps de réponse
+
+Mesures détaillées dans PERFORMANCE.md, section « Egress et taille des réponses ». Les octets envoyés par Postgres à l'API comptent dans l'egress Supabase, la ressource la plus limitée du plan gratuit. Ils baissent de 60 à 70 % sur les stats et de 96 % sur la liste des programmes. Le catalogue d'exercices ne touche plus la base.
+
+### Ce qui change
+
+- **Corrigé : le contenu des exercices voyageait avec chaque séance.** Les descriptions, consignes et photos ajoutées plus haut étaient chargées à chaque fois qu'un exercice est joint à une séance, un plan, un programme ou un calcul de stats, soit environ 1 ko par exercice et par séance. Elles ne sont plus lues que par `GET /exercises/:id`.
+  - Conséquence visible : `GET /workouts/completed/:id` et `GET /workouts/planned/:id` ne renvoient plus `description`, `instructions` et `image_urls` dans chaque exercice. Le détail d'une séance passe de 9 à 3,5 ko.
+- **Stats : seules les colonnes utiles au calcul sont chargées.**
+  - `/stats/comparisons` : 1,37 Mo lus en base par appel → 443 ko.
+  - `/stats/muscle-frequency` : 789 → 250 ko.
+  - `/stats/summary` : 619 → 195 ko, et 41 → 20 ms.
+  - Les réponses sont identiques, vérifiées champ par champ contre la version précédente.
+- **`GET /programmes`** compte les jours en SQL : 85 → 3 ko lus en base.
+- **Catalogue d'exercices en mémoire** : `GET /exercises` ne lit plus la base, sauf après une création, une modification ou une suppression d'exercice, ou au bout de 5 minutes.
+- **Réponses compressées** (brotli ou gzip, au-dessus de 1 ko), de 4 à 12 fois :
+  - catalogue d'exercices : 58 → 5 ko ;
+  - historique de 300 séances : 76 → 12 ko.
+
+  Coût : 2 à 4 ms de CPU sur les grosses réponses.
+- **Pagination facultative de l'historique** : `GET /workouts/completed?limit=20`, puis `&before=<id de la dernière séance reçue>` pour la page suivante. Sans paramètre, rien ne change.
+- **Nettoyage des photos orphelines** : `npm run photos:gc` liste les fichiers que plus aucune ligne ne référence, et `-- --delete` les supprime. Ce cas n'arrive qu'après un arrêt brutal entre l'écriture d'un fichier et celle de son URL. Les fichiers de moins d'une heure ne sont jamais touchés, leur envoi peut être en cours. Le script signale aussi les URL dont le fichier manque, utile après une restauration de sauvegarde.
+- Outillage de mesure : `perf/db-egress-proxy.mjs` compte les octets envoyés par Postgres, et `perf/bench.mjs` affiche aussi la taille compressée des réponses.
+- Nouvelle dépendance : `compression`.
+
+### Déploiement
+
+Rien d'obligatoire au-delà de `npm ci` et du redémarrage. Optionnel côté nginx :
+
+- servir `/uploads/` directement (`location /uploads/ { alias <UPLOADS_DIR>/; expires max; add_header X-Content-Type-Options nosniff; }`), ce qui décharge Node des photos ;
+- si nginx a déjà `gzip on` avec `gzip_proxied any`, il laisse passer les réponses déjà compressées par l'API.
+
 ## Non publié : photo de profil, photo de séance, développé couché à la barre
 
 ### Ce qui change

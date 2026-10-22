@@ -18,6 +18,7 @@ import {
 } from './entities/planned-workout.entity';
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
+import { ListCompletedWorkoutsQueryDto } from './dto/list-completed-workouts-query.dto';
 import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { PhotosService } from 'src/photos/photos.service';
 
@@ -206,8 +207,17 @@ export class WorkoutService {
       .getRawMany();
   }
 
-  async getCompletedWorkouts(user: AuthUser) {
-    return this.completedRepo
+  /**
+   * The history, most recent first. `limit` and `before` page through it by
+   * keyset: the next page starts strictly after the given workout in the
+   * (completionDate, createdAt, id) order, which the user/date index serves
+   * without counting skipped rows the way OFFSET would.
+   */
+  async getCompletedWorkouts(
+    user: AuthUser,
+    page: ListCompletedWorkoutsQueryDto = {},
+  ) {
+    const qb = this.completedRepo
       .createQueryBuilder('w')
       .select([
         'w.id AS id',
@@ -225,8 +235,19 @@ export class WorkoutService {
       .where('w."userId" = :userId', { userId: user.id })
       .orderBy('w."completionDate"', 'DESC')
       .addOrderBy('w."createdAt"', 'DESC')
-      .addOrderBy('w.id', 'DESC')
-      .getRawMany();
+      .addOrderBy('w.id', 'DESC');
+
+    if (page.before)
+      qb.andWhere(
+        `(w."completionDate", w."createdAt", w.id) < (
+          SELECT c."completionDate", c."createdAt", c.id
+          FROM completed_workouts c
+          WHERE c.id = :before AND c."userId" = :userId
+        )`,
+        { before: page.before },
+      );
+    if (page.limit) qb.limit(page.limit);
+    return qb.getRawMany();
   }
 
   async getPlannedWorkoutById(workoutId: string) {

@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import compression from 'compression';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
@@ -17,6 +18,11 @@ async function bootstrap() {
   // bucket, so five failed logins anywhere would lock everyone out.
   app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1));
   app.disable('x-powered-by');
+  // JSON compresses five to ten times (the exercise catalogue goes from about
+  // 100 KB to about 15 KB), which is mobile data and server bandwidth saved on
+  // every response above 1 KB. Brotli when the client accepts it, else gzip.
+  // Photos are already compressed and are left alone.
+  app.use(compression());
 
   // Unknown properties in a body or query are rejected with a 400 rather than
   // silently stripped, so a client typo surfaces instead of being ignored.

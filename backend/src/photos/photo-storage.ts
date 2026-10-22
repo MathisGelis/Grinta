@@ -15,7 +15,7 @@ const FOLDERS: Record<PhotoKind, string> = {
 // The only file names the storage ever writes. Matching a stored URL against
 // it, rather than trusting the URL, is what keeps remove() inside the uploads
 // directory.
-const STORED_FILE = /(avatars|workouts)\/[0-9a-f-]{36}\.webp$/;
+export const STORED_FILE = /(avatars|workouts)\/[0-9a-f-]{36}\.webp$/;
 
 /**
  * Photos on the local disk of the API server, served by the API itself under

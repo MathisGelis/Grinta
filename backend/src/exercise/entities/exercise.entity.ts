@@ -52,14 +52,18 @@ export class Exercise {
   @ApiProperty({ required: false })
   image_url?: string;
 
-  @Column({ type: 'text', nullable: true })
+  // The three content columns below are not loaded unless asked for
+  // (select: false). They weigh about 1 KB per exercise, and exercises are
+  // joined into every workout, plan and programme and into the stats, which
+  // only need the name and the muscles. Only GET /exercises/:id reads them.
+  @Column({ type: 'text', nullable: true, select: false })
   @ApiProperty({
     required: false,
     description: 'What the exercise is and what it works',
   })
   description?: string | null;
 
-  @Column({ type: 'text', array: true, nullable: true })
+  @Column({ type: 'text', array: true, nullable: true, select: false })
   @ApiProperty({
     type: [String],
     required: false,
@@ -71,7 +75,7 @@ export class Exercise {
    * Start and end positions of the movement. Shown in turn they animate the
    * exercise, which is how the app can play it like a GIF.
    */
-  @Column({ type: 'text', array: true, nullable: true })
+  @Column({ type: 'text', array: true, nullable: true, select: false })
   @ApiProperty({
     type: [String],
     required: false,

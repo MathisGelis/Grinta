@@ -65,20 +65,33 @@ export class ProgrammesService {
     return this.programmeRepo.save(programme);
   }
 
-  async getProgrammesByUser(user: AuthUser) {
-    const programmes = await this.programmeRepo.find({
-      where: { user: { id: user.id } },
-      relations: ['days', 'days.workout'],
-      order: { weekNumber: 'ASC' },
-    });
-
-    return programmes.map((p) => ({
-      id: p.id,
-      title: p.title,
-      totalDays: p.days.length,
-      workoutDays: p.days.filter((d) => d.workout !== null).length,
-      difficulty: p.difficulty,
-    }));
+  // Counted in SQL: loading every day and its planned workout only to count
+  // them read about 1 KB per programme from the database for a few bytes of
+  // response.
+  async getProgrammesByUser(user: AuthUser): Promise<
+    Array<{
+      id: string;
+      title: string;
+      totalDays: number;
+      workoutDays: number;
+      difficulty: string;
+    }>
+  > {
+    return this.programmeRepo
+      .createQueryBuilder('p')
+      .leftJoin('p.days', 'd')
+      .select([
+        'p.id AS id',
+        'p.title AS title',
+        'COUNT(d.id)::int AS "totalDays"',
+        'COUNT(d."workoutId")::int AS "workoutDays"',
+        'p.difficulty AS difficulty',
+      ])
+      .where('p."userId" = :userId', { userId: user.id })
+      .groupBy('p.id')
+      .orderBy('p."weekNumber"', 'ASC')
+      .addOrderBy('p.id', 'ASC')
+      .getRawMany();
   }
 
   async getProgrammeById(user: AuthUser, id: string) {

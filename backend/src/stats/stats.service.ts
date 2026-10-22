@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  FindOptionsSelect,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { CompletedWorkout } from '../workouts/entities/completed-workout.entity';
 import { PlannedWorkout } from '../workouts/entities/planned-workout.entity';
 import { User } from '../users/entities/users.entity';
@@ -57,6 +62,32 @@ import {
   sum,
 } from './utils/stats.util';
 
+/**
+ * Columns the calculator reads. The workouts are loaded with one join row per
+ * exercise, so every column left out here (the workout description, the
+ * exercise image URL, timestamps) would otherwise travel from the database
+ * once per exercise of every workout in the period.
+ */
+const WORKOUT_STATS_SELECT: FindOptionsSelect<CompletedWorkout> = {
+  id: true,
+  title: true,
+  completionDate: true,
+  totalDurationSeconds: true,
+  exercises: {
+    id: true,
+    sets: true,
+    timerSeconds: true,
+    exercise: {
+      id: true,
+      name: true,
+      equipment_type: true,
+      primary_muscle: true,
+      secondary_muscles: true,
+      exercise_type: true,
+    },
+  },
+};
+
 @Injectable()
 export class StatsService {
   constructor(
@@ -79,6 +110,7 @@ export class StatsService {
     const workout = await this.completedRepo.findOne({
       where: { id: workoutId, user: { id: user.id } },
       relations: ['exercises', 'exercises.exercise'],
+      select: WORKOUT_STATS_SELECT,
     });
 
     if (!workout) throw new NotFoundException('Completed workout not found');
@@ -88,6 +120,7 @@ export class StatsService {
       this.completedRepo.find({
         where: { user: { id: user.id }, completionDate: Between(start, end) },
         relations: ['exercises'],
+        select: { id: true, exercises: { id: true, sets: true } },
       }),
     ]);
     const durations = this.calculator.distributeDuration(workout);
@@ -270,6 +303,7 @@ export class StatsService {
         completionDate: MoreThanOrEqual(since),
       },
       relations: ['exercises', 'exercises.exercise'],
+      select: WORKOUT_STATS_SELECT,
       order: { completionDate: 'DESC' },
     });
 
@@ -740,6 +774,7 @@ export class StatsService {
         completionDate: Between(range.start, range.end),
       },
       relations: ['exercises', 'exercises.exercise'],
+      select: WORKOUT_STATS_SELECT,
     });
   }
 }

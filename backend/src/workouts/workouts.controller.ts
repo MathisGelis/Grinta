@@ -8,6 +8,7 @@ import {
   Get,
   Delete,
   Put,
+  Query,
   UploadedFile,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -16,6 +17,7 @@ import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { CreateCompletedWorkoutDto } from './dto/create-completed-workout.dto';
 import { CreatePlannedWorkoutDto } from './dto/create-planned-workout.dto';
 import { CompletedWorkoutListDto } from './dto/list-completed-workout.dto';
+import { ListCompletedWorkoutsQueryDto } from './dto/list-completed-workouts-query.dto';
 import { PlannedWorkoutListDto } from './dto/list-planned-workout.dto';
 import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
@@ -94,8 +96,9 @@ export class WorkoutsController {
   })
   getCompleted(
     @Req() req: AuthenticatedRequest,
+    @Query() page: ListCompletedWorkoutsQueryDto,
   ): Promise<CompletedWorkoutListDto[]> {
-    return this.workoutService.getCompletedWorkouts(req.user);
+    return this.workoutService.getCompletedWorkouts(req.user, page);
   }
 
   @Get('planned/:id')
