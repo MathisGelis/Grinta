@@ -1,5 +1,77 @@
 # Changelog backend
 
+## Non publié : photo de profil, photo de séance, développé couché à la barre
+
+### Ce qui change
+
+- **Photo de profil.** `PUT /users/me/avatar` (multipart, champ `photo`) enregistre la photo et renvoie `{ avatarUrl }`. `DELETE /users/me/avatar` la retire. Une nouvelle photo remplace l'ancienne, dont le fichier est supprimé.
+- **Photo de séance.** `PUT /workouts/completed/:id/photo` et `DELETE /workouts/completed/:id/photo`, même fonctionnement, propriétaire seulement (404 sinon, comme les autres routes de modification). Une photo par séance. La séance est créée d'abord, la photo envoyée ensuite : le JSON de `POST /workouts/completed` ne change pas.
+- **Où les URL apparaissent.**
+  - `avatarUrl` : le compte (`GET /users/:id`, y compris l'identité publique vue par les autres), le profil, la recherche, les followers et following, les demandes d'abonnement, les recommandations, les posts (détail, fils, likes, commentaires).
+  - `photoUrl` : l'historique (`GET /workouts/completed`) et le détail d'une séance.
+  - `workoutPhotoUrl` : le détail d'un post et `GET /posts/mine`.
+  - Le champ `image_url` documenté dans `UserListDto`, jamais rempli, est remplacé par `avatarUrl`.
+- **Les deux URL ne se modifient que par ces routes.** `PATCH /users/:id` et `PATCH /workouts/completed/:id` refusent `avatarUrl` et `photoUrl` (400), sinon on pourrait faire pointer son avatar vers n'importe quelle image.
+- **Les fichiers suivent les données** : supprimer une séance supprime sa photo, supprimer son compte supprime son avatar et les photos de ses séances.
+- **« Bench Press (Barbell) »** : le développé couché à plat à la barre, avec description, consignes et les deux photos de free-exercise-db (relues : barre bras tendus, puis barre à la poitrine). Le catalogue passe à 429 exercices, dont 273 illustrés. Aucun renommage : le seed crée simplement la ligne.
+- Migration `AddPhotos` (colonnes `users.avatarUrl` et `completed_workouts.photoUrl`, idempotente et réversible) et nouvelle dépendance `sharp` 0.34 (traitement d'image, Node 18.17 ou plus récent).
+
+### Sécurité des envois
+
+- **La photo stockée n'est jamais le fichier envoyé.** Elle est décodée puis réencodée en WebP par le serveur.
+  - Avatar : carré de 512 px.
+  - Photo de séance : 1600 px au plus, proportions conservées, jamais agrandie.
+  - Un fichier piégé (SVG avec script, polyglotte, faux JPEG) ne peut donc pas être servi tel quel.
+- **Les métadonnées sont supprimées** : une photo de téléphone contient en EXIF la position GPS et le modèle de l'appareil. Une photo de séance prise chez soi publierait son adresse. L'orientation EXIF est appliquée aux pixels avant d'être retirée.
+- **Formats acceptés : JPEG, PNG, WebP**, reconnus au contenu et pas au type déclaré. Le reste reçoit un 415, y compris SVG, GIF, AVIF et HEIC : le binaire de `sharp` ne décode pas le HEIC de l'iPhone, l'app doit envoyer du JPEG.
+- **Limites** :
+  - 10 Mo par fichier (413) ;
+  - 50 mégapixels (413), vérifiés sur l'en-tête avant tout décodage. Un PNG de quelques centaines de ko peut déclarer 56 Mpx et saturer la mémoire de la VM ;
+  - un seul fichier par requête ;
+  - 10 envois par minute et par adresse, car un envoi coûte bien plus qu'une requête JSON.
+- **Messages d'erreur en français**, y compris ceux de multer (fichier trop lourd, mauvais champ).
+- **Suppression des fichiers bornée** : le chemin à supprimer est déduit de l'URL stockée par un motif strict (`avatars|workouts/<uuid>.webp`), donc rien en dehors du dossier des photos ne peut être effacé.
+- **Ordre des écritures** : la photo est traitée et écrite avant de verrouiller la ligne (`SELECT ... FOR UPDATE`), l'URL est remplacée, puis l'ancien fichier est supprimé. Si la ligne a disparu entre-temps, le nouveau fichier est supprimé. Deux envois simultanés ne laissent pas de fichier orphelin.
+- **Service des fichiers** sous `/uploads` par l'API :
+  - `X-Content-Type-Options: nosniff` ;
+  - cache `immutable` d'un an, possible car un nom de fichier n'est jamais réutilisé ;
+  - pas d'index de dossier ni de fichiers cachés ;
+  - un fichier absent renvoie le 404 JSON habituel.
+
+### Choix à valider
+
+- **Stockage sur le disque de la VM.** Il fonctionne dès le déploiement, sans service ni clé supplémentaires. Contreparties : c'est la seule copie des photos (le dossier doit être sauvegardé), l'espace disque de la VM s'épuise, aucune mise en cache CDN, et l'API ne peut pas tourner sur plusieurs machines.
+  - Alternative : Supabase Storage, déjà disponible avec le projet Supabase de la base. Stockage durable et CDN, au prix d'une clé de service sur la VM et d'un bucket à créer.
+  - Seule la classe `PhotoStorage` changerait. Les URL déjà stockées se réécrivent en une requête (`replace` du préfixe) après copie des fichiers.
+- **Les URL des photos sont publiques**, sans jeton : elles sont imprévisibles (UUID v4) mais quiconque obtient l'URL voit la photo. C'est le fonctionnement habituel des applications sociales, et `<Image>` en React Native n'envoie pas d'en-tête d'authentification. L'avatar est visible de tous, compte privé compris.
+- **La photo de séance a la visibilité de la séance**, et `GET /workouts/completed/:id` reste ouvert à tout utilisateur authentifié (règle du projet) : la photo d'une séance d'un compte privé est lisible par qui connaît l'id de la séance. Restreindre cette route aux abonnés réglerait les deux.
+
+### Mesures
+
+Photo de téléphone de 12 Mpx (3,1 Mo, contenu bruité, le cas le plus défavorable), sur 4 cœurs : avatar en 127 ms (47 ko), photo de séance en 559 ms (569 ko ; une vraie photo se compresse mieux). Le travail de `sharp` tourne hors de la boucle d'événements de Node : les autres requêtes ne sont pas bloquées pendant un envoi.
+
+Vérifié de bout en bout sur une base créée avec le code précédent : migration puis seed (« 429 new »), aucune dérive de schéma, revert de la migration, 53 vérifications HTTP. Ce scénario a trouvé un bug : `user."avatarUrl"` dans une requête casse, car `user` est un mot réservé de Postgres ; corrigé en `user.avatarUrl`, que TypeORM entoure de guillemets.
+
+### Côté frontend, à faire
+
+L'app ne fait encore rien de ces routes :
+
+- **Envoi** : `FormData` avec le champ `photo`. Le helper `request` de `services/api.ts` force `Content-Type: application/json` et doit être contourné pour ces appels, le `boundary` étant fixé par `fetch`.
+- **Affichage** : `avatarUrl` et `photoUrl` sont des chemins relatifs (`/uploads/...`) tant que `UPLOADS_PUBLIC_URL` n'est pas défini, à préfixer par l'URL de l'API.
+- **HEIC** : sur iPhone, convertir en JPEG avant l'envoi (`expo-image-manipulator`, par exemple), sinon le backend répond 415.
+- **Écran de séance** : le sélecteur de photo existant (`WorkoutImagePicker`) n'envoie aujourd'hui l'image nulle part.
+
+### Déploiement
+
+1. `npm ci` installe `sharp` et son binaire précompilé (linux x64 et arm64, glibc et musl). Le `deploy.sh` actuel le fait déjà.
+2. `npm run migration:run:prod`, ou rien tant que `synchronize: true` est actif.
+3. **nginx : `client_max_body_size 10m;`** dans le bloc qui sert l'API. La valeur par défaut est de 1 Mo : sans ce réglage, la plupart des photos de téléphone seraient refusées par nginx (413 en HTML) avant d'atteindre l'API.
+4. Variables d'environnement, toutes deux facultatives :
+   - `UPLOADS_DIR` : dossier des photos, par défaut `uploads` dans le dossier de lancement, soit `~/Grinta/backend/uploads` sous PM2. Il est ignoré par git et n'est pas touché par le build. **À inclure dans les sauvegardes.**
+   - `UPLOADS_PUBLIC_URL` : préfixe des URL renvoyées, par exemple `https://<domaine de l'API>/uploads`, pour que l'app les affiche telles quelles. Par défaut `/uploads`, relatif.
+5. `npm run seed` pour créer « Bench Press (Barbell) ».
+6. Avec le Dockerfile, monter un volume sur `/app/uploads`, sinon les photos disparaissent à chaque redémarrage du conteneur.
+
 ## Non publié : description, consignes et photos des exercices, équipement dans le nom des variantes
 
 ### Ce qui change
@@ -30,7 +102,7 @@ Le JSON contenait **430 entrées pour 294 noms** : « Squat » existait en 7 éq
 
 **Impact frontend** : les noms affichés changent. L'app met le catalogue en cache (`exercises_cache`) et montrera les anciens noms jusqu'au prochain rafraîchissement. Les séances et programmes référencent les exercices par id et ne sont pas affectés.
 
-**Manque constaté, non corrigé** : le catalogue n'a pas de développé couché à plat à la barre. « Bench Press » n'existe qu'en poulie, haltères et Smith machine (la barre n'existe qu'en incliné, décliné, prise serrée et prise large). Ajout possible si souhaité.
+**Manque constaté** : le catalogue n'avait pas de développé couché à plat à la barre. Ajouté depuis, voir « Bench Press (Barbell) » plus haut.
 
 ### Déploiement
 

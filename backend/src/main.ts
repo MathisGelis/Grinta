@@ -1,9 +1,11 @@
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { readPhotoStorageConfig, UPLOADS_ROUTE } from './photos/photos.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -26,6 +28,22 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // UPLOADED PHOTOS
+  // Public like any image link: the names are random and never reused, so a
+  // photo can only be fetched by someone the API gave its URL to, and it can
+  // be cached for good. Only WebP files the server produced live there.
+  app.useStaticAssets(
+    readPhotoStorageConfig(app.get(ConfigService)).directory,
+    {
+      prefix: `${UPLOADS_ROUTE}/`,
+      index: false,
+      dotfiles: 'ignore',
+      immutable: true,
+      maxAge: '365d',
+      setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+    },
+  );
 
   // SWAGGER
   const config = new DocumentBuilder()

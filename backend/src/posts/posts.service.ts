@@ -81,8 +81,10 @@ export class PostsService {
         'u.id AS "userId"',
         'u."displayName" AS "displayName"',
         'u."uniqueName" AS "uniqueName"',
+        'u."avatarUrl" AS "avatarUrl"',
         'w.id AS "workoutId"',
         'w.title AS "workoutTitle"',
+        'w."photoUrl" AS "workoutPhotoUrl"',
         'w.description AS "workoutDescription"',
         'w."completionDate" AS "workoutCompletionDate"',
         'w."totalDurationSeconds" AS "workoutDurationSeconds"',
@@ -111,6 +113,7 @@ export class PostsService {
         'post."createdAt" AS "createdAt"',
         'w.id AS "workoutId"',
         'w.title AS "workoutTitle"',
+        'w."photoUrl" AS "workoutPhotoUrl"',
         'w."completionDate" AS "workoutCompletionDate"',
         `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
         `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
@@ -149,6 +152,7 @@ export class PostsService {
         'user.id AS id',
         'user.displayName AS "displayName"',
         'user.uniqueName AS "uniqueName"',
+        'user.avatarUrl AS "avatarUrl"',
         'like.createdAt AS "createdAt"',
       ])
       .orderBy('like.createdAt', 'DESC')
@@ -209,6 +213,7 @@ export class PostsService {
         'comment.createdAt AS "createdAt"',
         'user.id AS "userId"',
         'user.displayName AS "displayName"',
+        'user.avatarUrl AS "avatarUrl"',
       ])
       .orderBy('comment.createdAt', 'DESC')
       .getRawMany();
@@ -266,6 +271,7 @@ export class PostsService {
         'post.id AS id',
         'post.createdAt AS "createdAt"',
         'postUser.displayName AS "displayName"',
+        'postUser.avatarUrl AS "avatarUrl"',
         `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
         `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
         `EXISTS (
@@ -306,6 +312,7 @@ export class PostsService {
         'post.id AS id',
         'post."createdAt" AS "createdAt"',
         'u."displayName" AS "displayName"',
+        'u."avatarUrl" AS "avatarUrl"',
         `(SELECT COUNT(*)::int FROM post_likes l WHERE l."postId" = post.id) AS "likesCount"`,
         `(SELECT COUNT(*)::int FROM post_comments c WHERE c."postId" = post.id AND c."isHidden" = false) AS "commentsCount"`,
         `(

@@ -23,6 +23,7 @@ describe('WorkoutService exercise resolution', () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
     );
   });
 
@@ -83,6 +84,7 @@ describe('WorkoutService completed workouts and progress', () => {
   let exerciseRepo: { find: jest.Mock };
   let exerciseStats: { recompute: jest.Mock };
   let badges: { awardForWorkout: jest.Mock };
+  let photos: { remove: jest.Mock };
   let service: WorkoutService;
 
   beforeEach(() => {
@@ -98,6 +100,7 @@ describe('WorkoutService completed workouts and progress', () => {
     exerciseRepo = { find: jest.fn() };
     exerciseStats = { recompute: jest.fn().mockResolvedValue(histories) };
     badges = { awardForWorkout: jest.fn().mockResolvedValue([badge]) };
+    photos = { remove: jest.fn() };
     const dataSource = {
       transaction: (run: (m: typeof manager) => unknown) => run(manager),
     };
@@ -110,6 +113,7 @@ describe('WorkoutService completed workouts and progress', () => {
       dataSource as never,
       exerciseStats as never,
       badges as never,
+      photos as never,
     );
   });
 
@@ -207,9 +211,10 @@ describe('WorkoutService completed workouts and progress', () => {
     expect(exerciseStats.recompute).not.toHaveBeenCalled();
   });
 
-  it('on delete, rebuilds the stats of the exercises it contained', async () => {
+  it('on delete, rebuilds the stats of the exercises it contained and deletes its photo', async () => {
     manager.findOne.mockResolvedValue({
       id: 'w-1',
+      photoUrl: '/uploads/workouts/photo.webp',
       exercises: [{ exercise: exercise('a') }, { exercise: exercise('b') }],
     });
 
@@ -223,5 +228,92 @@ describe('WorkoutService completed workouts and progress', () => {
       'b',
     ]);
     expect(badges.awardForWorkout).not.toHaveBeenCalled();
+    expect(photos.remove).toHaveBeenCalledWith('/uploads/workouts/photo.webp');
+  });
+});
+
+describe('WorkoutService completed workout photo', () => {
+  const user = { id: 'user-1', email: 'u@example.com' };
+  const file = { buffer: Buffer.from('jpeg') } as Express.Multer.File;
+  const oldUrl = '/uploads/workouts/old.webp';
+  const newUrl = '/uploads/workouts/new.webp';
+  const query = { setLock: jest.fn(), where: jest.fn(), getOne: jest.fn() };
+  const manager = {
+    createQueryBuilder: jest.fn(() => query),
+    update: jest.fn(),
+  };
+  const completedRepo = { exists: jest.fn() };
+  const photos = { upload: jest.fn(), remove: jest.fn() };
+  let service: WorkoutService;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    query.setLock.mockReturnValue(query);
+    query.where.mockReturnValue(query);
+    query.getOne.mockResolvedValue({ id: 'w-1', photoUrl: oldUrl });
+    completedRepo.exists.mockResolvedValue(true);
+    photos.upload.mockResolvedValue(newUrl);
+    service = new WorkoutService(
+      {} as never,
+      {} as never,
+      completedRepo as never,
+      {} as never,
+      {
+        transaction: (run: (m: typeof manager) => unknown) => run(manager),
+      } as never,
+      {} as never,
+      {} as never,
+      photos as never,
+    );
+  });
+
+  it("refuses someone else's workout before doing any image work", async () => {
+    completedRepo.exists.mockResolvedValue(false);
+
+    await expect(
+      service.setCompletedWorkoutPhoto(user, 'w-1', file),
+    ).rejects.toThrow('Completed workout not found');
+    expect(completedRepo.exists).toHaveBeenCalledWith({
+      where: { id: 'w-1', user: { id: 'user-1' } },
+    });
+    expect(photos.upload).not.toHaveBeenCalled();
+  });
+
+  it('stores the new photo under a row lock, then deletes the old file', async () => {
+    await expect(
+      service.setCompletedWorkoutPhoto(user, 'w-1', file),
+    ).resolves.toEqual({ photoUrl: newUrl });
+    expect(photos.upload).toHaveBeenCalledWith('workout', file);
+    expect(query.setLock).toHaveBeenCalledWith('pessimistic_write');
+    expect(query.where).toHaveBeenCalledWith(expect.any(String), {
+      workoutId: 'w-1',
+      userId: 'user-1',
+    });
+    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'w-1', {
+      photoUrl: newUrl,
+    });
+    expect(photos.remove).toHaveBeenCalledTimes(1);
+    expect(photos.remove).toHaveBeenCalledWith(oldUrl);
+  });
+
+  it('deletes the new file when the workout disappeared during the upload', async () => {
+    query.getOne.mockResolvedValue(null);
+
+    await expect(
+      service.setCompletedWorkoutPhoto(user, 'w-1', file),
+    ).rejects.toThrow('Completed workout not found');
+    expect(manager.update).not.toHaveBeenCalled();
+    expect(photos.remove).toHaveBeenCalledTimes(1);
+    expect(photos.remove).toHaveBeenCalledWith(newUrl);
+  });
+
+  it('removes the photo from the workout, then its file', async () => {
+    await expect(
+      service.removeCompletedWorkoutPhoto(user, 'w-1'),
+    ).resolves.toEqual({ photoUrl: null });
+    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'w-1', {
+      photoUrl: null,
+    });
+    expect(photos.remove).toHaveBeenCalledWith(oldUrl);
   });
 });

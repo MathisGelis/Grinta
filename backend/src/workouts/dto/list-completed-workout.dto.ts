@@ -18,4 +18,7 @@ export class CompletedWorkoutListDto {
 
   @ApiProperty()
   totalExercises: number;
+
+  @ApiProperty({ type: String, nullable: true })
+  photoUrl: string | null;
 }

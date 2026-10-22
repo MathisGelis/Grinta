@@ -6,8 +6,10 @@ import {
   Param,
   Patch,
   Delete,
+  Put,
   Query,
   Req,
+  UploadedFile,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -16,6 +18,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Auth } from 'src/auth/auth.decorators';
 import type { AuthenticatedRequest } from 'src/auth/auth-user.interface';
 import { UserListDto } from './dto/users-list.dto';
+import { PhotoUpload } from 'src/photos/photo-upload.decorator';
 
 @ApiTags('users')
 @Controller('users')
@@ -59,11 +62,38 @@ export class UsersController {
   }
 
   @Auth()
+  @Put('me/avatar')
+  @PhotoUpload()
+  @ApiOperation({
+    summary: 'Set the profile photo of the current user',
+    description:
+      'Multipart upload in the `photo` field. The photo is cropped to a 512 px square, re-encoded as WebP and stripped of its metadata (EXIF, GPS). Replaces and deletes the previous one. The URL is public: anyone it is shared with can open it.',
+  })
+  @ApiResponse({ status: 200, description: '{ avatarUrl }' })
+  @ApiResponse({ status: 400, description: 'No photo, or not an image' })
+  @ApiResponse({ status: 413, description: 'Over 10 MB or 50 megapixels' })
+  @ApiResponse({ status: 415, description: 'Not JPEG, PNG or WebP' })
+  setAvatar(
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
+    return this.usersService.setAvatar(req.user.id, file);
+  }
+
+  @Auth()
+  @Delete('me/avatar')
+  @ApiOperation({ summary: 'Remove the profile photo of the current user' })
+  @ApiResponse({ status: 200, description: '{ avatarUrl: null }' })
+  removeAvatar(@Req() req: AuthenticatedRequest) {
+    return this.usersService.removeAvatar(req.user.id);
+  }
+
+  @Auth()
   @Get(':id')
   @ApiOperation({
     summary: 'Find a user by ID',
     description:
-      'Returns the full account for the authenticated user and only the public identity (id, displayName, uniqueName, isPublic) for anyone else.',
+      'Returns the full account for the authenticated user and only the public identity (id, displayName, uniqueName, isPublic, avatarUrl) for anyone else.',
   })
   @ApiResponse({ status: 200, description: 'User found' })
   @ApiResponse({ status: 404, description: 'User not found' })

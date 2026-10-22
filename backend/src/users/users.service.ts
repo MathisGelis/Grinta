@@ -16,6 +16,7 @@ import { Connection } from 'src/connections/entities/connections.entity';
 import { CompletedWorkout } from 'src/workouts/entities/completed-workout.entity';
 import { Post } from 'src/posts/entities/post.entity';
 import { ConnectionsService } from 'src/connections/connections.service';
+import { PhotosService } from 'src/photos/photos.service';
 
 @Injectable()
 export class UsersService {
@@ -33,6 +34,8 @@ export class UsersService {
     private readonly postRepository: Repository<Post>,
 
     private readonly connectionsService: ConnectionsService,
+
+    private readonly photos: PhotosService,
   ) {}
 
   async registerUser(userData: CreateUserDto): Promise<User> {
@@ -84,6 +87,7 @@ export class UsersService {
       displayName: user.displayName,
       uniqueName: user.uniqueName,
       isPublic: user.isPublic,
+      avatarUrl: user.avatarUrl ?? null,
     };
   }
 
@@ -131,11 +135,67 @@ export class UsersService {
     id: string,
   ): Promise<{ message: string }> {
     this.assertSelf(currentUserId, id);
+    const photoUrls = await this.findPhotoUrls(id);
     const result = await this.userRepository.delete(id);
 
     if (result.affected === 0)
       throw new NotFoundException(`User with ID ${id} not found`);
+    await this.photos.removeAll(photoUrls);
     return { message: 'User deleted successfully' };
+  }
+
+  /**
+   * Replaces the profile photo. The file is processed and written before the
+   * row is locked, so a slow upload never holds the lock, and the previous
+   * file is deleted only once the database no longer points to it.
+   */
+  async setAvatar(
+    userId: string,
+    file: Express.Multer.File | undefined,
+  ): Promise<{ avatarUrl: string }> {
+    const avatarUrl = await this.photos.upload('avatar', file);
+    let previous: string | null | undefined;
+
+    try {
+      previous = await this.swapAvatar(userId, avatarUrl);
+    } catch (error) {
+      await this.photos.remove(avatarUrl);
+      throw error;
+    }
+    await this.photos.remove(previous);
+    return { avatarUrl };
+  }
+
+  async removeAvatar(userId: string): Promise<{ avatarUrl: null }> {
+    await this.photos.remove(await this.swapAvatar(userId, null));
+    return { avatarUrl: null };
+  }
+
+  // Sets the avatar under a row lock and returns the URL it replaced, so two
+  // concurrent uploads each get a different previous file to delete.
+  private swapAvatar(userId: string, avatarUrl: string | null) {
+    return this.userRepository.manager.transaction(async (manager) => {
+      const user = await manager.findOne(User, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!user) throw new NotFoundException('User not found');
+      await manager.update(User, userId, { avatarUrl });
+      return user.avatarUrl;
+    });
+  }
+
+  // Every stored photo of an account, read before it is deleted.
+  private async findPhotoUrls(userId: string): Promise<string[]> {
+    const rows: Array<{ url: string }> = await this.userRepository.query(
+      `SELECT "avatarUrl" AS url FROM users WHERE id = $1 AND "avatarUrl" IS NOT NULL
+       UNION ALL
+       SELECT "photoUrl" FROM completed_workouts WHERE "userId" = $1 AND "photoUrl" IS NOT NULL`,
+      [userId],
+    );
+
+    return rows.map((row) => row.url);
   }
 
   private assertSelf(currentUserId: string, targetUserId: string) {
@@ -188,6 +248,7 @@ export class UsersService {
       id: user.id,
       displayName: user.displayName,
       uniqueName: user.uniqueName,
+      avatarUrl: user.avatarUrl ?? null,
       ...counts,
       followStatus,
       posts,
@@ -264,7 +325,12 @@ export class UsersService {
     if (!normalized) return [];
     return this.userRepository
       .createQueryBuilder('user')
-      .select(['user.id', 'user.uniqueName', 'user.displayName'])
+      .select([
+        'user.id',
+        'user.uniqueName',
+        'user.displayName',
+        'user.avatarUrl',
+      ])
       .where('user.id != :currentUserId', { currentUserId })
       .andWhere(
         `

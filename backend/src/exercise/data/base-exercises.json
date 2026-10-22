@@ -354,6 +354,28 @@
     ]
   },
   {
+    "name": "Bench Press (Barbell)",
+    "equipment_type": "barbell",
+    "primary_muscle": "middle_chest",
+    "secondary_muscles": [
+      "triceps",
+      "front_delts"
+    ],
+    "exercise_type": "weight_reps",
+    "description": "The classic horizontal press for the chest, front deltoids and triceps, done with a barbell on a flat bench.",
+    "instructions": [
+      "Lie on a flat bench with your eyes under the bar, your feet flat on the floor and your shoulder blades pulled back and down.",
+      "Grip the bar slightly wider than your shoulders, unrack it and hold it over your shoulders with straight arms.",
+      "Lower the bar under control to mid-chest level, keeping your elbows at roughly 45 degrees from your torso.",
+      "Press back up until your arms are extended, without bouncing off the chest, and rack the bar after the last rep."
+    ],
+    "image_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+    "image_urls": [
+      "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+      "https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ]
+  },
+  {
     "name": "Bench Press (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "middle_chest",

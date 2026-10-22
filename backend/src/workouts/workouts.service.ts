@@ -19,6 +19,7 @@ import {
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { omitUndefined } from 'src/common/utils/omit-undefined';
+import { PhotosService } from 'src/photos/photos.service';
 
 @Injectable()
 export class WorkoutService {
@@ -37,6 +38,7 @@ export class WorkoutService {
     private readonly dataSource: DataSource,
     private readonly exerciseStats: ExerciseStatsService,
     private readonly badges: BadgesService,
+    private readonly photos: PhotosService,
   ) {}
 
   async createPlannedWorkout(user: AuthUser, dto: CreatePlannedWorkoutDto) {
@@ -211,6 +213,7 @@ export class WorkoutService {
         'w.description AS description',
         'w."completionDate" AS "completionDate"',
         'w."totalDurationSeconds" AS "totalDurationSeconds"',
+        'w."photoUrl" AS "photoUrl"',
       ])
       .addSelect(
         '(SELECT COUNT(*)::int FROM completed_workout_exercises e WHERE e."workoutId" = w.id)',
@@ -261,10 +264,11 @@ export class WorkoutService {
 
   /**
    * The workout's badges go with it (ON DELETE CASCADE) and the stats of its
-   * exercises are rebuilt from the remaining sessions.
+   * exercises are rebuilt from the remaining sessions. Its photo is deleted
+   * once the transaction has committed.
    */
   async deleteCompletedWorkout(user: AuthUser, workoutId: string) {
-    return this.dataSource.transaction(async (manager) => {
+    const photoUrl = await this.dataSource.transaction(async (manager) => {
       const workout = await manager.findOne(CompletedWorkout, {
         where: { id: workoutId, user: { id: user.id } },
         relations: ['exercises'],
@@ -277,7 +281,76 @@ export class WorkoutService {
         user.id,
         workout.exercises.map((e) => e.exercise.id),
       );
-      return { message: 'Completed workout deleted successfully' };
+      return workout.photoUrl;
+    });
+
+    await this.photos.remove(photoUrl);
+    return { message: 'Completed workout deleted successfully' };
+  }
+
+  /**
+   * Replaces the photo of a completed workout of the user. Ownership is
+   * checked before the upload is processed, so a request on someone else's
+   * workout costs no image work, and again under the row lock that swaps the
+   * URL. The previous file is deleted only once nothing points to it.
+   */
+  async setCompletedWorkoutPhoto(
+    user: AuthUser,
+    workoutId: string,
+    file: Express.Multer.File | undefined,
+  ): Promise<{ photoUrl: string }> {
+    const owned = await this.completedRepo.exists({
+      where: { id: workoutId, user: { id: user.id } },
+    });
+
+    if (!owned) throw new NotFoundException('Completed workout not found');
+    const photoUrl = await this.photos.upload('workout', file);
+    let previous: string | null | undefined;
+
+    try {
+      previous = await this.swapCompletedWorkoutPhoto(
+        user,
+        workoutId,
+        photoUrl,
+      );
+    } catch (error) {
+      await this.photos.remove(photoUrl);
+      throw error;
+    }
+    await this.photos.remove(previous);
+    return { photoUrl };
+  }
+
+  async removeCompletedWorkoutPhoto(
+    user: AuthUser,
+    workoutId: string,
+  ): Promise<{ photoUrl: null }> {
+    await this.photos.remove(
+      await this.swapCompletedWorkoutPhoto(user, workoutId, null),
+    );
+    return { photoUrl: null };
+  }
+
+  // Sets the photo under a row lock and returns the URL it replaced, so two
+  // concurrent uploads each get a different previous file to delete.
+  private swapCompletedWorkoutPhoto(
+    user: AuthUser,
+    workoutId: string,
+    photoUrl: string | null,
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const workout = await manager
+        .createQueryBuilder(CompletedWorkout, 'w')
+        .setLock('pessimistic_write')
+        .where('w.id = :workoutId AND w."userId" = :userId', {
+          workoutId,
+          userId: user.id,
+        })
+        .getOne();
+
+      if (!workout) throw new NotFoundException('Completed workout not found');
+      await manager.update(CompletedWorkout, workout.id, { photoUrl });
+      return workout.photoUrl;
     });
   }
 

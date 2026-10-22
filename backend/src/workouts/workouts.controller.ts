@@ -7,6 +7,8 @@ import {
   Param,
   Get,
   Delete,
+  Put,
+  UploadedFile,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth } from '../auth/auth.decorators';
@@ -18,6 +20,7 @@ import { PlannedWorkoutListDto } from './dto/list-planned-workout.dto';
 import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { WorkoutService } from './workouts.service';
+import { PhotoUpload } from '../photos/photo-upload.decorator';
 
 @ApiTags('workouts')
 @Auth()
@@ -115,6 +118,37 @@ export class WorkoutsController {
   })
   getCompletedById(@Param('id') id: string) {
     return this.workoutService.getCompletedWorkoutById(id);
+  }
+
+  @Put('completed/:id/photo')
+  @PhotoUpload()
+  @ApiOperation({
+    summary: 'Set the photo of a completed workout',
+    description:
+      'Owner only. Multipart upload in the `photo` field. The photo is scaled down to 1600 px at most, re-encoded as WebP and stripped of its metadata (EXIF, GPS). Replaces and deletes the previous one. Visible to whoever can read the workout, and the URL itself is public.',
+  })
+  @ApiResponse({ status: 200, description: '{ photoUrl }' })
+  @ApiResponse({ status: 400, description: 'No photo, or not an image' })
+  @ApiResponse({ status: 404, description: 'Not a workout of the user' })
+  @ApiResponse({ status: 413, description: 'Over 10 MB or 50 megapixels' })
+  @ApiResponse({ status: 415, description: 'Not JPEG, PNG or WebP' })
+  setCompletedPhoto(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
+    return this.workoutService.setCompletedWorkoutPhoto(req.user, id, file);
+  }
+
+  @Delete('completed/:id/photo')
+  @ApiOperation({ summary: 'Remove the photo of a completed workout' })
+  @ApiResponse({ status: 200, description: '{ photoUrl: null }' })
+  @ApiResponse({ status: 404, description: 'Not a workout of the user' })
+  removeCompletedPhoto(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.workoutService.removeCompletedWorkoutPhoto(req.user, id);
   }
 
   @Delete('planned/:id')

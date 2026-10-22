@@ -10,6 +10,6 @@ export class UserListDto {
   @ApiProperty()
   displayName: string;
 
-  @ApiProperty({ required: false })
-  image_url?: string;
+  @ApiProperty({ type: String, nullable: true })
+  avatarUrl?: string | null;
 }

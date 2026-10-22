@@ -45,6 +45,11 @@ export class User {
   @ApiProperty({ required: false })
   weight?: number;
 
+  /** Set through PUT /users/me/avatar only, never through PATCH /users/:id. */
+  @Column({ type: 'text', nullable: true })
+  @ApiProperty({ type: String, required: false, nullable: true })
+  avatarUrl?: string | null;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   @ApiProperty()
   createdAt: Date;

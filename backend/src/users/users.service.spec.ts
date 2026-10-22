@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { User } from './entities/users.entity';
@@ -27,6 +27,7 @@ describe('UsersService access control', () => {
     userRepository.findOne.mockResolvedValue({ ...owner });
     service = new UsersService(
       userRepository as never,
+      {} as never,
       {} as never,
       {} as never,
       {} as never,
@@ -76,6 +77,77 @@ describe('UsersService access control', () => {
       displayName: 'Owner',
       uniqueName: 'owner',
       isPublic: true,
+      avatarUrl: null,
     });
+  });
+});
+
+describe('UsersService profile photo', () => {
+  const oldUrl = '/uploads/avatars/11111111-1111-4111-8111-111111111111.webp';
+  const newUrl = '/uploads/avatars/22222222-2222-4222-8222-222222222222.webp';
+  const file = { buffer: Buffer.from('jpeg') } as Express.Multer.File;
+  const manager = { findOne: jest.fn(), update: jest.fn() };
+  const userRepository = {
+    manager: {
+      transaction: jest.fn((work: (m: typeof manager) => unknown) =>
+        work(manager),
+      ),
+    },
+  };
+  const photos = {
+    upload: jest.fn(),
+    remove: jest.fn(),
+  };
+  let service: UsersService;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    photos.upload.mockResolvedValue(newUrl);
+    manager.findOne.mockResolvedValue({ id: 'user-1', avatarUrl: oldUrl });
+    service = new UsersService(
+      userRepository as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      photos as never,
+    );
+  });
+
+  it('stores the new photo under a row lock, then deletes the old file', async () => {
+    await expect(service.setAvatar('user-1', file)).resolves.toEqual({
+      avatarUrl: newUrl,
+    });
+    expect(photos.upload).toHaveBeenCalledWith('avatar', file);
+    expect(manager.findOne).toHaveBeenCalledWith(expect.anything(), {
+      where: { id: 'user-1' },
+      lock: { mode: 'pessimistic_write' },
+    });
+    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'user-1', {
+      avatarUrl: newUrl,
+    });
+    expect(photos.remove).toHaveBeenCalledTimes(1);
+    expect(photos.remove).toHaveBeenCalledWith(oldUrl);
+  });
+
+  it('deletes the new file and keeps the old one when the account is gone', async () => {
+    manager.findOne.mockResolvedValue(null);
+
+    await expect(service.setAvatar('user-1', file)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(manager.update).not.toHaveBeenCalled();
+    expect(photos.remove).toHaveBeenCalledTimes(1);
+    expect(photos.remove).toHaveBeenCalledWith(newUrl);
+  });
+
+  it('removes the photo from the account, then its file', async () => {
+    await expect(service.removeAvatar('user-1')).resolves.toEqual({
+      avatarUrl: null,
+    });
+    expect(manager.update).toHaveBeenCalledWith(expect.anything(), 'user-1', {
+      avatarUrl: null,
+    });
+    expect(photos.remove).toHaveBeenCalledWith(oldUrl);
   });
 });

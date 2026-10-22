@@ -135,6 +135,7 @@ export class ConnectionsService {
         'user.id',
         'user.displayName',
         'user.uniqueName',
+        'user.avatarUrl',
       ])
       .orderBy('request.createdAt', 'DESC')
       .getRawMany();
@@ -149,6 +150,7 @@ export class ConnectionsService {
           'user.id AS id',
           'user.uniqueName AS "uniqueName"',
           'user.displayName AS "displayName"',
+          'user.avatarUrl AS "avatarUrl"',
         ])
         .where('connection.followingId = :userId', { userId })
         .getRawMany() ?? []
@@ -164,6 +166,7 @@ export class ConnectionsService {
           'user.id AS id',
           'user.uniqueName AS "uniqueName"',
           'user.displayName AS "displayName"',
+          'user.avatarUrl AS "avatarUrl"',
         ])
         .where('connection.followerId = :userId', { userId })
         .getRawMany() ?? []
@@ -180,6 +183,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
+        'user.avatarUrl AS "avatarUrl"',
         'COUNT(*)::int AS score',
       ])
       .where('c1.follower = :currentUserId', { currentUserId })
@@ -208,6 +212,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
+        'user.avatarUrl AS "avatarUrl"',
         'COUNT(c.id)::int AS followersCount',
       ])
       .groupBy('user.id')
@@ -227,6 +232,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
+        'user.avatarUrl AS "avatarUrl"',
       ])
       .orderBy('RANDOM()')
       .limit(limit);

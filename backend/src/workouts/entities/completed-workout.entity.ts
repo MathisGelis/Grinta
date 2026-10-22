@@ -40,6 +40,11 @@ export class CompletedWorkout {
   @ApiProperty({ required: false })
   description?: string;
 
+  /** Set through PUT /workouts/completed/:id/photo only. */
+  @Column({ type: 'text', nullable: true })
+  @ApiProperty({ type: String, required: false, nullable: true })
+  photoUrl?: string | null;
+
   @OneToMany(() => CompletedWorkoutExercise, (cwe) => cwe.workout, {
     cascade: true,
   })

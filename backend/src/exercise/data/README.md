@@ -26,6 +26,6 @@ Ajouter une variante à un exercice sans suffixe impose de renommer l'existant, 
 
 Elles viennent de [free-exercise-db](https://github.com/yuhonas/free-exercise-db), publié sous [Unlicense](https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md) (domaine public). Les URL pointent vers le commit `f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5` et non vers `main`, pour qu'un renommage en amont ne casse pas les images.
 
-Une photo n'est associée que si la source montre le même mouvement avec un équipement compatible : une mauvaise photo est pire que pas de photo. 272 entrées sur 428 en ont une. Il n'y en a pas pour les variantes absentes de la source (la plupart des variantes à l'élastique, au kettlebell ou à la machine guidée), ni pour les activités (natation, yoga, boxe...).
+Une photo n'est associée que si la source montre le même mouvement avec un équipement compatible : une mauvaise photo est pire que pas de photo. 273 entrées sur 429 en ont une. Il n'y en a pas pour les variantes absentes de la source (la plupart des variantes à l'élastique, au kettlebell ou à la machine guidée), ni pour les activités (natation, yoga, boxe...).
 
 Il n'y a pas de GIF : aucune source de GIF d'exercices sous licence libre n'a été trouvée. Les GIF des bases commerciales (ExerciseDB, etc.) sont soumis à copyright et ne peuvent pas être redistribués sans licence.
