@@ -5,9 +5,11 @@ import { PostPartner } from './entities/post-partner.entity';
 import { extractMentions, MAX_PARTNERS } from './utils/mentions';
 
 /**
- * SQL expression listing the partners shown on the post aliased `postAlias`,
- * as a JSON array of { id, uniqueName, displayName, avatarThumbnailUrl },
- * oldest tag first then by username. One small indexed lookup per post.
+ * SQL expression listing the partners shown on the post aliased `postAlias`:
+ * the tagged users who still follow its author, so unfollowing also takes
+ * someone off the posts they were tagged in. A JSON array of
+ * { id, uniqueName, displayName, avatarThumbnailUrl }, oldest tag first then
+ * by username. A few small indexed lookups per post.
  */
 export function partnersSql(postAlias: string): string {
   return `COALESCE((
@@ -20,6 +22,11 @@ export function partnersSql(postAlias: string): string {
       FROM post_partners pp
       JOIN users pu ON pu.id = pp."userId"
      WHERE pp."postId" = ${postAlias}.id AND NOT pp.declined
+       AND EXISTS (
+         SELECT 1 FROM connections c
+          WHERE c."followerId" = pp."userId"
+            AND c."followingId" = ${postAlias}."userId"
+       )
   ), '[]'::json)`;
 }
 
@@ -32,9 +39,10 @@ export class PostPartnersService {
 
   /**
    * Makes the partners of a post match the @handles of its workout's title
-   * and description: handles of existing users other than the author, at
-   * most MAX_PARTNERS in order of appearance. Unknown handles stay plain
-   * text. A refusal is kept even when the handle is removed, so taking the
+   * and description: handles of users who follow the author, at most
+   * MAX_PARTNERS in order of appearance. Following is what allows being
+   * tagged: nobody can put a stranger's name and photo on their post. Other
+   * handles stay plain text. A refusal is kept even when the handle is removed, so taking the
    * @ out and putting it back does not tag that person again.
    */
   async sync(
@@ -51,6 +59,10 @@ export class PostPartnersService {
              FROM unnest($1::text[]) WITH ORDINALITY AS h(handle, position)
              JOIN users u ON u."uniqueName" = h.handle
             WHERE u.id <> $2
+              AND EXISTS (
+                SELECT 1 FROM connections c
+                 WHERE c."followerId" = u.id AND c."followingId" = $2
+              )
             ORDER BY h.position
             LIMIT $3`,
           [handles, authorId, MAX_PARTNERS],

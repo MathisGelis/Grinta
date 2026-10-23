@@ -5,7 +5,8 @@
 ### Ce qui change
 
 - **Identifier les personnes avec qui on s'est entraîné.** Un post affiche le titre et la description de sa séance : chaque `@pseudo` qu'ils contiennent identifie l'utilisateur correspondant comme partenaire du post.
-  - Règles : majuscules indifférentes ; un point final est ignoré (`merci @paul.`) ; une adresse e-mail (`paul@mail.com`) n'est pas une mention ; un pseudo inconnu reste du texte ; l'auteur ne s'identifie pas lui-même.
+  - **Seuls les abonnés de l'auteur peuvent être identifiés** : personne ne peut afficher le nom et la photo d'un inconnu sur son post. Un abonné qui se désabonne disparaît des posts où il était identifié, et y réapparaît s'il se réabonne, sauf s'il s'est retiré.
+  - Règles : majuscules indifférentes ; un point final est ignoré (`merci @paul.`) ; une adresse e-mail (`paul@mail.com`) n'est pas une mention ; un pseudo inconnu ou d'un non-abonné reste du texte ; l'auteur ne s'identifie pas lui-même.
   - 10 partenaires au plus, les premiers mentionnés.
 - **Les partenaires apparaissent partout où le post est lu**, dans un champ `partners` : `[{ id, uniqueName, displayName, avatarThumbnailUrl }]`. C'est le cas à la création (`POST /posts`), dans le détail d'un post, les fils following et top, `GET /posts/mine` et les posts du profil. Ils sont lus en une petite requête indexée par post, dans la même requête SQL que le reste.
 - **Ils suivent le texte** : modifier le titre ou la description d'une séance publiée (`PATCH /workouts/completed/:id`) met les partenaires à jour. Une modification qui ne touche pas au texte ne les change pas.
@@ -13,14 +14,24 @@
 - Nouvelle table `post_partners` (migration `AddPostPartners`, idempotente et réversible). Les lignes disparaissent avec le post ou l'utilisateur.
 - Tests :
   - extraction des mentions (fonction pure) et resynchronisation à la modification d'une séance ;
-  - scénario de bout en bout sur base réelle, 19 vérifications : compte privé, refus, resynchronisation, plafond de 10, suppression du post ;
+  - scénario de bout en bout sur base réelle, 26 vérifications : compte privé, non-abonné, désabonnement, refus, resynchronisation, plafond de 10, suppression du post, format des pseudos ;
   - migration vérifiée sans écart de schéma, sur une base vierge comme sur une base dont `synchronize` a déjà créé la table, puis annulée et rejouée.
 
-### À décider
+### Format des pseudos (correctif)
 
-- **Qui peut être identifié.** Pour l'instant, n'importe quel utilisateur, compte privé compris : son nom et sa miniature s'affichent sur le post de quelqu'un d'autre. Restreindre aux personnes qui suivent l'auteur, ou à celles que l'auteur suit, est une ligne SQL de plus dans la synchronisation.
+- **Corrigé : un pseudo pouvait contenir des espaces, des accents ou n'importe quel caractère**, `jean dupont` comme `élodie` ou un emoji. Seules la longueur (3 à 30) et la mise en minuscules étaient vérifiées. Un tel pseudo ne pouvait pas être mentionné.
+- Règle, à l'inscription et au changement de pseudo : lettres sans accent, chiffres, `_` et `.`, sans point au début ni à la fin. Le message d'erreur est en français. Les pseudos générés (suggestion quand un pseudo est pris, seed) suivent la même règle : « Élodie Martin » donne `elodiemartin`, et non plus `lodiemartin`.
+- **Comptes existants** : rien n'est renommé automatiquement, car le pseudo sert d'identifiant de connexion et un renommage empêcherait ces utilisateurs de se connecter avec. Ils restent valides, peuvent modifier le reste de leur profil (l'app n'envoie le pseudo que s'il a changé), mais ne peuvent pas être mentionnés. Pour les compter :
+
+  ```sql
+  SELECT count(*) FROM users WHERE "uniqueName" !~ '^[a-z0-9_]([a-z0-9_.]*[a-z0-9_])?$';
+  ```
+
+  S'il y en a, deux options : les prévenir de changer de pseudo, ou les renommer par migration en leur disant d'utiliser leur nouveau pseudo ou leur e-mail pour se connecter.
+
+### Reste ouvert
+
 - **Notification et visibilité côté identifié.** Il n'existe pas de système de notification : la personne identifiée ne le sait que si elle voit le post. Une route « posts où je suis identifié » est simple à ajouter, l'index `IDX_post_partners_user` est déjà en place.
-- **Pseudos mentionnables.** Seuls les pseudos faits de lettres, chiffres, `_` et `.` peuvent être mentionnés, ce que produisent les pseudos générés. Or rien n'empêche aujourd'hui de choisir un pseudo avec un espace ou un accent. Il faudrait valider le format des pseudos à l'inscription.
 
 ### Côté frontend, à faire
 

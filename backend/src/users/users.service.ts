@@ -18,6 +18,7 @@ import { Post } from 'src/posts/entities/post.entity';
 import { ConnectionsService } from 'src/connections/connections.service';
 import { PhotosService } from 'src/photos/photos.service';
 import { partnersSql } from 'src/posts/post-partners.service';
+import { usernameBaseFrom } from './username';
 
 type AvatarUrls<T = string> = { avatarUrl: T; avatarThumbnailUrl: T };
 
@@ -319,10 +320,7 @@ export class UsersService {
   async generateUniqueUsernameFromDisplayName(
     displayName: string,
   ): Promise<string> {
-    const base = displayName
-      .toLowerCase()
-      .replace(/\s+/g, '')
-      .replace(/[^a-z0-9]/g, '');
+    const base = usernameBaseFrom(displayName);
     let username = base;
     let counter = 1;
 
