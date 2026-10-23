@@ -13,6 +13,8 @@ import { PostComment } from './entities/comment.entity';
 import { PostLike } from './entities/like.entity';
 import { Post } from './entities/post.entity';
 import { ReportReason } from './enums/report-reason.enum';
+import { CompletedWorkout } from '../workouts/entities/completed-workout.entity';
+import { partnersSql, PostPartnersService } from './post-partners.service';
 
 const AUTO_HIDE_THRESHOLD = 5;
 
@@ -37,11 +39,17 @@ export class PostsService {
     private readonly reportRepository: Repository<CommentReport>,
 
     private readonly moderation: ModerationService,
+
+    private readonly partners: PostPartnersService,
   ) {}
 
+  /**
+   * Publishes a workout. The @handles of its title and description tag the
+   * people the author trained with, returned under `partners`.
+   */
   async createPost(userId: string, workoutId: string) {
     const workout = await this.postRepository.manager.findOne(
-      'CompletedWorkout',
+      CompletedWorkout,
       {
         where: { id: workoutId, user: { id: userId } },
       },
@@ -54,11 +62,33 @@ export class PostsService {
 
     if (alreadyPosted)
       throw new BadRequestException('Ce workout est déjà publié.');
-    const post = this.postRepository.create({
-      user: { id: userId },
-      workout: { id: workoutId },
+    return this.postRepository.manager.transaction(async (manager) => {
+      const post = await manager.save(
+        manager.create(Post, {
+          user: { id: userId },
+          workout: { id: workoutId },
+        }),
+      );
+
+      await this.partners.sync(
+        manager,
+        post.id,
+        userId,
+        workout.title,
+        workout.description,
+      );
+      const [{ partners }] = await manager.query<
+        Array<{ partners: unknown[] }>
+      >(`SELECT ${partnersSql('p')} AS partners FROM posts p WHERE p.id = $1`, [
+        post.id,
+      ]);
+
+      return { ...post, partners };
     });
-    return this.postRepository.save(post);
+  }
+
+  declinePartner(userId: string, postId: string) {
+    return this.partners.decline(userId, postId);
   }
 
   async deletePost(userId: string, postId: string) {
@@ -96,6 +126,7 @@ export class PostsService {
         'w."totalDurationSeconds" AS "workoutDurationSeconds"',
         'post."likesCount" AS "likesCount"',
         'post."commentsCount" AS "commentsCount"',
+        `${partnersSql('post')} AS partners`,
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id AND ml."userId" = :userId
@@ -124,6 +155,7 @@ export class PostsService {
         'w."completionDate" AS "workoutCompletionDate"',
         'post."likesCount" AS "likesCount"',
         'post."commentsCount" AS "commentsCount"',
+        `${partnersSql('post')} AS partners`,
       ])
       .orderBy('post."createdAt"', 'DESC')
       .limit(clampLimit(limit))
@@ -317,6 +349,7 @@ export class PostsService {
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'post."likesCount" AS "likesCount"',
         'post."commentsCount" AS "commentsCount"',
+        `${partnersSql('post')} AS partners`,
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id
@@ -360,6 +393,7 @@ export class PostsService {
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'post."likesCount" AS "likesCount"',
         'post."commentsCount" AS "commentsCount"',
+        `${partnersSql('post')} AS partners`,
         '(post."likesCount" + post."commentsCount") AS score',
         `EXISTS (
           SELECT 1 FROM post_likes ml

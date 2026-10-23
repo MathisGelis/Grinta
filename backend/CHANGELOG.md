@@ -1,5 +1,35 @@
 # Changelog backend
 
+## Non publié : partenaires de séance identifiés par @ dans un post
+
+### Ce qui change
+
+- **Identifier les personnes avec qui on s'est entraîné.** Un post affiche le titre et la description de sa séance : chaque `@pseudo` qu'ils contiennent identifie l'utilisateur correspondant comme partenaire du post.
+  - Règles : majuscules indifférentes ; un point final est ignoré (`merci @paul.`) ; une adresse e-mail (`paul@mail.com`) n'est pas une mention ; un pseudo inconnu reste du texte ; l'auteur ne s'identifie pas lui-même.
+  - 10 partenaires au plus, les premiers mentionnés.
+- **Les partenaires apparaissent partout où le post est lu**, dans un champ `partners` : `[{ id, uniqueName, displayName, avatarThumbnailUrl }]`. C'est le cas à la création (`POST /posts`), dans le détail d'un post, les fils following et top, `GET /posts/mine` et les posts du profil. Ils sont lus en une petite requête indexée par post, dans la même requête SQL que le reste.
+- **Ils suivent le texte** : modifier le titre ou la description d'une séance publiée (`PATCH /workouts/completed/:id`) met les partenaires à jour. Une modification qui ne touche pas au texte ne les change pas.
+- **Une personne identifiée peut se retirer** : `DELETE /posts/:postId/partners/me`. Son `@` reste dans le texte mais ne l'identifie plus, définitivement pour ce post, même si l'auteur retire puis remet la mention. Le refus est conservé en base pour ça. Si l'appelant n'est pas identifié, la route renvoie 404 avec un message en français.
+- Nouvelle table `post_partners` (migration `AddPostPartners`, idempotente et réversible). Les lignes disparaissent avec le post ou l'utilisateur.
+- Tests :
+  - extraction des mentions (fonction pure) et resynchronisation à la modification d'une séance ;
+  - scénario de bout en bout sur base réelle, 19 vérifications : compte privé, refus, resynchronisation, plafond de 10, suppression du post ;
+  - migration vérifiée sans écart de schéma, sur une base vierge comme sur une base dont `synchronize` a déjà créé la table, puis annulée et rejouée.
+
+### À décider
+
+- **Qui peut être identifié.** Pour l'instant, n'importe quel utilisateur, compte privé compris : son nom et sa miniature s'affichent sur le post de quelqu'un d'autre. Restreindre aux personnes qui suivent l'auteur, ou à celles que l'auteur suit, est une ligne SQL de plus dans la synchronisation.
+- **Notification et visibilité côté identifié.** Il n'existe pas de système de notification : la personne identifiée ne le sait que si elle voit le post. Une route « posts où je suis identifié » est simple à ajouter, l'index `IDX_post_partners_user` est déjà en place.
+- **Pseudos mentionnables.** Seuls les pseudos faits de lettres, chiffres, `_` et `.` peuvent être mentionnés, ce que produisent les pseudos générés. Or rien n'empêche aujourd'hui de choisir un pseudo avec un espace ou un accent. Il faudrait valider le format des pseudos à l'inscription.
+
+### Côté frontend, à faire
+
+Afficher `partners` sous le post. Rendre cliquables les `@pseudo` du titre et de la description qui correspondent à un partenaire. Proposer « Me retirer » à la personne identifiée.
+
+### Déploiement
+
+`npm run migration:run:prod`. La table est aussi créée par `synchronize`, et la migration le tolère.
+
 ## Non publié : optimisations de bande passante, de stockage et de temps de réponse
 
 Mesures détaillées dans PERFORMANCE.md, section « Egress et taille des réponses ». Les octets envoyés par Postgres à l'API comptent dans l'egress Supabase, la ressource la plus limitée du plan gratuit. Ils baissent de 60 à 70 % sur les stats et de 96 % sur la liste des programmes. Le catalogue d'exercices ne touche plus la base.

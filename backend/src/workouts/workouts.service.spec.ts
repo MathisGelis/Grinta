@@ -24,6 +24,7 @@ describe('WorkoutService exercise resolution', () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
     );
   });
 
@@ -86,6 +87,7 @@ describe('WorkoutService completed workouts and progress', () => {
   let exerciseStats: { recompute: jest.Mock; addWorkout: jest.Mock };
   let badges: { awardForWorkout: jest.Mock; awardRecords: jest.Mock };
   let photos: { removeAll: jest.Mock };
+  let postPartners: { syncForWorkout: jest.Mock };
   let service: WorkoutService;
 
   beforeEach(() => {
@@ -108,6 +110,7 @@ describe('WorkoutService completed workouts and progress', () => {
       awardRecords: jest.fn().mockResolvedValue([badge]),
     };
     photos = { removeAll: jest.fn() };
+    postPartners = { syncForWorkout: jest.fn() };
     const dataSource = {
       transaction: (run: (m: typeof manager) => unknown) => run(manager),
     };
@@ -121,6 +124,7 @@ describe('WorkoutService completed workouts and progress', () => {
       exerciseStats as never,
       badges as never,
       photos as never,
+      postPartners as never,
     );
   });
 
@@ -195,6 +199,39 @@ describe('WorkoutService completed workouts and progress', () => {
     expect(badges.awardForWorkout.mock.calls[0][4]).toEqual({
       replaceExisting: true,
     });
+  });
+
+  it('re-syncs the tagged partners when the title or description changes', async () => {
+    manager.findOne.mockResolvedValue({
+      id: 'w-1',
+      title: 'Push',
+      description: null,
+      exercises: [{ exercise: exercise('a') }],
+    });
+
+    await service.updateCompletedWorkout(user, 'w-1', {
+      description: 'avec @paul',
+    });
+    expect(postPartners.syncForWorkout).toHaveBeenCalledWith(
+      manager,
+      'w-1',
+      'user-1',
+      'Push',
+      'avec @paul',
+    );
+  });
+
+  it('leaves the partners alone when the text does not change', async () => {
+    manager.findOne.mockResolvedValue({
+      id: 'w-1',
+      title: 'Push',
+      exercises: [{ exercise: exercise('a') }],
+    });
+
+    await service.updateCompletedWorkout(user, 'w-1', {
+      totalDurationSeconds: 100,
+    });
+    expect(postPartners.syncForWorkout).not.toHaveBeenCalled();
   });
 
   it('re-evaluates badges even when only the date changes', async () => {
@@ -290,6 +327,7 @@ describe('WorkoutService completed workout photo', () => {
       {} as never,
       {} as never,
       photos as never,
+      {} as never,
     );
   });
 

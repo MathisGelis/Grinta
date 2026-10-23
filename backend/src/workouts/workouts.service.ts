@@ -21,6 +21,7 @@ import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { ListCompletedWorkoutsQueryDto } from './dto/list-completed-workouts-query.dto';
 import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { PhotosService } from 'src/photos/photos.service';
+import { PostPartnersService } from 'src/posts/post-partners.service';
 
 type WorkoutPhotoUrls<T = string> = { photoUrl: T; photoThumbnailUrl: T };
 
@@ -42,6 +43,7 @@ export class WorkoutService {
     private readonly exerciseStats: ExerciseStatsService,
     private readonly badges: BadgesService,
     private readonly photos: PhotosService,
+    private readonly postPartners: PostPartnersService,
   ) {}
 
   async createPlannedWorkout(user: AuthUser, dto: CreatePlannedWorkoutDto) {
@@ -183,6 +185,16 @@ export class WorkoutService {
         );
       }
       const saved = await manager.save(workout);
+
+      // The partners of a published workout are the @handles of its text.
+      if (dto.title !== undefined || dto.description !== undefined)
+        await this.postPartners.syncForWorkout(
+          manager,
+          saved.id,
+          user.id,
+          saved.title,
+          saved.description,
+        );
       const badges = await this.syncProgress(
         manager,
         user.id,

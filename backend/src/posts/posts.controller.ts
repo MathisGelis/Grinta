@@ -27,13 +27,33 @@ export class PostsController {
   @Auth()
   @Post()
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Create a new post from a workout' })
+  @ApiOperation({
+    summary: 'Create a new post from a workout',
+    description:
+      'The @handles in the title or the description of the workout tag the people the author trained with (existing users other than the author, 10 at most). They are returned under `partners`, as in every post read, and follow later edits of the workout.',
+  })
   @ApiResponse({ status: 201, description: 'Post created successfully' })
   async createPost(
     @Req() req: AuthenticatedRequest,
     @Body() dto: CreatePostDto,
   ) {
     return this.postsService.createPost(req.user.id, dto.workoutId);
+  }
+
+  @Auth()
+  @Delete(':postId/partners/me')
+  @ApiOperation({
+    summary: 'Remove yourself from the partners of a post',
+    description:
+      'For a user tagged by an @handle in the workout of the post. The handle stays in the text but no longer tags them, even if the workout is edited.',
+  })
+  @ApiResponse({ status: 200, description: '{ declined: true }' })
+  @ApiResponse({ status: 404, description: 'Not tagged on this post' })
+  declinePartner(
+    @Req() req: AuthenticatedRequest,
+    @Param('postId') postId: string,
+  ) {
+    return this.postsService.declinePartner(req.user.id, postId);
   }
 
   @Auth()

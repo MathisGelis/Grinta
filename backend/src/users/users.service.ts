@@ -17,6 +17,7 @@ import { CompletedWorkout } from 'src/workouts/entities/completed-workout.entity
 import { Post } from 'src/posts/entities/post.entity';
 import { ConnectionsService } from 'src/connections/connections.service';
 import { PhotosService } from 'src/photos/photos.service';
+import { partnersSql } from 'src/posts/post-partners.service';
 
 type AvatarUrls<T = string> = { avatarUrl: T; avatarThumbnailUrl: T };
 
@@ -303,6 +304,7 @@ export class UsersService {
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'post."likesCount" AS "likesCount"',
         'post."commentsCount" AS "commentsCount"',
+        `${partnersSql('post')} AS partners`,
         `EXISTS (
           SELECT 1 FROM post_likes ml
           WHERE ml."postId" = post.id

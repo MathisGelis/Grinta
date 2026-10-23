@@ -14,6 +14,7 @@ import { Exercise } from '../exercise/entities/exercise.entity';
 import { ExerciseModule } from '../exercise/exercise.module';
 import { BadgesModule } from '../badges/badges.module';
 import { PhotosModule } from '../photos/photos.module';
+import { PostsModule } from '../posts/posts.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { PhotosModule } from '../photos/photos.module';
     ExerciseModule,
     BadgesModule,
     PhotosModule,
+    PostsModule,
   ],
   providers: [WorkoutService],
   controllers: [WorkoutsController],
