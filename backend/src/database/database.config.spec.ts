@@ -6,14 +6,14 @@ const from =
     env[key] ?? fallback;
 
 describe('buildDatabaseOptions', () => {
-  it('keeps the historical defaults: TLS on and synchronize on', () => {
+  it('defaults to TLS on and synchronize off: the schema comes from migrations', () => {
     const options = buildDatabaseOptions(from({}));
 
     expect(options).toMatchObject({
       type: 'postgres',
       host: 'localhost',
       port: 5432,
-      synchronize: true,
+      synchronize: false,
       ssl: { rejectUnauthorized: false },
     });
   });
@@ -24,7 +24,7 @@ describe('buildDatabaseOptions', () => {
         DB_HOST: 'db.example.com',
         DB_PORT: '6543',
         DB_SSL: 'false',
-        DB_SYNCHRONIZE: 'false',
+        DB_SYNCHRONIZE: 'true',
         DB_SLOW_QUERY_MS: '150',
       }),
     );
@@ -33,7 +33,7 @@ describe('buildDatabaseOptions', () => {
       host: 'db.example.com',
       port: 6543,
       ssl: false,
-      synchronize: false,
+      synchronize: true,
       maxQueryExecutionTime: 150,
     });
   });

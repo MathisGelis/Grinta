@@ -1,5 +1,24 @@
 # Changelog backend
 
+## Non publié : schéma géré par les migrations, `synchronize` désactivé
+
+- **`DB_SYNCHRONIZE` vaut maintenant `false` par défaut.** Le schéma de prod ne change plus au démarrage selon les entités : une colonne supprimée ou renommée par erreur dans le code ne peut plus détruire de données. Il évolue uniquement par les migrations.
+- **Migration de référence `InitialSchema`** : schéma de la branche `backend`, conditionnel. Elle ne change rien sur la prod et crée le schéma complet sur une base vide (nouvel environnement, poste de développeur). Son annulation, qui supprime toutes les tables, demande `ALLOW_BASELINE_REVERT=true`.
+- **`deploy.sh` applique les migrations avant de redémarrer l'API.** Une migration en échec arrête le déploiement, et l'ancienne version continue de tourner.
+- **L'API applique aussi les migrations en attente au démarrage** (`DB_MIGRATIONS_RUN`, `true` par défaut). Au premier déploiement, c'est elle qui applique les migrations : bash exécute l'ancien `deploy.sh` jusqu'au bout, même après son `git pull` (vérifié).
+- Vérifié sur une base créée et remplie par le code actuellement en prod, et sur une base vierge. Détails dans PERFORMANCE.md, section « Migrations et `synchronize` ».
+
+### Conséquences pratiques
+
+- **Plus besoin de lancer `npm run migration:run:prod` à la main après un déploiement**, premier déploiement compris. `npm run seed`, `npm run backfill:exercise-stats:prod` et les vérifications restent manuels.
+- Toute modification d'entité doit maintenant être accompagnée d'une migration (`npm run migration:generate -- src/migrations/Nom`, puis la rendre idempotente comme les autres). Sinon, le schéma de prod ne suit pas le code. Vérification : `migration:generate --dr` doit répondre « No changes ».
+- En développement (`docker-compose.dev.yml`, `npm run start:dev`), l'API applique les migrations au démarrage : une base vide est prête sans `synchronize`.
+- Ne pas passer PM2 en mode cluster avec `DB_MIGRATIONS_RUN=true` : TypeORM ne verrouille pas la table des migrations.
+
+### Non fait, à décider
+
+Les posts publiés avant la fonctionnalité de partenaires n'ont pas de partenaires, même si leur séance contient des `@`. Ils en auront à la prochaine modification du titre ou de la description. Une migration peut les remplir rétroactivement, avec la même règle (abonnés de l'auteur seulement).
+
 ## Non publié : partenaires de séance identifiés par @ dans un post
 
 ### Ce qui change

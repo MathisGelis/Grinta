@@ -21,8 +21,11 @@ export const ENTITIES_GLOB = join(
  * both always talk to the database the same way. Reads through a getter so it
  * works with ConfigService in the app and with process.env in data-source.ts.
  *
- * DB_SYNCHRONIZE defaults to true, which is the historical behaviour. It should
- * be switched to false once a baseline migration exists, see PERFORMANCE.md.
+ * DB_SYNCHRONIZE defaults to false: the schema is described by migrations,
+ * from InitialSchema on, and applied by `npm run migration:run:prod` in
+ * deploy.sh before the API restarts. synchronize would reshape the production
+ * schema at boot from whatever the entities say, a dropped or renamed column
+ * included. DB_SYNCHRONIZE=true remains possible on a scratch database.
  * DB_SSL=false turns TLS off for a local Postgres. DB_LOGGING=true prints every
  * query with its parameters, which is for development only. DB_SLOW_QUERY_MS is
  * the threshold above which a query is logged as slow, without parameters.
@@ -39,7 +42,7 @@ export function buildDatabaseOptions(
     database: get('DB_NAME', 'postgres'),
     ssl:
       get('DB_SSL', 'true') === 'false' ? false : { rejectUnauthorized: false },
-    synchronize: get('DB_SYNCHRONIZE', 'true') === 'true',
+    synchronize: get('DB_SYNCHRONIZE', 'false') === 'true',
     logger: new DatabaseLogger(get('DB_LOGGING') === 'true'),
     maxQueryExecutionTime: Number(get('DB_SLOW_QUERY_MS', '300')),
     migrations: [join(__dirname, '..', 'migrations', `*.${SOURCE_EXTENSION}`)],

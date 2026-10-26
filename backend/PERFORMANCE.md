@@ -223,12 +223,19 @@ Variables d'environnement ajoutées, toutes optionnelles : `DB_SYNCHRONIZE` (dé
 
 **Ce qui se passe au prochain déploiement.** `deploy.sh` n'a pas été modifié. Comme `synchronize: true` reste actif, TypeORM crée les treize index au démarrage à partir des entités : des `CREATE INDEX` classiques qui verrouillent brièvement l'écriture sur chaque table, négligeable à la taille de la beta. Aucune action manuelle n'est requise, et lancer ensuite `npm run migration:run:prod` est sans effet (`IF NOT EXISTS`).
 
-**`synchronize: true` reste un risque** pour la beta : n'importe quel changement d'entité modifie le schéma de production au démarrage, y compris destructif (colonne supprimée ou renommée). Étapes proposées, à valider avant de les faire :
+**`synchronize` est désactivé (octobre 2026).** Il restait un risque pour la prod : au démarrage, n'importe quel changement d'entité modifiait le schéma, y compris de façon destructive (colonne supprimée ou renommée). Ce qui est en place :
 
-1. Générer une migration de référence sur une base vide (`migration:generate`) pour décrire le schéma complet.
-2. Sur la base de production, l'enregistrer comme déjà appliquée sans l'exécuter (insertion dans la table `migrations`).
-3. Passer `DB_SYNCHRONIZE=false` dans le `.env` de la VM.
-4. Ajouter `npm run migration:run:prod` à `deploy.sh` avant `pm2 restart`. Avec `set -e`, une migration en échec interrompt le déploiement et l'ancienne version continue de tourner.
+1. **Migration de référence `InitialSchema`.** C'est le schéma de la branche `backend`, généré par `migration:generate` sur une base vide à partir de ses entités, avec chaque instruction rendue conditionnelle (`IF NOT EXISTS`, blocs `DO` pour les types et les clés étrangères). Elle ne change rien sur la prod, et crée le schéma de départ sur une base vide. Son `down()` supprime toutes les tables : il refuse de s'exécuter sans `ALLOW_BASELINE_REVERT=true`.
+2. **`DB_SYNCHRONIZE` vaut `false` par défaut.** `true` reste possible sur une base jetable.
+3. **`deploy.sh` lance `npm run migration:run:prod` après le build et avant `pm2 restart`.** Avec `set -e`, une migration en échec arrête le déploiement et l'ancienne version continue de tourner.
+4. **L'API applique aussi les migrations en attente au démarrage** (`migrationsRun`, désactivable par `DB_MIGRATIONS_RUN=false`). C'est sans effet quand `deploy.sh` les a déjà appliquées. C'est indispensable au premier déploiement : `deploy.sh` se met lui-même à jour par `git pull`, mais bash continue d'exécuter la version qu'il a commencé à lire, donc ce premier déploiement ne lance pas les migrations (vérifié). Ne pas passer PM2 en mode cluster sans retirer ce réglage : TypeORM ne verrouille pas la table des migrations.
+
+Vérifié sur deux bases :
+
+- **Base vierge** : l'API crée tout le schéma par les migrations au démarrage, `migration:generate` ne trouve aucun écart, et le scénario des partenaires passe (26/26).
+- **Premier déploiement simulé** : base créée et remplie par le code actuellement en prod (`origin/backend`, TLS imposé), puis nouvelle API démarrée sans migration manuelle. Résultat :
+  - les 10 migrations sont appliquées, sans contrainte ni index en double, et aucun écart de schéma ne reste ;
+  - données intactes : un ancien compte se connecte, les compteurs sont remplis, les anciennes séances pointent vers les exercices renommés, une nouvelle séance reconstruit les stats sur tout l'historique.
 
 Pour les index d'une grosse table à l'avenir, préférer `CREATE INDEX CONCURRENTLY`, qui ne bloque pas les écritures mais doit s'exécuter hors transaction (`transaction = false` sur la migration).
 
