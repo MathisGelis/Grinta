@@ -1,5 +1,25 @@
 # Changelog backend
 
+## Non publié : photos stockées dans Supabase Storage
+
+- **Les photos (avatars, photos de séance et leurs miniatures) sont stockées dans un bucket public de Supabase Storage**, et non plus sur le disque de la VM. L'API envoie et supprime les fichiers avec la clé de service, qui reste sur le serveur. L'app charge les photos directement depuis le CDN de Supabase.
+- Rien d'autre ne change : traitement des images (WebP, métadonnées retirées, miniatures), routes et formats de réponse sont identiques. Les URL stockées sont maintenant absolues (`https://<projet>.supabase.co/storage/v1/object/public/photos/...`).
+- **Configuration**, dans le `.env` du serveur :
+  - `SUPABASE_URL` : l'URL du projet ;
+  - `SUPABASE_SERVICE_ROLE_KEY` : clé `service_role`, ou nouvelle clé secrète `sb_secret_...` ;
+  - `SUPABASE_STORAGE_BUCKET` : facultatif, `photos` par défaut.
+
+  Si `SUPABASE_URL` est défini sans clé, l'API refuse de démarrer. Sans `SUPABASE_URL`, les photos restent sur le disque local (développement) ; `PHOTOS_STORAGE=local` force ce mode. Au démarrage, l'API indique dans ses logs le stockage utilisé.
+- **`npm run photos:setup`** :
+  - crée le bucket s'il manque : public, WebP uniquement, 5 Mo par fichier ;
+  - le rend public s'il ne l'est pas ;
+  - vérifie le tout par un vrai aller-retour : envoi, lecture par l'URL publique, suppression.
+
+  Il peut être relancé sans risque.
+- `npm run photos:gc` fonctionne sur le bucket comme sur le disque.
+- **Bande passante** : chaque photo affichée compte dans l'egress de Supabase (5 Go par mois sur le plan gratuit). Les miniatures, réduites à environ 22 ko pour une séance et 5 ko pour un avatar, et le cache permanent des URL limitent ce coût. Voir PERFORMANCE.md.
+- Testé sans projet Supabase réel, contre une imitation de l'API Storage : mêmes routes, mêmes en-têtes et mêmes corps que le client officiel `storage-js`. Le parcours complet a été vérifié par l'API : envoi, remplacement, suppression avec la séance, nettoyage des orphelins. **Le premier vrai test est `npm run photos:setup` sur la VM**, à lancer avant de compter sur les photos.
+
 ## Non publié : schéma géré par les migrations, `synchronize` désactivé
 
 - **`DB_SYNCHRONIZE` vaut maintenant `false` par défaut.** Le schéma de prod ne change plus au démarrage selon les entités : une colonne supprimée ou renommée par erreur dans le code ne peut plus détruire de données. Il évolue uniquement par les migrations.

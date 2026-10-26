@@ -1,19 +1,23 @@
-import { ConfigService } from '@nestjs/config';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { PhotoStorage } from './photo-storage';
+import { LocalPhotoStorage } from './photo-storage';
+import { readPhotoStorageConfig } from './photos.config';
 
-describe('PhotoStorage', () => {
+describe('LocalPhotoStorage', () => {
   let directory: string;
-  let storage: PhotoStorage;
-  const config = (values: Record<string, string>) =>
-    ({ get: (key: string) => values[key] }) as unknown as ConfigService;
+  let storage: LocalPhotoStorage;
+  const config = (values: Record<string, string>) => {
+    const read = readPhotoStorageConfig((key) => values[key]);
+
+    if (read.driver !== 'local') throw new Error('expected local storage');
+    return read;
+  };
 
   beforeEach(async () => {
     directory = await mkdtemp(join(tmpdir(), 'grinta-photos-'));
-    storage = new PhotoStorage(
+    storage = new LocalPhotoStorage(
       config({
         UPLOADS_DIR: directory,
         UPLOADS_PUBLIC_URL: 'https://api.example.com/uploads/',
@@ -63,7 +67,7 @@ describe('PhotoStorage', () => {
   });
 
   it('defaults to the relative /uploads URL', async () => {
-    const relative = new PhotoStorage(config({ UPLOADS_DIR: directory }));
+    const relative = new LocalPhotoStorage(config({ UPLOADS_DIR: directory }));
 
     expect(await relative.save('workout', Buffer.from('x'))).toMatch(
       /^\/uploads\/workouts\/[0-9a-f-]{36}\.webp$/,

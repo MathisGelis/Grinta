@@ -171,7 +171,8 @@ async function uploadPhoto(path: string, uri: string, token: string) {
 - l'orientation est corrigée.
 
 **URL des photos** :
-- Elles valent `/uploads/...` (chemin relatif) si le serveur n'a pas `UPLOADS_PUBLIC_URL`, ou `https://<api>/uploads/...` s'il l'a. **Gérez les deux** : `url.startsWith("http") ? url : BASE_URL + url`.
+- **En production, les photos sont stockées dans Supabase Storage** et l'API renvoie des URL absolues, de la forme `https://<projet>.supabase.co/storage/v1/object/public/photos/avatars/<uuid>.webp`. L'app les charge directement depuis Supabase, sans passer par l'API.
+- En développement, sans configuration Supabase, le serveur stocke sur disque et renvoie un chemin relatif `/uploads/...`. Pour gérer les deux cas : `url.startsWith("http") ? url : BASE_URL + url`.
 - Elles sont publiques (pas de token à envoyer) et **ne changent jamais de contenu** : une nouvelle photo a une nouvelle URL. L'app peut les mettre en cache sans limite de durée. Avec `expo-image`, utilisez `cachePolicy="disk"`.
 - WebP est affiché nativement par `Image` et `expo-image` sur iOS et Android.
 
@@ -332,7 +333,7 @@ Champs ajoutés en **gras**, champs retirés ~~barrés~~.
 - `GET /badges`
 - `GET /stats/progression`, `/records`, `/adherence`, `/comparisons`, `/workout-type-breakdown`, `/heatmap`
 - `DELETE /posts/:postId/partners/me`
-- `GET /uploads/...` (fichiers des photos)
+- `GET /uploads/...` : fichiers des photos, **en développement seulement**. En production, ils sont servis par Supabase.
 
 **Route supprimée** : `PATCH /exercises/:id/stats`.
 

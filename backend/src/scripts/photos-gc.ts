@@ -1,41 +1,27 @@
 import { config } from 'dotenv';
-import { readdir, stat, unlink } from 'fs/promises';
-import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { buildDatabaseOptions } from '../database/database.config';
-import { findOrphans, StoredFile } from '../photos/orphans';
+import { findOrphans } from '../photos/orphans';
+import { photoKeyOf } from '../photos/photo-storage';
+import { createPhotoStorage } from '../photos/photo-storage.factory';
 import { readPhotoStorageConfig } from '../photos/photos.config';
 
-// Lists, and with --delete removes, the photo files no row points to any
-// more. Read-only by default.
+// Lists, and with --delete removes, the photos no row points to any more,
+// in Supabase Storage or on the local disk, whichever the API uses.
+// Read-only by default.
 //
 //   npm run photos:gc             report only
 //   npm run photos:gc -- --delete
 config();
 
-const FOLDERS = ['avatars', 'workouts'];
-
-async function listFiles(directory: string): Promise<StoredFile[]> {
-  const files: StoredFile[] = [];
-
-  for (const folder of FOLDERS) {
-    const names = await readdir(join(directory, folder)).catch(() => []);
-
-    for (const name of names) {
-      const info = await stat(join(directory, folder, name));
-
-      if (info.isFile())
-        files.push({ key: `${folder}/${name}`, modifiedAt: info.mtimeMs });
-    }
-  }
-  return files;
-}
-
 async function run() {
   const remove = process.argv.includes('--delete');
-  const { directory } = readPhotoStorageConfig({
-    get: (key: string) => process.env[key],
-  } as never);
+  const storageConfig = readPhotoStorageConfig((key) => process.env[key]);
+  const storage = createPhotoStorage(storageConfig);
+  const where =
+    storageConfig.driver === 'supabase'
+      ? `Supabase bucket "${storageConfig.bucket}"`
+      : storageConfig.directory;
   const dataSource = new DataSource({
     ...buildDatabaseOptions((key, fallback) => process.env[key] ?? fallback),
     entities: [],
@@ -53,25 +39,25 @@ async function run() {
   );
 
   await dataSource.destroy();
-  const files = await listFiles(directory);
+  const files = await storage.list();
   const orphans = findOrphans(
     files,
     rows.map((r) => r.url),
     Date.now(),
   );
   const keys = new Set(files.map((f) => f.key));
-  const missing = rows.filter(
-    (r) => !keys.has(r.url.replace(/^.*\/(avatars|workouts)\//, '$1/')),
-  ).length;
+  const missing = rows.filter((r) => !keys.has(photoKeyOf(r.url) ?? '')).length;
 
   console.log(
-    `${directory}: ${files.length} files, ${rows.length} referenced, ${orphans.length} orphaned, ${missing} referenced but missing`,
+    `${where}: ${files.length} files, ${rows.length} referenced, ${orphans.length} orphaned, ${missing} referenced but missing`,
   );
   if (!remove) {
     if (orphans.length) console.log('Run with --delete to remove the orphans');
     return;
   }
-  for (const orphan of orphans) await unlink(join(directory, orphan.key));
+  // remove() takes a URL or a bare key and never deletes outside the photo
+  // folders.
+  for (const orphan of orphans) await storage.remove(orphan.key);
   console.log(`Deleted ${orphans.length} orphaned files`);
 }
 
