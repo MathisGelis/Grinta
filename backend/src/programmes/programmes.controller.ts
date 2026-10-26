@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth } from '../auth/auth.decorators';
+import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { ProgrammesService } from './programmes.service';
 import { CreateProgrammeDto } from './dto/create-programme.dto';
 import { UpdateProgrammeDto } from './dto/update-programme.dto';
@@ -29,7 +30,7 @@ export class ProgrammesController {
     description: 'Programme created',
     type: Programme,
   })
-  create(@Req() req, @Body() dto: CreateProgrammeDto) {
+  create(@Req() req: AuthenticatedRequest, @Body() dto: CreateProgrammeDto) {
     return this.programmesService.createProgramme(req.user, dto);
   }
 
@@ -40,7 +41,11 @@ export class ProgrammesController {
     description: 'Programme updated',
     type: Programme,
   })
-  update(@Req() req, @Param('id') id: string, @Body() dto: UpdateProgrammeDto) {
+  update(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() dto: UpdateProgrammeDto,
+  ) {
     return this.programmesService.updateProgramme(req.user, id, dto);
   }
 
@@ -52,7 +57,7 @@ export class ProgrammesController {
     type: ProgrammeListDto,
     isArray: true,
   })
-  getAll(@Req() req) {
+  getAll(@Req() req: AuthenticatedRequest) {
     return this.programmesService.getProgrammesByUser(req.user);
   }
 
@@ -63,14 +68,14 @@ export class ProgrammesController {
     description: 'Programme returned',
     type: Programme,
   })
-  getById(@Req() req, @Param('id') id: string) {
+  getById(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.programmesService.getProgrammeById(req.user, id);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a programme' })
   @ApiResponse({ status: 200, description: 'Programme deleted' })
-  delete(@Req() req, @Param('id') id: string) {
+  delete(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.programmesService.deleteProgramme(req.user, id);
   }
 }
