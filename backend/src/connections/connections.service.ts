@@ -108,26 +108,14 @@ export class ConnectionsService {
   async getFollowStatus(currentUserId: string, targetUserId: string) {
     if (currentUserId === targetUserId) return 'SELF';
 
-    const [isFollowing, isFollowedBack, requestSent] = await Promise.all([
-      this.connectionRepository.exists({
-        where: {
-          follower: { id: currentUserId },
-          following: { id: targetUserId },
-        },
-      }),
-      this.connectionRepository.exists({
-        where: {
-          follower: { id: targetUserId },
-          following: { id: currentUserId },
-        },
-      }),
-      this.followRequestRepository.exists({
-        where: {
-          follower: { id: currentUserId },
-          following: { id: targetUserId },
-        },
-      }),
-    ]);
+    const [{ isFollowing, isFollowedBack, requestSent }] =
+      await this.connectionRepository.query(
+        `SELECT
+           EXISTS (SELECT 1 FROM connections WHERE "followerId" = $1 AND "followingId" = $2) AS "isFollowing",
+           EXISTS (SELECT 1 FROM connections WHERE "followerId" = $2 AND "followingId" = $1) AS "isFollowedBack",
+           EXISTS (SELECT 1 FROM follow_requests WHERE "followerId" = $1 AND "followingId" = $2) AS "requestSent"`,
+        [currentUserId, targetUserId],
+      );
 
     if (isFollowing) return 'FOLLOWING';
     if (requestSent) return 'REQUEST_SENT';
@@ -148,6 +136,10 @@ export class ConnectionsService {
         'user.displayName',
         'user.uniqueName',
       ])
+      .addSelect(
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl)',
+        'user_avatarThumbnailUrl',
+      )
       .orderBy('request.createdAt', 'DESC')
       .getRawMany();
   }
@@ -161,6 +153,7 @@ export class ConnectionsService {
           'user.id AS id',
           'user.uniqueName AS "uniqueName"',
           'user.displayName AS "displayName"',
+          'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         ])
         .where('connection.followingId = :userId', { userId })
         .getRawMany() ?? []
@@ -176,6 +169,7 @@ export class ConnectionsService {
           'user.id AS id',
           'user.uniqueName AS "uniqueName"',
           'user.displayName AS "displayName"',
+          'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         ])
         .where('connection.followerId = :userId', { userId })
         .getRawMany() ?? []
@@ -192,7 +186,8 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'COUNT(*) AS score',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
+        'COUNT(*)::int AS score',
       ])
       .where('c1.follower = :currentUserId', { currentUserId })
       .andWhere('user.id != :currentUserId', { currentUserId })
@@ -220,7 +215,8 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'COUNT(c.id) AS followersCount',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
+        'COUNT(c.id)::int AS followersCount',
       ])
       .groupBy('user.id')
       .orderBy('followersCount', 'DESC')
@@ -239,6 +235,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
       ])
       .orderBy('RANDOM()')
       .limit(limit);
@@ -249,10 +246,12 @@ export class ConnectionsService {
   }
 
   async recommendUsers(currentUserId: string) {
-    let recommended =
-      await this.getMutualFollowersRecommendations(currentUserId);
+    const [mutual, following] = await Promise.all([
+      this.getMutualFollowersRecommendations(currentUserId),
+      this.getFollowing(currentUserId),
+    ]);
+    let recommended = mutual;
     const alreadyRecommendedIds = recommended.map((u) => u.id);
-    const following = await this.getFollowing(currentUserId);
     const followingIds = following.map((u) => u.id);
     const excludeIds = [
       currentUserId,
