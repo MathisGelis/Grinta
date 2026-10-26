@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './users/users.module';
 import { DatabaseModule } from './database/database.module';
@@ -12,6 +12,7 @@ import { ConnectionsModule } from './connections/connections.module';
 import { PostsModule } from './posts/posts.module';
 import { StatsModule } from './stats/stats.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { BadgesModule } from './badges/badges.module';
 
 @Module({
   imports: [
@@ -27,7 +28,11 @@ import { ModerationModule } from './moderation/moderation.module';
     PostsModule,
     StatsModule,
     ModerationModule,
+    BadgesModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
+  ],
 })
 export class AppModule {}
