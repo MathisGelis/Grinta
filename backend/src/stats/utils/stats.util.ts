@@ -111,3 +111,52 @@ export function previousPeriodRange(
 
   return resolvePeriodRange(period, prevRef.toISOString());
 }
+
+/**
+ * The `count` full periods that precede the one containing `date`, most recent
+ * first. Used to build a personal baseline.
+ */
+export function precedingPeriodRanges(
+  period: StatsPeriod,
+  date: string | undefined,
+  count: number,
+): DateRange[] {
+  const ranges: DateRange[] = [];
+  let ref = date ? new Date(date) : new Date();
+
+  for (let i = 0; i < count; i++) {
+    const previous = previousPeriodRange(period, ref.toISOString());
+
+    ranges.push(previous);
+    ref = previous.start;
+  }
+  return ranges;
+}
+
+/** Share of `range` already elapsed at `now`, clamped to the 0 to 1 interval. */
+export function elapsedFraction(range: DateRange, now: Date): number {
+  const total = +range.end - +range.start;
+
+  if (total <= 0) return 1;
+  return Math.min(Math.max((+now - +range.start) / total, 0), 1);
+}
+
+const MS_PER_DAY = 86_400_000;
+
+/** Days since the epoch for a 'YYYY-MM-DD' key, independent of time zone. */
+export function dayNumber(key: string): number {
+  return Math.round(Date.parse(`${key}T00:00:00Z`) / MS_PER_DAY);
+}
+
+/** Longest run of consecutive calendar days in a list of 'YYYY-MM-DD' keys. */
+export function longestStreak(dayKeys: string[]): number {
+  const days = [...new Set(dayKeys.map(dayNumber))].sort((a, b) => a - b);
+  let longest = days.length ? 1 : 0;
+  let run = days.length ? 1 : 0;
+
+  for (let i = 1; i < days.length; i++) {
+    run = days[i] - days[i - 1] === 1 ? run + 1 : 1;
+    longest = Math.max(longest, run);
+  }
+  return longest;
+}

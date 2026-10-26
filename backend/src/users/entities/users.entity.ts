@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 @Unique(['email'])
@@ -12,8 +13,12 @@ export class User {
   @ApiProperty()
   email: string;
 
+  // Stripped from every serialized response by the global
+  // ClassSerializerInterceptor, including when a User is nested in another
+  // entity. The hash must only ever be read server-side.
   @Column()
-  @ApiProperty()
+  @Exclude({ toPlainOnly: true })
+  @ApiHideProperty()
   password: string;
 
   @Column()
@@ -39,6 +44,16 @@ export class User {
   @Column({ type: 'float', nullable: true })
   @ApiProperty({ required: false })
   weight?: number;
+
+  /** Set through PUT /users/me/avatar only, never through PATCH /users/:id. */
+  @Column({ type: 'text', nullable: true })
+  @ApiProperty({ type: String, required: false, nullable: true })
+  avatarUrl?: string | null;
+
+  /** 128 px copy of the profile photo, for lists. */
+  @Column({ type: 'text', nullable: true })
+  @ApiProperty({ type: String, required: false, nullable: true })
+  avatarThumbnailUrl?: string | null;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   @ApiProperty()
