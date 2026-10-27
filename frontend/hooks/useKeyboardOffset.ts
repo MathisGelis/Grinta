@@ -33,3 +33,8 @@ export function useKeyboardOffset(navbarHeight = 76) {
 
   return { keyboardY, bottomOffset };
 }
+
+export function useBottomOffset(navbarHeight = 76) {
+  const insets = useSafeAreaInsets();
+  return insets.bottom + navbarHeight;
+}

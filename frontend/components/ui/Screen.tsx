@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const FLOATING_HEADER_OFFSET = 12 + 44 + 12;
 
-const TAB_BAR_SPACE = 72 + 16;
+export const TAB_BAR_SPACE = 72 + 16;
 
 type ScreenProps = ScrollViewProps & {
   scroll?: boolean;
