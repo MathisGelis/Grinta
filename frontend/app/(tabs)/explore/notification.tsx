@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { router } from "expo-router";
+import { Directions, Gesture, GestureDetector } from "react-native-gesture-handler";
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
@@ -10,7 +11,13 @@ import PressableScale from "@/components/ui/PressableScale";
 export default function NotificationsScreen() {
   const { t } = useTranslation();
 
+  const swipeLeftToClose = Gesture.Fling()
+    .direction(Directions.LEFT)
+    .runOnJS(true)
+    .onEnd(() => router.back());
+
   return (
+    <GestureDetector gesture={swipeLeftToClose}>
     <View className="flex-1">
       <ScreenBackground />
       <View className="flex-row items-center justify-between px-4 pt-16 pb-4">
@@ -26,5 +33,6 @@ export default function NotificationsScreen() {
         <Text className="text-ink-faint text-base">{t.noNotifications}</Text>
       </View>
     </View>
+    </GestureDetector>
   );
 }

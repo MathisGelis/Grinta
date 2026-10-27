@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FLOATING_HEADER_OFFSET } from "@/components/ui/Screen";
+import { ConnectionsService } from "@/services/connections.service";
+import { SearchUser } from "@/services/user.service";
 import { useSearch } from "@/contexts/SearchContext";
 import SearchUserCard from "@/components/explorePage/SearchUserCard";
 
@@ -12,6 +14,13 @@ export default function SearchScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { query, results, loading, searchAttempted } = useSearch();
+  const [suggestions, setSuggestions] = useState<SearchUser[]>([]);
+
+  useEffect(() => {
+    ConnectionsService.getRecommendations()
+      .then((recs) => setSuggestions(recs as SearchUser[]))
+      .catch(() => setSuggestions([]));
+  }, []);
 
   return (
     <View
@@ -38,6 +47,15 @@ export default function SearchScreen() {
         ) : results.length > 0 ? (
           <View className="gap-3">
             {results.map((user) => (
+              <SearchUserCard key={user.id} user={user} />
+            ))}
+          </View>
+        ) : !query.trim() && suggestions.length > 0 ? (
+          <View className="gap-3">
+            <Text className="text-ink-muted text-[13px] font-semibold uppercase tracking-[0.5px]">
+              {t.suggestions}
+            </Text>
+            {suggestions.map((user) => (
               <SearchUserCard key={user.id} user={user} />
             ))}
           </View>
