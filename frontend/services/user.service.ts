@@ -20,6 +20,7 @@ export interface CurrentUser {
   displayName: string;
   uniqueName: string;
   createdAt: string;
+  isPublic?: boolean;
 }
 
 interface UpdateUserData {
@@ -49,6 +50,11 @@ export const UserService = {
     const me = await api.get<{ id: string; email: string }>("/auth/me", token ?? undefined);
     const full = await api.get<CurrentUser>(`/users/${me.id}`, token ?? undefined);
     return full;
+  },
+
+  async toggleVisibility(): Promise<{ isPublic: boolean }> {
+    const token = await TokenService.get();
+    return api.patch<{ isPublic: boolean }>("/users/me/toggle-visibility", {}, token ?? undefined);
   },
 
   async deleteAccount(): Promise<void> {

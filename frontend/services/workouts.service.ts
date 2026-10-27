@@ -1,5 +1,7 @@
 import { api } from "./api";
 import { saveItem, getItem } from "@/core/services/storage";
+import { TokenService } from "./token.service";
+import { createListCache } from "./listCache";
 
 export interface PlannedWorkout {
   id: string;
@@ -206,3 +208,7 @@ export async function getWorkoutById(id: string, token?: string): Promise<fullPl
     throw error;
   }
 }
+
+export const plannedWorkoutsList = createListCache<PlannedWorkout>(async () =>
+  getPlannedWorkouts((await TokenService.get()) || undefined),
+);
