@@ -57,8 +57,6 @@ export default function WorkoutDetailScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar
         barStyle="light-content"
-        backgroundColor="transparent"
-        translucent
       />
 
       <View style={styles.heroContainer}>

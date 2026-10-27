@@ -5,7 +5,7 @@ import {
   type LayoutChangeEvent,
   type ViewStyle,
 } from "react-native";
-import type { BottomTabBarProps } from "expo-router/build/react-navigation/bottom-tabs";
+import type { BottomTabBarProps } from "expo-router/build/layouts/Tabs";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   Easing,
@@ -97,7 +97,8 @@ type Props = BottomTabBarProps & {
 export default function FloatingTabBar({
   state,
   descriptors,
-  navigation,
+  emitter,
+  navigateToTab,
   sessionActive = false,
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -187,14 +188,14 @@ export default function FloatingTabBar({
               isCenter && sessionActive ? "pulse" : focused ? filled : outline;
 
             const onPress = () => {
-              const event = navigation.emit({
+              const event = emitter.emit({
                 type: "tabPress",
                 target: route.key,
                 canPreventDefault: true,
               });
               if (process.env.EXPO_OS === "ios") Haptics.selectionAsync();
               if (!focused && !event.defaultPrevented) {
-                navigation.navigate(route.name, route.params);
+                navigateToTab(route.key);
               }
             };
 
