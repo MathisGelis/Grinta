@@ -8,6 +8,16 @@ import {
   Modal,
   Text,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
@@ -30,8 +40,14 @@ import {
   saveActiveSession,
 } from "@/services/active-session.service";
 
+import {
+  ExerciseStats,
+  getExerciseStats,
+  updateExerciseStats,
+} from "@/services/exercises.service";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import Button from "@/components/ui/Button";
+import PressableScale from "@/components/ui/PressableScale";
 import { FormField, TextField } from "@/components/ui/FormField";
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
@@ -46,6 +62,7 @@ export default function ActiveWorkoutScreen() {
   const [totalWorkoutTime, setTotalWorkoutTime] = useState(0);
   const [showRestScreen, setShowRestScreen] = useState(false);
   const [restTimeRemaining, setRestTimeRemaining] = useState(0);
+  const [restTimeTotal, setRestTimeTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completionTitle, setCompletionTitle] = useState("");
@@ -54,6 +71,35 @@ export default function ActiveWorkoutScreen() {
   const [completedExercises, setCompletedExercises] = useState<number[]>([]);
   const setTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const totalTimeRef = useRef(0);
+  const [exerciseStats, setExerciseStats] = useState<
+    Record<string, ExerciseStats | null>
+  >({});
+  const pendingStatsRef = useRef<Record<string, ExerciseStats>>({});
+  const sheetTranslateY = useSharedValue(0);
+
+  useEffect(() => {
+    if (showCompletionModal) sheetTranslateY.set(0);
+  }, [showCompletionModal, sheetTranslateY]);
+
+  const sheetPan = Gesture.Pan()
+    .runOnJS(true)
+    .enabled(!isSubmitting)
+    .activeOffsetY(10)
+    .failOffsetX([-20, 20])
+    .onUpdate((e) => {
+      sheetTranslateY.set(Math.max(0, e.translationY));
+    })
+    .onEnd((e) => {
+      if (e.translationY > 100 || e.velocityY > 800) {
+        setShowCompletionModal(false);
+      } else {
+        sheetTranslateY.set(withSpring(0));
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sheetTranslateY.get() }],
+  }));
 
   useEffect(() => {
     totalTimeRef.current = totalWorkoutTime;
@@ -108,7 +154,7 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
-    if (!showRestScreen) {
+    if (!showRestScreen && !showCompletionModal) {
       interval = setInterval(() => {
         setTotalWorkoutTime((prev) => prev + 1);
       }, 1000);
@@ -116,7 +162,7 @@ export default function ActiveWorkoutScreen() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [showRestScreen]);
+  }, [showRestScreen, showCompletionModal]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -164,6 +210,49 @@ export default function ActiveWorkoutScreen() {
   const currentExerciseState = exercisesState[currentExerciseIndex];
   const currentExercise = currentExerciseState?.exerciseData;
   const isLastExercise = currentExerciseIndex === exercisesState.length - 1;
+  const currentExerciseId = currentExercise?.exerciseId;
+
+  useEffect(() => {
+    if (!currentExerciseId || currentExerciseId in exerciseStats) return;
+    let cancelled = false;
+    getExerciseStats(currentExerciseId)
+      .catch(() => null)
+      .then((stats) => {
+        if (cancelled) return;
+        setExerciseStats((prev) =>
+          currentExerciseId in prev ? prev : { ...prev, [currentExerciseId]: stats },
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentExerciseId, exerciseStats]);
+
+  const pushExerciseStats = (exerciseId: string, data: ExerciseStats) => {
+    pendingStatsRef.current[exerciseId] = {
+      ...pendingStatsRef.current[exerciseId],
+      ...data,
+    };
+    const payload = pendingStatsRef.current[exerciseId];
+    updateExerciseStats(exerciseId, payload)
+      .then(() => {
+        delete pendingStatsRef.current[exerciseId];
+      })
+      .catch(() => {});
+  };
+
+  const flushPendingStats = async () => {
+    await Promise.all(
+      Object.entries(pendingStatsRef.current).map(([id, data]) =>
+        updateExerciseStats(id, data)
+          .then(() => {
+            delete pendingStatsRef.current[id];
+          })
+          .catch(() => {}),
+      ),
+    );
+  };
+
   const isLastSet = currentSetIndex === (currentExercise?.sets.length || 1) - 1;
 
   const handleCompleteSet = (reps: number, weight: number) => {
@@ -173,8 +262,22 @@ export default function ActiveWorkoutScreen() {
     exState.completedSetIndices.push(currentSetIndex);
     exState.completedSets.push({ reps, weight });
 
+    if (currentExerciseId && (weight > 0 || reps > 0)) {
+      const previous = exerciseStats[currentExerciseId];
+      const update: ExerciseStats = { last_weight: weight, last_reps: reps };
+      if (previous !== undefined && weight > (previous?.PR ?? 0)) {
+        update.PR = weight;
+      }
+      setExerciseStats((prev) => ({
+        ...prev,
+        [currentExerciseId]: { ...prev[currentExerciseId], ...update },
+      }));
+      pushExerciseStats(currentExerciseId, update);
+    }
+
     const restTime = exState.restTimeSeconds || 90;
     setRestTimeRemaining(restTime);
+    setRestTimeTotal(restTime);
     setShowRestScreen(true);
     setExercisesState(newState);
 
@@ -390,6 +493,7 @@ export default function ActiveWorkoutScreen() {
       };
 
       await createCompletedWorkout(request, token || undefined);
+      await flushPendingStats();
       await clearActiveSession();
       Alert.alert(t.success, t.workoutSavedSuccess, [
         {
@@ -416,53 +520,10 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  if (showRestScreen) {
-    return (
-      <SafeAreaView className="flex-1">
-        <ScreenBackground />
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor={WorkoutTheme.backgroundSecondary}
-        />
-        <Modal
-          visible={showRestScreen}
-          animationType="fade"
-          transparent={true}
-          onRequestClose={() => {}}
-        >
-          <View className="flex-1 items-center justify-center bg-scrim px-5">
-            <View className="w-full items-center rounded-hero bg-surface p-8">
-              <Text className="mb-2 text-sm text-ink-muted">{t.restTime}</Text>
-              <Text
-                className="text-center text-[96px] font-semibold text-ink"
-                style={{ fontVariant: ["tabular-nums"], letterSpacing: -2 }}
-              >
-                {restTimeRemaining}
-              </Text>
-              <Text className="mb-8 mt-1 text-base text-ink-muted">
-                {t.seconds}
-              </Text>
-
-              <Button
-                className="w-full"
-                icon="play-forward"
-                label={t.skipRest}
-                onPress={handleSkipRest}
-              />
-            </View>
-          </View>
-        </Modal>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView edges={["top"]} className="flex-1">
       <ScreenBackground />
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={WorkoutTheme.backgroundSecondary}
-      />
+      <StatusBar barStyle="light-content" />
 
       <WorkoutSessionHeader
         workoutTitle={workoutName}
@@ -478,20 +539,61 @@ export default function ActiveWorkoutScreen() {
       >
         {currentExercise && (
           <>
-            <CurrentExerciseSection
-              exerciseName={currentExercise.exerciseName || t.currentExercise}
-              currentSetIndex={currentSetIndex}
-              totalSets={currentExercise.sets.length}
-              plannedSetData={currentExercise.sets}
-              completedSets={currentExerciseState.completedSets}
-              onCompleteSet={handleCompleteSet}
-              onAddSet={handleAddSet}
-              onRemoveSet={handleRemoveSet}
-              onSkipExercise={handleSkipExercise}
-              onDeleteExercise={handleDeleteExercise}
-              isLastExercise={isLastExercise}
-              isLastSet={isLastSet}
-            />
+            {showRestScreen ? (
+              <View className="mx-5 my-3 gap-6 rounded-hero bg-surface p-5">
+                <View className="items-center">
+                  <Text className="mb-1 text-sm text-ink-muted">
+                    {t.restTime}
+                  </Text>
+                  <Text className="text-center text-2xl font-semibold text-ink">
+                    {currentExercise?.exerciseName || t.currentExercise}
+                  </Text>
+                </View>
+
+                <View className="items-center rounded-card bg-accent-tint px-3 py-6">
+                  <Text
+                    className="text-center text-[72px] font-semibold text-ink"
+                    style={{ fontVariant: ["tabular-nums"], lineHeight: 80 }}
+                  >
+                    {restTimeRemaining}
+                  </Text>
+                  <Text className="mt-1 text-sm text-accent-text">
+                    {t.seconds}
+                  </Text>
+                </View>
+
+                <View className="h-1.5 overflow-hidden rounded-full bg-raised">
+                  <View
+                    className="h-full rounded-full bg-accent"
+                    style={{
+                      width: `${restTimeTotal > 0 ? (restTimeRemaining / restTimeTotal) * 100 : 0}%`,
+                    }}
+                  />
+                </View>
+
+                <Button
+                  icon="play-forward"
+                  label={t.skipRest}
+                  onPress={handleSkipRest}
+                />
+              </View>
+            ) : (
+              <CurrentExerciseSection
+                exerciseName={currentExercise.exerciseName || t.currentExercise}
+                currentSetIndex={currentSetIndex}
+                totalSets={currentExercise.sets.length}
+                plannedSetData={currentExercise.sets}
+                completedSets={currentExerciseState.completedSets}
+                onCompleteSet={handleCompleteSet}
+                onAddSet={handleAddSet}
+                onRemoveSet={handleRemoveSet}
+                onSkipExercise={handleSkipExercise}
+                onDeleteExercise={handleDeleteExercise}
+                isLastExercise={isLastExercise}
+                isLastSet={isLastSet}
+                lastStats={currentExerciseId ? exerciseStats[currentExerciseId] : null}
+              />
+            )}
 
             <OtherExercisesSection
               exercises={exercisesState.map((s) => s.exerciseData)}
@@ -512,71 +614,88 @@ export default function ActiveWorkoutScreen() {
         transparent={true}
         onRequestClose={() => setShowCompletionModal(false)}
       >
-        <View className="flex-1 justify-end bg-overlay">
-          <View className="max-h-[90%] rounded-t-hero bg-surface px-5 pb-8 pt-3">
-            <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
+        <GestureHandlerRootView className="flex-1 justify-end bg-overlay">
+          <Animated.View style={[{ maxHeight: "90%" }, sheetStyle]}>
+            <View className="rounded-t-hero bg-surface px-5 pb-8 pt-3">
+              <GestureDetector gesture={sheetPan}>
+                <View collapsable={false}>
+                  <View className="mb-5 h-6 w-full items-center justify-start">
+                    <View className="h-1.5 w-12 rounded-full bg-raised" />
+                  </View>
 
-            <View className="mb-6 items-center">
-              <View className="h-20 w-20 items-center justify-center rounded-full bg-success-tint">
-                <Ionicons
-                  name="checkmark"
-                  size={40}
-                  color={WorkoutTheme.status.success}
-                />
-              </View>
-              <Text className="mt-4 text-2xl font-semibold text-ink">
-                {t.workoutCompleted}
-              </Text>
+                  <View className="mb-6 items-center">
+                    <View className="h-20 w-20 items-center justify-center rounded-full bg-success-tint">
+                      <Ionicons
+                        name="checkmark"
+                        size={40}
+                        color={WorkoutTheme.status.success}
+                      />
+                    </View>
+                    <Text className="mt-4 text-2xl font-semibold text-ink">
+                      {t.workoutCompleted}
+                    </Text>
+                  </View>
+                </View>
+              </GestureDetector>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerClassName="gap-5"
+              >
+                <FormField label={t.titleLabel}>
+                  <TextField
+                    placeholder={t.workoutNameLabel}
+                    value={completionTitle}
+                    onChangeText={setCompletionTitle}
+                    editable={!isSubmitting}
+                  />
+                </FormField>
+
+                <FormField label={t.descriptionOptional}>
+                  <TextField
+                    multiline
+                    placeholder={t.addDescriptionPlaceholder}
+                    value={completionDescription}
+                    onChangeText={setCompletionDescription}
+                    editable={!isSubmitting}
+                  />
+                </FormField>
+
+                <View className="gap-3">
+                  <View className="flex-row items-center gap-3">
+                    <View className="flex-1">
+                      <Button
+                        icon="checkmark"
+                        label={t.save}
+                        loading={isSubmitting}
+                        onPress={handleSubmitCompletion}
+                      />
+                    </View>
+                    <PressableScale
+                      onPress={isSubmitting ? undefined : handleDiscardWorkout}
+                      accessibilityRole="button"
+                      accessibilityLabel={t.dontSave}
+                      className={`h-[52px] w-[52px] items-center justify-center rounded-full bg-danger-tint ${isSubmitting ? "opacity-50" : ""}`}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={20}
+                        color={WorkoutTheme.status.danger}
+                      />
+                    </PressableScale>
+                  </View>
+                  <Button
+                    variant="secondary"
+                    label={t.back}
+                    disabled={isSubmitting}
+                    onPress={() => setShowCompletionModal(false)}
+                  />
+                </View>
+              </ScrollView>
             </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerClassName="gap-5"
-            >
-              <FormField label={t.titleLabel}>
-                <TextField
-                  placeholder={t.workoutNameLabel}
-                  value={completionTitle}
-                  onChangeText={setCompletionTitle}
-                  editable={!isSubmitting}
-                />
-              </FormField>
-
-              <FormField label={t.descriptionOptional}>
-                <TextField
-                  multiline
-                  placeholder={t.addDescriptionPlaceholder}
-                  value={completionDescription}
-                  onChangeText={setCompletionDescription}
-                  editable={!isSubmitting}
-                />
-              </FormField>
-
-              <View className="gap-3">
-                <Button
-                  icon="checkmark"
-                  label={t.save}
-                  loading={isSubmitting}
-                  onPress={handleSubmitCompletion}
-                />
-                <Button
-                  variant="danger"
-                  icon="trash-outline"
-                  label={t.dontSave}
-                  disabled={isSubmitting}
-                  onPress={handleDiscardWorkout}
-                />
-                <Button
-                  variant="secondary"
-                  label={t.back}
-                  disabled={isSubmitting}
-                  onPress={() => setShowCompletionModal(false)}
-                />
-              </View>
-            </ScrollView>
-          </View>
-        </View>
+          </Animated.View>
+        </GestureHandlerRootView>
       </Modal>
     </SafeAreaView>
   );
