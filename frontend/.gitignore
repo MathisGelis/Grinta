@@ -45,3 +45,6 @@ app-example
 /android
 
 .vscode/
+
+*.md
+
