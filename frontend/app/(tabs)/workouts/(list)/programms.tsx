@@ -1,55 +1,79 @@
-import React, { useCallback, useState } from "react";
-import { View, Text, Animated, ScrollView } from "react-native";
+import React, {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { View, Text, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import GlassSearchBar from "@/components/GlassSearchBar";
-import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
-import { useFocusEffect, router } from "expo-router";
-import { getProgramms, SmallProgramm } from "@/services/programms.service";
+import { useBottomOffset } from "@/hooks/useKeyboardOffset";
+import { useFocusEffect } from "expo-router";
+import { programmsList, SmallProgramm } from "@/services/programms.service";
 import ProgrammCard from "@/components/workout/programmes/ProgrammCard";
+import { useSectionQuery } from "@/contexts/WorkoutsSearchContext";
+import { normalizeText } from "@/utils/text";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 export default function ProgramsScreen() {
   const { t } = useTranslation();
-  const { keyboardY, bottomOffset } = useKeyboardOffset();
-  const [programms, setProgramms] = useState<SmallProgramm[]>([]);
-  const [filteredProgramms, setFilteredProgramms] = useState<SmallProgramm[]>(
-    [],
+  const bottomOffset = useBottomOffset();
+  const [programms, setProgramms] = useState<SmallProgramm[]>(
+    () => programmsList.peek() ?? [],
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => programmsList.peek() === null);
   const [error, setError] = useState<string | null>(null);
+  const query = useSectionQuery("programmes");
+  const deferredQuery = useDeferredValue(query);
+
   const loadProgramms = useCallback(async () => {
     try {
       setError(null);
-      const programms = await getProgramms();
-      setProgramms(programms);
-      setFilteredProgramms(programms);
+      setProgramms(await programmsList.load());
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : t.loadingError;
-      setError(message);
+      setError(err instanceof Error ? err.message : t.loadingError);
       console.error("Erreur:", err);
     } finally {
       setLoading(false);
     }
   }, [t]);
 
-  const handleSearchResults = (filteredNames: string[]) => {
-    const filtered = programms.filter((p) => filteredNames.includes(p.title));
-    setFilteredProgramms(filtered);
-  };
-
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
       loadProgramms();
     }, [loadProgramms]),
   );
 
+  useEffect(() => {
+    programmsList.set(programms);
+  }, [programms]);
+
+  const data = useMemo(() => {
+    const needle = normalizeText(deferredQuery.trim());
+    return needle
+      ? programms.filter((p) => normalizeText(p.title).includes(needle))
+      : programms;
+  }, [programms, deferredQuery]);
+
+  const handleUpdate = useCallback((updated: SmallProgramm) => {
+    setProgramms((prev) =>
+      prev.map((item) => (item.id === updated.id ? updated : item)),
+    );
+  }, []);
+
+  const handleDelete = useCallback((id: string) => {
+    setProgramms((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: SmallProgramm }) => (
+      <ProgrammCard program={item} onUpdate={handleUpdate} onDelete={handleDelete} />
+    ),
+    [handleUpdate, handleDelete],
+  );
+
   return (
-    <SafeAreaView
-      edges={["bottom", "left", "right"]}
-      className="flex-1"
-    >
+    <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1">
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <Text className="text-ink-muted">{t.loadingProgrammes}</Text>
@@ -58,52 +82,25 @@ export default function ProgramsScreen() {
         <View className="flex-1 items-center justify-center">
           <Text className="text-danger">{error}</Text>
         </View>
-      ) : filteredProgramms.length === 0 ? (
+      ) : data.length === 0 ? (
         <View className="flex-1 items-center justify-center">
           <Text className="text-ink-muted">{t.noProgrammeFound}</Text>
         </View>
       ) : (
-        <ScrollView
-          className="px-4 pb-24 pt-4"
-          contentContainerStyle={{ paddingBottom: bottomOffset + 80 }}
+        <FlatList
+          data={data}
+          keyExtractor={(p) => p.id}
+          renderItem={renderItem}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-        >
-          {filteredProgramms.map((programm) => (
-            <ProgrammCard
-              key={programm.id}
-              program={programm}
-              onUpdate={(updated) => {
-                setProgramms((prev) =>
-                  prev.map((item) => (item.id === updated.id ? updated : item)),
-                );
-                setFilteredProgramms((prev) =>
-                  prev.map((item) => (item.id === updated.id ? updated : item)),
-                );
-              }}
-              onDelete={(id) => {
-                setProgramms((prev) => prev.filter((item) => item.id !== id));
-                setFilteredProgramms((prev) =>
-                  prev.filter((item) => item.id !== id),
-                );
-              }}
-            />
-          ))}
-        </ScrollView>
-      )}
-      <Animated.View
-        className="absolute left-0 right-0 px-5"
-        style={{
-          bottom: bottomOffset + 12,
-          transform: [{ translateY: keyboardY }],
-        }}
-      >
-        <GlassSearchBar
-          items={programms.map((p) => p.title)}
-          onResults={handleSearchResults}
-          onAdd={() => router.push("/(tabs)/workouts/create/programm")}
-          placeholder={t.searchProgrammePlaceholder}
+          contentContainerClassName="px-4 pt-4"
+          contentContainerStyle={{ paddingBottom: bottomOffset + 80 }}
         />
-      </Animated.View>
+      )}
     </SafeAreaView>
   );
 }

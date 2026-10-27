@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { WorkoutTheme } from "@/constants/Colors";
 import { fullPlannedWorkout } from "@/services/workouts.service";
+import MuscleMap from "@/components/ui/MuscleMap";
+import Stat from "@/components/ui/Stat";
+import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutStatsTabProps {
@@ -19,54 +20,36 @@ export default function WorkoutStatsTab({
   stats,
 }: WorkoutStatsTabProps) {
   const { t } = useTranslation();
+  const muscleData = usePlannedMuscleData(workout?.exercises);
+  const tiles = [
+    { label: t.sets, value: stats.totalSets },
+    { label: t.totalReps, value: stats.totalReps },
+    { label: t.totalKgLabel, value: stats.totalWeight },
+    { label: t.exercises, value: workout?.exercises?.length || 0 },
+  ];
+
   return (
-    <View className="pb-3 px-3 py-3">
-      <View className="flex-row flex-wrap gap-2">
-        <View className="flex-1 min-w-[47%] bg-raised px-3 py-3.5 rounded-[10px] items-center border border-line">
-          <Ionicons
-            name="repeat"
-            size={24}
-            color={WorkoutTheme.accent.purple}
-          />
-          <Text className="text-base font-bold text-accent mt-1.5">
-            {stats.totalSets}
-          </Text>
-          <Text className="text-[11px] text-ink-soft mt-1 text-center">
-            {t.sets}
-          </Text>
-        </View>
-        <View className="flex-1 min-w-[47%] bg-raised px-3 py-3.5 rounded-[10px] items-center border border-line">
-          <Ionicons name="fitness" size={24} color={WorkoutTheme.status.info} />
-          <Text className="text-base font-bold text-accent mt-1.5">
-            {stats.totalReps}
-          </Text>
-          <Text className="text-[11px] text-ink-soft mt-1 text-center">
-            {t.totalReps}
-          </Text>
-        </View>
-        <View className="flex-1 min-w-[47%] bg-raised px-3 py-3.5 rounded-[10px] items-center border border-line">
-          <Ionicons
-            name="barbell"
-            size={24}
-            color={WorkoutTheme.status.success}
-          />
-          <Text className="text-base font-bold text-accent mt-1.5">
-            {stats.totalWeight}
-          </Text>
-          <Text className="text-[11px] text-ink-soft mt-1 text-center">
-            {t.totalKgLabel}
-          </Text>
-        </View>
-        <View className="flex-1 min-w-[47%] bg-raised px-3 py-3.5 rounded-[10px] items-center border border-line">
-          <Ionicons name="list" size={24} color={WorkoutTheme.status.danger} />
-          <Text className="text-base font-bold text-accent mt-1.5">
-            {workout?.exercises?.length || 0}
-          </Text>
-          <Text className="text-[11px] text-ink-soft mt-1 text-center">
-            {t.exercises}
-          </Text>
-        </View>
+    <View className="gap-4 px-4 pb-4 pt-1">
+      <View className="flex-row flex-wrap gap-3">
+        {tiles.map((tile) => (
+          <View
+            key={tile.label}
+            className="rounded-tile bg-raised p-4"
+            style={{ width: "47.5%", flexGrow: 1 }}
+          >
+            <Stat size="md" value={tile.value} label={tile.label} />
+          </View>
+        ))}
       </View>
+
+      {muscleData.length > 0 ? (
+        <View className="gap-3 rounded-tile bg-raised p-4">
+          <Text className="text-base font-semibold text-ink">
+            {t.musclesWorkedTitle}
+          </Text>
+          <MuscleMap data={muscleData} unit={t.sets.toLowerCase()} />
+        </View>
+      ) : null}
     </View>
   );
 }

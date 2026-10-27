@@ -1,23 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, Alert, ActivityIndicator } from "react-native";
-import { WorkoutTheme } from "@/constants/Colors";
-import { TokenService } from "@/services/token.service";
-import {
-  getWorkoutById,
-  updatePlannedWorkout,
-  UpdateWorkoutRequest,
-  fullPlannedWorkout,
-  deletePlannedWorkout,
-} from "@/services/workouts.service";
-import { getAllExercises, Exercise } from "@/services/exercises.service";
-import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { View } from "react-native";
+import { fullPlannedWorkout } from "@/services/workouts.service";
 import WorkoutCardHeader from "@/components/workout/card/WorkoutCardHeader";
-import WorkoutTabs from "@/components/workout/card/WorkoutTabs";
-import WorkoutInfosTab from "@/components/workout/card/WorkoutInfosTab";
-import WorkoutStatsTab from "@/components/workout/card/WorkoutStatsTab";
+import WorkoutCardBody, {
+  computeWorkoutStats,
+} from "@/components/workout/card/WorkoutCardBody";
 
-import { useTranslation } from "@/contexts/LanguageContext";
-import { format } from "@/i18n/translations";
 interface WorkoutCardProps {
   workout: {
     id: string;
@@ -25,243 +13,34 @@ interface WorkoutCardProps {
     description?: string;
     totalExercises?: number;
   };
-  onDelete?: () => void;
+  onDelete?: (id: string) => void;
   onUpdate?: (updatedWorkout: fullPlannedWorkout) => void;
-  onPress?: () => void;
 }
 
-export default function WorkoutCard({
-  workout,
-  onDelete,
-  onUpdate,
-  onPress,
-}: WorkoutCardProps) {
-  const { t } = useTranslation();
+function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState<"infos" | "stats">("infos");
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-
-  const [fullWorkout, setFullWorkout] = useState<fullPlannedWorkout | null>(
-    null,
-  );
-  const [editedExercises, setEditedExercises] = useState<ExerciseSetupData[]>(
-    [],
-  );
+  const [hasExpanded, setHasExpanded] = useState(false);
+  const [fullWorkout, setFullWorkout] = useState<fullPlannedWorkout | null>(null);
   const [editedTitle, setEditedTitle] = useState(workout.title);
-  const [editedDescription, setEditedDescription] = useState(
-    workout.description || "",
-  );
-  const [exercisesMap, setExercisesMap] = useState<Map<string, Exercise>>(
-    new Map(),
-  );
 
-  const loadExercisesMap = useCallback(async () => {
-    try {
-      const exercises = await getAllExercises();
-      const map = new Map<string, Exercise>();
-      exercises.forEach((ex) => {
-        map.set(ex.id, ex);
-      });
-      setExercisesMap(map);
-    } catch (error) {
-      console.error("Erreur lors du chargement des exercices:", error);
-    }
+  useEffect(() => {
+    setEditedTitle(workout.title);
+  }, [workout.title]);
+
+  const toggleExpand = useCallback(() => {
+    setHasExpanded(true);
+    setIsExpanded((prev) => !prev);
   }, []);
 
-  useEffect(() => {
-    loadExercisesMap();
-  }, [loadExercisesMap]);
-
-  useEffect(() => {
-    if (!isEditing && !isLoading) {
-      setEditedTitle(workout.title);
-      setEditedDescription(workout.description || "");
-    }
-  }, [workout.title, workout.description, isEditing, isLoading]);
-
-  const loadWorkoutData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const token = await TokenService.get();
-      const data = await getWorkoutById(workout.id, token || undefined);
-
-      if (!data.exercises) {
-        data.exercises = [];
-      }
-
-      setFullWorkout(data);
-
-      if (data.title) {
-        setEditedTitle(data.title);
-      }
-      if (data.description !== undefined) {
-        setEditedDescription(data.description);
-      }
-
-      const enrichedExercises = data.exercises.map((ex) => ({
-        id: ex.exerciseId,
-        name:
-          ex.exerciseName ||
-          exercisesMap.get(ex.exerciseId)?.name ||
-          ex.exerciseId,
-        sets: ex.sets,
-      }));
-      setEditedExercises(enrichedExercises);
-
-      return data;
-    } catch (error) {
-      console.error("Erreur lors du chargement du workout:", error);
-      Alert.alert(t.error, t.cannotLoadWorkoutDetails);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [t, workout.id, exercisesMap]);
-
-  useEffect(() => {
-    if (isExpanded && !fullWorkout) {
-      loadWorkoutData();
-    }
-  }, [isExpanded, fullWorkout, loadWorkoutData]);
-
-  const handleEdit = () => {
-    setIsEditing(true);
-    setHasChanges(false);
-  };
-
-  const handleCancel = () => {
-    if (fullWorkout && fullWorkout.exercises) {
-      const enrichedExercises = fullWorkout.exercises.map((ex) => ({
-        id: ex.exerciseId,
-        name: exercisesMap.get(ex.exerciseId)?.name || ex.exerciseId,
-        sets: ex.sets,
-      }));
-      setEditedExercises(enrichedExercises);
-    }
-    setEditedTitle(workout.title);
-    setEditedDescription(workout.description || "");
-    setIsEditing(false);
-    setHasChanges(false);
-  };
-
-  const handleExerciseUpdate = (index: number, updated: ExerciseSetupData) => {
-    const newExercises = [...editedExercises];
-    newExercises[index] = updated;
-    setEditedExercises(newExercises);
-    setHasChanges(true);
-  };
-
-  const handleAddExercise = (exercise: ExerciseSetupData) => {
-    setEditedExercises((prev) => [...prev, exercise]);
-    setHasChanges(true);
-  };
-
-  const handleRemoveExercise = (index: number) => {
-    const newExercises = editedExercises.filter((_, i) => i !== index);
-    setEditedExercises(newExercises);
-    setHasChanges(true);
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      const token = await TokenService.get();
-
-      const updateData: UpdateWorkoutRequest = {
-        title: editedTitle !== workout.title ? editedTitle : undefined,
-        description:
-          editedDescription !== (workout.description || "")
-            ? editedDescription
-            : undefined,
-        exercises: editedExercises.map((ex) => ({
-          exerciseId: ex.id,
-          sets: ex.sets,
-          plannedRestSeconds: 90,
-        })),
-      };
-
-      Object.keys(updateData).forEach(
-        (key) =>
-          updateData[key as keyof UpdateWorkoutRequest] === undefined &&
-          delete updateData[key as keyof UpdateWorkoutRequest],
-      );
-
-      await updatePlannedWorkout(workout.id, updateData, token || undefined);
-
-      const updatedWorkout = await loadWorkoutData();
-      setIsEditing(false);
-      setHasChanges(false);
-
-      if (onUpdate && updatedWorkout) {
-        onUpdate(updatedWorkout);
-      }
-
-      Alert.alert(t.success, t.workoutUpdated);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : t.cannotSaveProfile;
-      Alert.alert(t.error, message);
-      console.error("Erreur de sauvegarde:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = () => {
-    Alert.alert(
-      t.deleteWorkoutTitle,
-      format(t.deleteWorkoutConfirm, { title: workout.title }),
-      [
-        { text: t.cancel, style: "cancel" },
-        {
-          text: t.delete,
-          onPress: async () => {
-            try {
-              const token = await TokenService.get();
-              await deletePlannedWorkout(workout.id, token || undefined);
-              if (onDelete) onDelete();
-              Alert.alert(t.success, t.workoutDeleted);
-            } catch {
-              Alert.alert(t.error, t.cannotDeleteWorkout);
-            }
-          },
-          style: "destructive",
-        },
-      ],
-    );
-  };
-
-  const calculateStats = () => {
-    if (!fullWorkout || !fullWorkout.exercises)
-      return { totalSets: 0, totalReps: 0, totalWeight: 0 };
-
-    let totalSets = 0;
-    let totalReps = 0;
-    let totalWeight = 0;
-
-    fullWorkout.exercises.forEach((ex) => {
-      totalSets += ex.sets.length;
-      ex.sets.forEach((set) => {
-        totalReps += set.reps || 0;
-        totalWeight += (set.weight || 0) * (set.reps || 1);
-      });
-    });
-
-    return { totalSets, totalReps, totalWeight: Math.round(totalWeight) };
-  };
-
-  const stats = calculateStats();
+  const stats = useMemo(() => computeWorkoutStats(fullWorkout), [fullWorkout]);
 
   return (
-    <View className="w-full">
-      <View className="rounded-card overflow-hidden bg-surface">
+    <View className="w-full pb-3">
+      <View className="overflow-hidden rounded-card bg-surface">
         <WorkoutCardHeader
           title={editedTitle}
           isExpanded={isExpanded}
-          onToggleExpand={() => setIsExpanded(!isExpanded)}
+          onToggleExpand={toggleExpand}
           totalExercises={
             fullWorkout?.exercises?.length ?? workout.totalExercises ?? 0
           }
@@ -272,53 +51,21 @@ export default function WorkoutCard({
           hasWorkout={!!fullWorkout}
         />
 
-        {isExpanded && (
-          <View className="bg-surface">
-            {isLoading ? (
-              <View className="h-[300px] justify-center items-center">
-                <ActivityIndicator
-                  size="large"
-                  color={WorkoutTheme.accent.purple}
-                />
-              </View>
-            ) : (
-              <>
-                <WorkoutTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-                {activeTab === "infos" && (
-                  <WorkoutInfosTab
-                    isEditing={isEditing}
-                    hasChanges={hasChanges}
-                    isSaving={isSaving}
-                    editedTitle={editedTitle}
-                    editedDescription={editedDescription}
-                    editedExercises={editedExercises}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onSave={handleSave}
-                    onCancel={handleCancel}
-                    onTitleChange={(text) => {
-                      setEditedTitle(text);
-                      setHasChanges(true);
-                    }}
-                    onDescriptionChange={(text) => {
-                      setEditedDescription(text);
-                      setHasChanges(true);
-                    }}
-                    onExerciseUpdate={handleExerciseUpdate}
-                    onRemoveExercise={handleRemoveExercise}
-                    onAddExercise={handleAddExercise}
-                  />
-                )}
-
-                {activeTab === "stats" && fullWorkout && (
-                  <WorkoutStatsTab workout={fullWorkout} stats={stats} />
-                )}
-              </>
-            )}
+        {hasExpanded && (
+          <View className="bg-surface" style={isExpanded ? undefined : { display: "none" }}>
+            <WorkoutCardBody
+              workout={workout}
+              editedTitle={editedTitle}
+              onEditedTitleChange={setEditedTitle}
+              onLoaded={setFullWorkout}
+              onDelete={onDelete}
+              onUpdate={onUpdate}
+            />
           </View>
         )}
       </View>
     </View>
   );
 }
+
+export default React.memo(WorkoutCard);

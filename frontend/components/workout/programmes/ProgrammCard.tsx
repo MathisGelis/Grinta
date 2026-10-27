@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TokenService } from "@/services/token.service";
 import {
@@ -28,7 +28,7 @@ interface ProgrammCardProps {
   onDelete?: (id: string) => void;
 }
 
-export default function ProgrammCard({
+function ProgrammCard({
   program,
   onUpdate,
   onDelete,
@@ -124,13 +124,13 @@ export default function ProgrammCard({
 
   return (
     <View className="mb-3 rounded-card bg-surface p-5">
-      <PressableScale
+      <Pressable
         onPress={handleExpand}
         disabled={loading}
         accessibilityRole="button"
         accessibilityState={{ expanded: isExpanded }}
         accessibilityLabel={program.title}
-        className="gap-4"
+        className="gap-4 active:opacity-70"
       >
         <View className="flex-row items-center justify-between gap-3">
           <Text
@@ -171,7 +171,7 @@ export default function ProgrammCard({
             </Text>
           </View>
         </View>
-      </PressableScale>
+      </Pressable>
 
       {isExpanded && (
         <View className="mt-4 gap-3">
@@ -195,7 +195,7 @@ export default function ProgrammCard({
               className="h-[52px] w-[52px] items-center justify-center rounded-full bg-danger-tint"
             >
               <Ionicons
-                name="trash"
+                name="trash-outline"
                 size={20}
                 color={WorkoutTheme.status.danger}
               />
@@ -206,3 +206,5 @@ export default function ProgrammCard({
     </View>
   );
 }
+
+export default React.memo(ProgrammCard);

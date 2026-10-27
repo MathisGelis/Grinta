@@ -1,9 +1,8 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 
-import PressableScale from "@/components/ui/PressableScale";
 import { format } from "@/i18n/translations";
 import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutCardHeaderProps {
@@ -35,7 +34,7 @@ function StatPill({
   );
 }
 
-export default function WorkoutCardHeader({
+function WorkoutCardHeader({
   title,
   isExpanded,
   onToggleExpand,
@@ -45,12 +44,12 @@ export default function WorkoutCardHeader({
 }: WorkoutCardHeaderProps) {
   const { t } = useTranslation();
   return (
-    <PressableScale
+    <Pressable
       onPress={onToggleExpand}
       accessibilityRole="button"
       accessibilityState={{ expanded: isExpanded }}
       accessibilityLabel={title}
-      className="w-full gap-4 p-5"
+      className="w-full gap-4 p-5 active:opacity-70"
     >
       <View className="flex-row items-center justify-between gap-3">
         <Text
@@ -89,6 +88,8 @@ export default function WorkoutCardHeader({
           />
         )}
       </View>
-    </PressableScale>
+    </Pressable>
   );
 }
+
+export default React.memo(WorkoutCardHeader);
