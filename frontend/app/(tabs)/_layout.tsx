@@ -34,7 +34,6 @@ export default function Layout() {
           })}
         />
         <Tabs.Screen name="stats" />
-        <Tabs.Screen name="social" options={{ href: null }} />
         <Tabs.Screen name="profile" />
       </Tabs>
       <ActiveSessionBanner session={session} />
