@@ -12,6 +12,8 @@ import {
 import { TokenService } from "@/services/token.service";
 
 import Button from "@/components/ui/Button";
+import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { FormField, TextField } from "@/components/ui/FormField";
@@ -25,6 +27,7 @@ import {
 } from "@/i18n/labels";
 export default function CreateProgrammScreen() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const DIFFICULTY_OPTIONS = DIFFICULTY_KEYS.map((key) => ({
     key,
     value: difficultyLabel(t, key),
@@ -121,7 +124,8 @@ export default function CreateProgrammScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="gap-5 px-5 pb-10"
+        contentContainerClassName="gap-5 px-5"
+        contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
         <Text className="text-sm text-ink-muted">

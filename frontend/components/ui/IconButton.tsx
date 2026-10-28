@@ -9,10 +9,16 @@ type IconButtonProps = {
   icon: keyof typeof Ionicons.glyphMap;
   onPress?: () => void;
   label: string;
-  variant?: "surface" | "glass" | "accent";
+  variant?: "surface" | "glass" | "accent" | "danger";
   size?: number;
   halo?: boolean;
   className?: string;
+};
+
+const BACKGROUND = {
+  surface: "bg-surface",
+  accent: "bg-accent",
+  danger: "bg-danger-tint",
 };
 
 export default function IconButton({
@@ -29,7 +35,11 @@ export default function IconButton({
     <Ionicons
       name={icon}
       size={size >= 52 ? 24 : 20}
-      color={WorkoutTheme.text.primary}
+      color={
+        variant === "danger"
+          ? WorkoutTheme.status.danger
+          : WorkoutTheme.text.primary
+      }
     />
   );
   return (
@@ -48,7 +58,7 @@ export default function IconButton({
       ) : (
         <View
           style={dim}
-          className={`items-center justify-center ${variant === "accent" ? "bg-accent" : "bg-surface"}`}
+          className={`items-center justify-center ${BACKGROUND[variant]}`}
         >
           {glyph}
         </View>

@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { WorkoutTheme } from "@/constants/Colors";
 
 export default function StatsStack() {
   return (
@@ -9,6 +10,10 @@ export default function StatsStack() {
       }}
     >
       <Stack.Screen name="index" />
+      <Stack.Screen
+        name="workout-detail"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
     </Stack>
   );
 }

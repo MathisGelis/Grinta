@@ -54,7 +54,7 @@ export default function WorkoutSummaryScreen() {
   return (
     <SafeAreaView edges={["top"]} className="flex-1">
       <ScreenBackground />
-      <StatusBar barStyle="light-content" backgroundColor={WorkoutTheme.background} />
+      <StatusBar barStyle="light-content" />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <Animated.View

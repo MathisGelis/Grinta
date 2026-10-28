@@ -17,7 +17,7 @@ import Glass from "@/components/ui/Glass";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 
 import { useTranslation } from "@/contexts/LanguageContext";
-const RIGHT_GROUP_WIDTH = 112;
+const RIGHT_GROUP_WIDTH = 56;
 
 function ExploreHeader() {
   const { t } = useTranslation();
@@ -111,12 +111,6 @@ function ExploreHeader() {
           >
             <IconButton
               icon="people-outline"
-              label={t.socialTitle}
-              variant="glass"
-              onPress={() => router.push("/(tabs)/social" as any)}
-            />
-            <IconButton
-              icon="paper-plane-outline"
               label={t.chatLabel}
               variant="glass"
               onPress={() => router.push("/(tabs)/explore/chat")}
@@ -156,7 +150,7 @@ export default function ExploreLayout() {
           />
           <Stack.Screen
             name="notification"
-            options={{ animation: "slide_from_left" }}
+            options={{ animation: "slide_from_left", gestureEnabled: false }}
           />
           <Stack.Screen name="chat" />
           <Stack.Screen name="userPost" />

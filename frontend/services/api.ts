@@ -2,6 +2,21 @@ import { getStrings } from "@/i18n/current";
 const DEV_API = "https://grinta-backend.duckdns.org";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API;
 
+const HEALTH_TIMEOUT_MS = 4000;
+
+export async function checkServerHealth(): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${BASE_URL}/`, { signal: controller.signal });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 async function request<T>(
@@ -23,9 +38,11 @@ async function request<T>(
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (error) {
-    throw new Error(
-      `${getStrings().apiUnreachable} (${BASE_URL}${endpoint}): ${error instanceof Error ? error.message : String(error)}`
+    console.warn(
+      `API unreachable (${BASE_URL}${endpoint}):`,
+      error instanceof Error ? error.message : String(error),
     );
+    throw new Error(getStrings().apiUnreachable);
   }
 
   const rawText = await response.text();
@@ -40,6 +57,9 @@ async function request<T>(
   }
 
   if (!response.ok) {
+    if (response.status >= 500 && !(await checkServerHealth())) {
+      throw new Error(getStrings().apiUnreachable);
+    }
     const raw = data?.message ?? data?.error ?? data;
     const msg = Array.isArray(raw)
       ? raw[0]

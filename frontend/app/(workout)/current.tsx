@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, ScrollView, ActivityIndicator, TextInput, Alert } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, TextInput, Alert, Pressable, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -11,11 +11,15 @@ import {
   fullPlannedWorkout,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
-import Modal from "react-native-modal";
+import Modal from "@/components/ui/AppModal";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
+import IconButton from "@/components/ui/IconButton";
+import MuscleMap from "@/components/ui/MuscleMap";
+import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
+import Button from "@/components/ui/Button";
 const SECONDS_PER_SET = 45;
 
 function formatRest(seconds: number) {
@@ -29,6 +33,7 @@ function formatRest(seconds: number) {
 export default function CurrentWorkoutScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
   const [selectedWorkout, setSelectedWorkout] =
     useState<fullPlannedWorkout | null>(null);
@@ -36,6 +41,7 @@ export default function CurrentWorkoutScreen() {
     null,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const muscleData = usePlannedMuscleData(selectedWorkout?.exercises);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -147,21 +153,37 @@ export default function CurrentWorkoutScreen() {
       className="flex-1"
     >
       <ScreenBackground />
-      <View
-        className="px-4 pt-1 pb-3 flex-row justify-between items-center"
-      >
-        <Text
-          className="text-[22px] font-bold text-ink tracking-[-0.3px]"
-        >
-          {t.selectWorkout}
-        </Text>
-        <PressableScale
-          onPress={closeScreen}
-          hitSlop={8}
-          className="w-8 h-8 rounded-full bg-raised items-center justify-center"
-        >
-          <Ionicons name="close" size={18} color={WorkoutTheme.text.primary} />
-        </PressableScale>
+      <View className="flex-row items-center gap-3 px-4 pb-3 pt-1">
+        {workouts.length > 0 ? (
+          <Pressable
+            onPress={() => setPickerVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t.selectWorkout}
+            className="flex-1 flex-row items-center gap-3 rounded-tile bg-surface px-4 py-3 active:opacity-70"
+          >
+            <View className="flex-1">
+              <Text className="text-xs text-ink-muted">{t.selectWorkout}</Text>
+              <Text
+                numberOfLines={1}
+                className="mt-0.5 text-lg font-semibold text-ink"
+              >
+                {selectedWorkout?.title ?? "–"}
+              </Text>
+            </View>
+            <View className="h-9 w-9 items-center justify-center rounded-full bg-raised">
+              <Ionicons
+                name="swap-horizontal"
+                size={18}
+                color={WorkoutTheme.text.primary}
+              />
+            </View>
+          </Pressable>
+        ) : (
+          <Text className="flex-1 text-[22px] font-bold tracking-[-0.3px] text-ink">
+            {t.selectWorkout}
+          </Text>
+        )}
+        <IconButton icon="close" label={t.closeLabel} onPress={closeScreen} />
       </View>
 
       {workouts.length === 0 ? (
@@ -193,29 +215,9 @@ export default function CurrentWorkoutScreen() {
           >
             {selectedWorkout && (
               <>
-                <PressableScale
-                  onPress={() => setPickerVisible(true)}
-                  className="flex-row items-center gap-2"
-                >
-                  <Text
-                    numberOfLines={1}
-                    className="flex-1 text-[26px] font-bold text-ink tracking-[-0.5px]"
-                  >
-                    {selectedWorkout.title}
-                  </Text>
-                  <View
-                    className="w-[30px] h-[30px] rounded-full bg-raised items-center justify-center"
-                  >
-                    <Ionicons
-                      name="chevron-down"
-                      size={17}
-                      color={WorkoutTheme.text.secondary}
-                    />
-                  </View>
-                </PressableScale>
                 {selectedWorkout.description ? (
                   <Text
-                    className="text-sm text-ink-soft mt-1"
+                    className="text-sm text-ink-soft"
                   >
                     {selectedWorkout.description}
                   </Text>
@@ -258,6 +260,15 @@ export default function CurrentWorkoutScreen() {
                         </Text>
                       </View>
                     ))}
+                  </View>
+                )}
+
+                {muscleData.length > 0 && (
+                  <View className="mb-5 gap-3 rounded-card bg-surface p-4">
+                    <Text className="text-base font-semibold text-ink">
+                      {t.musclesWorkedTitle}
+                    </Text>
+                    <MuscleMap data={muscleData} unit={t.sets.toLowerCase()} />
                   </View>
                 )}
 
@@ -345,36 +356,36 @@ export default function CurrentWorkoutScreen() {
             onBackdropPress={() => setPickerVisible(false)}
             onSwipeComplete={() => setPickerVisible(false)}
             swipeDirection="down"
-            propagateSwipe
-            useNativeDriverForBackdrop
-        useNativeDriver
-        hideModalContentWhileAnimating
             style={{ justifyContent: "flex-end", margin: 0 }}
           >
             <View
+              className="rounded-t-hero bg-surface px-5 pt-3"
               style={{
-                backgroundColor: WorkoutTheme.backgroundSecondary,
-                borderTopLeftRadius: 20,
-                borderTopRightRadius: 20,
-                maxHeight: "82%",
-                paddingTop: 10,
+                maxHeight: windowHeight * 0.82,
                 paddingBottom: Math.max(insets.bottom, 16),
               }}
             >
-              <View
-                className="h-1 w-11 rounded-sm self-center bg-line mb-3.5"
-              />
+              <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
 
-              <View
-                className="flex-row items-center bg-raised rounded-[10px] px-3 mx-4 mb-3"
-              >
+              <View className="mb-4 flex-row items-center justify-between">
+                <Text className="text-2xl font-semibold text-ink">
+                  {t.searchWorkout}
+                </Text>
+                <IconButton
+                  icon="close"
+                  label={t.closeLabel}
+                  onPress={() => setPickerVisible(false)}
+                />
+              </View>
+
+              <View className="mb-4 h-12 flex-row items-center gap-2 rounded-full bg-raised px-4">
                 <Ionicons
                   name="search"
-                  size={16}
+                  size={18}
                   color={WorkoutTheme.text.tertiary}
                 />
                 <TextInput
-                  className="flex-1 py-[11px] px-2 text-sm text-ink"
+                  className="flex-1 py-0 text-base text-ink"
                   placeholder={t.searchWorkout}
                   placeholderTextColor={WorkoutTheme.text.tertiary}
                   value={searchQuery}
@@ -385,7 +396,7 @@ export default function CurrentWorkoutScreen() {
                   <PressableScale onPress={() => setSearchQuery("")}>
                     <Ionicons
                       name="close-circle"
-                      size={16}
+                      size={18}
                       color={WorkoutTheme.text.tertiary}
                     />
                   </PressableScale>
@@ -395,7 +406,7 @@ export default function CurrentWorkoutScreen() {
               <ScrollView
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+                contentContainerClassName="gap-3 pb-2"
               >
                 {filteredWorkouts.map((workout) => {
                   const active = selectedWorkoutId === workout.id;
@@ -407,45 +418,31 @@ export default function CurrentWorkoutScreen() {
                         setPickerVisible(false);
                         if (!active) handleSelectWorkout(workout.id);
                       }}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        borderRadius: 12,
-                        padding: 14,
-                        backgroundColor: active
-                          ? WorkoutTheme.accent.purple + "22"
-                          : WorkoutTheme.backgroundTertiary,
-                        borderWidth: 1,
-                        borderColor: active
-                          ? WorkoutTheme.accent.purple
-                          : WorkoutTheme.border,
-                      }}
+                      className={`flex-row items-center gap-3 rounded-tile p-4 ${active ? "bg-accent-tint" : "bg-raised"}`}
                     >
                       <View className="flex-1">
                         <Text
                           numberOfLines={1}
-                          className="text-[15px] font-semibold text-ink"
+                          className="text-base font-semibold text-ink"
                         >
                           {workout.title}
                         </Text>
                         {workout.description ? (
                           <Text
                             numberOfLines={1}
-                            className="text-xs mt-[3px] text-ink-muted"
+                            className="mt-0.5 text-sm text-ink-muted"
                           >
                             {workout.description}
                           </Text>
                         ) : null}
                       </View>
-                      <Text
-                        className="text-xs font-bold mr-2.5 text-ink-muted"
-                      >
+                      <Text className="text-xs text-ink-muted">
                         {workout.totalExercises} {t.exercisesShort}
                       </Text>
                       {active && (
                         <Ionicons
                           name="checkmark-circle"
-                          size={20}
+                          size={22}
                           color={WorkoutTheme.accent.purple}
                         />
                       )}
@@ -454,47 +451,32 @@ export default function CurrentWorkoutScreen() {
                 })}
 
                 {filteredWorkouts.length === 0 && (
-                  <Text
-                    className="text-sm text-center py-7 text-ink-muted"
-                  >
-                    {t.noWorkoutFound}
-                  </Text>
+                  <View className="items-center gap-2 rounded-card bg-raised p-8">
+                    <Ionicons
+                      name="barbell-outline"
+                      size={28}
+                      color={WorkoutTheme.text.tertiary}
+                    />
+                    <Text className="text-center text-sm text-ink-muted">
+                      {t.noWorkoutFound}
+                    </Text>
+                  </View>
                 )}
               </ScrollView>
             </View>
           </Modal>
 
           <View
-            style={{
-              paddingHorizontal: 16,
-              paddingTop: 12,
-              paddingBottom: Math.max(insets.bottom, 12),
-              borderTopWidth: 1,
-              borderTopColor: WorkoutTheme.border,
-              backgroundColor: WorkoutTheme.backgroundSecondary,
-            }}
+            className="px-5 pt-3"
+            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
           >
-            <PressableScale
+            <Button
+              icon="play"
+              label={t.startWorkout}
+              disabled={!selectedWorkout}
+              loading={loadingDetail}
               onPress={startWorkout}
-              disabled={!selectedWorkout || loadingDetail}
-              style={{
-                backgroundColor: WorkoutTheme.accent.purple,
-                opacity: !selectedWorkout || loadingDetail ? 0.5 : 1,
-                borderRadius: 14,
-                paddingVertical: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <Ionicons name="play" size={18} color="white" />
-              <Text
-                style={{ fontSize: 15, fontWeight: "700", color: "white" }}
-              >
-                {t.startWorkout}
-              </Text>
-            </PressableScale>
+            />
           </View>
         </>
       )}

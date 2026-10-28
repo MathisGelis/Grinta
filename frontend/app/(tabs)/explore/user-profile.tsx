@@ -18,7 +18,10 @@ export default function UserProfileScreen() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchProfile = useCallback(async () => {
-    if (!params.userId) return;
+    if (!params.userId) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const data = await UserService.getProfile(params.userId);

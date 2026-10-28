@@ -1,5 +1,6 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
+import { createListCache } from "./listCache";
 
 export interface SmallProgramm {
   id: string;
@@ -114,3 +115,5 @@ export async function deleteProgramme(id: string): Promise<void> {
     throw error;
   }
 }
+
+export const programmsList = createListCache<SmallProgramm>(getProgramms);

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 
+import type { ExerciseStats } from "@/services/exercises.service";
 import PressableScale from "@/components/ui/PressableScale";
 import Button from "@/components/ui/Button";
 export interface CompletedSet {
@@ -24,6 +25,7 @@ interface CurrentExerciseSectionProps {
   onDeleteExercise?: () => void;
   isLastExercise: boolean;
   isLastSet: boolean;
+  lastStats?: ExerciseStats | null;
 }
 
 export default function CurrentExerciseSection({
@@ -39,23 +41,31 @@ export default function CurrentExerciseSection({
   onDeleteExercise,
   isLastExercise,
   isLastSet,
+  lastStats,
 }: CurrentExerciseSectionProps) {
   const { t } = useTranslation();
-  const [weight, setWeight] = useState(
-    plannedSetData[currentSetIndex]?.weight.toString() || "0",
-  );
-  const [reps, setReps] = useState(
-    plannedSetData[currentSetIndex]?.reps.toString() || "0",
-  );
+  const initialValues = (index: number) => {
+    const planned = plannedSetData[index];
+    return {
+      weight: planned?.weight || lastStats?.last_weight || 0,
+      reps: planned?.reps || lastStats?.last_reps || 0,
+    };
+  };
+  const [weight, setWeight] = useState(initialValues(currentSetIndex).weight.toString());
+  const [reps, setReps] = useState(initialValues(currentSetIndex).reps.toString());
+
+  const lastWeight = lastStats?.last_weight;
+  const lastReps = lastStats?.last_reps;
 
   useEffect(() => {
-    setWeight(plannedSetData[currentSetIndex]?.weight.toString() || "0");
-    setReps(plannedSetData[currentSetIndex]?.reps.toString() || "0");
-  }, [currentSetIndex, plannedSetData]);
+    const planned = plannedSetData[currentSetIndex];
+    setWeight(String(planned?.weight || lastWeight || 0));
+    setReps(String(planned?.reps || lastReps || 1));
+  }, [currentSetIndex, plannedSetData, lastWeight, lastReps]);
 
   const handleCompleteSet = () => {
     const w = parseFloat(weight) || 0;
-    const r = parseInt(reps) || 0;
+    const r = Math.max(1, parseInt(reps) || 1);
     onCompleteSet(r, w);
   };
 
@@ -83,6 +93,28 @@ export default function CurrentExerciseSection({
         </Text>
       </View>
 
+      {lastStats && (lastStats.last_weight != null || lastStats.PR != null) ? (
+        <View className="flex-row gap-3">
+          {lastStats.last_weight != null ? (
+            <View className="flex-1 rounded-tile bg-raised px-4 py-3">
+              <Text className="text-xs text-ink-muted">{t.lastPerformanceLabel}</Text>
+              <Text className="mt-0.5 text-base font-semibold text-ink">
+                {lastStats.last_weight} kg
+                {lastStats.last_reps != null ? ` × ${lastStats.last_reps}` : ""}
+              </Text>
+            </View>
+          ) : null}
+          {lastStats.PR != null ? (
+            <View className="flex-1 rounded-tile bg-accent-tint px-4 py-3">
+              <Text className="text-xs text-accent-text">{t.personalRecordLabel}</Text>
+              <Text className="mt-0.5 text-base font-semibold text-ink">
+                {lastStats.PR} kg
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
       <View className="flex-row gap-3">
         <View className="flex-1 items-center rounded-card bg-raised px-3 py-5">
           <Text className="mb-2 text-xs text-ink-muted">{t.weightLabel}</Text>
@@ -91,6 +123,8 @@ export default function CurrentExerciseSection({
             style={{ fontVariant: ["tabular-nums"], height: 52 }}
             value={weight}
             onChangeText={setWeight}
+            onBlur={() => !weight.trim() && setWeight("0")}
+            selectTextOnFocus
             keyboardType="decimal-pad"
             maxLength={5}
           />
@@ -103,6 +137,8 @@ export default function CurrentExerciseSection({
             style={{ fontVariant: ["tabular-nums"], height: 52 }}
             value={reps}
             onChangeText={setReps}
+            onBlur={() => !(parseInt(reps, 10) >= 1) && setReps("1")}
+            selectTextOnFocus
             keyboardType="number-pad"
             maxLength={3}
           />

@@ -26,7 +26,7 @@ const getTickHeight = (value: number) => {
 export default function WeightScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ gender: string; age: string }>();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [weight, setWeight] = useState(DEFAULT_WEIGHT);
 
   const handleScrollEnd = useCallback(

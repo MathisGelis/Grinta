@@ -1,9 +1,11 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
+import { UserService } from "./user.service";
 
 export interface Post {
   id: string,
   createdAt: string,
+  userId?: string,
   displayName: string,
   likesCount?: string,
   commentsCount?: string,
@@ -22,6 +24,13 @@ export interface Post {
   },
 }
 
+export type ReportReason =
+  | "spam"
+  | "harassment"
+  | "hate_speech"
+  | "inappropriate"
+  | "other";
+
 interface PostLike {
   id: string;
   displayName: string;
@@ -33,6 +42,16 @@ export const PostsService = {
   async createPost(workoutId: string): Promise<{ id: string }> {
     const token = await TokenService.get();
     return api.post<{ id: string }>("/posts", { workoutId }, token ?? undefined);
+  },
+
+  async deletePost(postId: string): Promise<void> {
+    const token = await TokenService.get();
+    return api.delete(`/posts/${postId}`, token ?? undefined);
+  },
+
+  async getPostById(postId: string): Promise<Post | null> {
+    const token = await TokenService.get();
+    return api.get<Post | null>(`/posts/${encodeURIComponent(postId)}`, token ?? undefined);
   },
 
   async getTopPosts(limit: number): Promise<Post[]> {
@@ -83,9 +102,26 @@ export const PostsService = {
     const token = await TokenService.get();
     return api.delete(`/posts/comments/${commentId}`, token ?? undefined);
   },
-  async reportComment(commentId: string, reason: string): Promise<void> {
+  async reportComment(commentId: string, reason: ReportReason): Promise<void> {
     const token = await TokenService.get();
     return api.post(`/posts/comments/${commentId}/report`, { reason }, token ?? undefined);
-  }
-};
+  },
 
+  async getPublishedWorkoutMap(): Promise<Record<string, string>> {
+    const me = await UserService.getMe();
+    const profile = await UserService.getProfile(me.id);
+    const posts = (profile.posts ?? []).slice(0, 50);
+    const entries = await Promise.all(
+      posts.map((post: { id: string }) =>
+        PostsService.getPostById(post.id)
+          .then((detail) => [detail?.workoutId, post.id] as const)
+          .catch(() => [undefined, post.id] as const),
+      ),
+    );
+    const map: Record<string, string> = {};
+    for (const [workoutId, postId] of entries) {
+      if (workoutId) map[workoutId] = postId;
+    }
+    return map;
+  },
+};

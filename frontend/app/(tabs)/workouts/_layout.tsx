@@ -11,6 +11,10 @@ export default function WorkoutsStack() {
     >
       <Stack.Screen name="(list)" />
       <Stack.Screen
+        name="exercise-detail"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
         name="create/workout"
         options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
       />

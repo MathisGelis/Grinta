@@ -1,6 +1,8 @@
 import React from "react";
 import { View } from "react-native";
-import Button from "@/components/ui/Button";
+import { Ionicons } from "@expo/vector-icons";
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutActionButtonsProps {
@@ -23,42 +25,64 @@ export default function WorkoutActionButtons({
   onCancel,
 }: WorkoutActionButtonsProps) {
   const { t } = useTranslation();
+  const saveDisabled = !hasChanges || isSaving;
+
   return (
-    <View className="mb-4 w-full flex-row gap-3">
+    <View className="flex-row items-center gap-2">
       {!isEditing ? (
         <>
-          <Button
-            className="flex-1"
-            icon="pencil"
-            label={t.editLabel}
+          <PressableScale
             onPress={onEdit}
-          />
-          <Button
-            className="flex-1"
-            variant="danger"
-            icon="trash"
-            label={t.delete}
+            accessibilityRole="button"
+            accessibilityLabel={t.editLabel}
+            className="h-10 w-10 items-center justify-center rounded-full bg-raised"
+          >
+            <Ionicons
+              name="create-outline"
+              size={18}
+              color={WorkoutTheme.text.primary}
+            />
+          </PressableScale>
+          <PressableScale
             onPress={onDelete}
-          />
+            accessibilityRole="button"
+            accessibilityLabel={t.delete}
+            className="h-10 w-10 items-center justify-center rounded-full bg-danger-tint"
+          >
+            <Ionicons
+              name="trash-outline"
+              size={18}
+              color={WorkoutTheme.status.danger}
+            />
+          </PressableScale>
         </>
       ) : (
         <>
-          <Button
-            className="flex-1"
-            icon="checkmark"
-            label={t.save}
-            loading={isSaving}
-            disabled={!hasChanges}
-            onPress={onSave}
-          />
-          <Button
-            className="flex-1"
-            variant="secondary"
-            icon="close"
-            label={t.cancel}
-            disabled={isSaving}
-            onPress={onCancel}
-          />
+          <PressableScale
+            onPress={isSaving ? undefined : onCancel}
+            accessibilityRole="button"
+            accessibilityLabel={t.cancel}
+            className={`h-10 w-10 items-center justify-center rounded-full bg-raised ${isSaving ? "opacity-50" : ""}`}
+          >
+            <Ionicons
+              name="close"
+              size={18}
+              color={WorkoutTheme.text.primary}
+            />
+          </PressableScale>
+          <PressableScale
+            onPress={saveDisabled ? undefined : onSave}
+            accessibilityRole="button"
+            accessibilityLabel={t.save}
+            accessibilityState={{ disabled: saveDisabled }}
+            className={`h-10 w-10 items-center justify-center rounded-full bg-accent ${saveDisabled ? "opacity-50" : ""}`}
+          >
+            <Ionicons
+              name="checkmark"
+              size={18}
+              color={WorkoutTheme.text.primary}
+            />
+          </PressableScale>
         </>
       )}
     </View>

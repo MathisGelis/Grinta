@@ -24,7 +24,7 @@ export function DrumRollPicker({
   onSelect,
   unit,
 }: DrumRollPickerProps) {
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
   useEffect(() => {
     setTimeout(() => {

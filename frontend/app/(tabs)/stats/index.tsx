@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, router } from "expo-router";
 import { View, Text, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -13,6 +13,7 @@ import Card from "@/components/ui/Card";
 import Stat from "@/components/ui/Stat";
 import SectionHeader from "@/components/ui/SectionHeader";
 import IconButton from "@/components/ui/IconButton";
+import PressableScale from "@/components/ui/PressableScale";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import StatsCalendar, {
   CalendarView,
@@ -35,7 +36,7 @@ export default function StatsScreen() {
   const [completedWorkouts, setCompletedWorkouts] = useState<
     CompletedWorkout[]
   >([]);
-  const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
+  const [publishedPosts, setPublishedPosts] = useState<Record<string, string>>({});
 
   const shiftPeriod = (direction: -1 | 1) => {
     setAnchor((d) => {
@@ -50,12 +51,14 @@ export default function StatsScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [consistencyData, workoutsData] = await Promise.all([
+      const [consistencyData, workoutsData, published] = await Promise.all([
         StatsService.getConsistency(),
         WorkoutService.getCompleted(),
+        PostsService.getPublishedWorkoutMap().catch(() => ({})),
       ]);
       setConsistency(consistencyData);
       setCompletedWorkouts(workoutsData);
+      setPublishedPosts(published);
     } catch {
     } finally {
       setLoading(false);
@@ -109,7 +112,8 @@ export default function StatsScreen() {
   };
 
   const handlePublishWorkout = (workout: CompletedWorkout) => {
-    const isPublished = publishedIds.has(workout.id);
+    const publishedPostId = publishedPosts[workout.id];
+    const isPublished = !!publishedPostId;
     Alert.alert(
       isPublished ? t.unpublish : t.publish,
       isPublished
@@ -122,14 +126,15 @@ export default function StatsScreen() {
           onPress: async () => {
             try {
               if (isPublished) {
-                setPublishedIds((prev) => {
-                  const next = new Set(prev);
-                  next.delete(workout.id);
+                await PostsService.deletePost(publishedPostId);
+                setPublishedPosts((prev) => {
+                  const next = { ...prev };
+                  delete next[workout.id];
                   return next;
                 });
               } else {
-                await PostsService.createPost(workout.id);
-                setPublishedIds((prev) => new Set(prev).add(workout.id));
+                const { id } = await PostsService.createPost(workout.id);
+                setPublishedPosts((prev) => ({ ...prev, [workout.id]: id }));
               }
             } catch {
               Alert.alert(t.error, t.cannotUpdatePublication);
@@ -165,7 +170,6 @@ export default function StatsScreen() {
       </Text>
 
       <SegmentedControl<"sessions" | "data">
-        variant="glass"
         value={tab}
         onChange={setTab}
         options={[
@@ -239,37 +243,49 @@ export default function StatsScreen() {
                       key={w.id}
                       className="flex-row items-center gap-3 rounded-card bg-surface p-4"
                     >
-                      <View className="h-12 w-12 items-center justify-center rounded-full bg-accent">
-                        <Ionicons
-                          name="checkmark"
-                          size={20}
-                          color={WorkoutTheme.text.primary}
-                        />
-                      </View>
-                      <View className="flex-1">
-                        <Text
-                          className="text-base font-semibold text-ink"
-                          numberOfLines={1}
-                        >
-                          {w.title}
-                        </Text>
-                        <Text className="mt-0.5 text-xs text-ink-muted">
-                          {formatWorkoutDate(w.completionDate)} ·{" "}
-                          {formatDuration(w.totalDurationSeconds)}
-                        </Text>
-                      </View>
+                      <PressableScale
+                        className="flex-1 flex-row items-center gap-3"
+                        accessibilityRole="button"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/(tabs)/stats/workout-detail",
+                            params: { workoutId: w.id },
+                          } as any)
+                        }
+                      >
+                        <View className="h-12 w-12 items-center justify-center rounded-full bg-accent">
+                          <Ionicons
+                            name="checkmark"
+                            size={20}
+                            color={WorkoutTheme.text.primary}
+                          />
+                        </View>
+                        <View className="flex-1">
+                          <Text
+                            className="text-base font-semibold text-ink"
+                            numberOfLines={1}
+                          >
+                            {w.title}
+                          </Text>
+                          <Text className="mt-0.5 text-xs text-ink-muted">
+                            {formatWorkoutDate(w.completionDate)} ·{" "}
+                            {formatDuration(w.totalDurationSeconds)}
+                          </Text>
+                        </View>
+                      </PressableScale>
                       <IconButton
                         icon={
-                          publishedIds.has(w.id)
+                          !!publishedPosts[w.id]
                             ? "cloud-done"
                             : "cloud-upload-outline"
                         }
-                        label={publishedIds.has(w.id) ? t.unpublish : t.publish}
+                        label={!!publishedPosts[w.id] ? t.unpublish : t.publish}
                         onPress={() => handlePublishWorkout(w)}
                         className="opacity-90"
                       />
                       <IconButton
                         icon="trash-outline"
+                        variant="danger"
                         label={t.remove}
                         onPress={() => handleDeleteWorkout(w)}
                       />

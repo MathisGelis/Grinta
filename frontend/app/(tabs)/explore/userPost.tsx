@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { Post } from "@/services/posts.service";
+import { Post, PostsService } from "@/services/posts.service";
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
@@ -33,7 +33,9 @@ export default function UserPostScreen() {
 
     try {
       setLoading(true);
-      const data = JSON.parse(serializedPost) as Post;
+      const fromFeed = JSON.parse(serializedPost) as Post;
+      const detail = await PostsService.getPostById(fromFeed.id).catch(() => null);
+      const data = { ...fromFeed, ...(detail ?? {}) } as Post;
       setPost(data);
 
       if (!data) {

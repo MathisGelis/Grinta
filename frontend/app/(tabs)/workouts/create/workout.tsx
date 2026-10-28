@@ -15,10 +15,13 @@ import ExerciseSection from "@/components/workout/editor/ExerciseSection";
 import WorkoutStats from "@/components/workout/editor/WorkoutStats";
 
 import Button from "@/components/ui/Button";
+import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 export default function CreateWorkoutScreen() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState<string | null>(null);
@@ -105,7 +108,8 @@ export default function CreateWorkoutScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="gap-5 px-5 pb-10"
+        contentContainerClassName="gap-5 px-5"
+        contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
         <WorkoutFormFields
