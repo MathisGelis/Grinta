@@ -7,6 +7,7 @@ import { ConnectionsService } from "@/services/connections.service";
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
+import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 export default function UserProfileScreen() {
@@ -70,13 +71,6 @@ export default function UserProfileScreen() {
     }
   };
 
-  const initials = profile?.displayName
-    ?.split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) ?? "?";
-
   const renderFollowButton = () => {
     if (followStatus === "SELF") return null;
     if (followStatus === "FOLLOWING") {
@@ -123,10 +117,8 @@ export default function UserProfileScreen() {
           contentContainerStyle={{ paddingBottom: 120 }}
         >
           <View className="items-center py-5">
-            <View className="w-[88px] h-[88px] rounded-full p-[3px] bg-accent mb-3">
-              <View className="flex-1 rounded-[44px] bg-accent-tint items-center justify-center">
-                <Text className="text-ink text-[26px] font-bold">{initials}</Text>
-              </View>
+            <View className="mb-3 rounded-full bg-accent p-[3px]">
+              <Avatar uri={profile.avatarUrl} name={profile.displayName} size={88} />
             </View>
             <Text className="text-ink text-xl font-bold mb-0.5">{profile.displayName}</Text>
             <Text className="text-accent text-sm font-medium">@{profile.uniqueName}</Text>

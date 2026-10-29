@@ -6,6 +6,7 @@ import { ConnectionsService, UserListItem } from "@/services/connections.service
 
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
+import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 export default function FollowersScreen() {
@@ -77,11 +78,7 @@ export default function FollowersScreen() {
               className="flex-row items-center bg-surface rounded-tile p-3 mb-2 gap-2.5"
               onPress={() => router.push({ pathname: "/(tabs)/profile/user-profile", params: { userId: u.id } } as any)}
             >
-              <View className="w-10 h-10 rounded-full bg-accent-tint items-center justify-center">
-                <Text className="text-ink text-base font-bold">
-                  {u.displayName?.[0]?.toUpperCase() ?? "?"}
-                </Text>
-              </View>
+              <Avatar uri={u.avatarThumbnailUrl} name={u.displayName} size={40} />
               <View className="flex-1">
                 <Text className="text-ink text-sm font-semibold">{u.displayName}</Text>
                 <Text className="text-ink-muted text-xs mt-[1px]">@{u.uniqueName}</Text>

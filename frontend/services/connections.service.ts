@@ -5,6 +5,7 @@ export interface UserListItem {
   id: string;
   uniqueName: string;
   displayName: string;
+  avatarThumbnailUrl?: string | null;
 }
 
 export interface FollowRequest {
@@ -13,6 +14,7 @@ export interface FollowRequest {
   user_id: string;
   user_displayName: string;
   user_uniqueName: string;
+  user_avatarThumbnailUrl?: string | null;
 }
 
 export const ConnectionsService = {

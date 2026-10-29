@@ -6,6 +6,7 @@ import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme } from "@/constants/Colors";
 import Screen from "@/components/ui/Screen";
+import Avatar from "@/components/ui/Avatar";
 import Stat from "@/components/ui/Stat";
 import Glass from "@/components/ui/Glass";
 import IconButton from "@/components/ui/IconButton";
@@ -62,13 +63,6 @@ export default function ProfileScreen() {
   };
 
   const userName = user?.displayName ?? t.athlete;
-  const initials = userName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
   const joinedDate = user?.createdAt
     ? formatJoinDate(user.createdAt, t.months)
     : "";
@@ -111,10 +105,8 @@ export default function ProfileScreen() {
         ) : (
           <>
             <View className="-mt-4 items-center gap-1">
-              <View className="mb-2 h-24 w-24 items-center justify-center rounded-full bg-accent">
-                <Text className="text-3xl font-semibold text-ink">
-                  {initials}
-                </Text>
+              <View className="mb-2 rounded-full bg-accent p-[3px]">
+                <Avatar uri={user?.avatarUrl} name={userName} size={96} />
               </View>
               <Text className="text-xl font-semibold text-ink">{userName}</Text>
               {user?.uniqueName ? (

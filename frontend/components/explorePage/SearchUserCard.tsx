@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Alert, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { SearchUser } from "@/services/user.service";
 import { ConnectionsService } from "@/services/connections.service";
 
 import { WorkoutTheme } from "@/constants/Colors";
+import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 interface SearchUserCardProps {
@@ -74,15 +75,7 @@ export default function SearchUserCard({ user }: SearchUserCardProps) {
       accessibilityLabel={`${user.displayName} @${user.uniqueName}`}
       className="flex-row items-center gap-3 rounded-card bg-surface p-3 pr-4"
     >
-      <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-accent-tint">
-        {user.image_url ? (
-          <Image source={{ uri: user.image_url }} className="h-full w-full" />
-        ) : (
-          <Text className="text-xl font-semibold text-accent">
-            {user.displayName?.[0]?.toUpperCase() ?? "?"}
-          </Text>
-        )}
-      </View>
+      <Avatar uri={user.avatarThumbnailUrl} name={user.displayName} size={56} />
 
       <View className="flex-1">
         <Text className="text-base font-semibold text-ink" numberOfLines={1}>
