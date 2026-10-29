@@ -1,6 +1,10 @@
 # Changements du backend à intégrer dans l'app
 
-Branche backend : `claude/eloquent-franklin-77c84i`, à merger dans `backend`. Ce document liste tout ce que l'app voit changer : comportements, formats de réponse, nouvelles routes. Le détail technique côté serveur est dans `backend/CHANGELOG.md`, et tous les schémas de requête et de réponse sont dans Swagger (`GET /api` sur l'API).
+Deux livraisons backend :
+- **Sections 1 à 6** : branche `claude/eloquent-franklin-77c84i`, **déjà en production** depuis le 29 octobre.
+- **Section 7** : branche `feat/backend-v3`, **pas encore déployée**. Ses routes répondront `404` tant qu'elle ne l'est pas.
+
+Ce document liste tout ce que l'app voit changer : comportements, formats de réponse, nouvelles routes. Le détail technique côté serveur est dans `backend/CHANGELOG.md`, et tous les schémas de requête et de réponse sont dans Swagger (`GET /api` sur l'API).
 
 Ordre de lecture conseillé :
 
