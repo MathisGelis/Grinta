@@ -1,5 +1,16 @@
 # Changelog backend
 
+## Non publié : données de démonstration
+
+- **`npm run demo:seed`** (`demo:seed:prod` sur la VM) remplit la base avec des comptes fictifs et plusieurs mois d'activité pour une démo : 60 personnes par défaut (`-- --users=N`), abonnements, programmes et séances planifiées, séances terminées avec une progression réaliste, posts, likes, commentaires, partenaires tagués par @, avatars générés, stats par exercice et badges calculés avec les mêmes fonctions que l'API.
+- Compte vitrine : `lucas.moreau`, suivi par la plupart des autres comptes.
+- **Sécurité** :
+  - tous les comptes de démo ont une adresse sur le domaine réservé `grinta-demo.example.com`, ce qui empêche d'écrire sur une vraie boîte mail et permet de les retrouver ;
+  - leur mot de passe commun est lu dans `DEMO_PASSWORD` (8 caractères minimum). Il n'est ni généré ni affiché, donc jamais écrit dans un log ;
+  - le script refuse de tourner si des comptes de démo existent déjà.
+- **`npm run demo:clear`** (`demo:clear:prod`) supprime les comptes de démo et tout ce qui en dépend, ainsi que leurs photos dans le stockage. Il recalcule ensuite les compteurs des vrais posts que ces comptes avaient likés ou commentés. Les vrais comptes ne sont pas modifiés, sauf qu'ils perdent leurs likes, commentaires et abonnements liés aux comptes de démo.
+- Les comptes de démo sont visibles par les vrais utilisateurs (recherche, recommandations, feed top) : lancer `demo:clear` après la présentation.
+
 ## Non publié : photos stockées dans Supabase Storage
 
 - **Les photos (avatars, photos de séance et leurs miniatures) sont stockées dans un bucket public de Supabase Storage**, et non plus sur le disque de la VM. L'API envoie et supprime les fichiers avec la clé de service, qui reste sur le serveur. L'app charge les photos directement depuis le CDN de Supabase.
