@@ -11,7 +11,17 @@ import { Logger } from 'typeorm';
 export class DatabaseLogger implements Logger {
   private readonly logger = new NestLogger('Database');
 
-  constructor(private readonly logEveryQuery: boolean) {}
+  /**
+   * logSchemaBuild: print what TypeORM reports while building the schema,
+   * which includes the progress of `migration:run` (pending migrations, each
+   * one executed). For the migration CLI only: a schema comparison reports
+   * the same way ("new columns added") without changing anything, and would
+   * read as if it had in the API logs.
+   */
+  constructor(
+    private readonly logEveryQuery: boolean,
+    private readonly logSchemaBuildMessages = false,
+  ) {}
 
   logQuery(query: string, parameters?: unknown[]) {
     if (this.logEveryQuery)
@@ -24,7 +34,9 @@ export class DatabaseLogger implements Logger {
 
   logQueryError() {}
 
-  logSchemaBuild() {}
+  logSchemaBuild(message: string) {
+    if (this.logSchemaBuildMessages) this.logger.log(message);
+  }
 
   logMigration(message: string) {
     this.logger.log(message);

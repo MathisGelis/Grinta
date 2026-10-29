@@ -1,5 +1,31 @@
 # Changelog backend
 
+## Non publié : schéma de prod réparé et vérifié à chaque déploiement
+
+**Incident du 29 octobre.** Après le déploiement, l'API renvoyait des 500 : `column User.avatarUrl does not exist`, `stats.pr_reps`, `exercise.description`. Le login était cassé. La table `migrations` de prod indiquait les 10 migrations comme appliquées, mais les colonnes qu'elles ajoutent manquaient. Les trois colonnes de contenu des exercices ont même disparu de nouveau après avoir été restaurées. Rien dans le repo ne lance de migration en arrière ; la cause de ces suppressions n'est pas identifiée. La prod a été réparée à la main avec des `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+
+Correctifs :
+
+- **Migration `RepairSchemaDrift`** : rejoue une fois les changements de schéma de toutes les migrations depuis la baseline. Elles sont toutes idempotentes, donc ce qui existe déjà est laissé tel quel, et les compteurs des posts sont recalculés. Son `down()` ne fait rien : les colonnes appartiennent aux migrations précédentes.
+- **`npm run schema:check:prod`** : compare les entités au schéma réel, en lecture seule.
+  - S'il manque une colonne, une table ou un index utilisé par le code, il les liste et sort en erreur. `deploy.sh` s'arrête alors avant `pm2 restart` et l'ancienne version continue de tourner.
+  - Ce que seule la base contient est signalé sans faire échouer.
+  - Les instructions SQL affichées ne doivent jamais être lancées telles quelles : TypeORM y devine des renommages de colonnes.
+- **Au démarrage, l'API journalise en `ERROR` ce qui manque dans la base.** Une colonne supprimée entre deux déploiements apparaît ainsi dans `pm2 logs` au lieu de 500 sans explication. Ce n'est pas bloquant : une API cassée sur une route vaut mieux qu'une API arrêtée.
+- **`migration:run` affiche enfin sa progression** : migrations déjà en base, en attente, chacune exécutée. Le logger supprimait ces messages, si bien qu'une exécution qui n'appliquait rien ressemblait à une exécution complète. L'API et le contrôle de schéma n'affichent pas ces messages, car une comparaison à blanc y écrit « new columns added » sans rien modifier.
+- **`base-exercises.json` est copié dans `dist/` au build** (asset dans `nest-cli.json`). `node dist/scripts/seed.js`, désormais `npm run seed:prod`, échouait en prod faute de fichier. Le build vide `dist/` à chaque fois (`deleteOutDir`), donc une copie manuelle ne tenait pas.
+
+**Prochain déploiement.** Bash exécute la version de `deploy.sh` qu'il a lue avant le `git pull`, donc le contrôle de schéma ne tournera automatiquement qu'au déploiement suivant. Après le prochain déploiement, lancer une fois `npm run schema:check:prod` sur la VM, qui doit afficher « Schema OK ». Les logs du job montrent maintenant la migration `RepairSchemaDrift` exécutée.
+
+Vérifié sur une copie de l'état de prod : journal complet, six colonnes supprimées, une colonne en trop.
+- Le contrôle échoue (code 1) et liste les six manques.
+- `migration:run:prod` exécute la réparation, avec sa progression affichée.
+- Le contrôle passe ensuite, avec un simple avertissement sur la colonne en trop.
+- Une seconde exécution répond « No migrations are pending ».
+- `seed:prod` trouve son fichier.
+- L'API démarrée sur une base privée de `exercises.description` journalise l'erreur et renvoie 500 sur le détail d'un exercice ; une fois la colonne remise, il y a 200 et aucun log.
+- Sur une base neuve, les 11 migrations passent et le contrôle est propre. Annuler la réparation ne supprime rien.
+
 ## Non publié : données de démonstration
 
 - **`npm run demo:seed`** (`demo:seed:prod` sur la VM) remplit la base avec des comptes fictifs et plusieurs mois d'activité pour une démo : 60 personnes par défaut (`-- --users=N`), abonnements, programmes et séances planifiées, séances terminées avec une progression réaliste, posts, likes, commentaires, partenaires tagués par @, avatars générés, stats par exercice et badges calculés avec les mêmes fonctions que l'API.

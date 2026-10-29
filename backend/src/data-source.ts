@@ -4,6 +4,7 @@ import {
   buildDatabaseOptions,
   ENTITIES_GLOB,
 } from './database/database.config';
+import { DatabaseLogger } from './database/database.logger';
 
 config();
 
@@ -14,4 +15,7 @@ export default new DataSource({
   entities: [ENTITIES_GLOB],
   // The CLI must never reshape the schema behind a migration's back.
   synchronize: false,
+  // Prints which migrations are pending and which ran: without it,
+  // migration:run says nothing, whether it applied ten migrations or none.
+  logger: new DatabaseLogger(process.env.DB_LOGGING === 'true', true),
 });
