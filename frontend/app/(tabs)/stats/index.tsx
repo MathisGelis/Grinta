@@ -1,10 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useFocusEffect, router } from "expo-router";
 import { View, Text, ActivityIndicator, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { mediaUrl } from "@/services/api";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { StatsService, Consistency } from "@/services/stats.service";
-import { WorkoutService, CompletedWorkout } from "@/services/workout.service";
+import { WorkoutService, CompletedWorkout, COMPLETED_PAGE_SIZE } from "@/services/workout.service";
 import { PostsService } from "@/services/posts.service";
 
 import { WorkoutTheme } from "@/constants/Colors";
@@ -37,6 +39,8 @@ export default function StatsScreen() {
     CompletedWorkout[]
   >([]);
   const [publishedPosts, setPublishedPosts] = useState<Record<string, string>>({});
+  const [hasMore, setHasMore] = useState(false);
+  const loadingMore = useRef(false);
 
   const shiftPeriod = (direction: -1 | 1) => {
     setAnchor((d) => {
@@ -53,11 +57,12 @@ export default function StatsScreen() {
     try {
       const [consistencyData, workoutsData, published] = await Promise.all([
         StatsService.getConsistency(),
-        WorkoutService.getCompleted(),
+        WorkoutService.getCompleted({ limit: COMPLETED_PAGE_SIZE }),
         PostsService.getPublishedWorkoutMap().catch(() => ({})),
       ]);
       setConsistency(consistencyData);
       setCompletedWorkouts(workoutsData);
+      setHasMore(workoutsData.length === COMPLETED_PAGE_SIZE);
       setPublishedPosts(published);
     } catch {
     } finally {
@@ -70,6 +75,33 @@ export default function StatsScreen() {
       fetchData();
     }, [fetchData]),
   );
+
+  // Historique paginé : on charge les pages suivantes quand le calendrier remonte avant la plus ancienne séance reçue.
+  const loadMore = useCallback(async () => {
+    if (loadingMore.current || !hasMore || completedWorkouts.length === 0) return;
+    loadingMore.current = true;
+    try {
+      const page = await WorkoutService.getCompleted({
+        limit: COMPLETED_PAGE_SIZE,
+        before: completedWorkouts[completedWorkouts.length - 1].id,
+      });
+      setCompletedWorkouts((prev) => [...prev, ...page]);
+      setHasMore(page.length === COMPLETED_PAGE_SIZE);
+    } catch {
+    } finally {
+      loadingMore.current = false;
+    }
+  }, [hasMore, completedWorkouts]);
+
+  useEffect(() => {
+    if (!hasMore || completedWorkouts.length === 0) return;
+    const oldest = new Date(completedWorkouts[completedWorkouts.length - 1].completionDate);
+    const periodStart =
+      view === "week"
+        ? new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - 7)
+        : new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+    if (oldest > periodStart) void loadMore();
+  }, [anchor, view, hasMore, completedWorkouts, loadMore]);
 
   const currentStreak = consistency?.currentStreakDays ?? 0;
 
@@ -89,7 +121,7 @@ export default function StatsScreen() {
     return sum + Math.round(mins * 7.5);
   }, 0);
 
-  const totalWorkouts = completedWorkouts.length;
+  const totalWorkouts = consistency?.totalWorkouts ?? completedWorkouts.length;
 
   const handleDeleteWorkout = (workout: CompletedWorkout) => {
     Alert.alert(t.delete, `${t.delete} "${workout.title}" ?`, [
@@ -136,8 +168,13 @@ export default function StatsScreen() {
                 const { id } = await PostsService.createPost(workout.id);
                 setPublishedPosts((prev) => ({ ...prev, [workout.id]: id }));
               }
-            } catch {
-              Alert.alert(t.error, t.cannotUpdatePublication);
+            } catch (err) {
+              // Les messages du serveur sont en français (« Ce workout est déjà publié. »).
+              Alert.alert(
+                t.error,
+                err instanceof Error && err.message ? err.message : t.cannotUpdatePublication,
+              );
+              PostsService.getPublishedWorkoutMap().then(setPublishedPosts).catch(() => {});
             }
           },
         },
@@ -223,6 +260,24 @@ export default function StatsScreen() {
                   <Stat value={dayWorkouts.length} label={t.completedLabel} />
                 </Card>
               </View>
+
+              <PressableScale
+                accessibilityRole="button"
+                accessibilityLabel={t.myRecordsTitle}
+                onPress={() => router.push("/(tabs)/stats/records" as any)}
+                className="flex-row items-center gap-4 rounded-card bg-surface p-4"
+              >
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-accent-tint">
+                  <Ionicons name="trophy" size={22} color={WorkoutTheme.accent.purple} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-ink">{t.myRecordsTitle}</Text>
+                  <Text className="mt-0.5 text-xs text-ink-muted">{t.myRecordsHint}</Text>
+                </View>
+                <View className="h-9 w-9 items-center justify-center rounded-full bg-raised">
+                  <MaterialCommunityIcons name="arrow-top-right" size={18} color={WorkoutTheme.text.primary} />
+                </View>
+              </PressableScale>
             </>
           )}
 
@@ -253,13 +308,23 @@ export default function StatsScreen() {
                           } as any)
                         }
                       >
-                        <View className="h-12 w-12 items-center justify-center rounded-full bg-accent">
-                          <Ionicons
-                            name="checkmark"
-                            size={20}
-                            color={WorkoutTheme.text.primary}
+                        {w.photoThumbnailUrl ? (
+                          <Image
+                            source={{ uri: mediaUrl(w.photoThumbnailUrl) }}
+                            cachePolicy="disk"
+                            contentFit="cover"
+                            accessibilityLabel={w.title}
+                            style={{ width: 48, height: 48, borderRadius: 24 }}
                           />
-                        </View>
+                        ) : (
+                          <View className="h-12 w-12 items-center justify-center rounded-full bg-accent">
+                            <Ionicons
+                              name="checkmark"
+                              size={20}
+                              color={WorkoutTheme.text.primary}
+                            />
+                          </View>
+                        )}
                         <View className="flex-1">
                           <Text
                             className="text-base font-semibold text-ink"

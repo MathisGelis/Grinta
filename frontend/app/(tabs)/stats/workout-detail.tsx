@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -26,6 +27,11 @@ import Stat from "@/components/ui/Stat";
 import Button from "@/components/ui/Button";
 import IconButton from "@/components/ui/IconButton";
 import { FormField, TextField } from "@/components/ui/FormField";
+import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
+import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
+import { mediaUrl } from "@/services/api";
+import { PhotoService } from "@/services/photo.service";
+import type { Badge } from "@/services/badges.service";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -53,6 +59,9 @@ export default function CompletedWorkoutDetailScreen() {
   const [draftTitle, setDraftTitle] = useState("");
   const [draftDescription, setDraftDescription] = useState("");
   const [draftExercises, setDraftExercises] = useState<ExerciseSetupData[]>([]);
+  // undefined : photo inchangée, null : photo retirée, chaîne : nouvelle photo locale.
+  const [draftPhoto, setDraftPhoto] = useState<string | null | undefined>(undefined);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
   const [exercisesById, setExercisesById] = useState<Map<string, Exercise>>(
     new Map(),
   );
@@ -98,6 +107,7 @@ export default function CompletedWorkoutDetailScreen() {
         })),
       })),
     );
+    setDraftPhoto(undefined);
     setEditing(true);
   };
 
@@ -128,7 +138,7 @@ export default function CompletedWorkoutDetailScreen() {
           entry.timerSeconds,
         ]),
       );
-      await WorkoutService.updateCompleted(workout.id, {
+      const saved = await WorkoutService.updateCompleted(workout.id, {
         title: draftTitle.trim(),
         description: draftDescription,
         exercises: draftExercises.map((exercise) => {
@@ -140,9 +150,26 @@ export default function CompletedWorkoutDetailScreen() {
           };
         }),
       });
+      let photoError = false;
+      try {
+        if (typeof draftPhoto === "string") {
+          await PhotoService.uploadWorkoutPhoto(workout.id, draftPhoto);
+        } else if (draftPhoto === null && workout.photoUrl) {
+          await PhotoService.removeWorkoutPhoto(workout.id);
+        }
+      } catch {
+        photoError = true;
+      }
       await load();
       setEditing(false);
-      Alert.alert(t.success, t.workoutUpdated);
+      if (saved?.badges && saved.badges.length > 0) {
+        setNewBadges(saved.badges);
+      } else {
+        Alert.alert(
+          photoError ? t.error : t.success,
+          photoError ? t.photoNotSent : t.workoutUpdated,
+        );
+      }
     } catch (err) {
       Alert.alert(
         t.error,
@@ -242,6 +269,10 @@ export default function CompletedWorkoutDetailScreen() {
                     editable={!saving}
                   />
                 </FormField>
+                <WorkoutImagePicker
+                  image={draftPhoto === undefined ? (workout.photoUrl ?? null) : draftPhoto}
+                  onImageChange={setDraftPhoto}
+                />
               </Card>
 
               <Text className="mt-2 text-xl font-semibold text-ink">
@@ -301,6 +332,16 @@ export default function CompletedWorkoutDetailScreen() {
           ) : (
             <>
               <Card size="hero" className="gap-4">
+                {workout.photoUrl ? (
+                  <Image
+                    source={{ uri: mediaUrl(workout.photoUrl) }}
+                    cachePolicy="disk"
+                    contentFit="cover"
+                    transition={150}
+                    accessibilityLabel={workout.title}
+                    style={{ width: "100%", aspectRatio: 4 / 3, borderRadius: 22 }}
+                  />
+                ) : null}
                 <View className="flex-row">
                   <Stat
                     size="md"
@@ -423,6 +464,11 @@ export default function CompletedWorkoutDetailScreen() {
           )}
         </ScrollView>
       )}
+      <NewRecordsSheet
+        badges={newBadges}
+        visible={newBadges.length > 0}
+        onClose={() => setNewBadges([])}
+      />
     </View>
   );
 }

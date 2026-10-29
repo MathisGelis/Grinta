@@ -1,4 +1,5 @@
 import { api } from "./api";
+import type { Badge } from "./badges.service";
 
 export interface CompletedSet {
   reps: number;
@@ -19,12 +20,19 @@ interface CompletedWorkoutRequest {
   exercises: CompletedExercise[];
 }
 
+/** Réponse de `POST` / `PATCH /workouts/completed` : la séance + les records battus. */
+export interface SavedCompletedWorkout {
+  id: string;
+  title: string;
+  badges?: Badge[];
+}
+
 export async function createCompletedWorkout(
   workoutData: CompletedWorkoutRequest,
   token?: string
-) {
+): Promise<SavedCompletedWorkout> {
   try {
-    const response = await api.post<any>(
+    const response = await api.post<SavedCompletedWorkout>(
       "/workouts/completed",
       workoutData,
       token

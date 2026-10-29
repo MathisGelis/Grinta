@@ -41,14 +41,17 @@ import {
 } from "@/services/active-session.service";
 
 import {
-  ExerciseStats,
+  LiveExerciseStats,
   getExerciseStats,
-  updateExerciseStats,
 } from "@/services/exercises.service";
+import type { Badge } from "@/services/badges.service";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import Button from "@/components/ui/Button";
 import PressableScale from "@/components/ui/PressableScale";
 import { FormField, TextField } from "@/components/ui/FormField";
+import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
+import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
+import { PhotoService } from "@/services/photo.service";
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
@@ -68,13 +71,15 @@ export default function ActiveWorkoutScreen() {
   const [completionTitle, setCompletionTitle] = useState("");
   const [completionDescription, setCompletionDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completionPhoto, setCompletionPhoto] = useState<string | null>(null);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
+  const photoFailedRef = useRef(false);
   const [completedExercises, setCompletedExercises] = useState<number[]>([]);
   const setTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const totalTimeRef = useRef(0);
   const [exerciseStats, setExerciseStats] = useState<
-    Record<string, ExerciseStats | null>
+    Record<string, LiveExerciseStats | null>
   >({});
-  const pendingStatsRef = useRef<Record<string, ExerciseStats>>({});
   const sheetTranslateY = useSharedValue(0);
 
   useEffect(() => {
@@ -228,31 +233,6 @@ export default function ActiveWorkoutScreen() {
     };
   }, [currentExerciseId, exerciseStats]);
 
-  const pushExerciseStats = (exerciseId: string, data: ExerciseStats) => {
-    pendingStatsRef.current[exerciseId] = {
-      ...pendingStatsRef.current[exerciseId],
-      ...data,
-    };
-    const payload = pendingStatsRef.current[exerciseId];
-    updateExerciseStats(exerciseId, payload)
-      .then(() => {
-        delete pendingStatsRef.current[exerciseId];
-      })
-      .catch(() => {});
-  };
-
-  const flushPendingStats = async () => {
-    await Promise.all(
-      Object.entries(pendingStatsRef.current).map(([id, data]) =>
-        updateExerciseStats(id, data)
-          .then(() => {
-            delete pendingStatsRef.current[id];
-          })
-          .catch(() => {}),
-      ),
-    );
-  };
-
   const isLastSet = currentSetIndex === (currentExercise?.sets.length || 1) - 1;
 
   const handleCompleteSet = (reps: number, weight: number) => {
@@ -263,16 +243,16 @@ export default function ActiveWorkoutScreen() {
     exState.completedSets.push({ reps, weight });
 
     if (currentExerciseId && (weight > 0 || reps > 0)) {
+      // Affichage uniquement : le serveur recalcule les stats à l'enregistrement de la séance.
       const previous = exerciseStats[currentExerciseId];
-      const update: ExerciseStats = { last_weight: weight, last_reps: reps };
-      if (previous !== undefined && weight > (previous?.PR ?? 0)) {
-        update.PR = weight;
+      const update: LiveExerciseStats = { lastWeight: weight, lastReps: reps };
+      if (previous !== undefined && weight > (previous?.prWeight ?? 0)) {
+        update.prWeight = weight;
       }
       setExerciseStats((prev) => ({
         ...prev,
         [currentExerciseId]: { ...prev[currentExerciseId], ...update },
       }));
-      pushExerciseStats(currentExerciseId, update);
     }
 
     const restTime = exState.restTimeSeconds || 90;
@@ -492,15 +472,32 @@ export default function ActiveWorkoutScreen() {
         exercises: completedData,
       };
 
-      await createCompletedWorkout(request, token || undefined);
-      await flushPendingStats();
+      const saved = await createCompletedWorkout(request, token || undefined);
+
+      // La séance est déjà enregistrée : un échec d'envoi de photo ne doit pas la faire perdre.
+      let photoError: string | null = null;
+      if (completionPhoto) {
+        try {
+          await PhotoService.uploadWorkoutPhoto(saved.id, completionPhoto);
+        } catch (err) {
+          photoError = err instanceof Error ? err.message : t.cannotUploadPhoto;
+        }
+      }
       await clearActiveSession();
-      Alert.alert(t.success, t.workoutSavedSuccess, [
-        {
-          text: "OK",
-          onPress: () => router.replace("/(tabs)/stats"),
-        },
-      ]);
+
+      const goToStats = () => router.replace("/(tabs)/stats");
+      const records = saved.badges ?? [];
+      setShowCompletionModal(false);
+      if (records.length > 0) {
+        photoFailedRef.current = !!photoError;
+        setNewBadges(records);
+      } else {
+        Alert.alert(
+          t.success,
+          photoError ? `${t.workoutSavedSuccess}\n${t.photoNotSent}` : t.workoutSavedSuccess,
+          [{ text: "OK", onPress: goToStats }],
+        );
+      }
     } catch (error) {
       console.error("Erreur:", error);
       Alert.alert(t.error, t.cannotSaveWorkout);
@@ -662,6 +659,11 @@ export default function ActiveWorkoutScreen() {
                   />
                 </FormField>
 
+                <WorkoutImagePicker
+                  image={completionPhoto}
+                  onImageChange={setCompletionPhoto}
+                />
+
                 <View className="gap-3">
                   <View className="flex-row items-center gap-3">
                     <View className="flex-1">
@@ -697,6 +699,15 @@ export default function ActiveWorkoutScreen() {
           </Animated.View>
         </GestureHandlerRootView>
       </Modal>
+      <NewRecordsSheet
+        badges={newBadges}
+        visible={newBadges.length > 0}
+        onClose={() => {
+          setNewBadges([]);
+          if (photoFailedRef.current) Alert.alert(t.error, t.photoNotSent);
+          router.replace("/(tabs)/stats");
+        }}
+      />
     </SafeAreaView>
   );
 }
