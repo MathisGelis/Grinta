@@ -485,6 +485,8 @@ Règles :
 | `POST /groups/invitations/:invitationId/accept` | accepter | détail du groupe |
 | `DELETE /groups/invitations/:invitationId` | refuser | `{ declined: true }` |
 | `DELETE /groups/:id/members/me` | partir | `{ left: true }` |
+| `POST /groups/:id/shares` `{ postId }` | envoyer un post dans le groupe | `{ id, postId, createdAt }` |
+| `DELETE /groups/:id/shares/:shareId` | retirer un post que j'ai envoyé | `{ deleted: true }` |
 | `GET /groups/:id/activity?limit=20&before=...` | fil du groupe | voir ci-dessous |
 
 Erreurs à l'invitation :
@@ -492,18 +494,35 @@ Erreurs à l'invitation :
 - `404` : pseudo inconnu ;
 - `409` : déjà membre, déjà invité, ou groupe complet.
 
-**Fil du groupe** : un événement par séance qu'un membre a **publiée après être entré dans le groupe**, de la plus récente à la plus ancienne. Les séances non publiées n'apparaissent jamais.
+**Envoyer un post dans le groupe** : n'importe quel membre peut envoyer un post, d'une autre personne ou le sien, à condition de pouvoir le voir (même règle que `GET /posts/:postId`).
+- Un même post n'est envoyé qu'une fois par groupe : `409` la deuxième fois.
+- `404` pour un post invisible ou inexistant, ou si je ne suis pas membre. `400` (`Identifiant invalide`) pour un `postId` mal formé.
+- **Confidentialité** : le post envoyé n'apparaît dans le fil du groupe que pour les membres qui ont le droit de le voir. Le post d'un compte privé n'est visible que des membres qui suivent ce compte.
+- Seule la personne qui l'a envoyé peut le retirer. Il disparaît aussi si le post est supprimé, ou si cette personne quitte le groupe.
+- Bouton à prévoir sur un post : « Envoyer dans un groupe », avec le choix parmi `GET /groups`.
+
+**Fil du groupe** : deux sortes d'événements, de la plus récente à la plus ancienne, distinguées par `type`.
+- `workout` : une séance qu'un membre a **publiée après être entré dans le groupe**, avec ses records. Les séances non publiées n'apparaissent jamais.
+- `share` : un post qu'un membre a envoyé dans le groupe. `user` est la personne qui l'a envoyé, `author` l'auteur du post.
 
 ```json
 [{
+  "type": "workout",
   "postId": "uuid", "at": "2026-10-29T18:05:00.000Z",
   "user": { "id": "uuid", "uniqueName": "paul.martin", "displayName": "Paul Martin", "avatarThumbnailUrl": null },
   "workout": { "id": "uuid", "title": "Push" },
   "records": [{ "exercise": { "id": "uuid", "name": "Bench Press (Barbell)" }, "type": "heaviest_weight", "value": 100, "unit": "kg" }]
+}, {
+  "type": "share",
+  "shareId": "uuid", "postId": "uuid", "at": "2026-10-29T17:40:00.000Z",
+  "user": { "id": "uuid", "uniqueName": "julie.roux", "...": "..." },
+  "author": { "id": "uuid", "uniqueName": "hugo.blanc", "...": "..." },
+  "workout": { "id": "uuid", "title": "Leg day" }
 }]
 ```
 
-- L'app affiche « Paul s'est entraîné » pour l'événement, et « Paul a battu son record de … » pour chaque `records[]`.
+- `workout` : l'app affiche « Paul s'est entraîné », et « Paul a battu son record de … » pour chaque `records[]`.
+- `share` : l'app affiche « Julie a partagé la séance de Hugo », qui ouvre le post (`postId`).
 - Page suivante : `before` = le `at` du dernier événement reçu.
 - Il n'y a pas de notification push : l'app consulte le fil.
 
@@ -523,5 +542,6 @@ Données disponibles :
 - [ ] Traduire les clés de `realLifeComparison` (7.4) et l'afficher sur le résumé de séance et sur les badges de charge et de volume.
 - [ ] Écran d'un exercice : bouton « Comparer avec… » parmi les personnes suivies (gérer `403`).
 - [ ] « Dupliquer » sur un post et sur mes séances terminées, puis ouvrir la séance planifiée créée.
-- [ ] Groupes : liste, création, invitations (reçues et envoyées), fil d'activité, départ, suppression par le créateur.
+- [ ] Groupes : liste, création, invitations (reçues et envoyées), fil d'activité (`type` `workout` et `share`), départ, suppression par le créateur.
+- [ ] « Envoyer dans un groupe » sur un post (gérer `409` déjà partagé), et « Retirer » sur mes partages dans le fil.
 - [ ] Cards de partage (7.8).

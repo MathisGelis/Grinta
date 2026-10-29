@@ -15,6 +15,7 @@ import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { GroupActivityQueryDto } from './dto/group-activity-query.dto';
 import { GroupNameDto } from './dto/group-name.dto';
 import { InviteToGroupDto } from './dto/invite-to-group.dto';
+import { ShareToGroupDto } from './dto/share-to-group.dto';
 import { GroupsService } from './groups.service';
 
 const GROUP_DETAIL =
@@ -147,16 +148,49 @@ export class GroupsController {
     return this.groupsService.leave(req.user.id, id);
   }
 
+  @Post(':id/shares')
+  @ApiOperation({
+    summary: "Send a post to the group, someone else's or my own",
+    description:
+      'Any member, for any post they can see (same rule as GET /posts/:postId). Once per post and group. It appears in the group feed only to the members allowed to see the post.',
+  })
+  @ApiResponse({ status: 201, description: '{ id, postId, createdAt }' })
+  @ApiResponse({ status: 400, description: 'Identifiant invalide' })
+  @ApiResponse({
+    status: 404,
+    description: 'Not a member, or post not found / not visible',
+  })
+  @ApiResponse({ status: 409, description: 'Already shared in this group' })
+  share(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() dto: ShareToGroupDto,
+  ) {
+    return this.groupsService.share(req.user.id, id, dto.postId);
+  }
+
+  @Delete(':id/shares/:shareId')
+  @ApiOperation({ summary: 'Take back a post I sent to the group' })
+  @ApiResponse({ status: 200, description: '{ deleted: true }' })
+  @ApiResponse({ status: 404, description: 'Not a share of mine' })
+  unshare(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('shareId') shareId: string,
+  ) {
+    return this.groupsService.unshare(req.user.id, id, shareId);
+  }
+
   @Get(':id/activity')
   @ApiOperation({
-    summary: 'Group feed: workouts members published, with their records',
+    summary: 'Group feed: published workouts and shared posts',
     description:
-      'One event per workout a member published (posted) after joining the group, most recent first, with the personal records that workout set. Unpublished workouts never appear. Next page: `before` = `at` of the last event.',
+      'Most recent first. `type: "workout"`: a workout a member published after joining the group, with the personal records it set; unpublished workouts never appear. `type: "share"`: a post a member sent to the group, only listed for members allowed to see that post. Next page: `before` = `at` of the last event.',
   })
   @ApiResponse({
     status: 200,
     description:
-      '[{ postId, at, user: { id, uniqueName, displayName, avatarThumbnailUrl }, workout: { id, title }, records: [{ exercise: { id, name }, type, value, unit }] }]',
+      '[{ type: "workout", postId, at, user, workout: { id, title }, records: [{ exercise: { id, name }, type, value, unit }] } | { type: "share", shareId, postId, at, user (who shared), author (of the post), workout: { id, title } }], user and author being { id, uniqueName, displayName, avatarThumbnailUrl }',
   })
   @ApiResponse({ status: 404, description: 'Not a member of this group' })
   activity(

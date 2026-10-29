@@ -13,9 +13,10 @@
   - 20 membres au plus, invitations en attente comprises, sous verrou de ligne pour qu'aucune course ne dépasse la limite ;
   - tout membre peut renommer et inviter, seul le créateur supprime ;
   - si le créateur part, le membre le plus ancien prend sa place, et le dernier à partir supprime le groupe ;
-  - fil d'activité : séances publiées par les membres depuis leur arrivée, avec les records qu'elles ont battus ;
+  - fil d'activité : séances publiées par les membres depuis leur arrivée, avec les records qu'elles ont battus (`type: "workout"`) ;
+  - envoi d'un post dans le groupe (`POST /groups/:id/shares`, migration réversible `AddGroupShares`) : tout membre, pour tout post qu'il peut voir, une fois par post et par groupe. Dans le fil (`type: "share"`), un post envoyé n'est montré qu'aux membres autorisés à voir ce post, si bien que le post d'un compte privé reste réservé à ses abonnés. Seul l'expéditeur peut le retirer. L'envoi disparaît avec le post, ou quand l'expéditeur quitte le groupe ;
   - un non-membre reçoit 404.
-- Vérifié sur une base de démo (61 comptes, 2 772 séances) : 57 contrôles HTTP de bout en bout. Ils couvrent les cas d'erreur, les limites de taille et la passation du créateur. Le contrôle de schéma confirme que la migration correspond aux entités, et le revert de la migration a aussi été testé.
+- Vérifié sur une base de démo (61 comptes, 2 772 séances) : 57 contrôles HTTP de bout en bout, plus 18 pour l'envoi de posts dans un groupe. Ils couvrent les cas d'erreur, les limites de taille et la passation du créateur. Le contrôle de schéma confirme que la migration correspond aux entités, et le revert de la migration a aussi été testé.
 
 ## Non publié : schéma de prod réparé et vérifié à chaque déploiement
 

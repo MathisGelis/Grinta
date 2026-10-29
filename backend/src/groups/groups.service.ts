@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { BADGE_UNIT, BadgeType } from '../badges/enums/badge-type.enum';
+import { PostsService } from '../posts/posts.service';
 import { GroupInvitation } from './entities/group-invitation.entity';
 import { GroupMember } from './entities/group-member.entity';
 import { Group, GROUP_MAX_MEMBERS } from './entities/group.entity';
@@ -20,6 +21,13 @@ const userCard = (alias: string) => `
   ${alias}."uniqueName" AS "uniqueName",
   ${alias}."displayName" AS "displayName",
   COALESCE(${alias}."avatarThumbnailUrl", ${alias}."avatarUrl") AS "avatarThumbnailUrl"`;
+
+// The same card, as one JSON object, for rows that hold two users.
+const userCardJson = (alias: string) => `json_build_object(
+  'id', ${alias}.id,
+  'uniqueName', ${alias}."uniqueName",
+  'displayName', ${alias}."displayName",
+  'avatarThumbnailUrl', COALESCE(${alias}."avatarThumbnailUrl", ${alias}."avatarUrl"))`;
 
 type UserCard = {
   id: string;
@@ -41,6 +49,7 @@ export class GroupsService {
   constructor(
     @InjectRepository(Group)
     private readonly groupRepository: Repository<Group>,
+    private readonly posts: PostsService,
   ) {}
 
   private get manager() {
@@ -298,9 +307,48 @@ export class GroupsService {
   }
 
   /**
-   * The group feed: one event per workout a member published since joining,
-   * most recent first, with the personal records it set. Pages go back in
-   * time with `before`, the `at` of the last event received.
+   * Sends a post to the group: someone else's or one's own, any post the
+   * member can see. A post is sent once per group.
+   */
+  async share(userId: string, groupId: string, postId: string) {
+    await this.assertMember(this.manager, userId, groupId);
+    await this.posts.visibleWorkoutOf(userId, postId);
+    const [share] = await this.manager.query<
+      Array<{ id: string; createdAt: Date }>
+    >(
+      `INSERT INTO group_shares ("groupId", "postId", "sharerId")
+       VALUES ($1, $2, $3)
+       ON CONFLICT ("groupId", "postId") DO NOTHING
+       RETURNING id, "createdAt"`,
+      [groupId, postId, userId],
+    );
+
+    if (!share)
+      throw new ConflictException('Ce post est déjà partagé dans ce groupe.');
+    return { id: share.id, postId, createdAt: share.createdAt };
+  }
+
+  /** Takes back a post one sent to the group. */
+  async unshare(userId: string, groupId: string, shareId: string) {
+    await this.assertMember(this.manager, userId, groupId);
+    const [deleted] = await this.manager.query<unknown[][]>(
+      `DELETE FROM group_shares
+        WHERE id = $1 AND "groupId" = $2 AND "sharerId" = $3 RETURNING id`,
+      [shareId, groupId, userId],
+    );
+
+    if (!deleted.length) throw new NotFoundException('Share not found');
+    return { deleted: true };
+  }
+
+  /**
+   * The group feed, most recent first. Two kinds of events:
+   * - `workout`: a workout a member published since joining, with the
+   *   personal records it set;
+   * - `share`: a post a member sent to the group, shown only to the members
+   *   allowed to see that post (public author, or followed, or their own).
+   * Events of people who left the group are no longer shown. Pages go back
+   * in time with `before`, the `at` of the last event received.
    */
   async activity(
     userId: string,
@@ -308,6 +356,22 @@ export class GroupsService {
     query: { limit?: number; before?: Date },
   ) {
     await this.assertMember(this.manager, userId, groupId);
+    const limit = query.limit ?? DEFAULT_ACTIVITY_LIMIT;
+    const [workouts, shares] = await Promise.all([
+      this.workoutEvents(groupId, query.before, limit),
+      this.shareEvents(userId, groupId, query.before, limit),
+    ]);
+
+    return [...workouts, ...shares]
+      .sort((a, b) => +b.at - +a.at)
+      .slice(0, limit);
+  }
+
+  private async workoutEvents(
+    groupId: string,
+    before: Date | undefined,
+    limit: number,
+  ) {
     const posts = await this.manager.query<
       Array<
         UserCard & {
@@ -328,7 +392,7 @@ export class GroupsService {
           AND ($2::timestamp IS NULL OR p."createdAt" < $2)
         ORDER BY p."createdAt" DESC, p.id
         LIMIT $3`,
-      [groupId, query.before ?? null, query.limit ?? DEFAULT_ACTIVITY_LIMIT],
+      [groupId, before ?? null, limit],
     );
     const records = posts.length
       ? await this.manager.query<
@@ -350,6 +414,7 @@ export class GroupsService {
       : [];
 
     return posts.map((p) => ({
+      type: 'workout' as const,
       postId: p.postId,
       at: p.at,
       user: {
@@ -367,6 +432,57 @@ export class GroupsService {
           value: r.value,
           unit: BADGE_UNIT[r.type],
         })),
+    }));
+  }
+
+  private async shareEvents(
+    viewerId: string,
+    groupId: string,
+    before: Date | undefined,
+    limit: number,
+  ) {
+    const shares = await this.manager.query<
+      Array<{
+        shareId: string;
+        at: Date;
+        postId: string;
+        workoutId: string;
+        workoutTitle: string;
+        user: UserCard;
+        author: UserCard;
+      }>
+    >(
+      `SELECT s.id AS "shareId", s."createdAt" AS at, p.id AS "postId",
+              w.id AS "workoutId", w.title AS "workoutTitle",
+              ${userCardJson('su')} AS "user", ${userCardJson('au')} AS author
+         FROM group_shares s
+         JOIN group_members gm
+           ON gm."groupId" = s."groupId" AND gm."userId" = s."sharerId"
+         JOIN posts p ON p.id = s."postId"
+         JOIN completed_workouts w ON w.id = p."workoutId"
+         JOIN users su ON su.id = s."sharerId"
+         JOIN users au ON au.id = p."userId"
+        WHERE s."groupId" = $1
+          AND ($2::timestamp IS NULL OR s."createdAt" < $2)
+          AND (
+            au.id = $4
+            OR au."isPublic" = true
+            OR EXISTS (SELECT 1 FROM connections c
+                        WHERE c."followingId" = au.id AND c."followerId" = $4)
+          )
+        ORDER BY s."createdAt" DESC, s.id
+        LIMIT $3`,
+      [groupId, before ?? null, limit, viewerId],
+    );
+
+    return shares.map((s) => ({
+      type: 'share' as const,
+      shareId: s.shareId,
+      postId: s.postId,
+      at: s.at,
+      user: s.user,
+      author: s.author,
+      workout: { id: s.workoutId, title: s.workoutTitle },
     }));
   }
 
