@@ -43,7 +43,7 @@ export default function ExploreScreen() {
         return {
           ...item,
           isLiked: nextLiked,
-          likesCount: String(Math.max(0, currentLikes + (nextLiked ? 1 : -1))),
+          likesCount: Math.max(0, currentLikes + (nextLiked ? 1 : -1)),
         };
       }),
     );
@@ -60,9 +60,7 @@ export default function ExploreScreen() {
           return {
             ...item,
             isLiked: revertedLiked,
-            likesCount: String(
-              Math.max(0, currentLikes + (revertedLiked ? 1 : -1)),
-            ),
+            likesCount: Math.max(0, currentLikes + (revertedLiked ? 1 : -1)),
           };
         }),
       );

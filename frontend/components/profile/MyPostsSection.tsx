@@ -4,18 +4,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Post, PostsService } from "@/services/posts.service";
+import type { ProfilePost } from "@/services/user.service";
 import PressableScale from "@/components/ui/PressableScale";
 import PostCard from "@/components/explorePage/PostCard";
 
-export type MyPost = {
-  id: string;
-  createdAt: string;
-  likesCount?: string | number;
-  commentsCount?: string | number;
-};
-
 type Props = {
-  posts: MyPost[];
+  posts: ProfilePost[];
   authorName: string;
   authorId?: string;
   onDeleted: (postId: string) => void;
@@ -60,13 +54,16 @@ export default function MyPostsSection({
     [t, onDeleted],
   );
 
-  const toPost = (post: MyPost): Post => ({
+  const toPost = (post: ProfilePost): Post => ({
     id: post.id,
     createdAt: post.createdAt,
     displayName: authorName,
     userId: authorId,
-    likesCount: String(Number(post.likesCount ?? 0)),
-    commentsCount: String(Number(post.commentsCount ?? 0)),
+    likesCount: post.likesCount ?? 0,
+    commentsCount: post.commentsCount ?? 0,
+    isLiked: post.isLiked,
+    workoutPhotoThumbnailUrl: post.workoutPhotoThumbnailUrl,
+    partners: post.partners,
   });
 
   return (

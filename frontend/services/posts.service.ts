@@ -1,27 +1,47 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
-import { UserService } from "./user.service";
+import { type PostPartner } from "./user.service";
+
+export type { PostPartner };
 
 export interface Post {
   id: string,
   createdAt: string,
   userId?: string,
   displayName: string,
-  likesCount?: string,
-  commentsCount?: string,
-  score?: string,
+  uniqueName?: string,
+  avatarThumbnailUrl?: string | null,
+  likesCount?: number,
+  commentsCount?: number,
+  score?: number,
   isLiked?: boolean,
   workoutId?: string,
   workoutTitle?: string,
   workoutDescription?: string,
   workoutDurationSeconds?: number,
   workoutCompletionDate?: string,
+  workoutPhotoUrl?: string | null,
+  workoutPhotoThumbnailUrl?: string | null,
+  partners?: PostPartner[],
   workout?: {
     id?: string,
     title?: string,
     description?: string,
     totalExercises?: number,
   },
+}
+
+export interface MyPost {
+  id: string,
+  createdAt: string,
+  workoutId: string,
+  workoutTitle?: string,
+  workoutCompletionDate?: string,
+  workoutPhotoUrl?: string | null,
+  workoutPhotoThumbnailUrl?: string | null,
+  likesCount?: number,
+  commentsCount?: number,
+  partners?: PostPartner[],
 }
 
 export type ReportReason =
@@ -35,13 +55,35 @@ interface PostLike {
   id: string;
   displayName: string;
   uniqueName: string;
+  avatarThumbnailUrl?: string | null;
   createdAt: string;
 }
 
+export interface PostComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  userId: string;
+  displayName: string;
+  avatarThumbnailUrl?: string | null;
+}
+
 export const PostsService = {
-  async createPost(workoutId: string): Promise<{ id: string }> {
+  async createPost(workoutId: string): Promise<{ id: string; partners?: PostPartner[] }> {
     const token = await TokenService.get();
-    return api.post<{ id: string }>("/posts", { workoutId }, token ?? undefined);
+    return api.post<{ id: string; partners?: PostPartner[] }>("/posts", { workoutId }, token ?? undefined);
+  },
+
+  /** Posts de l'utilisateur connecté, avec l'id de la séance publiée. */
+  async getMyPosts(limit = 100): Promise<MyPost[]> {
+    const token = await TokenService.get();
+    return api.get<MyPost[]>(`/posts/mine?limit=${limit}`, token ?? undefined);
+  },
+
+  /** L'utilisateur connecté se retire des partenaires d'un post (définitif). */
+  async declinePartner(postId: string): Promise<{ declined: boolean }> {
+    const token = await TokenService.get();
+    return api.delete<{ declined: boolean }>(`/posts/${postId}/partners/me`, token ?? undefined);
   },
 
   async deletePost(postId: string): Promise<void> {
@@ -86,7 +128,7 @@ export const PostsService = {
     const token = await TokenService.get();
     return api.get(`/posts/${postId}/likes`, token ?? undefined);
   },
-  async getPostComments(postId: string): Promise<any[]> {
+  async getPostComments(postId: string): Promise<PostComment[]> {
     const token = await TokenService.get();
     return api.get(`/posts/${postId}/comments`, token ?? undefined);
   },
@@ -108,19 +150,10 @@ export const PostsService = {
   },
 
   async getPublishedWorkoutMap(): Promise<Record<string, string>> {
-    const me = await UserService.getMe();
-    const profile = await UserService.getProfile(me.id);
-    const posts = (profile.posts ?? []).slice(0, 50);
-    const entries = await Promise.all(
-      posts.map((post: { id: string }) =>
-        PostsService.getPostById(post.id)
-          .then((detail) => [detail?.workoutId, post.id] as const)
-          .catch(() => [undefined, post.id] as const),
-      ),
-    );
+    const posts = await PostsService.getMyPosts();
     const map: Record<string, string> = {};
-    for (const [workoutId, postId] of entries) {
-      if (workoutId) map[workoutId] = postId;
+    for (const post of posts) {
+      if (post.workoutId) map[post.workoutId] = post.id;
     }
     return map;
   },

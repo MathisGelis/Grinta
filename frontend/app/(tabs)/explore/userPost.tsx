@@ -6,6 +6,11 @@ import { Post, PostsService } from "@/services/posts.service";
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
+import { Image } from "expo-image";
+import { mediaUrl } from "@/services/api";
+import Avatar from "@/components/ui/Avatar";
+import MentionText from "@/components/explorePage/MentionText";
+import PostPartners from "@/components/explorePage/PostPartners";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
@@ -24,6 +29,7 @@ export default function UserPostScreen() {
     durationSeconds?: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [declinedBy, setDeclinedBy] = useState<string | null>(null);
 
   const fetchPost = useCallback(async () => {
     if (!serializedPost) {
@@ -75,6 +81,9 @@ export default function UserPostScreen() {
     );
   }
 
+  const partners = post?.partners?.filter((p) => p.id !== declinedBy);
+  const photo = mediaUrl(post?.workoutPhotoUrl ?? post?.workoutPhotoThumbnailUrl);
+
   if (!post) {
     return (
       <View className="flex-1 items-center justify-center px-5">
@@ -91,6 +100,7 @@ export default function UserPostScreen() {
 
   return (
     <View className="flex-1">
+      <ScreenBackground />
       <View className="flex-row items-center justify-between px-4 pt-16 pb-4">
         <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
           <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
@@ -103,13 +113,19 @@ export default function UserPostScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
       >
-        <View className="bg-surface rounded-tile p-[18px] border border-raised">
+        <View className="bg-surface rounded-card p-[18px]">
+          {photo ? (
+            <Image
+              source={{ uri: photo }}
+              cachePolicy="disk"
+              contentFit="cover"
+              transition={150}
+              accessibilityLabel={workoutPreview?.title}
+              style={{ width: "100%", aspectRatio: 4 / 3, borderRadius: 22, marginBottom: 18 }}
+            />
+          ) : null}
           <View className="flex-row items-center mb-[18px]">
-            <View className="w-12 h-12 rounded-card bg-accent-tint items-center justify-center mr-3">
-              <Text className="text-ink text-lg font-bold">
-                {post.displayName?.[0]?.toUpperCase() ?? "?"}
-              </Text>
-            </View>
+            <Avatar uri={post.avatarThumbnailUrl} name={post.displayName} size={48} className="mr-3" />
 
             <View className="flex-1">
               <Text className="text-ink text-lg font-bold">{post.displayName}</Text>
@@ -130,6 +146,13 @@ export default function UserPostScreen() {
             </Text>
           </View>
 
+          <PostPartners
+            postId={post.id}
+            partners={partners}
+            onDeclined={setDeclinedBy}
+            className="mb-[18px]"
+          />
+
           {workoutPreview ? (
             <View className="mt-2">
               <Text className="text-ink-soft text-xs font-semibold mb-2.5 uppercase">{t.linkedWorkout}</Text>
@@ -138,14 +161,17 @@ export default function UserPostScreen() {
                   <Ionicons name="checkmark-circle" size={26} color={WorkoutTheme.status.success} />
                 </View>
                 <View className="flex-1">
-      <ScreenBackground />
-                  <Text className="text-ink text-base font-bold">
-                    {workoutPreview.title}
-                  </Text>
+                  <MentionText
+                    className="text-ink text-base font-bold"
+                    text={workoutPreview.title}
+                    partners={partners}
+                  />
                   {!!workoutPreview.description && (
-                    <Text className="text-ink-soft text-[13px] mt-1">
-                      {workoutPreview.description}
-                    </Text>
+                    <MentionText
+                      className="text-ink-soft text-[13px] mt-1"
+                      text={workoutPreview.description}
+                      partners={partners}
+                    />
                   )}
                   {workoutPreview.durationSeconds !== undefined && (
                     <Text className="text-ink-muted text-xs mt-1.5">

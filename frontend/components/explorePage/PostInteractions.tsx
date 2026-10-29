@@ -12,9 +12,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { PostsService, ReportReason } from "@/services/posts.service";
+import { isNotFound } from "@/services/api";
 import Modal from "@/components/ui/AppModal";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { WorkoutTheme } from "@/constants/Colors";
+import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import Button from "@/components/ui/Button";
 import IconButton from "@/components/ui/IconButton";
@@ -228,15 +230,20 @@ export function usePostInteractions(
             .then((post) => setPostOwnerId(post?.userId ?? null))
             .catch(() => {});
         }
-      } catch {
+      } catch (error) {
         setPostModalData([]);
+        // Post d'un compte privé (ou supprimé) : le serveur répond 404.
+        if (isNotFound(error)) {
+          closePostModal();
+          Alert.alert(t.error, t.postUnavailable);
+        }
       } finally {
         setPostModalLoading(false);
       }
     };
 
     fetchPostModalData();
-  }, [postModalVisible, postModalType, postModalPostId]);
+  }, [postModalVisible, postModalType, postModalPostId, closePostModal, t]);
 
 
   const openLikes = useCallback(
@@ -306,11 +313,11 @@ export function usePostInteractions(
                         });
                       }}
                     >
-                      <View className="h-11 w-11 items-center justify-center rounded-full bg-accent-tint">
-                        <Text className="text-base font-semibold text-ink">
-                          {(like.displayName ?? t.userLabel)[0]?.toUpperCase()}
-                        </Text>
-                      </View>
+                      <Avatar
+                        uri={like.avatarThumbnailUrl}
+                        name={like.displayName ?? t.userLabel}
+                        size={44}
+                      />
                       <View className="flex-1">
                         <Text className="text-base font-semibold text-ink" numberOfLines={1}>
                           {like.displayName ?? t.userLabel}
@@ -371,11 +378,7 @@ export function usePostInteractions(
                           className="gap-3 rounded-tile bg-raised p-4"
                         >
                           <View className="flex-row items-center gap-3">
-                            <View className="h-9 w-9 items-center justify-center rounded-full bg-accent-tint">
-                              <Text className="text-sm font-semibold text-ink">
-                                {author[0]?.toUpperCase()}
-                              </Text>
-                            </View>
+                            <Avatar uri={comment.avatarThumbnailUrl} name={author} size={36} />
                             <Text className="flex-1 text-sm font-semibold text-ink" numberOfLines={1}>
                               {author}
                             </Text>

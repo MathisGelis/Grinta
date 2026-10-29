@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { WorkoutTheme } from "@/constants/Colors";
+import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LOCALES } from "@/i18n/labels";
 import { Post, PostsService } from "@/services/posts.service";
+import { mediaUrl } from "@/services/api";
+import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import Stat from "@/components/ui/Stat";
+import MentionText from "@/components/explorePage/MentionText";
+import PostPartners from "@/components/explorePage/PostPartners";
 
 type Props = {
   post: Post;
@@ -38,6 +44,7 @@ export default function PostCard({
   const [pageWidth, setPageWidth] = useState(0);
   const [page, setPage] = useState(0);
   const [detail, setDetail] = useState<Post | undefined>(details.get(post.id));
+  const [declinedBy, setDeclinedBy] = useState<string | null>(null);
 
   useEffect(() => {
     if (details.has(post.id)) return;
@@ -59,6 +66,8 @@ export default function PostCard({
   const description = detail?.workoutDescription ?? detail?.workout?.description;
   const duration = detail?.workoutDurationSeconds;
   const totalExercises = detail?.workout?.totalExercises;
+  const photo = mediaUrl(detail?.workoutPhotoThumbnailUrl ?? post.workoutPhotoThumbnailUrl);
+  const partners = (detail?.partners ?? post.partners)?.filter((p) => p.id !== declinedBy);
 
   return (
     <View className="w-full gap-3 rounded-card bg-surface p-4">
@@ -74,11 +83,11 @@ export default function PostCard({
           } as any)
         }
       >
-        <View className="h-9 w-9 items-center justify-center rounded-full bg-accent-tint">
-          <Text className="text-sm font-bold text-ink">
-            {post.displayName?.[0]?.toUpperCase() ?? "?"}
-          </Text>
-        </View>
+        <Avatar
+          uri={post.avatarThumbnailUrl ?? detail?.avatarThumbnailUrl}
+          name={post.displayName}
+          size={36}
+        />
         <View className="flex-1">
           <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
             {post.displayName}
@@ -114,13 +123,37 @@ export default function PostCard({
             <PressableScale
               halo={false}
               onPress={onPress}
-              className="items-center justify-center gap-2 rounded-tile bg-accent-tint px-4"
+              className="overflow-hidden rounded-tile bg-accent-tint"
               style={{ width: pageWidth, height: PAGE_HEIGHT }}
             >
-              <Ionicons name="barbell" size={40} color={WorkoutTheme.accent.purple} />
-              <Text className="text-center text-lg font-semibold text-ink" numberOfLines={2}>
-                {title}
-              </Text>
+              {photo ? (
+                <>
+                  <Image
+                    source={{ uri: photo }}
+                    cachePolicy="disk"
+                    contentFit="cover"
+                    transition={150}
+                    style={{ width: pageWidth, height: PAGE_HEIGHT }}
+                  />
+                  <LinearGradient
+                    pointerEvents="none"
+                    colors={["transparent", withAlpha(WorkoutTheme.backgroundSecondary, 0.9)]}
+                    className="absolute inset-x-0 bottom-0 h-[65%]"
+                  />
+                  <View className="absolute inset-x-0 bottom-0 p-4">
+                    <Text className="text-lg font-semibold text-ink" numberOfLines={2}>
+                      {title}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <View className="flex-1 items-center justify-center gap-2 px-4">
+                  <Ionicons name="barbell" size={40} color={WorkoutTheme.accent.purple} />
+                  <Text className="text-center text-lg font-semibold text-ink" numberOfLines={2}>
+                    {title}
+                  </Text>
+                </View>
+              )}
             </PressableScale>
 
             <PressableScale
@@ -133,9 +166,16 @@ export default function PostCard({
                 <Ionicons name="list" size={20} color={WorkoutTheme.text.tertiary} />
                 <Text className="text-xs text-ink-muted">{t.exercises}</Text>
               </View>
-              <Text className="text-base text-ink" numberOfLines={5}>
-                {totalExercises != null ? `${totalExercises}` : description || "–"}
-              </Text>
+              {totalExercises != null ? (
+                <Text className="text-base text-ink">{totalExercises}</Text>
+              ) : (
+                <MentionText
+                  className="text-base text-ink"
+                  numberOfLines={5}
+                  text={description || "–"}
+                  partners={partners}
+                />
+              )}
             </PressableScale>
 
             <PressableScale
@@ -176,6 +216,8 @@ export default function PostCard({
           />
         ))}
       </View>
+
+      <PostPartners postId={post.id} partners={partners} onDeclined={setDeclinedBy} />
 
       <View className="flex-row items-center justify-evenly">
         <PressableScale
