@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api, isNotFound } from "./api";
 import { TokenService } from "./token.service";
 import { getItem, saveItem, removeItem } from "@/core/services/storage";
 
@@ -13,8 +13,17 @@ export interface Exercise {
   createdAt: string;
 }
 
-const EXERCISES_STORAGE_KEY = "exercises_cache";
-const EXERCISES_CACHED_AT_KEY = "exercises_cache_at";
+/** `GET /exercises/:id` : en plus de la liste, description, consignes et photos. */
+export interface ExerciseDetail extends Exercise {
+  description?: string | null;
+  instructions?: string[] | null;
+  image_urls?: string[] | null;
+}
+
+// v2 : le catalogue a été renommé (équipement dans le nom) et étendu côté serveur.
+const EXERCISES_STORAGE_KEY = "exercises_cache_v2";
+const EXERCISES_CACHED_AT_KEY = "exercises_cache_v2_at";
+const LEGACY_CACHE_KEYS = ["exercises_cache", "exercises_cache_at"];
 const USER_CREATED_EXERCISES_KEY = "user_created_exercises";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -46,6 +55,7 @@ const fetchAndStoreExercises = (): Promise<Exercise[]> => {
 export const getAllExercises = async (): Promise<Exercise[]> => {
   const isFresh = () => Date.now() - memoryCachedAt < CACHE_TTL_MS;
   try {
+    void Promise.all(LEGACY_CACHE_KEYS.map(removeItem));
     if (!memoryCache) {
       const [cached, cachedAt] = await Promise.all([
         getItem(EXERCISES_STORAGE_KEY),
@@ -149,15 +159,9 @@ export const deleteExercise = async (
   }
 };
 
-export interface ExerciseStats {
-  PR?: number | null;
-  last_reps?: number | null;
-  last_weight?: number | null;
-}
-
-export const getExerciseById = async (exerciseId: string): Promise<Exercise> => {
+export const getExerciseById = async (exerciseId: string): Promise<ExerciseDetail> => {
   const token = await TokenService.get();
-  return api.get<Exercise>(`/exercises/${exerciseId}`, token ?? undefined);
+  return api.get<ExerciseDetail>(`/exercises/${exerciseId}`, token ?? undefined);
 };
 
 export const updateExercise = async (
@@ -175,25 +179,52 @@ export const updateExercise = async (
   }
 };
 
+/**
+ * Stats calculées par le serveur à partir des séances terminées.
+ * `GET /exercises/:id/stats` répond 404 tant que l'exercice n'a jamais été pratiqué.
+ */
+export interface ExerciseStats {
+  exerciseId: string;
+  exerciseName: string;
+  primaryMuscle: string;
+  lastPerformedAt: string | null;
+  lastWeight: number | null;
+  lastReps: number | null;
+  lastSets: { reps: number; weight: number }[];
+  prWeight: number | null;
+  prReps: number | null;
+  bestEstimatedOneRepMax: number | null;
+  bestSessionVolume: number | null;
+  maxReps: number | null;
+  totalSessions: number;
+  totalSets: number;
+  totalReps: number;
+  totalVolume: number;
+  updatedAt: string;
+}
+
+/** Ce qu'affiche la séance en cours : dernière performance et record de charge. */
+export type LiveExerciseStats = Partial<
+  Pick<ExerciseStats, "lastWeight" | "lastReps" | "prWeight">
+>;
+
 export const getExerciseStats = async (
   exerciseId: string,
 ): Promise<ExerciseStats | null> => {
   const token = await TokenService.get();
-  const stats = await api.get<ExerciseStats | undefined>(
-    `/exercises/${exerciseId}/stats`,
-    token ?? undefined,
-  );
-  return stats ?? null;
+  try {
+    return await api.get<ExerciseStats>(
+      `/exercises/${exerciseId}/stats`,
+      token ?? undefined,
+    );
+  } catch (error) {
+    if (isNotFound(error)) return null;
+    throw error;
+  }
 };
 
-export const updateExerciseStats = async (
-  exerciseId: string,
-  data: ExerciseStats,
-): Promise<ExerciseStats> => {
+/** Tous les exercices pratiqués, du plus récent au plus ancien. */
+export const getAllExerciseStats = async (): Promise<ExerciseStats[]> => {
   const token = await TokenService.get();
-  return api.patch<ExerciseStats>(
-    `/exercises/${exerciseId}/stats`,
-    data,
-    token ?? undefined,
-  );
+  return api.get<ExerciseStats[]>("/exercises/stats", token ?? undefined);
 };

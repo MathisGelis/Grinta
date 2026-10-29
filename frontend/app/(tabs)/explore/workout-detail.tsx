@@ -3,8 +3,7 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Dimensions, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { api } from "@/services/api";
-import { TokenService } from "@/services/token.service";
+import { getAllExercises } from "@/services/exercises.service";
 
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
@@ -41,9 +40,8 @@ export default function WorkoutDetailScreen() {
   useEffect(() => {
     async function fetchExercises() {
       try {
-        const token = await TokenService.get();
-        const data = await api.get<Exercise[]>("/exercises", token ?? undefined);
-        setExercises(data);
+        // Catalogue en cache local : évite de retélécharger tout `/exercises` à chaque ouverture.
+        setExercises(await getAllExercises());
       } catch {
       } finally {
         setLoading(false);

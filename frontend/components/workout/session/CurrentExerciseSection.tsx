@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 
-import type { ExerciseStats } from "@/services/exercises.service";
+import type { LiveExerciseStats } from "@/services/exercises.service";
 import PressableScale from "@/components/ui/PressableScale";
 import Button from "@/components/ui/Button";
 export interface CompletedSet {
@@ -25,7 +25,7 @@ interface CurrentExerciseSectionProps {
   onDeleteExercise?: () => void;
   isLastExercise: boolean;
   isLastSet: boolean;
-  lastStats?: ExerciseStats | null;
+  lastStats?: LiveExerciseStats | null;
 }
 
 export default function CurrentExerciseSection({
@@ -47,15 +47,15 @@ export default function CurrentExerciseSection({
   const initialValues = (index: number) => {
     const planned = plannedSetData[index];
     return {
-      weight: planned?.weight || lastStats?.last_weight || 0,
-      reps: planned?.reps || lastStats?.last_reps || 0,
+      weight: planned?.weight || lastStats?.lastWeight || 0,
+      reps: planned?.reps || lastStats?.lastReps || 0,
     };
   };
   const [weight, setWeight] = useState(initialValues(currentSetIndex).weight.toString());
   const [reps, setReps] = useState(initialValues(currentSetIndex).reps.toString());
 
-  const lastWeight = lastStats?.last_weight;
-  const lastReps = lastStats?.last_reps;
+  const lastWeight = lastStats?.lastWeight;
+  const lastReps = lastStats?.lastReps;
 
   useEffect(() => {
     const planned = plannedSetData[currentSetIndex];
@@ -93,22 +93,22 @@ export default function CurrentExerciseSection({
         </Text>
       </View>
 
-      {lastStats && (lastStats.last_weight != null || lastStats.PR != null) ? (
+      {lastStats && (lastStats.lastWeight != null || lastStats.prWeight != null) ? (
         <View className="flex-row gap-3">
-          {lastStats.last_weight != null ? (
+          {lastStats.lastWeight != null ? (
             <View className="flex-1 rounded-tile bg-raised px-4 py-3">
               <Text className="text-xs text-ink-muted">{t.lastPerformanceLabel}</Text>
               <Text className="mt-0.5 text-base font-semibold text-ink">
-                {lastStats.last_weight} kg
-                {lastStats.last_reps != null ? ` × ${lastStats.last_reps}` : ""}
+                {lastStats.lastWeight} kg
+                {lastStats.lastReps != null ? ` × ${lastStats.lastReps}` : ""}
               </Text>
             </View>
           ) : null}
-          {lastStats.PR != null ? (
+          {lastStats.prWeight != null ? (
             <View className="flex-1 rounded-tile bg-accent-tint px-4 py-3">
               <Text className="text-xs text-accent-text">{t.personalRecordLabel}</Text>
               <Text className="mt-0.5 text-base font-semibold text-ink">
-                {lastStats.PR} kg
+                {lastStats.prWeight} kg
               </Text>
             </View>
           ) : null}
