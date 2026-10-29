@@ -5,7 +5,7 @@ import GlassSearchBar from "@/components/GlassSearchBar";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { useFocusEffect, router } from "expo-router";
 import { getProgramms, SmallProgramm } from "@/services/programms.service";
-import ProgrammCard from "@/components/workoutCreation/ProgrammCard";
+import ProgrammCard from "@/components/workout/programmes/ProgrammCard";
 
 export default function ProgramsScreen() {
   const { keyboardY, bottomOffset } = useKeyboardOffset();
@@ -98,7 +98,7 @@ export default function ProgramsScreen() {
         <GlassSearchBar
           items={programms.map((p) => p.title)}
           onResults={handleSearchResults}
-          onAdd={() => router.push("/(tabs)/workouts/createProgramm")}
+          onAdd={() => router.push("/(tabs)/workouts/create/programm")}
           placeholder="Rechercher un programme…"
         />
       </Animated.View>

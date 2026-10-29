@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export interface CompletedSet {
   reps: number;
@@ -37,6 +38,7 @@ export default function CurrentExerciseSection({
   isLastExercise,
   isLastSet,
 }: CurrentExerciseSectionProps) {
+  const { t } = useTranslation();
   const [weight, setWeight] = useState(
     plannedSetData[currentSetIndex]?.weight.toString() || "0",
   );
@@ -58,12 +60,12 @@ export default function CurrentExerciseSection({
 
   const handleDeleteExercise = () => {
     Alert.alert(
-      "Supprimer l'exercice",
+      t.deleteExercise,
       `Êtes-vous sûr de vouloir supprimer "${exerciseName}" de la séance?`,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: "Supprimer",
+          text: t.delete,
           onPress: () => onDeleteExercise?.(),
           style: "destructive",
         },
@@ -95,7 +97,7 @@ export default function CurrentExerciseSection({
             marginBottom: 8,
           }}
         >
-          Exercice en cours
+          {t.currentExercise}
         </Text>
         <Text
           style={{
@@ -139,7 +141,7 @@ export default function CurrentExerciseSection({
                 textTransform: "uppercase",
               }}
             >
-              Poids
+              {t.weightLabel}
             </Text>
             <View
               style={{
@@ -200,7 +202,7 @@ export default function CurrentExerciseSection({
                 textTransform: "uppercase",
               }}
             >
-              Répétitions
+              {t.repsLabel}
             </Text>
             <View
               style={{
@@ -380,7 +382,7 @@ export default function CurrentExerciseSection({
               color: WorkoutTheme.text.secondary,
             }}
           >
-            Passer l&apos;exercice
+            {t.skipExercise}
           </Text>
         </TouchableOpacity>
 
@@ -412,7 +414,7 @@ export default function CurrentExerciseSection({
                 color: WorkoutTheme.status.danger,
               }}
             >
-              Supprimer l&apos;exercice
+              {t.deleteExercise}
             </Text>
           </TouchableOpacity>
         )}

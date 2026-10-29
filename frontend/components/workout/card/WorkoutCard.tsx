@@ -10,11 +10,11 @@ import {
   deletePlannedWorkout,
 } from "@/services/workouts.service";
 import { getAllExercises, Exercise } from "@/services/exercises.service";
-import { ExerciseSetupData } from "./ExerciseSetupItem";
-import WorkoutCardHeader from "./WorkoutCardHeader";
-import WorkoutTabs from "./WorkoutTabs";
-import WorkoutInfosTab from "./WorkoutInfosTab";
-import WorkoutStatsTab from "./WorkoutStatsTab";
+import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
+import WorkoutCardHeader from "@/components/workout/card/WorkoutCardHeader";
+import WorkoutTabs from "@/components/workout/card/WorkoutTabs";
+import WorkoutInfosTab from "@/components/workout/card/WorkoutInfosTab";
+import WorkoutStatsTab from "@/components/workout/card/WorkoutStatsTab";
 
 interface WorkoutCardProps {
   workout: {
@@ -56,18 +56,7 @@ export default function WorkoutCard({
     new Map(),
   );
 
-  useEffect(() => {
-    loadExercisesMap();
-  }, []);
-
-  useEffect(() => {
-    if (!isEditing && !isLoading) {
-      setEditedTitle(workout.title);
-      setEditedDescription(workout.description || "");
-    }
-  }, [workout.title, workout.description, isEditing, isLoading]);
-
-  const loadExercisesMap = async () => {
+  const loadExercisesMap = useCallback(async () => {
     try {
       const exercises = await getAllExercises();
       const map = new Map<string, Exercise>();
@@ -78,7 +67,18 @@ export default function WorkoutCard({
     } catch (error) {
       console.error("Erreur lors du chargement des exercices:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadExercisesMap();
+  }, [loadExercisesMap]);
+
+  useEffect(() => {
+    if (!isEditing && !isLoading) {
+      setEditedTitle(workout.title);
+      setEditedDescription(workout.description || "");
+    }
+  }, [workout.title, workout.description, isEditing, isLoading]);
 
   const loadWorkoutData = useCallback(async () => {
     setIsLoading(true);

@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import WorkoutCard from "@/components/workoutCreation/WorkoutCard";
+import WorkoutCard from "@/components/workout/card/WorkoutCard";
 import {
   getPlannedWorkouts,
   PlannedWorkout,
@@ -56,10 +56,6 @@ export default function WorkoutScreen() {
     }, [loadWorkouts]),
   );
 
-  const goToCreateWorkout = () => {
-    router.push("/(tabs)/workouts/createWorkout");
-  };
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadWorkouts().finally(() => setRefreshing(false));
@@ -67,27 +63,13 @@ export default function WorkoutScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>{t.myWorkouts}</Text>
-          <Text style={styles.headerSubtitle}>
-            {workouts.length} {t.sessionCount}{workouts.length !== 1 ? "s" : ""}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={goToCreateWorkout}
-          style={styles.createButton}
-        >
-          <Ionicons name="add" size={26} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
       {/* Quick stats */}
       {!loading && !error && workouts.length > 0 && (
         <View style={styles.quickStats}>
           <View style={styles.quickStatItem}>
-            <View style={[styles.quickStatIcon, { backgroundColor: "#2a1f4a" }]}>
+            <View
+              style={[styles.quickStatIcon, { backgroundColor: "#2a1f4a" }]}
+            >
               <Ionicons name="barbell" size={16} color="#7B5CF0" />
             </View>
             <Text style={styles.quickStatValue}>{workouts.length}</Text>
@@ -95,7 +77,9 @@ export default function WorkoutScreen() {
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>
-            <View style={[styles.quickStatIcon, { backgroundColor: "#1a2f1a" }]}>
+            <View
+              style={[styles.quickStatIcon, { backgroundColor: "#1a2f1a" }]}
+            >
               <Ionicons name="fitness" size={16} color="#34D399" />
             </View>
             <Text style={styles.quickStatValue}>
@@ -109,7 +93,10 @@ export default function WorkoutScreen() {
       {/* Workouts List */}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomOffset }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottomOffset },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -178,11 +165,9 @@ export default function WorkoutScreen() {
               <Ionicons name="barbell-outline" size={48} color="#7B5CF0" />
             </View>
             <Text style={styles.emptyStateTitle}>{t.noWorkouts}</Text>
-            <Text style={styles.emptyStateText}>
-              {t.createFirstWorkout}
-            </Text>
+            <Text style={styles.emptyStateText}>{t.createFirstWorkout}</Text>
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/workouts/createWorkout")}
+              onPress={() => router.push("/(tabs)/workouts/create/workout")}
               style={styles.emptyStateButton}
             >
               <Ionicons name="add-circle" size={22} color="#fff" />

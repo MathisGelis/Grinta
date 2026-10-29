@@ -10,8 +10,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function WorkoutSummaryScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const workoutName = params.workoutName as string;
   const totalTime = parseInt(params.totalTime as string) || 0;
@@ -75,10 +77,10 @@ export default function WorkoutSummaryScreen() {
             <Ionicons name="checkmark" size={64} color="white" />
           </View>
           <Text className="text-3xl font-bold text-white text-center">
-            Workout Complete!
+            {t.workoutComplete}
           </Text>
           <Text className="text-base text-neutral-400 text-center mt-2">
-            Great effort today
+            {t.greatEffortToday}
           </Text>
         </Animated.View>
 
@@ -86,7 +88,7 @@ export default function WorkoutSummaryScreen() {
         <View className="px-4 mb-6">
           <View className="bg-neutral-900 rounded-2xl p-6 border border-neutral-800">
             <Text className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-              Workout
+              {t.workoutsLabel}
             </Text>
             <Text className="text-2xl font-bold text-white mb-4">
               {workoutName}
@@ -95,7 +97,7 @@ export default function WorkoutSummaryScreen() {
             <View className="flex-row justify-between items-center pt-4 border-t border-neutral-800">
               <View>
                 <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
-                  Total Time
+                  {t.totalTime}
                 </Text>
                 <Text className="text-2xl font-bold text-white">
                   {formatTime(totalTime)}
@@ -109,7 +111,7 @@ export default function WorkoutSummaryScreen() {
         {/* Stats Grid */}
         <View className="px-4 mb-6">
           <Text className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-            Summary
+            {t.summary}
           </Text>
 
           <View className="flex-row flex-wrap gap-2">
@@ -119,7 +121,7 @@ export default function WorkoutSummaryScreen() {
                 <Ionicons name="flame" size={24} color="#ef4444" />
               </View>
               <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
-                Calories
+                {t.calories}
               </Text>
               <Text className="text-2xl font-bold text-white">
                 {stats.calories}
@@ -133,7 +135,7 @@ export default function WorkoutSummaryScreen() {
                 <Ionicons name="barbell" size={24} color="#3b82f6" />
               </View>
               <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
-                Exercises
+                {t.exercises}
               </Text>
               <Text className="text-2xl font-bold text-white">
                 {stats.exercises}
@@ -146,7 +148,7 @@ export default function WorkoutSummaryScreen() {
                 <Ionicons name="layers" size={24} color="#7B61FF" />
               </View>
               <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
-                Sets
+                {t.sets}
               </Text>
               <Text className="text-2xl font-bold text-white">
                 {stats.sets}
@@ -159,7 +161,7 @@ export default function WorkoutSummaryScreen() {
                 <Ionicons name="repeat" size={24} color="#ec4899" />
               </View>
               <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
-                Total Reps
+                {t.totalReps}
               </Text>
               <Text className="text-2xl font-bold text-white">
                 {stats.reps}
@@ -179,7 +181,7 @@ export default function WorkoutSummaryScreen() {
             </View>
             <View className="flex-1">
               <Text className="text-xs text-neutral-400 uppercase font-semibold mb-1">
-                Total Volume
+                {t.totalVolume}
               </Text>
               <Text className="text-xl font-bold text-white">
                 {stats.volume.toLocaleString()}
@@ -200,10 +202,10 @@ export default function WorkoutSummaryScreen() {
             <Ionicons name="star" size={28} color="white" />
             <View className="flex-1">
               <Text className="text-white font-bold text-sm">
-                Great consistency!
+                {t.greatConsistency}
               </Text>
               <Text className="text-white/80 text-xs">
-                You&apos;ve completed 5 workouts this week
+                5 {t.weeklyWorkoutsDone}
               </Text>
             </View>
           </View>
@@ -220,13 +222,13 @@ export default function WorkoutSummaryScreen() {
           }}
         >
           <Ionicons name="home" size={20} color="white" />
-          <Text className="text-white font-bold text-lg">Go Home</Text>
+          <Text className="text-white font-bold text-lg">{t.goHome}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={goBack}
           className="bg-neutral-800 rounded-lg py-3 items-center justify-center"
         >
-          <Text className="text-white font-semibold">Back to Workouts</Text>
+          <Text className="text-white font-semibold">{t.backToWorkouts}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

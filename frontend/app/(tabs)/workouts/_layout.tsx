@@ -13,9 +13,9 @@ export default function WorkoutsStack() {
         headerShadowVisible: false,
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="(list)" options={{ headerShown: false }} />
       <Stack.Screen
-        name="createWorkout"
+        name="create/workout"
         options={{
           title: t.newSession,
           presentation: "modal",
