@@ -15,6 +15,8 @@ import { Post } from './entities/post.entity';
 import { ReportReason } from './enums/report-reason.enum';
 import { CompletedWorkout } from '../workouts/entities/completed-workout.entity';
 import { partnersSql, PostPartnersService } from './post-partners.service';
+import { withWorkoutSummaries } from './workout-summary';
+import { StatsService } from '../stats/stats.service';
 
 const AUTO_HIDE_THRESHOLD = 5;
 
@@ -41,6 +43,8 @@ export class PostsService {
     private readonly moderation: ModerationService,
 
     private readonly partners: PostPartnersService,
+
+    private readonly stats: StatsService,
   ) {}
 
   /**
@@ -140,8 +144,56 @@ export class PostsService {
     return rows;
   }
 
+  /**
+   * The exercises, sets and totals of the workout behind a post, for whoever
+   * may see the post, the author included. Reached through the post only: a
+   * workout that was not published cannot be read here. Exercises have the
+   * shape of GET /workouts/completed/:id. Nothing private to the author is
+   * returned: no badges, and other people get calories computed for the
+   * default body weight rather than the author's.
+   */
+  async getPostWorkout(viewerId: string, postId: string) {
+    const post = await this.visibleWorkoutOf(viewerId, postId);
+    const workout = await this.postRepository.manager.findOne(
+      CompletedWorkout,
+      { where: { id: post.workoutId }, relations: ['exercises'] },
+    );
+
+    if (!workout) throw new NotFoundException('Post not found');
+    return {
+      workoutId: workout.id,
+      totalExercises: workout.exercises.length,
+      exercises: workout.exercises,
+      stats: await this.stats.publishedWorkoutStats(
+        workout,
+        post.authorId,
+        viewerId,
+      ),
+    };
+  }
+
+  /**
+   * The workout of a post the viewer may see, and its author. 404 for a post
+   * that is missing or out of reach, the same answer in both cases. The API
+   * never leaves a post without its workout; one made by hand has nothing to
+   * show and reads as missing too.
+   */
+  async visibleWorkoutOf(viewerId: string, postId: string) {
+    const post = await this.postRepository
+      .createQueryBuilder('post')
+      .innerJoin('post.user', 'author')
+      .where('post.id = :postId', { postId })
+      .andWhere(this.visibleToViewerSql('author'))
+      .select(['post."workoutId" AS "workoutId"', 'author.id AS "authorId"'])
+      .setParameter('viewerId', viewerId)
+      .getRawOne<{ workoutId: string | null; authorId: string }>();
+
+    if (!post?.workoutId) throw new NotFoundException('Post not found');
+    return { workoutId: post.workoutId, authorId: post.authorId };
+  }
+
   async getMyPosts(userId: string, limit?: number) {
-    return this.postRepository
+    const rows = await this.postRepository
       .createQueryBuilder('post')
       .innerJoin('post.workout', 'w')
       .where('post."userId" = :userId', { userId })
@@ -159,7 +211,9 @@ export class PostsService {
       ])
       .orderBy('post."createdAt"', 'DESC')
       .limit(clampLimit(limit))
-      .getRawMany();
+      .getRawMany<{ workoutId: string }>();
+
+    return withWorkoutSummaries(this.postRepository.manager, rows);
   }
 
   /**
@@ -329,7 +383,7 @@ export class PostsService {
   }
 
   async getFollowingFeed(userId: string, limit?: number) {
-    return this.postRepository
+    const rows = await this.postRepository
       .createQueryBuilder('post')
       .innerJoin('post.user', 'postUser')
       .leftJoin('post.workout', 'w')
@@ -346,6 +400,7 @@ export class PostsService {
         'post.createdAt AS "createdAt"',
         'postUser.displayName AS "displayName"',
         'COALESCE(postUser.avatarThumbnailUrl, postUser.avatarUrl) AS "avatarThumbnailUrl"',
+        'w.id AS "workoutId"',
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'post."likesCount" AS "likesCount"',
         'post."commentsCount" AS "commentsCount"',
@@ -359,21 +414,28 @@ export class PostsService {
       .orderBy('post.createdAt', 'DESC')
       .limit(clampLimit(limit))
       .setParameter('userId', userId)
-      .getRawMany();
+      .getRawMany<{ workoutId: string }>();
+
+    return withWorkoutSummaries(this.postRepository.manager, rows);
   }
 
+  /**
+   * The month's most liked and commented posts the user can see, without
+   * their own: the feed is there to discover other people's sessions.
+   */
   async getTopPostsThisMonth(userId: string, limit?: number) {
     const startOfMonth = new Date();
 
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-    return this.postRepository
+    const rows = await this.postRepository
       .createQueryBuilder('post')
       .innerJoin('post.user', 'u')
       .leftJoin('post.workout', 'w')
       .where(
         `
           post."createdAt" >= :startOfMonth
+          AND post."userId" <> :userId
           AND (
             u."isPublic" = true
             OR EXISTS (
@@ -390,6 +452,7 @@ export class PostsService {
         'post."createdAt" AS "createdAt"',
         'u."displayName" AS "displayName"',
         'COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"',
+        'w.id AS "workoutId"',
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'post."likesCount" AS "likesCount"',
         'post."commentsCount" AS "commentsCount"',
@@ -405,7 +468,9 @@ export class PostsService {
       .addOrderBy('post."createdAt"', 'DESC')
       .limit(clampLimit(limit))
       .setParameter('userId', userId)
-      .getRawMany();
+      .getRawMany<{ workoutId: string }>();
+
+    return withWorkoutSummaries(this.postRepository.manager, rows);
   }
 
   // Hides a visible comment and takes it off its post's counter; a comment

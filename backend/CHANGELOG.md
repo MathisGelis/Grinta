@@ -1,5 +1,22 @@
 # Changelog backend
 
+## Non publié : groupes, comparaisons, duplication, séance d'un post
+
+- **Fil populaire** : `GET /posts/feed/top` n'affiche plus les posts de l'utilisateur connecté.
+- **Exercices et stats de la séance dans les fils** : `feed/following`, `feed/top`, `/posts/mine` et les posts du profil renvoient `workoutId`, `exercises[]` (nom, nombre de séries, meilleure série) et `stats` (durée, volume, séries, reps, records battus). Deux requêtes par page, quelle que soit sa taille. Les séries complètes restent dans le détail.
+- **`GET /posts/:postId/workout`** : exercices, séries et totaux de la séance d'un post, avec la même visibilité que le post. L'accès se fait uniquement par le post, donc une séance non publiée reste inaccessible. Pour les autres que l'auteur, les calories sont calculées pour le poids par défaut (70 kg) afin de ne pas révéler le poids de l'auteur. Un post sans séance renvoie 404.
+- **Comparaisons avec la vie réelle** (`realLifeComparison: { object, count }`, clé en anglais traduite par l'app) : sur `GET /stats/workout/:id` et la séance d'un post (volume total), et sur les badges `heaviest_weight` et `best_session_volume`. 12 objets de 7 kg à 225 t, poids typiques arrondis (`src/common/utils/real-life-comparison.ts`).
+- **`GET /exercises/:id/stats/compare/:userId`** : mes stats d'un exercice à côté de celles d'une personne que je suis. Les siennes sont recalculées à partir de ses seules séances publiées. 403 si je ne la suis pas.
+- **Duplication** : `POST /workouts/planned/from-post/:postId` (tout post visible) et `POST /workouts/planned/from-completed/:id` (mes séances) créent une séance planifiée avec le titre et les exercices dans le même ordre, sans les séries ni la description. Les exercices sont insérés en une requête, car un enregistrement en cascade réordonnait parfois les lignes.
+- **Groupes** (`/groups`, migration réversible `AddGroups`) :
+  - invitation par pseudo entre personnes qui se suivent mutuellement, puis acceptation ;
+  - 20 membres au plus, invitations en attente comprises, sous verrou de ligne pour qu'aucune course ne dépasse la limite ;
+  - tout membre peut renommer et inviter, seul le créateur supprime ;
+  - si le créateur part, le membre le plus ancien prend sa place, et le dernier à partir supprime le groupe ;
+  - fil d'activité : séances publiées par les membres depuis leur arrivée, avec les records qu'elles ont battus ;
+  - un non-membre reçoit 404.
+- Vérifié sur une base de démo (61 comptes, 2 772 séances) : 57 contrôles HTTP de bout en bout. Ils couvrent les cas d'erreur, les limites de taille et la passation du créateur. Le contrôle de schéma confirme que la migration correspond aux entités, et le revert de la migration a aussi été testé.
+
 ## Non publié : schéma de prod réparé et vérifié à chaque déploiement
 
 **Incident du 29 octobre.** Après le déploiement, l'API renvoyait des 500 : `column User.avatarUrl does not exist`, `stats.pr_reps`, `exercise.description`. Le login était cassé. La table `migrations` de prod indiquait les 10 migrations comme appliquées, mais les colonnes qu'elles ajoutent manquaient. Les trois colonnes de contenu des exercices ont même disparu de nouveau après avoir été restaurées. Rien dans le repo ne lance de migration en arrière ; la cause de ces suppressions n'est pas identifiée. La prod a été réparée à la main avec des `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.

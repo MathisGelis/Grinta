@@ -13,6 +13,7 @@ import { PostsModule } from './posts/posts.module';
 import { StatsModule } from './stats/stats.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { BadgesModule } from './badges/badges.module';
+import { GroupsModule } from './groups/groups.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BadgesModule } from './badges/badges.module';
     StatsModule,
     ModerationModule,
     BadgesModule,
+    GroupsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

@@ -22,6 +22,7 @@ import { ListCompletedWorkoutsQueryDto } from './dto/list-completed-workouts-que
 import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { PhotosService } from 'src/photos/photos.service';
 import { PostPartnersService } from 'src/posts/post-partners.service';
+import { PostsService } from 'src/posts/posts.service';
 
 type WorkoutPhotoUrls<T = string> = { photoUrl: T; photoThumbnailUrl: T };
 
@@ -44,6 +45,7 @@ export class WorkoutService {
     private readonly badges: BadgesService,
     private readonly photos: PhotosService,
     private readonly postPartners: PostPartnersService,
+    private readonly posts: PostsService,
   ) {}
 
   async createPlannedWorkout(user: AuthUser, dto: CreatePlannedWorkoutDto) {
@@ -282,6 +284,59 @@ export class WorkoutService {
       workout,
       totalExercises: workout.exercises.length,
     };
+  }
+
+  /**
+   * Copies the workout of a post the user can see into their planned
+   * workouts: the same exercises in the same order, without the author's
+   * sets, weights or description.
+   */
+  async duplicatePostWorkout(user: AuthUser, postId: string) {
+    const { workoutId } = await this.posts.visibleWorkoutOf(user.id, postId);
+
+    return this.plannedCopyOf(user, workoutId);
+  }
+
+  /** Copies one of the user's own completed workouts, as above. */
+  async duplicateCompletedWorkout(user: AuthUser, workoutId: string) {
+    const owned = await this.completedRepo.exists({
+      where: { id: workoutId, user: { id: user.id } },
+    });
+
+    if (!owned) throw new NotFoundException('Completed workout not found');
+    return this.plannedCopyOf(user, workoutId);
+  }
+
+  private async plannedCopyOf(user: AuthUser, workoutId: string) {
+    const source = await this.completedRepo.findOne({
+      where: { id: workoutId },
+      relations: ['exercises'],
+    });
+
+    if (!source) throw new NotFoundException('Completed workout not found');
+    // Workouts have no position column: their exercises read back in the
+    // order they were inserted. A cascade save may reorder them, so they go
+    // in with one INSERT, in the source order.
+    const copy = await this.dataSource.transaction(async (manager) => {
+      const workout = await manager.save(
+        manager.create(PlannedWorkout, {
+          user: { id: user.id },
+          title: source.title,
+        }),
+      );
+
+      if (source.exercises.length)
+        await manager.insert(
+          PlannedWorkoutExercise,
+          source.exercises.map((e) => ({
+            workout: { id: workout.id },
+            exercise: { id: e.exercise.id },
+          })),
+        );
+      return workout;
+    });
+
+    return this.getPlannedWorkoutById(copy.id);
   }
 
   async getCompletedWorkoutById(workoutId: string) {

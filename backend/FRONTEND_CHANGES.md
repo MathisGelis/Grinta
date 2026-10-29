@@ -370,3 +370,158 @@ L'egress (données sortantes) est la ressource la plus limitée du plan gratuit 
 - [ ] Historique paginé.
 - [ ] `workout-detail.tsx` utilise le cache du catalogue.
 - [ ] Une réponse non JSON (`413` en HTML de nginx) est traitée comme une erreur générique.
+
+---
+
+## 7. Nouveautés de la branche `feat/backend-v3`
+
+Tous les détails des routes sont aussi dans Swagger (`GET /api`). Les erreurs gardent le format habituel : `{ statusCode, message: { message, ... } }`.
+
+### 7.1 Le fil populaire n'affiche plus mes propres posts
+
+`GET /posts/feed/top` exclut les posts de l'utilisateur connecté. Rien à changer côté app.
+
+### 7.2 Exercices et stats de la séance dans les fils
+
+Chaque post de `GET /posts/feed/following`, `GET /posts/feed/top`, `GET /posts/mine` et des `posts` de `GET /users/:id/profile` contient maintenant :
+
+```json
+{
+  "workoutId": "uuid",
+  "exercises": [
+    { "exerciseId": "uuid", "name": "Bench Press (Barbell)", "sets": 4, "bestSet": { "reps": 6, "weight": 85 } }
+  ],
+  "stats": { "durationSeconds": 3600, "totalVolume": 6400, "totalSets": 15, "totalReps": 120, "recordsCount": 2 }
+}
+```
+
+- `bestSet` : la série la plus lourde, et à poids égal celle avec le plus de reps. `null` pour un exercice sans série. Poids `0` = poids du corps.
+- `recordsCount` : nombre de records personnels battus pendant la séance.
+- Les séries complètes ne sont pas dans les fils : elles sont dans le détail (7.3).
+- `workoutId` est nouveau dans `feed/following`, `feed/top` et les posts du profil.
+
+### 7.3 Détail de la séance d'un post : `GET /posts/:postId/workout`
+
+C'est la route de la spec front, livrée telle quelle.
+
+- **Visibilité** : la même que `GET /posts/:postId` (l'auteur, tout le monde pour un compte public, les abonnés pour un compte privé). Sinon `404` avec le message `Post not found`.
+- **Accès** : uniquement par le post. Une séance non publiée reste inaccessible.
+- **Réponse** : `{ workoutId, totalExercises, exercises, stats }`.
+  - `exercises` a exactement le format de `GET /workouts/completed/:id`.
+  - `stats` contient `{ estimatedCalories, totalVolume, totalSets, totalReps, realLifeComparison }`.
+- **Calories** : pour un autre que l'auteur, elles sont calculées pour un poids de corps par défaut de 70 kg. Avec le poids de l'auteur, elles révéleraient son poids. L'auteur voit les mêmes calories que dans `GET /stats/workout/:id`.
+- **Point à trancher de la spec** : un post sans séance renvoie `404 Post not found`. L'API ne peut pas créer un tel post.
+- **Erreurs** : `400` avec le message `Identifiant invalide` pour un id mal formé, `401` sans token.
+- **Correction de la spec** : `GET /workouts/completed/:id` ne filtre pas sur le propriétaire. Cette lecture est ouverte par choix. La nouvelle route reste la bonne pour les posts, car elle respecte la confidentialité des comptes privés.
+
+### 7.4 Comparaisons avec la vie réelle
+
+Le champ `realLifeComparison` vaut `{ "object": "car", "count": 3.2 }` ou `null`. L'app traduit `object`. `count` vaut toujours 1 ou plus, avec une décimale.
+
+Où il apparaît :
+- `GET /stats/workout/:id` et `stats` de `GET /posts/:postId/workout` : à partir du volume total de la séance ;
+- les badges (`GET /badges`, `badges` après `POST` ou `PATCH /workouts/completed`) : seulement pour `heaviest_weight` (la charge) et `best_session_volume` (le volume). Il vaut `null` pour le 1RM estimé (jamais réellement soulevé) et pour les reps.
+
+Il vaut aussi `null` sous 7 kg.
+
+Clés à traduire, avec leur poids de référence :
+
+| Clé | Poids | Clé | Poids |
+| --- | --- | --- | --- |
+| `bowling_ball` | 7 kg | `car` | 1,5 t |
+| `golden_retriever` | 30 kg | `white_rhinoceros` | 2,3 t |
+| `washing_machine` | 70 kg | `african_elephant` | 6 t |
+| `giant_panda` | 100 kg | `school_bus` | 11 t |
+| `upright_piano` | 230 kg | `boeing_737` | 41 t |
+| `horse` | 500 kg | `statue_of_liberty` | 225 t |
+
+L'objet choisi est le plus lourd que la charge atteint au moins une fois. Exemple : 9,2 t donne `{ "object": "african_elephant", "count": 1.5 }`.
+
+### 7.5 Comparer ses stats à celles d'une personne suivie
+
+`GET /exercises/:id/stats/compare/:userId`
+
+```json
+{
+  "exercise": { "id": "uuid", "name": "Bench Press (Barbell)" },
+  "me": { "heaviestWeight": 90, "estimatedOneRepMax": 101.3, "bestSessionVolume": 2880, "maxReps": null, "totalSessions": 26, "lastPerformedAt": "..." },
+  "user": { "id": "uuid", "uniqueName": "paul.martin", "displayName": "Paul Martin", "avatarThumbnailUrl": null },
+  "them": { "heaviestWeight": 80, "...": "..." }
+}
+```
+
+- `me` : toutes mes séances.
+- `them` : **uniquement les séances que la personne a publiées**. Ses séances non postées ne comptent jamais.
+- `null` quand l'exercice n'a jamais été fait (ou jamais publié, pour `them`).
+- Erreurs : `403` si je ne suis pas cette personne, `400` si `userId` est moi-même, `404` pour un exercice inconnu.
+
+### 7.6 Dupliquer une séance
+
+Les deux routes créent une **séance planifiée** chez moi, avec le même titre et les mêmes exercices dans le même ordre. Elles ne copient ni les séries, ni les charges, ni la description. La réponse a le format de `GET /workouts/planned/:id` : `{ workout, totalExercises }`, avec `sets: null` sur chaque exercice.
+
+- `POST /workouts/planned/from-post/:postId` : depuis n'importe quel post que je peux voir. Sinon `404`.
+- `POST /workouts/planned/from-completed/:id` : depuis une de mes séances terminées. `404` si ce n'est pas la mienne.
+
+### 7.7 Groupes
+
+Règles :
+- **Inviter** : n'importe quel membre peut inviter par pseudo (avec ou sans `@`), à condition que l'invitant et l'invité **se suivent mutuellement**. L'invité doit accepter.
+- **Taille** : 20 membres au plus, créateur compris. Les invitations en attente comptent dans la limite.
+- **Renommer** : n'importe quel membre.
+- **Supprimer** : seulement le créateur.
+- **Partir** : n'importe quel membre. Si le créateur part, le membre le plus ancien devient créateur. Le dernier à partir supprime le groupe.
+- **Compte supprimé** : la suppression du compte du créateur supprime ses groupes.
+- **Confidentialité** : un groupe dont je ne suis pas membre répond `404`.
+
+| Route | Rôle | Réponse |
+| --- | --- | --- |
+| `POST /groups` `{ name }` | créer (1 à 50 caractères) | détail du groupe |
+| `GET /groups` | mes groupes | `[{ id, name, creatorId, createdAt, joinedAt, memberCount }]` |
+| `GET /groups/:id` | détail | `{ id, name, creatorId, createdAt, members: [{ id, uniqueName, displayName, avatarThumbnailUrl, joinedAt }], invitations: [{ id, createdAt, invitee: {...}, invitedById }] }` |
+| `PATCH /groups/:id` `{ name }` | renommer | détail |
+| `DELETE /groups/:id` | supprimer (`403` si pas créateur) | `{ deleted: true }` |
+| `POST /groups/:id/invitations` `{ uniqueName }` | inviter | invitations en attente du groupe |
+| `GET /groups/invitations` | invitations reçues | `[{ id, createdAt, group: { id, name, memberCount }, invitedBy: {...} }]` |
+| `POST /groups/invitations/:invitationId/accept` | accepter | détail du groupe |
+| `DELETE /groups/invitations/:invitationId` | refuser | `{ declined: true }` |
+| `DELETE /groups/:id/members/me` | partir | `{ left: true }` |
+| `GET /groups/:id/activity?limit=20&before=...` | fil du groupe | voir ci-dessous |
+
+Erreurs à l'invitation :
+- `403` : vous ne vous suivez pas mutuellement ;
+- `404` : pseudo inconnu ;
+- `409` : déjà membre, déjà invité, ou groupe complet.
+
+**Fil du groupe** : un événement par séance qu'un membre a **publiée après être entré dans le groupe**, de la plus récente à la plus ancienne. Les séances non publiées n'apparaissent jamais.
+
+```json
+[{
+  "postId": "uuid", "at": "2026-10-29T18:05:00.000Z",
+  "user": { "id": "uuid", "uniqueName": "paul.martin", "displayName": "Paul Martin", "avatarThumbnailUrl": null },
+  "workout": { "id": "uuid", "title": "Push" },
+  "records": [{ "exercise": { "id": "uuid", "name": "Bench Press (Barbell)" }, "type": "heaviest_weight", "value": 100, "unit": "kg" }]
+}]
+```
+
+- L'app affiche « Paul s'est entraîné » pour l'événement, et « Paul a battu son record de … » pour chaque `records[]`.
+- Page suivante : `before` = le `at` du dernier événement reçu.
+- Il n'y a pas de notification push : l'app consulte le fil.
+
+### 7.8 Cards de partage
+
+Elles sont entièrement côté app : dessiner la card puis la capturer en image, par exemple avec `react-native-view-shot`, et l'ouvrir dans le partage natif.
+
+Données disponibles :
+- `GET /posts/:postId/workout`, ou `GET /stats/workout/:id` pour ses propres séances : séries, totaux, comparaison avec la vie réelle ;
+- les `badges` de la séance pour ses records.
+
+### 7.9 Checklist
+
+- [ ] Fil populaire : rien à faire (mes posts n'y sont plus).
+- [ ] Cartes de post : afficher `exercises` (nom, séries, meilleure série) et `stats`.
+- [ ] `userPost.tsx` : un seul appel à `GET /posts/:postId/workout` pour tous les posts.
+- [ ] Traduire les clés de `realLifeComparison` (7.4) et l'afficher sur le résumé de séance et sur les badges de charge et de volume.
+- [ ] Écran d'un exercice : bouton « Comparer avec… » parmi les personnes suivies (gérer `403`).
+- [ ] « Dupliquer » sur un post et sur mes séances terminées, puis ouvrir la séance planifiée créée.
+- [ ] Groupes : liste, création, invitations (reçues et envoyées), fil d'activité, départ, suppression par le créateur.
+- [ ] Cards de partage (7.8).

@@ -5,14 +5,22 @@ import {
   ExerciseHistory,
   ExerciseRecords,
 } from '../exercise/exercise-stats.service';
+import { compareToRealLife } from '../common/utils/real-life-comparison';
 import { percentChange, round } from '../stats/utils/stats.util';
 import { BadgeDto } from './dto/badge.dto';
 import { ListBadgesQueryDto } from './dto/list-badges-query.dto';
 import { Badge } from './entities/badge.entity';
-import { BADGE_UNIT } from './enums/badge-type.enum';
+import { BADGE_UNIT, BadgeType } from './enums/badge-type.enum';
 import { detectPersonalRecords } from './utils/personal-records.util';
 
 const DEFAULT_LIMIT = 50;
+
+// Records that are a weight really lifted, worth telling as everyday objects.
+// An estimated 1RM was never lifted, and reps are not a weight.
+const LIFTED_LOAD = new Set<BadgeType>([
+  BadgeType.HEAVIEST_WEIGHT,
+  BadgeType.BEST_SESSION_VOLUME,
+]);
 
 @Injectable()
 export class BadgesService {
@@ -116,5 +124,8 @@ function toDto(badge: Badge, workoutId: string): BadgeDto {
     weight: badge.weight,
     reps: badge.reps,
     achievedAt: badge.achievedAt,
+    realLifeComparison: LIFTED_LOAD.has(badge.type)
+      ? compareToRealLife(badge.value)
+      : null,
   };
 }

@@ -38,6 +38,7 @@ import {
   WorkoutTypeBreakdownDto,
 } from './dto/stats-response.dto';
 import { StatsCalculatorService } from './stats-calculator.service';
+import { compareToRealLife } from '../common/utils/real-life-comparison';
 import {
   BestSetRow,
   BreakdownRow,
@@ -123,16 +124,8 @@ export class StatsService {
         select: { id: true, exercises: { id: true, sets: true } },
       }),
     ]);
-    const durations = this.calculator.distributeDuration(workout);
-    const exercises = workout.exercises.map((cwe, i) =>
-      this.calculator.computeExerciseStats(cwe, durations[i], weightKg),
-    );
-
-    const totalSets = sum(exercises, (e) => e.sets);
-    const totalReps = sum(exercises, (e) => e.reps);
-    const totalVolume = sum(exercises, (e) => e.volume);
-    const estimatedCalories = sum(exercises, (e) => e.estimatedCalories);
-
+    const { exercises, totalSets, totalReps, totalVolume, estimatedCalories } =
+      this.workoutTotals(workout, weightKg);
     const fullDayLoad = round(
       dayWorkouts.reduce((acc, w) => acc + this.calculator.workoutVolume(w), 0),
     );
@@ -147,10 +140,11 @@ export class StatsService {
       title: workout.title,
       completionDate: workout.completionDate,
       totalDurationSeconds: workout.totalDurationSeconds,
-      estimatedCalories: round(estimatedCalories),
+      estimatedCalories,
       totalSets,
       totalReps,
-      totalVolume: round(totalVolume),
+      totalVolume,
+      realLifeComparison: compareToRealLife(totalVolume),
       fullDayLoad,
       workoutsCompletedThatDay: dayWorkouts.length,
       numberOfExercises: workout.exercises.length,
@@ -158,6 +152,53 @@ export class StatsService {
       averageVolumePerSet: totalSets ? round(totalVolume / totalSets) : 0,
       musclesWorked: this.calculator.collectMuscles(workout.exercises),
       exercises,
+    };
+  }
+
+  /**
+   * Totals of a workout loaded with its exercises. The body weight only
+   * changes the calories. Shared by the owner's stats and by a workout read
+   * through a post.
+   */
+  workoutTotals(workout: CompletedWorkout, bodyWeightKg: number) {
+    const durations = this.calculator.distributeDuration(workout);
+    const exercises = workout.exercises.map((cwe, i) =>
+      this.calculator.computeExerciseStats(cwe, durations[i], bodyWeightKg),
+    );
+    const totalVolume = round(sum(exercises, (e) => e.volume));
+
+    return {
+      exercises,
+      totalSets: sum(exercises, (e) => e.sets),
+      totalReps: sum(exercises, (e) => e.reps),
+      totalVolume,
+      estimatedCalories: round(sum(exercises, (e) => e.estimatedCalories)),
+    };
+  }
+
+  /**
+   * The totals of a workout shown through a post. Other people see calories
+   * computed for the default body weight: with the author's own, the calories
+   * would give their weight away.
+   */
+  async publishedWorkoutStats(
+    workout: CompletedWorkout,
+    authorId: string,
+    viewerId: string,
+  ) {
+    const weightKg =
+      authorId === viewerId
+        ? await this.resolveBodyWeight(authorId)
+        : DEFAULT_BODY_WEIGHT_KG;
+    const { totalSets, totalReps, totalVolume, estimatedCalories } =
+      this.workoutTotals(workout, weightKg);
+
+    return {
+      estimatedCalories,
+      totalVolume,
+      totalSets,
+      totalReps,
+      realLifeComparison: compareToRealLife(totalVolume),
     };
   }
 

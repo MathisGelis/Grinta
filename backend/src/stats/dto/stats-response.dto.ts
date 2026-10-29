@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { RealLifeComparisonDto } from '../../common/dto/real-life-comparison.dto';
 import { DetailedMuscleGroup } from '../../exercise/enums/detailed-muscle.enum';
 
 export class ExerciseStatsDto {
@@ -33,6 +34,13 @@ export class WorkoutStatsDto {
   totalReps: number;
   @ApiProperty({ description: 'Volume load for this workout (kg)' })
   totalVolume: number;
+  @ApiProperty({
+    type: () => RealLifeComparisonDto,
+    nullable: true,
+    description:
+      'totalVolume told as everyday objects, null under 7 kg. object is an English key the app translates',
+  })
+  realLifeComparison: RealLifeComparisonDto | null;
   @ApiProperty({
     description: 'Combined volume of every workout completed the same day (kg)',
   })

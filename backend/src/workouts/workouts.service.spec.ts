@@ -25,6 +25,7 @@ describe('WorkoutService exercise resolution', () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
     );
   });
 
@@ -125,6 +126,7 @@ describe('WorkoutService completed workouts and progress', () => {
       badges as never,
       photos as never,
       postPartners as never,
+      {} as never,
     );
   });
 
@@ -327,6 +329,7 @@ describe('WorkoutService completed workout photo', () => {
       {} as never,
       {} as never,
       photos as never,
+      {} as never,
       {} as never,
     );
   });

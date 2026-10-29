@@ -1,8 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { SetPair } from '../workouts/entities/completed-workout.entity';
 import { ExerciseStatsDto } from './dto/exercise-stats.dto';
+import {
+  ComparedExerciseStatsDto,
+  ExerciseComparisonDto,
+} from './dto/exercise-comparison.dto';
 import { Exercise } from './entities/exercise.entity';
 import { UserExerciseStats } from './entities/user-exercise-stats.entity';
 import {
@@ -245,10 +254,64 @@ export class ExerciseStatsService {
     return rows.map(toDto);
   }
 
+  /**
+   * The user's stats on one exercise next to those of someone they follow.
+   * Theirs come from their published workouts only, recomputed on the fly:
+   * the stored stats cover every workout, unpublished ones included.
+   */
+  async compareWithFollowed(
+    userId: string,
+    otherId: string,
+    exerciseId: string,
+  ): Promise<ExerciseComparisonDto> {
+    if (otherId === userId)
+      throw new BadRequestException(
+        "Choisissez quelqu'un d'autre que vous pour comparer vos stats.",
+      );
+    const manager = this.statsRepository.manager;
+    const [[user], [exercise], mine, theirs] = await Promise.all([
+      manager.query<ExerciseComparisonDto['user'][]>(
+        `SELECT u.id, u."uniqueName", u."displayName",
+                COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"
+           FROM users u
+           JOIN connections c ON c."followingId" = u.id AND c."followerId" = $1
+          WHERE u.id = $2`,
+        [userId, otherId],
+      ),
+      manager.query<Array<{ id: string; name: string }>>(
+        `SELECT id, name FROM exercises WHERE id = $1`,
+        [exerciseId],
+      ),
+      manager
+        .query<StatsRow[]>(
+          `SELECT * FROM user_exercise_stats
+            WHERE user_id = $1 AND exercise_id = $2`,
+          [userId, exerciseId],
+        )
+        .then(([row]) => row && fromRow(row)),
+      this.loadHistories(manager, otherId, [exerciseId], true),
+    ]);
+
+    if (!exercise) throw new NotFoundException('Exercise not found');
+    if (!user)
+      throw new ForbiddenException(
+        'Suivez cette personne pour comparer vos stats avec les siennes.',
+      );
+    const history = theirs.get(exerciseId);
+
+    return {
+      exercise,
+      me: mine ? compared(mine) : null,
+      user,
+      them: history ? compared(buildExerciseStats(history.sessions)) : null,
+    };
+  }
+
   private async loadHistories(
     manager: EntityManager,
     userId: string,
     exerciseIds: string[],
+    publishedOnly = false,
   ): Promise<Map<string, ExerciseHistory>> {
     const rows: Array<{
       exerciseId: string;
@@ -265,7 +328,8 @@ export class ExerciseStatsService {
          JOIN completed_workout_exercises e ON e."workoutId" = w.id
          JOIN exercises ex ON ex.id = e."exerciseId"
         WHERE w."userId" = $1
-          AND e."exerciseId" = ANY($2::uuid[])`,
+          AND e."exerciseId" = ANY($2::uuid[])
+          ${publishedOnly ? 'AND EXISTS (SELECT 1 FROM posts p WHERE p."workoutId" = w.id)' : ''}`,
       [userId, exerciseIds],
     );
     const histories = new Map<string, ExerciseHistory>();
@@ -311,6 +375,21 @@ function fromRow(row: StatsRow): StoredExerciseStats {
     lastWeight: row.last_weight ?? 0,
     lastReps: row.last_reps ?? 0,
   };
+}
+
+function compared(
+  stats: Omit<StoredExerciseStats, 'lastWorkoutId'> | null,
+): ComparedExerciseStatsDto | null {
+  return (
+    stats && {
+      heaviestWeight: stats.prWeight,
+      estimatedOneRepMax: stats.bestEstimatedOneRepMax,
+      bestSessionVolume: stats.bestSessionVolume,
+      maxReps: stats.maxReps,
+      totalSessions: stats.totalSessions,
+      lastPerformedAt: stats.lastPerformedAt,
+    }
+  );
 }
 
 function toColumns(snapshot: StoredExerciseStats) {

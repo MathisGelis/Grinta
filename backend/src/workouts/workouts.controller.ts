@@ -50,6 +50,36 @@ export class WorkoutsController {
     return this.workoutService.createCompletedWorkout(req.user, dto);
   }
 
+  @Post('planned/from-post/:postId')
+  @ApiOperation({
+    summary: 'Copy the workout of a post into my planned workouts',
+    description:
+      'For any post the user can see (same rule as GET /posts/:postId). The planned workout gets the title and the exercises, in the same order, without the sets, weights or description of the author. Returned like GET /workouts/planned/:id.',
+  })
+  @ApiResponse({ status: 201, description: '{ workout, totalExercises }' })
+  @ApiResponse({ status: 404, description: 'Post not found' })
+  duplicatePost(
+    @Req() req: AuthenticatedRequest,
+    @Param('postId') postId: string,
+  ) {
+    return this.workoutService.duplicatePostWorkout(req.user, postId);
+  }
+
+  @Post('planned/from-completed/:id')
+  @ApiOperation({
+    summary: 'Copy one of my completed workouts into my planned workouts',
+    description:
+      'Owner only. Same copy as from a post: title and exercises, without the sets.',
+  })
+  @ApiResponse({ status: 201, description: '{ workout, totalExercises }' })
+  @ApiResponse({ status: 404, description: 'Not a workout of the user' })
+  duplicateCompleted(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.workoutService.duplicateCompletedWorkout(req.user, id);
+  }
+
   @Patch('planned/:id')
   @ApiOperation({ summary: 'Update a planned workout' })
   @ApiResponse({ status: 200, description: 'Planned workout updated' })

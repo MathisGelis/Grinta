@@ -80,6 +80,30 @@ export class PostsController {
   }
 
   @Auth()
+  @Get(':postId/workout')
+  @ApiOperation({
+    summary: 'Exercises, sets and stats of the workout behind a post',
+    description:
+      "Same visibility as GET /posts/:postId: the author, anyone for a public profile, followers for a private one. The workout is reached through the post only, so an unpublished workout stays out of reach. `exercises` has the shape of GET /workouts/completed/:id. `stats` holds the totals of GET /stats/workout/:id; for anyone but the author the calories are computed for the default body weight (70 kg), so they do not reveal the author's. No badges or other private data of the author.",
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      '{ workoutId, totalExercises, exercises: [{ id, timerSeconds, sets: [{ reps, weight }], exercise: { id, name, equipment_type, primary_muscle, secondary_muscles, exercise_type, image_url, createdAt } }], stats: { estimatedCalories, totalVolume, totalSets, totalReps, realLifeComparison } }',
+  })
+  @ApiResponse({ status: 400, description: 'Identifiant invalide' })
+  @ApiResponse({
+    status: 404,
+    description: 'Post not found: missing, or private and not followed',
+  })
+  getPostWorkout(
+    @Req() req: AuthenticatedRequest,
+    @Param('postId') postId: string,
+  ) {
+    return this.postsService.getPostWorkout(req.user.id, postId);
+  }
+
+  @Auth()
   @Delete(':postId')
   @ApiOperation({ summary: 'Delete a post' })
   @ApiResponse({ status: 200, description: 'Post deleted successfully' })

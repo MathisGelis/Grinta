@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ExerciseService } from './exercise.service';
 import { ExerciseStatsService } from './exercise-stats.service';
 import { ExerciseStatsDto } from './dto/exercise-stats.dto';
+import { ExerciseComparisonDto } from './dto/exercise-comparison.dto';
 import { Auth } from '../auth/auth.decorators';
 import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
@@ -123,5 +124,24 @@ export class ExerciseController {
   })
   async getStats(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.exerciseStats.getForUser(req.user.id, id);
+  }
+
+  @Auth()
+  @Get(':id/stats/compare/:userId')
+  @ApiOperation({
+    summary: 'My stats on one exercise next to those of someone I follow',
+    description:
+      'Mine come from all my workouts, theirs only from the workouts they published (posted): unpublished sessions never count. Only for a user the current user follows.',
+  })
+  @ApiResponse({ status: 200, type: ExerciseComparisonDto })
+  @ApiResponse({ status: 400, description: 'Compared with oneself, or bad id' })
+  @ApiResponse({ status: 403, description: 'User not followed' })
+  @ApiResponse({ status: 404, description: 'Exercise not found' })
+  compareStats(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+  ): Promise<ExerciseComparisonDto> {
+    return this.exerciseStats.compareWithFollowed(req.user.id, userId, id);
   }
 }

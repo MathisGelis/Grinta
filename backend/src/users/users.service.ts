@@ -18,6 +18,7 @@ import { Post } from 'src/posts/entities/post.entity';
 import { ConnectionsService } from 'src/connections/connections.service';
 import { PhotosService } from 'src/photos/photos.service';
 import { partnersSql } from 'src/posts/post-partners.service';
+import { withWorkoutSummaries } from 'src/posts/workout-summary';
 import { usernameBaseFrom } from './username';
 
 type AvatarUrls<T = string> = { avatarUrl: T; avatarThumbnailUrl: T };
@@ -294,14 +295,15 @@ export class UsersService {
     return counts;
   }
 
-  private findProfilePosts(currentUserId: string, targetUserId: string) {
-    return this.postRepository
+  private async findProfilePosts(currentUserId: string, targetUserId: string) {
+    const rows = await this.postRepository
       .createQueryBuilder('post')
       .leftJoin('post.workout', 'w')
       .where('post."userId" = :targetUserId', { targetUserId })
       .select([
         'post.id AS id',
         'post."createdAt" AS "createdAt"',
+        'w.id AS "workoutId"',
         'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
         'post."likesCount" AS "likesCount"',
         'post."commentsCount" AS "commentsCount"',
@@ -314,7 +316,9 @@ export class UsersService {
       ])
       .orderBy('post."createdAt"', 'DESC')
       .setParameter('currentUserId', currentUserId)
-      .getRawMany();
+      .getRawMany<{ workoutId: string }>();
+
+    return withWorkoutSummaries(this.postRepository.manager, rows);
   }
 
   async generateUniqueUsernameFromDisplayName(
