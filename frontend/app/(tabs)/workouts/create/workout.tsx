@@ -24,7 +24,6 @@ export default function CreateWorkoutScreen() {
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState<string | null>(null);
   const [selectedExercises, setSelectedExercises] = useState<
     ExerciseSetupData[]
   >([]);
@@ -117,8 +116,6 @@ export default function CreateWorkoutScreen() {
           onNameChange={setName}
           description={description}
           onDescriptionChange={setDescription}
-          image={image}
-          onImageChange={setImage}
           estimatedTime={estimatedTime}
           onEstimatedTimeChange={setEstimatedTime}
         />
