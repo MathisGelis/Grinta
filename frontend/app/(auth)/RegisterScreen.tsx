@@ -10,6 +10,7 @@ import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
+import { LIMITS } from "@/utils/validation";
 import { useTranslation } from "@/contexts/LanguageContext";
 const { height } = Dimensions.get("window");
 const HERO_HEIGHT = height * 0.38;
@@ -29,6 +30,18 @@ export default function RegisterScreen() {
     setError("");
     if (!name || !email || !password) {
       setError(t.fillAllFields);
+      return;
+    }
+    if (name.trim().length > LIMITS.displayName) {
+      setError(t.nameTooLong);
+      return;
+    }
+    if (email.trim().length > LIMITS.email) {
+      setError(t.emailTooLong);
+      return;
+    }
+    if (password.length > LIMITS.password) {
+      setError(t.passwordTooLong);
       return;
     }
     if (password !== confirmPassword) {
@@ -97,6 +110,7 @@ export default function RegisterScreen() {
               placeholder={t.yourName}
               placeholderTextColor={WorkoutTheme.text.disabled}
               value={name}
+              maxLength={LIMITS.displayName}
               onChangeText={setName}
             />
             <View className="h-[1px] bg-raised mt-1.5" />
@@ -109,6 +123,7 @@ export default function RegisterScreen() {
               placeholder={t.emailPlaceholder}
               placeholderTextColor={WorkoutTheme.text.disabled}
               value={email}
+              maxLength={LIMITS.email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -125,6 +140,7 @@ export default function RegisterScreen() {
                 placeholderTextColor={WorkoutTheme.text.disabled}
                 secureTextEntry={!showPassword}
                 value={password}
+                maxLength={LIMITS.password}
                 onChangeText={setPassword}
                 textContentType="oneTimeCode"
               />

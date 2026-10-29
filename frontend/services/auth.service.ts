@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { buildUniqueName } from "@/utils/validation";
 
 interface LoginResponse {
   access_token: string;
@@ -15,19 +16,14 @@ export const AuthService = {
   },
 
   async register(email: string, password: string, name: string): Promise<RegisterResponse> {
-    const base = name.trim()
-      ? name.trim().toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9_]/g, "")
-      : email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "");
-    const uniqueName = base + Math.floor(Math.random() * 1000);
-
     const user = await api.post<{ id: string }>("/users/register", {
-      email,
+      email: email.trim(),
       password,
-      displayName: name,
-      uniqueName,
+      displayName: name.trim(),
+      uniqueName: buildUniqueName(name, email),
     });
 
-    const auth = await api.post<LoginResponse>("/auth/login", { identifier: email, password });
+    const auth = await api.post<LoginResponse>("/auth/login", { identifier: email.trim(), password });
 
     return { access_token: auth.access_token, id: user.id };
   },
