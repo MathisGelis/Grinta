@@ -53,6 +53,19 @@ import { FormField, TextField } from "@/components/ui/FormField";
 import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
 import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
 import { PhotoService } from "@/services/photo.service";
+const dedupeCompletedSets = (state: ExerciseState): ExerciseState => {
+  const seen = new Set<number>();
+  const completedSetIndices: number[] = [];
+  const completedSets: ExerciseState["completedSets"] = [];
+  state.completedSetIndices.forEach((index, position) => {
+    if (seen.has(index)) return;
+    seen.add(index);
+    completedSetIndices.push(index);
+    if (state.completedSets[position]) completedSets.push(state.completedSets[position]);
+  });
+  return { ...state, completedSetIndices, completedSets };
+};
+
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
@@ -76,7 +89,6 @@ export default function ActiveWorkoutScreen() {
   const [newBadges, setNewBadges] = useState<Badge[]>([]);
   const photoFailedRef = useRef(false);
   const [completedExercises, setCompletedExercises] = useState<number[]>([]);
-  const setTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const totalTimeRef = useRef(0);
   const [exerciseStats, setExerciseStats] = useState<
     Record<string, LiveExerciseStats | null>
@@ -119,7 +131,7 @@ export default function ActiveWorkoutScreen() {
         const stored = await getActiveSession();
 
         if (stored) {
-          setExercisesState(stored.exercisesState);
+          setExercisesState(stored.exercisesState.map(dedupeCompletedSets));
           setCurrentExerciseIndex(stored.currentExerciseIndex);
           setCurrentSetIndex(stored.currentSetIndex);
           setCompletedExercises(stored.completedExercises);
@@ -150,12 +162,6 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     loadWorkout();
-
-    return () => {
-      if (setTimeoutRef.current) {
-        clearTimeout(setTimeoutRef.current);
-      }
-    };
   }, [loadWorkout]);
 
   useEffect(() => {
@@ -237,11 +243,18 @@ export default function ActiveWorkoutScreen() {
   const isLastSet = currentSetIndex === (currentExercise?.sets.length || 1) - 1;
 
   const handleCompleteSet = (reps: number, weight: number) => {
-    const newState = [...exercisesState];
-    const exState = newState[currentExerciseIndex];
+    const exState = exercisesState[currentExerciseIndex];
+    if (exState.completedSetIndices.includes(currentSetIndex)) return;
 
-    exState.completedSetIndices.push(currentSetIndex);
-    exState.completedSets.push({ reps, weight });
+    const newState = exercisesState.map((state, index) =>
+      index === currentExerciseIndex
+        ? {
+            ...state,
+            completedSetIndices: [...state.completedSetIndices, currentSetIndex],
+            completedSets: [...state.completedSets, { reps, weight }],
+          }
+        : state,
+    );
 
     if (currentExerciseId && (weight > 0 || reps > 0)) {
       // Affichage uniquement : le serveur recalcule les stats à l'enregistrement de la séance.
@@ -256,41 +269,25 @@ export default function ActiveWorkoutScreen() {
       }));
     }
 
+    setExercisesState(newState);
+
+    if (isLastSet) {
+      setCompletedExercises([...completedExercises, currentExerciseIndex]);
+      if (isLastExercise) {
+        setShowRestScreen(false);
+        setShowCompletionModal(true);
+        return;
+      }
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setCurrentSetIndex(0);
+    } else {
+      setCurrentSetIndex(currentSetIndex + 1);
+    }
+
     const restTime = exState.restTimeSeconds || 90;
     setRestTimeRemaining(restTime);
     setRestTimeTotal(restTime);
     setShowRestScreen(true);
-    setExercisesState(newState);
-
-    if (setTimeoutRef.current) {
-      clearTimeout(setTimeoutRef.current);
-    }
-
-    setTimeoutRef.current = setTimeout(
-      () => {
-        executeSetTransition(isLastSet, isLastExercise, newState);
-      },
-      restTime * 1000 + 500,
-    );
-  };
-
-  const executeSetTransition = (
-    isLastSet: boolean,
-    isLastExercise: boolean,
-    newState: ExerciseState[],
-  ) => {
-    if (isLastSet) {
-      setCompletedExercises([...completedExercises, currentExerciseIndex]);
-
-      if (isLastExercise) {
-        setShowCompletionModal(true);
-      } else {
-        setCurrentExerciseIndex(currentExerciseIndex + 1);
-        setCurrentSetIndex(0);
-      }
-    } else {
-      setCurrentSetIndex(currentSetIndex + 1);
-    }
   };
 
   const handleAddSet = () => {
@@ -404,13 +401,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleSkipRest = () => {
-    if (setTimeoutRef.current) {
-      clearTimeout(setTimeoutRef.current);
-    }
-
     setShowRestScreen(false);
-
-    executeSetTransition(isLastSet, isLastExercise, exercisesState);
   };
 
   const handleEndWorkout = () => {
