@@ -82,7 +82,7 @@ export default function ActiveWorkoutScreen() {
   const [restTimeTotal, setRestTimeTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [completionTitle, setCompletionTitle] = useState("");
+  const [completionTitle, setCompletionTitle] = useState(workoutName);
   const [completionDescription, setCompletionDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completionPhoto, setCompletionPhoto] = useState<string | null>(null);
