@@ -817,8 +817,8 @@ const en: BaseStrings = {
   nextWeek: "Next week",
   prevMonth: "Previous month",
   nextMonth: "Next month",
-  setsCount: "{n} sets",
-  exercisesCount: "{n} exercises",
+  setsCount: "{n} set|{n} sets",
+  exercisesCount: "{n} exercise|{n} exercises",
   equipmentNames: {
     barbell: "Barbell",
     dumbbell: "Dumbbells",
@@ -883,10 +883,10 @@ const en: BaseStrings = {
   editLabel: "Edit",
   requestsLabel: "Requests",
   postedOn: "Posted on {date}",
-  daysCount: "{n} day(s)",
-  workoutsCountLabel: "{n} workout(s)",
+  daysCount: "{n} day|{n} days",
+  workoutsCountLabel: "{n} workout|{n} workouts",
   dayN: "Day {n}",
-  commentsCount: "{n} comment(s)",
+  commentsCount: "{n} comment|{n} comments",
   apiUnreachable: "Could not reach the server",
   serverError: "Server error",
   cannotUploadPhoto: "Could not upload the photo",
@@ -1214,7 +1214,7 @@ const fr: BaseStrings = {
   fillAllFields: "Veuillez remplir tous les champs",
   passwordsDontMatch: "Les mots de passe ne correspondent pas",
   wrongCredentials: "Identifiants incorrects",
-  topPostsTab: "Tops posts",
+  topPostsTab: "Top posts",
   followedPeopleTab: "Personnes suivies",
   noPopularPosts: "Aucun post populaire pour le moment.",
   reportThisComment: "Signaler ce commentaire",
@@ -1334,8 +1334,8 @@ const fr: BaseStrings = {
   nextWeek: "Semaine suivante",
   prevMonth: "Mois précédent",
   nextMonth: "Mois suivant",
-  setsCount: "{n} séries",
-  exercisesCount: "{n} exercices",
+  setsCount: "{n} série|{n} séries",
+  exercisesCount: "{n} exercice|{n} exercices",
   equipmentNames: {
     barbell: "Barre",
     dumbbell: "Haltères",
@@ -1400,10 +1400,10 @@ const fr: BaseStrings = {
   editLabel: "Modifier",
   requestsLabel: "Demandes",
   postedOn: "Posté le {date}",
-  daysCount: "{n} jour(s)",
-  workoutsCountLabel: "{n} séance(s)",
+  daysCount: "{n} jour|{n} jours",
+  workoutsCountLabel: "{n} séance|{n} séances",
   dayN: "Jour {n}",
-  commentsCount: "{n} commentaire(s)",
+  commentsCount: "{n} commentaire|{n} commentaires",
   apiUnreachable: "Impossible de joindre le serveur",
   serverError: "Erreur serveur",
   cannotUploadPhoto: "Impossible d'envoyer la photo",
@@ -5640,7 +5640,10 @@ export function format(
   template: string,
   vars: Record<string, string | number>,
 ): string {
-  return template.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
+  // « {n} set|{n} sets » : forme singulière quand n vaut 1, plurielle sinon.
+  const forms = template.split("|");
+  const chosen = forms.length > 1 && vars.n !== undefined ? forms[Number(vars.n) === 1 ? 0 : 1] : template;
+  return chosen.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
 }
 
 const base: Record<Lang, BaseStrings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };
@@ -5657,7 +5660,7 @@ export const LANGUAGE_OPTIONS: { code: Lang; label: string; nativeLabel: string 
   { code: "fr", label: "French", nativeLabel: "Français" },
   { code: "de", label: "German", nativeLabel: "Deutsch" },
   { code: "ru", label: "Russian", nativeLabel: "Русский" },
-  { code: "pt", label: "Portugues", nativeLabel: "Português" },
+  { code: "pt", label: "Portuguese", nativeLabel: "Português" },
   { code: "it", label: "Italian", nativeLabel: "Italiano" },
   { code: "ko", label: "Korean", nativeLabel: "한국어" },
 ];

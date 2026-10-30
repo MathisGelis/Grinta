@@ -491,7 +491,7 @@ export default function CompletedWorkoutDetailScreen() {
                         <View className="flex-1 rounded-tile bg-raised p-3">
                           <Stat
                             size="md"
-                            value={formatWeight(exerciseStats.estimatedOneRepMax, 0)}
+                            value={formatWeight(exerciseStats.estimatedOneRepMax)}
                             label={t.oneRepMaxLabel}
                           />
                         </View>

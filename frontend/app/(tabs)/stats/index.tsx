@@ -1,3 +1,4 @@
+import { formatDate } from "@/utils/formatDate";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useFocusEffect, router } from "expo-router";
 import { View, Text, ActivityIndicator, Alert } from "react-native";
@@ -29,7 +30,7 @@ function formatDuration(seconds: number): string {
 }
 
 export default function StatsScreen() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [view, setView] = useState<CalendarView>("week");
   const [tab, setTab] = useState<"sessions" | "data">("sessions");
   const [anchor, setAnchor] = useState(() => new Date());
@@ -185,7 +186,7 @@ export default function StatsScreen() {
 
   const formatWorkoutDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    return `${t.days[(d.getDay() + 6) % 7]}, ${t.months[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
+    return formatDate(d, lang, "weekday");
   };
 
   return (
@@ -204,7 +205,7 @@ export default function StatsScreen() {
       />
 
       <Text className="text-center text-lg font-semibold text-ink">
-        {`${t.days[(selectedDate.getDay() + 6) % 7]} ${selectedDate.getDate()} ${t.months[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`}
+        {formatDate(selectedDate, lang, "long")}
       </Text>
 
       <SegmentedControl<"sessions" | "data">

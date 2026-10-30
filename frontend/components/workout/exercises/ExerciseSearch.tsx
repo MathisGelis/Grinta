@@ -149,7 +149,8 @@ export default function ExerciseSearch({
                         {item.name}
                       </Text>
                       <Text className="mt-0.5 text-xs capitalize text-ink-muted">
-                        {item.primary_muscle}
+                        {t.muscleNames[item.primary_muscle] ??
+                          item.primary_muscle.replace(/_/g, " ")}
                       </Text>
                     </View>
                     <Ionicons

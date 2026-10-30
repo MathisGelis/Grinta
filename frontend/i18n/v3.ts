@@ -175,7 +175,7 @@ const en: V3Strings = {
   },
 
   pcBestSet: "Best set",
-  pcSetsCount: "{n} sets",
+  pcSetsCount: "{n} set|{n} sets",
   pcMoreExercises: "+{n} more",
   pcRecords: "Records",
   pcVolume: "Volume",
@@ -346,7 +346,7 @@ const fr: V3Strings = {
   },
 
   pcBestSet: "Meilleure série",
-  pcSetsCount: "{n} séries",
+  pcSetsCount: "{n} série|{n} séries",
   pcMoreExercises: "+{n} autres",
   pcRecords: "Records",
   pcVolume: "Volume",

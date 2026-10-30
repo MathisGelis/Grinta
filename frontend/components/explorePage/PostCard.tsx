@@ -1,3 +1,4 @@
+import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
@@ -102,7 +103,7 @@ export default function PostCard({
             {post.displayName}
           </Text>
           <Text className="mt-0.5 text-[12px] text-ink-muted">
-            {new Date(post.createdAt).toLocaleDateString(LOCALES[lang])}
+            {formatDate(post.createdAt, lang)}
           </Text>
         </View>
         {onShare ? (

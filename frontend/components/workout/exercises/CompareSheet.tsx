@@ -1,3 +1,4 @@
+import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
@@ -7,7 +8,6 @@ import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
 import { ApiError } from "@/services/api";
 import { ConnectionsService, type UserListItem } from "@/services/connections.service";
 import {
@@ -146,10 +146,10 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
             <Text className="px-1 text-xs text-ink-muted">
               {t.cmpLastPerformed} ·{" "}
               {comparison.me.lastPerformedAt
-                ? new Date(comparison.me.lastPerformedAt).toLocaleDateString(LOCALES[lang])
+                ? formatDate(comparison.me.lastPerformedAt, lang)
                 : t.cmpNever}{" "}
               / {comparison.them.lastPerformedAt
-                ? new Date(comparison.them.lastPerformedAt).toLocaleDateString(LOCALES[lang])
+                ? formatDate(comparison.them.lastPerformedAt, lang)
                 : t.cmpNever}
             </Text>
             <Text className="px-1 text-xs text-ink-muted">{t.cmpOnlyPublished}</Text>

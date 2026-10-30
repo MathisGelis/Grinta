@@ -1,3 +1,4 @@
+import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
 import { Text, View } from "react-native";
@@ -63,7 +64,7 @@ export default function BadgeList({ badges, showDate = false }: Props) {
                 <Text className="text-sm font-medium text-ink">{label[badge.type]}</Text>
                 <Text className="mt-0.5 text-xs text-ink-muted" numberOfLines={1}>
                   {showDate
-                    ? new Date(badge.achievedAt).toLocaleDateString(lang)
+                    ? formatDate(badge.achievedAt, lang)
                     : `${val(badge, badge.previousValue)} → ${val(badge, badge.value)} ${unit(badge)}`}
                 </Text>
                 {realLifeText(t, badge.realLifeComparison) ? (

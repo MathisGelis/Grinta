@@ -1,3 +1,4 @@
+import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
@@ -116,7 +117,7 @@ export default function RecordsScreen() {
                       <Text className="mt-0.5 text-xs text-ink-muted">
                         {muscle(s.primaryMuscle)}
                         {s.lastPerformedAt
-                          ? ` · ${new Date(s.lastPerformedAt).toLocaleDateString(lang)}`
+                          ? ` · ${formatDate(s.lastPerformedAt, lang)}`
                           : ""}
                       </Text>
                     </View>
