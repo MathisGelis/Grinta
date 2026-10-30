@@ -66,6 +66,13 @@ export default function ProfileScreen() {
     );
   };
 
+  const goalLabels = {
+    gain_weight: t.goalGainWeight,
+    lose_weight: t.goalLoseWeight,
+    get_fitter: t.goalGetFitter,
+    flexibility: t.goalFlexibility,
+    learn_basics: t.goalLearnBasics,
+  };
   const userName = user?.displayName ?? "";
   const joinedDate = user?.createdAt
     ? formatJoinDate(user.createdAt, t.months)
@@ -125,6 +132,9 @@ export default function ProfileScreen() {
                 <Text className="text-sm font-medium text-accent-light">
                   @{user.uniqueName}
                 </Text>
+              ) : null}
+              {user.goal ? (
+                <Text className="text-xs text-ink-soft">{goalLabels[user.goal]}</Text>
               ) : null}
               {joinedDate ? (
                 <Text className="text-xs text-ink-muted">

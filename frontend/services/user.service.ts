@@ -48,9 +48,14 @@ export interface CurrentUser {
   uniqueName: string;
   createdAt: string;
   isPublic?: boolean;
+  gender?: Gender | null;
+  goal?: Goal | null;
   avatarUrl?: string | null;
   avatarThumbnailUrl?: string | null;
 }
+
+export type Gender = "male" | "female" | "other";
+export type Goal = "gain_weight" | "lose_weight" | "get_fitter" | "flexibility" | "learn_basics";
 
 interface UpdateUserData {
   displayName?: string;
@@ -59,6 +64,8 @@ interface UpdateUserData {
   birthDate?: string;
   height?: number;
   weight?: number;
+  gender?: Gender | null;
+  goal?: Goal | null;
 }
 
 export interface SearchUser {

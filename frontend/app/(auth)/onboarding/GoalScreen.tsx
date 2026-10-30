@@ -1,21 +1,21 @@
 import React, { useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { DrumRollPicker } from "@/components/DrumRollPicker";
-import { UserService } from "@/services/user.service";
-import { saveItem, getItem } from "@/core/services/storage";
+import { UserService, type Gender, type Goal } from "@/services/user.service";
+import { getItem } from "@/core/services/storage";
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 const GOALS = [
-  { id: "Gain Weight", label: "goalGainWeight" },
-  { id: "Lose weight", label: "goalLoseWeight" },
-  { id: "Get fitter", label: "goalGetFitter" },
-  { id: "Gain more flexible", label: "goalFlexibility" },
-  { id: "Learn the basic", label: "goalLearnBasics" },
-] as const;
+  { id: "gain_weight", label: "goalGainWeight" },
+  { id: "lose_weight", label: "goalLoseWeight" },
+  { id: "get_fitter", label: "goalGetFitter" },
+  { id: "flexibility", label: "goalFlexibility" },
+  { id: "learn_basics", label: "goalLearnBasics" },
+] as const satisfies readonly { id: Goal; label: string }[];
 
 export default function GoalScreen() {
   const { t } = useTranslation();
@@ -38,14 +38,15 @@ export default function GoalScreen() {
           birthDate: `${birthYear}-01-01`,
           height: parseInt(params.height),
           weight: parseInt(params.weight),
+          gender: params.gender as Gender,
+          goal: GOALS[goalIndex].id,
         });
       }
-      await saveItem("user_gender", params.gender);
-      await saveItem("user_goal", GOALS[goalIndex].id);
-    } catch {
+      router.replace("/(tabs)/explore");
+    } catch (err) {
+      Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
     } finally {
       setLoading(false);
-      router.replace("/(tabs)/explore");
     }
   };
 
