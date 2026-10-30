@@ -643,3 +643,9 @@ Un `400` de validation a maintenant ce format, **au premier niveau** :
 - `errors[].field` donne le chemin du champ, y compris imbriqué (`exercises.0.sets.1.weight`), pour afficher l'erreur sous le bon champ.
 - Les autres erreurs (`401`, `403`, `404`, `409`, `429`…) gardent leur format `{ statusCode, message: { message, … } }`.
 - Il n'y avait déjà qu'un seul `ValidationPipe` sur cette branche. Le doublon signalé par l'audit vient du backend périmé de la branche front (voir B-00).
+
+### B-07 Longueur des commentaires
+
+- Un commentaire fait **1 à 500 caractères**, à la création comme à la modification. La limite existait déjà côté serveur, elle est maintenant documentée et renvoie un code exploitable.
+- Au-delà : `400` avec `errors: [{ field: "content", code: "FIELD_TOO_LONG", message: "« content » ne doit pas dépasser 500 caractères." }]`.
+- Côté app : `maxLength={500}` sur le champ, et un compteur à l'approche de la limite.

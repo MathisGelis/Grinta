@@ -73,3 +73,28 @@ export async function exerciseId(app: NestExpressApplication, name: string) {
   if (!row) throw new Error(`Exercise ${name} missing from the catalogue`);
   return row.id;
 }
+
+/** A workout of the user, published as a post; returns the post id. */
+export async function createPost(
+  app: NestExpressApplication,
+  user: TestUser,
+  exercise: string,
+): Promise<string> {
+  const workout = await http(app)
+    .post('/workouts/completed')
+    .auth(user.token, { type: 'bearer' })
+    .send({
+      title: 'Séance',
+      completionDate: new Date().toISOString(),
+      totalDurationSeconds: 1800,
+      exercises: [{ exerciseId: exercise, sets: [{ reps: 8, weight: 50 }] }],
+    })
+    .expect(201);
+  const post = await http(app)
+    .post('/posts')
+    .auth(user.token, { type: 'bearer' })
+    .send({ workoutId: (workout.body as { id: string }).id })
+    .expect(201);
+
+  return (post.body as { id: string }).id;
+}
