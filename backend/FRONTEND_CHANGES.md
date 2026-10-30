@@ -676,3 +676,27 @@ Un `400` de validation a maintenant ce format, **au premier niveau** :
   - un catalogue inchangé répond `304` sans corps : on garde la liste locale ;
   - sinon `200` avec la nouvelle liste et un nouvel ETag.
 - Le cache HTTP natif d'iOS et Android applique déjà ces règles avec `fetch`. Si l'app garde son propre cache (`exercises_cache_v2`), qu'elle stocke l'ETag à côté et traite le `304`.
+
+### B-10 Codes à la place des phrases dans les stats
+
+`insights` reste un tableau de chaînes, mais ce sont maintenant **des codes à traduire**, plus des phrases anglaises. Les chiffres sont dans les champs voisins de la réponse.
+
+`GET /stats/balance`, avec les chiffres `pushPullRatio` et `upperLowerRatio` :
+
+| Code | Sens |
+| --- | --- |
+| `INSUFFICIENT_PULL_VOLUME` | Pas assez de tirage pour juger l'équilibre poussée/tirage |
+| `PUSH_DOMINANT` | Poussée > 1,3 × tirage : ajouter du tirage |
+| `PULL_DOMINANT` | Tirage dominant (ratio < 0,77) : ajouter de la poussée |
+| `PUSH_PULL_BALANCED` | Équilibre poussée/tirage correct |
+| `NO_LOWER_BODY_VOLUME` | Aucun volume bas du corps sur la période |
+| `UPPER_BODY_DOMINANT` | Haut > 2 × bas : plus de jambes |
+| `LOWER_BODY_DOMINANT` | Bas dominant (ratio < 0,5) : haut du corps peut-être négligé |
+
+`GET /stats/comparisons`, avec les chiffres `comparison.workouts.changePct`, `comparison.volume.changePct`, `baseline.periodsConsidered` et `elapsedPct` :
+
+| Code | Sens |
+| --- | --- |
+| `NOT_ENOUGH_HISTORY` | Pas encore assez d'historique pour comparer |
+| `WORKOUTS_ON_TRACK` / `WORKOUTS_ABOVE_USUAL` / `WORKOUTS_BELOW_USUAL` | Nombre de séances dans la moyenne, au-dessus ou en dessous |
+| `VOLUME_ON_TRACK` / `VOLUME_ABOVE_USUAL` / `VOLUME_BELOW_USUAL` | Volume dans la moyenne, au-dessus ou en dessous |

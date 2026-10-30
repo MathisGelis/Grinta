@@ -770,12 +770,7 @@ export class StatsService {
           }
         : null,
       comparison,
-      insights: this.calculator.comparisonInsights(
-        comparison,
-        usable.length,
-        query.period,
-        elapsed,
-      ),
+      insights: this.calculator.comparisonInsights(comparison, usable.length),
     };
   }
 

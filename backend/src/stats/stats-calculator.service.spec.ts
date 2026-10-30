@@ -3,6 +3,7 @@ import { PlannedWorkout } from '../workouts/entities/planned-workout.entity';
 import { ProgressionMetric } from './dto/progression-query.dto';
 import { StatsCalculatorService } from './stats-calculator.service';
 import { BestSetRow, PeriodTotals } from './stats.types';
+import { BalanceInsight, ComparisonInsight } from './constants/insights';
 
 const calc = new StatsCalculatorService();
 const set = (reps: number, weight: number) => ({ reps, weight });
@@ -396,20 +397,27 @@ describe('comparison against the personal baseline', () => {
     });
   });
 
-  it('writes insights that mention the elapsed part of the period', () => {
+  it('gives insight codes, the figures staying in the comparison', () => {
     const average = calc.averageTotals([totals(4, 2000)]);
     const comparison = calc.compareToBaseline(totals(3, 1500), average, 0.5);
-    const insights = calc.comparisonInsights(comparison, 8, 'week', 0.5);
 
-    expect(insights).toEqual([
-      'Workouts are 50% above your usual week (last 8) so far this week.',
-      'Training volume is 50% above your usual week (last 8) so far this week.',
+    expect(calc.comparisonInsights(comparison, 8)).toEqual([
+      ComparisonInsight.WORKOUTS_ABOVE_USUAL,
+      ComparisonInsight.VOLUME_ABOVE_USUAL,
+    ]);
+    expect(comparison.workouts.changePct).toBe(50);
+
+    const onTrack = calc.compareToBaseline(totals(2, 1000), average, 0.5);
+
+    expect(calc.comparisonInsights(onTrack, 8)).toEqual([
+      ComparisonInsight.WORKOUTS_ON_TRACK,
+      ComparisonInsight.VOLUME_ON_TRACK,
     ]);
   });
 
   it('says so when there is nothing to compare with', () => {
-    expect(calc.comparisonInsights({}, 0, 'week', 1)).toEqual([
-      'Not enough history yet to compare with your usual routine.',
+    expect(calc.comparisonInsights({}, 0)).toEqual([
+      ComparisonInsight.NOT_ENOUGH_HISTORY,
     ]);
   });
 });
@@ -482,5 +490,25 @@ describe('heatmapDays', () => {
     ]);
 
     expect(days.map((d) => d.level)).toEqual([4, 4]);
+  });
+});
+
+describe('balanceInsights', () => {
+  it('gives one code for push/pull and one for upper/lower', () => {
+    expect(calc.balanceInsights(null, 1, 10)).toEqual([
+      BalanceInsight.INSUFFICIENT_PULL_VOLUME,
+    ]);
+    expect(calc.balanceInsights(1.5, 3, 4)).toEqual([
+      BalanceInsight.PUSH_DOMINANT,
+      BalanceInsight.UPPER_BODY_DOMINANT,
+    ]);
+    expect(calc.balanceInsights(0.5, 0.4, 20)).toEqual([
+      BalanceInsight.PULL_DOMINANT,
+      BalanceInsight.LOWER_BODY_DOMINANT,
+    ]);
+    expect(calc.balanceInsights(1, null, 0)).toEqual([
+      BalanceInsight.PUSH_PULL_BALANCED,
+      BalanceInsight.NO_LOWER_BODY_VOLUME,
+    ]);
   });
 });

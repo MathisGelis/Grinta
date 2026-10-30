@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RealLifeComparisonDto } from '../../common/dto/real-life-comparison.dto';
 import { DetailedMuscleGroup } from '../../exercise/enums/detailed-muscle.enum';
+import { BalanceInsight, ComparisonInsight } from '../constants/insights';
 
 export class ExerciseStatsDto {
   @ApiProperty() exerciseId: string;
@@ -195,10 +196,12 @@ export class TrainingBalanceDto {
   })
   upperLowerRatio: number | null;
   @ApiProperty({
-    type: [String],
-    description: 'Human-readable balance insights',
+    enum: BalanceInsight,
+    isArray: true,
+    description:
+      'Codes for the app to translate, with pushPullRatio and upperLowerRatio for the figures',
   })
-  insights: string[];
+  insights: BalanceInsight[];
 }
 
 // ---------------------------------------------------------------------------
@@ -508,7 +511,13 @@ export class ComparisonsDto {
       'Per metric: workouts, durationSeconds, sets, reps, volume, calories',
   })
   comparison: Record<string, MetricComparisonDto>;
-  @ApiProperty({ type: [String] }) insights: string[];
+  @ApiProperty({
+    enum: ComparisonInsight,
+    isArray: true,
+    description:
+      'Codes for the app to translate, with comparison[metric].changePct and baseline.periodsConsidered for the figures',
+  })
+  insights: ComparisonInsight[];
 }
 
 // ---------------------------------------------------------------------------

@@ -53,6 +53,7 @@ import {
   round,
   sum,
 } from './utils/stats.util';
+import { BalanceInsight, ComparisonInsight } from './constants/insights';
 
 export type MuscleContribution = {
   muscle: DetailedMuscleGroup;
@@ -183,35 +184,25 @@ export class StatsCalculatorService {
     return 'overdue';
   }
 
+  /** Codes of the balance insights, see BalanceInsight. */
   balanceInsights(
     pushPull: number | null,
     upperLower: number | null,
     lowerSets: number,
-  ): string[] {
-    const insights: string[] = [];
+  ): BalanceInsight[] {
+    const insights: BalanceInsight[] = [];
 
     if (pushPull === null)
-      insights.push('Not enough pulling volume to assess push/pull balance.');
-    else if (pushPull > 1.3)
-      insights.push(
-        `Push volume is ${pushPull}x your pull volume — consider adding pulling work.`,
-      );
-    else if (pushPull < 0.77)
-      insights.push(
-        `Pull volume outweighs push (ratio ${pushPull}) — consider adding pushing work.`,
-      );
-    else insights.push(`Push/pull balance looks healthy (ratio ${pushPull}).`);
+      insights.push(BalanceInsight.INSUFFICIENT_PULL_VOLUME);
+    else if (pushPull > 1.3) insights.push(BalanceInsight.PUSH_DOMINANT);
+    else if (pushPull < 0.77) insights.push(BalanceInsight.PULL_DOMINANT);
+    else insights.push(BalanceInsight.PUSH_PULL_BALANCED);
 
-    if (lowerSets === 0)
-      insights.push('No lower-body volume logged this period.');
+    if (lowerSets === 0) insights.push(BalanceInsight.NO_LOWER_BODY_VOLUME);
     else if (upperLower !== null && upperLower > 2)
-      insights.push(
-        `Upper-body volume is ${upperLower}x lower-body — consider more leg work.`,
-      );
+      insights.push(BalanceInsight.UPPER_BODY_DOMINANT);
     else if (upperLower !== null && upperLower < 0.5)
-      insights.push(
-        `Lower-body volume dominates (ratio ${upperLower}) — upper body may be undertrained.`,
-      );
+      insights.push(BalanceInsight.LOWER_BODY_DOMINANT);
     return insights;
   }
 
@@ -544,32 +535,31 @@ export class StatsCalculatorService {
     return result;
   }
 
+  /** Codes of the comparison insights, see ComparisonInsight. */
   comparisonInsights(
     comparison: Record<string, MetricComparisonDto>,
     periodsConsidered: number,
-    periodLabel: string,
-    elapsed: number,
-  ): string[] {
-    if (!periodsConsidered)
-      return ['Not enough history yet to compare with your usual routine.'];
-    const scope =
-      elapsed < 1 ? `so far this ${periodLabel}` : `this ${periodLabel}`;
-    const insights: string[] = [];
+  ): ComparisonInsight[] {
+    if (!periodsConsidered) return [ComparisonInsight.NOT_ENOUGH_HISTORY];
+    const insights: ComparisonInsight[] = [];
+    const codes = {
+      workouts: {
+        on_track: ComparisonInsight.WORKOUTS_ON_TRACK,
+        above: ComparisonInsight.WORKOUTS_ABOVE_USUAL,
+        below: ComparisonInsight.WORKOUTS_BELOW_USUAL,
+      },
+      volume: {
+        on_track: ComparisonInsight.VOLUME_ON_TRACK,
+        above: ComparisonInsight.VOLUME_ABOVE_USUAL,
+        below: ComparisonInsight.VOLUME_BELOW_USUAL,
+      },
+    } as const;
 
-    for (const [metric, subject] of [
-      ['workouts', 'Workouts are'],
-      ['volume', 'Training volume is'],
-    ] as const) {
+    for (const metric of ['workouts', 'volume'] as const) {
       const entry = comparison[metric];
 
       if (entry.verdict === 'unknown' || entry.changePct === null) continue;
-      const usual = `your usual ${periodLabel} (last ${periodsConsidered})`;
-
-      insights.push(
-        entry.verdict === 'on_track'
-          ? `${subject} in line with ${usual} ${scope}.`
-          : `${subject} ${Math.abs(entry.changePct)}% ${entry.verdict === 'above' ? 'above' : 'below'} ${usual} ${scope}.`,
-      );
+      insights.push(codes[metric][entry.verdict]);
     }
     return insights;
   }
