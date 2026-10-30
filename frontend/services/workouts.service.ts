@@ -8,6 +8,8 @@ export interface PlannedWorkout {
   title: string;
   description: string;
   totalExercises: number;
+  totalSets?: number;
+  estimatedDurationMinutes?: number | null;
   workout?: {
     id?: string;
     title?: string;
@@ -51,12 +53,14 @@ interface APIWorkoutResponse {
 export interface CreateWorkoutRequest {
   title: string;
   description: string;
+  estimatedDurationMinutes?: number;
   exercises: WorkoutExercise[];
 }
 
 export interface UpdateWorkoutRequest {
   title?: string;
   description?: string;
+  estimatedDurationMinutes?: number | null;
   exercises?: WorkoutExercise[];
 }
 
@@ -75,6 +79,8 @@ export async function getPlannedWorkouts(
       title: item.title ?? item.workout?.title ?? "",
       description: item.description ?? item.workout?.description ?? "",
       totalExercises: item.totalExercises,
+      totalSets: item.totalSets,
+      estimatedDurationMinutes: item.estimatedDurationMinutes,
       workout: item.workout,
     }));
     await saveItem(PLANNED_WORKOUTS_CACHE_KEY, JSON.stringify(normalized));

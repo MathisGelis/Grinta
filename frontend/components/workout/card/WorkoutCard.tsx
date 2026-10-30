@@ -12,6 +12,7 @@ interface WorkoutCardProps {
     title: string;
     description?: string;
     totalExercises?: number;
+    totalSets?: number;
   };
   onDelete?: (id: string) => void;
   onUpdate?: (updatedWorkout: fullPlannedWorkout) => void;
@@ -45,7 +46,7 @@ function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
             fullWorkout?.exercises?.length ?? workout.totalExercises ?? 0
           }
           stats={{
-            totalSets: stats.totalSets,
+            totalSets: fullWorkout ? stats.totalSets : workout.totalSets,
             totalWeight: stats.totalWeight,
           }}
           hasWorkout={!!fullWorkout}

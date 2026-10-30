@@ -11,7 +11,7 @@ interface WorkoutCardHeaderProps {
   onToggleExpand: () => void;
   totalExercises?: number;
   stats: {
-    totalSets: number;
+    totalSets?: number;
     totalWeight: number;
   };
   hasWorkout?: boolean;
@@ -68,11 +68,13 @@ function WorkoutCardHeader({
       </View>
 
       <View className="flex-row flex-wrap gap-2">
-        <StatPill
-          icon="repeat"
-          color={WorkoutTheme.accent.purple}
-          label={format(t.setsCount, { n: stats.totalSets })}
-        />
+        {stats.totalSets !== undefined && (
+          <StatPill
+            icon="repeat"
+            color={WorkoutTheme.accent.purple}
+            label={format(t.setsCount, { n: stats.totalSets })}
+          />
+        )}
         {hasWorkout && (
           <StatPill
             icon="barbell"

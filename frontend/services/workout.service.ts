@@ -9,6 +9,7 @@ export interface CompletedWorkout {
   description?: string | null;
   completionDate: string;
   totalDurationSeconds: number;
+  calories?: number;
   photoUrl?: string | null;
   photoThumbnailUrl?: string | null;
   totalExercises?: number;

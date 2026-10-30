@@ -120,10 +120,7 @@ export default function StatsScreen() {
     (w) => dayKey(new Date(w.completionDate)) === selectedDateStr,
   );
 
-  const dayCalories = dayWorkouts.reduce((sum, w) => {
-    const mins = w.totalDurationSeconds / 60;
-    return sum + Math.round(mins * 7.5);
-  }, 0);
+  const dayCalories = dayWorkouts.reduce((sum, w) => sum + (w.calories ?? 0), 0);
 
   const totalWorkouts = consistency?.totalWorkouts ?? completedWorkouts.length;
 

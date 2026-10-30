@@ -65,9 +65,12 @@ export default function CreateWorkoutScreen() {
     setSelectedExercises((prev) => prev.filter((ex) => ex.id !== id));
   };
 
+  const estimatedMinutes = Math.min(600, Math.max(0, parseInt(estimatedTime, 10) || 0));
+
   const transformExercisesToAPI = (): CreateWorkoutRequest => ({
     title: name.trim(),
     description: description.trim(),
+    ...(estimatedMinutes ? { estimatedDurationMinutes: estimatedMinutes } : {}),
     exercises: selectedExercises.map((exercise) => ({
       exerciseId: exercise.id,
       sets: exercise.sets,
