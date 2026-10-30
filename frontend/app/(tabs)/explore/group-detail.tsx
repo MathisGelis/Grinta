@@ -143,19 +143,9 @@ export default function GroupDetailScreen() {
     groupId && run(() => GroupsService.removeShare(groupId, shareId), load);
 
   const openPost = (event: GroupEvent) => {
-    const author = event.type === "share" ? event.author : event.user;
     router.push({
       pathname: "/(tabs)/explore/userPost",
-      params: {
-        postId: event.postId,
-        post: JSON.stringify({
-          id: event.postId,
-          createdAt: event.at,
-          userId: author.id,
-          displayName: author.displayName,
-          avatarThumbnailUrl: author.avatarThumbnailUrl,
-        }),
-      },
+      params: { postId: event.postId },
     } as any);
   };
 

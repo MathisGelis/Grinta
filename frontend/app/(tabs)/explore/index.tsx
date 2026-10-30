@@ -153,10 +153,7 @@ export default function ExploreScreen() {
                     onPress={() =>
                       router.push({
                         pathname: "/(tabs)/explore/userPost",
-                        params: {
-                          postId: post.id,
-                          post: JSON.stringify(post),
-                        },
+                        params: { postId: post.id },
                       } as any)
                     }
                     onToggleLike={() => handleToggleLike(post)}

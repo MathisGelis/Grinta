@@ -25,10 +25,8 @@ import { LOCALES } from "@/i18n/labels";
 export default function UserPostScreen() {
   const { t, lang } = useTranslation();
   const { formatWeight, formatVolume } = useUnits();
-  const params = useLocalSearchParams<{ post?: string }>();
-  const serializedPost = Array.isArray(params.post)
-    ? params.post[0]
-    : params.post;
+  const params = useLocalSearchParams<{ postId?: string }>();
+  const routePostId = Array.isArray(params.postId) ? params.postId[0] : params.postId;
   const [post, setPost] = useState<Post | null>(null);
   const [workoutPreview, setWorkoutPreview] = useState<{
     id: string;
@@ -90,16 +88,14 @@ export default function UserPostScreen() {
     : null;
 
   const fetchPost = useCallback(async () => {
-    if (!serializedPost) {
+    if (!routePostId) {
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      const fromFeed = JSON.parse(serializedPost) as Post;
-      const detail = await PostsService.getPostById(fromFeed.id).catch(() => null);
-      const data = { ...fromFeed, ...(detail ?? {}) } as Post;
+      const data = await PostsService.getPostById(routePostId);
       setPost(data);
 
       if (!data) {
@@ -125,7 +121,7 @@ export default function UserPostScreen() {
     } finally {
       setLoading(false);
     }
-  }, [t, serializedPost]);
+  }, [t, routePostId]);
 
   useEffect(() => {
     fetchPost();

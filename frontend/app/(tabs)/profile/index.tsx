@@ -211,7 +211,7 @@ export default function ProfileScreen() {
                 onOpenPost={(post) =>
                   router.push({
                     pathname: "/(tabs)/profile/userPost",
-                    params: { postId: post.id, post: JSON.stringify(post) },
+                    params: { postId: post.id },
                   } as any)
                 }
                 onShowLikes={openLikes}
