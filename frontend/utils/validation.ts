@@ -8,6 +8,11 @@ export const LIMITS = {
   password: 72,
 } as const;
 
+export const MIN_PASSWORD = 8;
+
+export const isValidEmail = (value: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
 export const isValidUniqueName = (value: string): boolean => {
   const v = value.trim().toLowerCase();
   return (

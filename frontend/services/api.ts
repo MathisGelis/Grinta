@@ -34,11 +34,30 @@ export const mediaUrl = (url?: string | null): string | undefined => {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
   }
+}
+
+function formatDelay(seconds: number): string {
+  if (seconds < 90) return `${Math.max(1, Math.round(seconds))} s`;
+  return `${Math.ceil(seconds / 60)} min`;
+}
+
+function extractCode(data: unknown): string | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const body = data as { code?: unknown; errors?: unknown; message?: unknown };
+  if (Array.isArray(body.errors)) {
+    const first = body.errors[0] as { code?: unknown } | undefined;
+    if (first && typeof first.code === "string") return first.code;
+  }
+  if (typeof body.code === "string") return body.code;
+  if (body.message && typeof body.message === "object") return extractCode(body.message);
+  return undefined;
 }
 
 export const isNotFound = (error: unknown): boolean =>
@@ -95,12 +114,14 @@ async function parseResponse<T>(
     throw new ApiError(strings.sessionExpired, 401);
   }
   if (response.status === 429) {
-    throw new ApiError(
-      endpoint.startsWith("/auth/login")
-        ? strings.tooManyAttempts
-        : strings.tooManyRequests,
-      429,
-    );
+    const retryAfter = isJson ? (data as { retryAfterSeconds?: unknown }).retryAfterSeconds : undefined;
+    const message =
+      typeof retryAfter === "number"
+        ? strings.retryIn.replace("{time}", formatDelay(retryAfter))
+        : endpoint.startsWith("/auth/login")
+          ? strings.tooManyAttempts
+          : strings.tooManyRequests;
+    throw new ApiError(message, 429, isJson ? extractCode(data) : undefined);
   }
   if (response.status >= 500 && !(await checkServerHealth())) {
     throw new ApiError(strings.apiUnreachable, response.status);
@@ -108,8 +129,9 @@ async function parseResponse<T>(
   if (response.status === 413) throw new ApiError(strings.photoTooHeavy, 413);
 
   // Une réponse non JSON (ex. page HTML de nginx) devient une erreur générique.
-  const message = isJson ? extractMessage(data) : undefined;
-  throw new ApiError(message || `${strings.serverError} ${response.status}`, response.status);
+  const code = isJson ? extractCode(data) : undefined;
+  const message = (code && strings.apiErrors[code]) || (isJson ? extractMessage(data) : undefined);
+  throw new ApiError(message || `${strings.serverError} ${response.status}`, response.status, code);
 }
 
 async function send(

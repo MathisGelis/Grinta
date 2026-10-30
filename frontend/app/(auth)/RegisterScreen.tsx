@@ -11,7 +11,7 @@ import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
-import { LIMITS } from "@/utils/validation";
+import { LIMITS, MIN_PASSWORD, isValidEmail } from "@/utils/validation";
 import { useTranslation } from "@/contexts/LanguageContext";
 const { height } = Dimensions.get("window");
 const HERO_HEIGHT = height * 0.38;
@@ -31,6 +31,14 @@ export default function RegisterScreen() {
     setError("");
     if (!name || !email || !password) {
       setError(t.fillAllFields);
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError(t.invalidEmail);
+      return;
+    }
+    if (password.length < MIN_PASSWORD) {
+      setError(t.passwordTooShort);
       return;
     }
     if (name.trim().length > LIMITS.displayName) {
@@ -116,6 +124,13 @@ export default function RegisterScreen() {
               onChangeText={setName}
             />
             <View className="h-[1px] bg-raised mt-1.5" />
+            <Text
+              className={`mt-1.5 text-xs ${
+                password.length > 0 && password.length < MIN_PASSWORD ? "text-danger" : "text-ink-muted"
+              }`}
+            >
+              {t.passwordHint}
+            </Text>
           </View>
 
           <View className="mb-6">

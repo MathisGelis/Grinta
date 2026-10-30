@@ -1,3 +1,4 @@
+import { isValidEmail } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { clearUserSession } from "@/services/session.service";
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,6 +27,10 @@ export default function LoginScreen() {
     setError(null);
     if (!email || !password) {
       setError(t.fillAllFields);
+      return;
+    }
+    if (!isValidEmail(email) && email.includes("@")) {
+      setError(t.invalidEmail);
       return;
     }
     try {

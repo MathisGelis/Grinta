@@ -43,6 +43,24 @@ export interface V3Strings {
   dupDoneMessage: string;
   dupView: string;
 
+  apiErrors: Record<string, string>;
+  invalidEmail: string;
+  passwordTooShort: string;
+  passwordHint: string;
+  retryIn: string;
+  forgotTitle: string;
+  forgotIntro: string;
+  forgotSend: string;
+  forgotSent: string;
+  backToLogin: string;
+  resetTitle: string;
+  resetIntro: string;
+  newPasswordLabel: string;
+  resetSubmit: string;
+  resetDone: string;
+  resetTokenInvalid: string;
+  resetRequestNew: string;
+
   loadFailedTitle: string;
   newsTab: string;
   newsBetaTag: string;
@@ -162,6 +180,40 @@ const en: V3Strings = {
   dupDone: "Workout duplicated",
   dupDoneMessage: "It was added to your planned workouts.",
   dupView: "View",
+
+  apiErrors: {
+    EMAIL_INVALID: "Invalid email address.",
+    PASSWORD_TOO_SHORT: "The password must be at least 8 characters long.",
+    PASSWORD_TOO_LONG: "The password is too long.",
+    USERNAME_INVALID: "Invalid username: 3 to 30 characters among a-z, 0-9, _ and .",
+    FIELD_REQUIRED: "A required field is missing.",
+    FIELD_TOO_SHORT: "A text is too short.",
+    FIELD_TOO_LONG: "A text is too long.",
+    NUMBER_INVALID: "Invalid number (2 decimals at most).",
+    INTEGER_EXPECTED: "A whole number is expected.",
+    VALUE_TOO_SMALL: "A value is too small.",
+    VALUE_TOO_LARGE: "A value is too large.",
+    VALUE_NOT_ALLOWED: "This value is not accepted.",
+    DATE_INVALID: "Invalid date.",
+    CURRENT_PASSWORD_INVALID: "The current password is incorrect.",
+    RESET_TOKEN_INVALID: "This link is invalid or has expired.",
+  },
+  invalidEmail: "Enter a valid email address.",
+  passwordTooShort: "The password must be at least 8 characters long.",
+  passwordHint: "At least 8 characters",
+  retryIn: "Too many attempts. Try again in {time}.",
+  forgotTitle: "Forgot password",
+  forgotIntro: "Enter your email address and we will send you a link to choose a new password.",
+  forgotSend: "Send the link",
+  forgotSent: "If an account exists for this address, an email has been sent.",
+  backToLogin: "Back to login",
+  resetTitle: "New password",
+  resetIntro: "Choose a new password for your account.",
+  newPasswordLabel: "New password",
+  resetSubmit: "Change the password",
+  resetDone: "Password changed. Sign in with your new password.",
+  resetTokenInvalid: "This link is invalid or has expired.",
+  resetRequestNew: "Request a new link",
 
   loadFailedTitle: "Unable to load",
   newsTab: "News",
@@ -283,6 +335,40 @@ const fr: V3Strings = {
   dupDone: "Séance dupliquée",
   dupDoneMessage: "Elle a été ajoutée à vos séances planifiées.",
   dupView: "Voir",
+
+  apiErrors: {
+    EMAIL_INVALID: "Adresse e-mail invalide.",
+    PASSWORD_TOO_SHORT: "Le mot de passe doit contenir au moins 8 caractères.",
+    PASSWORD_TOO_LONG: "Le mot de passe est trop long.",
+    USERNAME_INVALID: "Pseudo invalide : 3 à 30 caractères parmi a-z, 0-9, _ et .",
+    FIELD_REQUIRED: "Un champ obligatoire est manquant.",
+    FIELD_TOO_SHORT: "Un texte est trop court.",
+    FIELD_TOO_LONG: "Un texte est trop long.",
+    NUMBER_INVALID: "Nombre invalide (2 décimales au maximum).",
+    INTEGER_EXPECTED: "Un nombre entier est attendu.",
+    VALUE_TOO_SMALL: "Une valeur est trop petite.",
+    VALUE_TOO_LARGE: "Une valeur est trop grande.",
+    VALUE_NOT_ALLOWED: "Cette valeur n'est pas acceptée.",
+    DATE_INVALID: "Date invalide.",
+    CURRENT_PASSWORD_INVALID: "Le mot de passe actuel est incorrect.",
+    RESET_TOKEN_INVALID: "Ce lien est invalide ou a expiré.",
+  },
+  invalidEmail: "Saisissez une adresse e-mail valide.",
+  passwordTooShort: "Le mot de passe doit contenir au moins 8 caractères.",
+  passwordHint: "Au moins 8 caractères",
+  retryIn: "Trop de tentatives. Réessayez dans {time}.",
+  forgotTitle: "Mot de passe oublié",
+  forgotIntro: "Saisissez votre adresse e-mail, nous vous enverrons un lien pour choisir un nouveau mot de passe.",
+  forgotSend: "Envoyer le lien",
+  forgotSent: "Si un compte existe pour cette adresse, un e-mail vient d'être envoyé.",
+  backToLogin: "Retour à la connexion",
+  resetTitle: "Nouveau mot de passe",
+  resetIntro: "Choisissez un nouveau mot de passe pour votre compte.",
+  newPasswordLabel: "Nouveau mot de passe",
+  resetSubmit: "Changer le mot de passe",
+  resetDone: "Mot de passe modifié. Connectez-vous avec le nouveau.",
+  resetTokenInvalid: "Ce lien est invalide ou a expiré.",
+  resetRequestNew: "Demander un nouveau lien",
 
   loadFailedTitle: "Impossible de charger",
   newsTab: "Actualités",
