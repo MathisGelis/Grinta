@@ -114,7 +114,6 @@ export default function FloatingTabBar({
   const [width, setWidth] = useState(0);
   const pathname = usePathname();
 
-  // Nouvelle page : la barre repart à sa taille normale.
   useEffect(() => {
     resetChrome();
   }, [pathname]);
@@ -154,7 +153,6 @@ export default function FloatingTabBar({
     transform: [{ scale: 1 + 0.6 * pulse.value }],
   }));
 
-  // Réduite en descendant l'accueil, rétablie en remontant (ancrée en bas).
   const shrinkStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - 0.2 * chromeCompact.get() }],
   }));

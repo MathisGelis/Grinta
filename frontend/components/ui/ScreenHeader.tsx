@@ -11,11 +11,9 @@ type Props = {
   right?: React.ReactNode;
   onBack?: () => void;
   className?: string;
-  /** Barre flottante : fond transparent avec un flou doux qui s'estompe sous la barre. Le contenu défile dessous. */
   floating?: boolean;
 };
 
-/** Hauteur d'un `ScreenHeader` flottant : à utiliser comme `paddingTop` du contenu qui défile dessous. */
 export function useFloatingHeaderHeight(): number {
   return useSafeAreaInsets().top + 12 + 44 + 12;
 }

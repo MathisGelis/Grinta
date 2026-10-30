@@ -31,7 +31,6 @@ const SECONDS_PER_SET = 45;
 const maxWeight = (sets: { weight: number }[]) =>
   sets.reduce((max, set) => Math.max(max, set.weight), 0);
 
-/** « 8 » si toutes les séries ont le même nombre de répétitions, sinon « 6-10 ». */
 function repsRange(sets: { reps: number }[]): string {
   if (sets.length === 0) return "–";
   const reps = sets.map((set) => set.reps);
@@ -66,7 +65,6 @@ export default function CurrentWorkoutScreen() {
     };
   }, [muscleData]);
 
-  // Une séance choisie : son premier exercice est sélectionné par défaut.
   useEffect(() => {
     setFocusedExerciseId(selectedWorkout?.exercises[0]?.exerciseId ?? null);
     setListAtEnd(false);
@@ -152,10 +150,8 @@ export default function CurrentWorkoutScreen() {
   const fromProgramme =
     today?.status === "workout" && !!today.workout && selectedWorkoutId === today.workout.id;
 
-  // La carte de la silhouette a une taille fixe : sa largeur est 44 % de l'écran, sa hauteur en découle.
   const bodyScale = Math.max(0.3, (windowWidth * 0.44 - 24) / 200);
   const cardHeight = bodyScale * 400 + 24 + 44;
-  // La liste ne défile que si elle dépasse la hauteur de la carte.
   const listScrollable = listContentHeight > cardHeight + 1;
 
   const focusedExercise = focusedExerciseId ? exercisesById.get(focusedExerciseId) : undefined;
