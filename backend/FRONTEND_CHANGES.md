@@ -756,3 +756,22 @@ Trois routes :
 - Toutes les routes protégées (88 aujourd'hui) répondent `401` avec un jeton absent, expiré, mal signé, malformé, en `alg: none`, ou appartenant à un compte supprimé. Un test e2e le vérifie route par route et découvre les routes automatiquement. Une route ajoutée plus tard sera testée, et toute nouvelle route publique doit y être déclarée.
 - Les seules routes publiques : `GET /`, `GET /health`, `GET /exercises`, `GET /exercises/:id`, `POST /users/register`, `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/reset-password`.
 - Nouveau depuis B-05 : un jeton est aussi refusé après une réinitialisation ou un changement de mot de passe, ou si le compte a été supprimé. Le `handleSessionExpired` de l'app sur `401` couvre ces cas.
+
+### B-00 Backend périmé sur la branche front (à faire côté front)
+
+- La branche `features/frontend-align_to_backend` n'a jamais modifié `backend/`. Son dossier est resté à un ancien état, d'où les `404` et `500` sur `/badges`, `/posts/mine` et `/exercises/stats`.
+- Ces trois routes répondent `200` sur `main` comme sur `feat/backend-v3` (vérifié).
+- **Fusion testée sans conflit** :
+  - `git merge origin/main` dans la branche front ;
+  - ou, une fois `feat/backend-v3` mergée, `git merge origin/main` à nouveau. La fusion directe de `feat/backend-v3` est elle aussi sans conflit.
+- Elle n'a pas été faite d'ici : elle pousserait sur la branche front, hors du périmètre demandé.
+
+### B-11 Connexion Apple et Google : décision produit
+
+- Rien n'est implémenté. Il faut soit des routes `POST /auth/apple` et `POST /auth/google` qui vérifient l'`identityToken`, soit retirer les boutons.
+- Implémenter demande des éléments à créer côté comptes développeur :
+  - Apple : Services ID, clé de connexion, Team ID ;
+  - Google : identifiants OAuth iOS et Android.
+- Il faut aussi décider comment rattacher un compte existant (même e-mail) ou un e-mail masqué par Apple.
+- Rappel : si l'app propose Google, l'App Store impose aussi « Se connecter avec Apple ».
+- **Recommandation** : retirer les deux boutons pour l'instant, puis les ajouter ensemble quand le produit l'aura décidé.
