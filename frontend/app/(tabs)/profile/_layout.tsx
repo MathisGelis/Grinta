@@ -27,8 +27,6 @@ export default function ProfileStack() {
       <Stack.Screen name="followers" />
       <Stack.Screen name="user-profile" />
       <Stack.Screen name="userPost" />
-      <Stack.Screen name="groups" />
-      <Stack.Screen name="group-detail" />
     </Stack>
   );
 }

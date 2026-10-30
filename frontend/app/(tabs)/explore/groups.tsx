@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -57,7 +58,7 @@ export default function GroupsScreen() {
       setCreating(true);
       const group = await GroupsService.create(trimmed);
       setName("");
-      router.push({ pathname: "/(tabs)/profile/group-detail", params: { groupId: group.id } } as any);
+      router.push({ pathname: "/(tabs)/explore/group-detail", params: { groupId: group.id } } as any);
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
     } finally {
@@ -70,7 +71,7 @@ export default function GroupsScreen() {
       setBusyInvitation(invitation.id);
       if (accept) {
         const group = await GroupsService.accept(invitation.id);
-        router.push({ pathname: "/(tabs)/profile/group-detail", params: { groupId: group.id } } as any);
+        router.push({ pathname: "/(tabs)/explore/group-detail", params: { groupId: group.id } } as any);
       } else {
         await GroupsService.decline(invitation.id);
       }
@@ -89,7 +90,7 @@ export default function GroupsScreen() {
       {loading ? (
         <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
       ) : (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="gap-4 px-5"
@@ -163,7 +164,7 @@ export default function GroupsScreen() {
                 accessibilityRole="button"
                 onPress={() =>
                   router.push({
-                    pathname: "/(tabs)/profile/group-detail",
+                    pathname: "/(tabs)/explore/group-detail",
                     params: { groupId: group.id },
                   } as any)
                 }

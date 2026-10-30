@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchProvider, useSearch } from "@/contexts/SearchContext";
 import { WorkoutTheme } from "@/constants/Colors";
+import TopBlur from "@/components/ui/TopBlur";
 import IconButton from "@/components/ui/IconButton";
 import PressableScale from "@/components/ui/PressableScale";
 import Glass from "@/components/ui/Glass";
@@ -18,7 +19,6 @@ import ScreenBackground from "@/components/ui/ScreenBackground";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 const RIGHT_GROUP_WIDTH = 56;
-
 function ExploreHeader() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -46,11 +46,14 @@ function ExploreHeader() {
     opacity: 1 - progress.get(),
   }));
 
+  const fadeHeight = insets.top + 12 + 44 + 12;
+
   return (
     <View
       className="absolute inset-x-0 top-0 z-10 px-5"
-      style={{ paddingTop: insets.top + 12 }}
+      style={{ paddingTop: insets.top + 12, paddingBottom: 12 }}
     >
+      <TopBlur height={fadeHeight} />
       <View className="flex-row items-center" style={{ height: 44 }}>
         <IconButton
           icon={isSearchPage ? "chevron-back" : "notifications-outline"}
@@ -113,7 +116,7 @@ function ExploreHeader() {
               icon="people-outline"
               label={t.chatLabel}
               variant="glass"
-              onPress={() => router.push("/(tabs)/explore/chat")}
+              onPress={() => router.push("/(tabs)/explore/groups")}
             />
           </View>
         </Animated.View>
@@ -127,7 +130,8 @@ export default function ExploreLayout() {
 
   const hideHeader =
     pathname.endsWith("/notification") ||
-    pathname.endsWith("/chat") ||
+    pathname.endsWith("/groups") ||
+    pathname.includes("/group-detail") ||
     pathname.endsWith("/userPost") ||
     pathname.includes("/user-profile");
 
@@ -159,7 +163,8 @@ export default function ExploreLayout() {
             name="notification"
             options={{ animation: "slide_from_left", gestureEnabled: false }}
           />
-          <Stack.Screen name="chat" />
+          <Stack.Screen name="groups" />
+          <Stack.Screen name="group-detail" />
           <Stack.Screen name="userPost" />
         </Stack>
       </View>

@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -144,7 +145,7 @@ export default function GroupDetailScreen() {
   const openPost = (event: GroupEvent) => {
     const author = event.type === "share" ? event.author : event.user;
     router.push({
-      pathname: "/(tabs)/profile/userPost",
+      pathname: "/(tabs)/explore/userPost",
       params: {
         postId: event.postId,
         post: JSON.stringify({
@@ -202,7 +203,7 @@ export default function GroupDetailScreen() {
           <Text className="text-danger">{error ?? t.loadingError}</Text>
         </View>
       ) : (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="gap-4 px-5"
