@@ -1,4 +1,5 @@
 import {
+  Header,
   Controller,
   Get,
   Patch,
@@ -29,11 +30,20 @@ export class ExerciseController {
     private readonly exerciseStats: ExerciseStatsService,
   ) {}
 
+  // The response carries an ETag (Express computes it from the body). With
+  // no-cache the app keeps the list and revalidates it on each call: an
+  // If-None-Match matching the current catalogue gets an empty 304 instead
+  // of the ~140 KB list.
   @Get()
+  @Header('Cache-Control', 'private, no-cache')
   @ApiOperation({
     summary: 'Get all exercises',
     description:
-      'Light list for browsing: use GET /exercises/:id for the description, instructions and photos.',
+      'Light list for browsing: use GET /exercises/:id for the description, instructions and photos. Send back the ETag of the last response in If-None-Match: an unchanged catalogue answers 304 with no body.',
+  })
+  @ApiResponse({
+    status: 304,
+    description: 'Catalogue unchanged since the ETag sent',
   })
   @ApiResponse({
     status: 200,

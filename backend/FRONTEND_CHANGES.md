@@ -667,3 +667,12 @@ Un `400` de validation a maintenant ce format, **au premier niveau** :
 - Les deux sont optionnels. `null` les efface. Une autre valeur donne `400` avec le code `VALUE_NOT_ALLOWED`.
 - Ils sont relus dans `GET /users/:id` **pour son propre compte uniquement**. Les autres utilisateurs ne les voient jamais.
 - Côté app : envoyer les réponses de l'onboarding par `PATCH /users/:id` une fois le compte créé. L'inscription (`POST /users/register`) ne les accepte pas : l'audit ne demandait que l'édition. Dis-le si l'onboarding a lieu avant l'inscription.
+
+### B-12 Catalogue : Bayesian Curl et cache
+
+- « Baesyan Curl (Cable) » et « Baesyan Curl (Dumbbell) » deviennent **« Bayesian Curl (Cable) »** et **« Bayesian Curl (Dumbbell) »**. Les ids ne changent pas : historique, stats et séances restent liés.
+- `GET /exercises` renvoie un `ETag` et `Cache-Control: private, no-cache`. L'app garde la liste et la revalide à chaque appel :
+  - elle renvoie l'ETag reçu dans `If-None-Match` ;
+  - un catalogue inchangé répond `304` sans corps : on garde la liste locale ;
+  - sinon `200` avec la nouvelle liste et un nouvel ETag.
+- Le cache HTTP natif d'iOS et Android applique déjà ces règles avec `fetch`. Si l'app garde son propre cache (`exercises_cache_v2`), qu'elle stocke l'ETag à côté et traite le `304`.

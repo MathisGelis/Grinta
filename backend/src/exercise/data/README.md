@@ -4,13 +4,13 @@
 
 ## Champs
 
-| Champ | Contenu |
-| --- | --- |
-| `name`, `equipment_type`, `primary_muscle`, `secondary_muscles`, `exercise_type` | Identité de l'exercice, valeurs des enums de `src/exercise/enums` |
-| `description` | Ce qu'est l'exercice et ce qu'il travaille, en une ou deux phrases |
-| `instructions` | Comment le faire, une étape par élément, dans l'ordre. La première étape décrit la mise en place propre à l'équipement quand elle diffère |
-| `image_urls` | Photo de la position de départ puis de la position d'arrivée. Les afficher en alternance anime le mouvement |
-| `image_url` | Miniature : la première photo de `image_urls`, chaîne vide sans photo |
+| Champ                                                                            | Contenu                                                                                                                                   |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`, `equipment_type`, `primary_muscle`, `secondary_muscles`, `exercise_type` | Identité de l'exercice, valeurs des enums de `src/exercise/enums`                                                                         |
+| `description`                                                                    | Ce qu'est l'exercice et ce qu'il travaille, en une ou deux phrases                                                                        |
+| `instructions`                                                                   | Comment le faire, une étape par élément, dans l'ordre. La première étape décrit la mise en place propre à l'équipement quand elle diffère |
+| `image_urls`                                                                     | Photo de la position de départ puis de la position d'arrivée. Les afficher en alternance anime le mouvement                               |
+| `image_url`                                                                      | Miniature : la première photo de `image_urls`, chaîne vide sans photo                                                                     |
 
 Les textes sont en anglais, comme les noms des exercices.
 

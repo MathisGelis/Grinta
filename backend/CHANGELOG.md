@@ -6,6 +6,11 @@
   - `GET /health` vérifie la base (`SELECT 1`), sans authentification ni limite de débit, et répond 503 si la base ne répond pas. `GET /` répond `{ status: "ok" }`. Le contrôleur racine est enregistré.
   - La configuration HTTP (proxy, compression, validation, format des erreurs) est extraite dans `configureApp` (`src/app.setup.ts`), commune à `main.ts` et aux tests e2e.
   - Les tests e2e (`npm run test:e2e`) démarrent toute l'API sur une base jetable. Ils refusent de tourner si `DB_NAME` ne contient pas « e2e » ou « test », ce qui empêche un `.env` de prod d'être utilisé par erreur.
+- **B-12** :
+  - « Baesyan Curl » est renommé « Bayesian Curl » (Cable et Dumbbell) dans `base-exercises.json`.
+  - Les bases existantes sont corrigées sur place, ids conservés, par la migration réversible `FixExerciseNames` et par le seed (`NAME_FIXES_2026_10`, liste figée appliquée avant les upserts).
+  - `GET /exercises` renvoie `Cache-Control: private, no-cache`. Express y ajoutait déjà un ETag et répondait 304 à un `If-None-Match` à jour, mais rien ne disait à l'app de garder la liste et de la revalider.
+  - Tests e2e : migration, retour arrière, seed sur une base à l'ancien nom, 304.
 - **B-06** : `gender` (`male`, `female`, `other`) et `goal` (`gain_weight`, `lose_weight`, `get_fitter`, `flexibility`, `learn_basics`) sur les utilisateurs. Ce sont des enums Postgres nullables, ajoutés par la migration réversible `AddUserGenderAndGoal`, et modifiables par `PATCH /users/:id`. Comme les mensurations, ils ne sont visibles que de leur propriétaire : `GET /users/:id` sur un autre compte ne renvoie que l'identité publique (vérifié en e2e).
 - **B-03** : `GET /workouts/planned` renvoie `totalSets` (séries prévues, calculées en SQL) et `estimatedDurationMinutes`. Ce dernier est saisi en création et en édition (entier de 1 à 600, `null` l'efface). Il est stocké dans la colonne `planned_workouts.estimatedDurationMinutes`, ajoutée par la migration réversible `AddPlannedWorkoutDuration`. Tests e2e.
 - **B-07** : les commentaires sont limités à 500 caractères (`COMMENT_MAX_LENGTH`, création et édition), avec le code `FIELD_TOO_LONG`. La limite existait déjà ; elle est maintenant partagée, documentée dans Swagger et testée en e2e.
