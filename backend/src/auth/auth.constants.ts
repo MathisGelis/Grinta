@@ -18,8 +18,15 @@ export const JWT_ALGORITHM = 'HS256';
  */
 export const BCRYPT_ROUNDS = 10;
 
-/** Login attempts allowed per client address and per window. */
+/** Login attempts allowed per account and client address, per window. */
 export const LOGIN_THROTTLE = { limit: 5, ttl: 15 * 60_000 };
+
+/**
+ * Login attempts allowed per client address across all accounts, per
+ * window: high enough for many people behind one NAT, low enough to stop
+ * one machine from trying passwords on account after account.
+ */
+export const LOGIN_IP_THROTTLE = { limit: 50, ttl: 15 * 60_000 };
 
 const MIN_JWT_SECRET_LENGTH = 32;
 

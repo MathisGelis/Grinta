@@ -5,13 +5,13 @@ import {
   UnauthorizedException,
   Get,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { UserLoginDto } from './dto/user-login.dto';
 import { Auth } from './auth.decorators';
-import { LOGIN_THROTTLE } from './auth.constants';
+import { LoginThrottleGuard } from './login-throttle.guard';
 import type { AuthenticatedRequest } from './auth-user.interface';
 
 @ApiTags('auth')
@@ -20,11 +20,18 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  @Throttle({ default: LOGIN_THROTTLE })
-  @ApiOperation({ summary: 'Login user and get JWT token' })
+  @UseGuards(LoginThrottleGuard)
+  @ApiOperation({
+    summary: 'Login user and get JWT token',
+    description:
+      'Limited to 5 attempts per 15 minutes per account and address, and 50 per address across accounts. Over the limit: 429 with a Retry-After header and { code: "TOO_MANY_LOGIN_ATTEMPTS", message, retryAfterSeconds }.',
+  })
   @ApiResponse({ status: 200, description: 'Returns JWT token' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 429, description: 'Too many login attempts' })
+  @ApiResponse({
+    status: 429,
+    description: '{ statusCode, code, message, retryAfterSeconds }',
+  })
   async login(@Body() body: UserLoginDto) {
     const user = await this.authService.validateUser(
       body.identifier,

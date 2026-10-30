@@ -6,6 +6,11 @@
   - `GET /health` vérifie la base (`SELECT 1`), sans authentification ni limite de débit, et répond 503 si la base ne répond pas. `GET /` répond `{ status: "ok" }`. Le contrôleur racine est enregistré.
   - La configuration HTTP (proxy, compression, validation, format des erreurs) est extraite dans `configureApp` (`src/app.setup.ts`), commune à `main.ts` et aux tests e2e.
   - Les tests e2e (`npm run test:e2e`) démarrent toute l'API sur une base jetable. Ils refusent de tourner si `DB_NAME` ne contient pas « e2e » ou « test », ce qui empêche un `.env` de prod d'être utilisé par erreur.
+- **B-08 (sécurité)** :
+  - Le login est limité par un garde dédié (`LoginThrottleGuard`), dans le stockage du throttler. La limite est de 5 tentatives par 15 min par couple identifiant + adresse, au lieu de 5 par adresse, si bien que les utilisateurs derrière un même NAT ne se bloquent plus entre eux. Une seconde limite, de 50 par 15 min par adresse tous comptes confondus, freine le test de mots de passe sur de nombreux comptes. L'identifiant est haché dans les clés.
+  - Les 429 (login et limite globale, via `AppThrottlerGuard`) portent `Retry-After` et `{ code, message, retryAfterSeconds }`.
+  - Toute erreur dont le corps a un `code` est désormais renvoyée telle quelle au premier niveau par `AllExceptionsFilter`.
+  - Tests unitaires et e2e (même adresse et autre compte, autre adresse, limite par adresse, limite globale).
 - **B-09** : `calories` par séance dans `GET /workouts/completed`, et par jour plus `totalCalories` dans `GET /stats/heatmap`. La valeur est calculée par `StatsService.caloriesOf`, avec le même calcul que `estimatedCalories` de `GET /stats/workout/:id` (MET, poids du profil ou 70 kg, arrondi), pour que l'app n'ait plus de calcul à elle. Le test e2e vérifie l'égalité des trois chiffres.
 - **B-10** : `insights` de `/stats/balance` et `/stats/comparisons` renvoie des codes (`BalanceInsight`, `ComparisonInsight`, dans `src/stats/constants/insights.ts`) au lieu de phrases anglaises. Les chiffres que ces phrases citaient sont déjà des champs de la réponse. Le type reste un tableau de chaînes.
 - **B-12** :

@@ -1,7 +1,8 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AppThrottlerGuard } from './common/throttling/app-throttler.guard';
 import { UsersModule } from './users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
@@ -35,7 +36,7 @@ import { AppController } from './app.controller';
   ],
   controllers: [AppController],
   providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
   ],
 })

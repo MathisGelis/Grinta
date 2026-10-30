@@ -707,3 +707,17 @@ Un `400` de validation a maintenant ce format, **au premier niveau** :
 - `GET /stats/heatmap` : chaque jour a **`calories`**, et la réponse a **`totalCalories`** pour l'année.
 - C'est exactement le même chiffre que `estimatedCalories` de `GET /stats/workout/:id` : même formule (MET par type d'exercice × poids de corps × durée), même poids de corps (celui du profil, sinon 70 kg), même arrondi. Le test e2e le vérifie.
 - **L'app ne doit plus calculer les calories elle-même.** C'est son calcul local qui donnait 31 au lieu de 47 kcal.
+
+### B-08 Limiteur de connexion
+
+- Le login n'est plus bloqué par adresse IP seule. Les limites sont désormais :
+  - **5 tentatives par 15 minutes pour un même identifiant depuis une même adresse** : les autres personnes derrière le même réseau ne sont plus bloquées ;
+  - **50 tentatives par 15 minutes par adresse**, tous comptes confondus.
+- Le `429` a un format exploitable, au premier niveau, avec l'en-tête `Retry-After` (mêmes secondes) :
+
+```json
+{ "statusCode": 429, "code": "TOO_MANY_LOGIN_ATTEMPTS", "message": "Trop de tentatives de connexion. Réessayez dans 15 min.", "retryAfterSeconds": 900 }
+```
+
+- La limite générale (60 requêtes par minute) renvoie le même format avec `code: "RATE_LIMITED"`.
+- Côté app : afficher le délai à partir de `retryAfterSeconds`, par exemple un compte à rebours sur le bouton de connexion.

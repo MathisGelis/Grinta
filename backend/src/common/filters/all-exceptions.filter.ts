@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { QueryFailedError } from 'typeorm';
-import { ValidationFailedException } from '../validation/validation-errors';
 
 // Postgres error code for a malformed value, e.g. a non-uuid string compared
 // against a uuid column.
@@ -22,9 +21,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    // Validation errors keep their structured body at the top level:
-    // { statusCode, code, message, errors }.
-    if (exception instanceof ValidationFailedException) {
+    // Errors with a stable code keep their structured body at the top level:
+    // validation ({ statusCode, code, message, errors }), rate limits
+    // ({ statusCode, code, message, retryAfterSeconds }).
+    if (
+      exception instanceof HttpException &&
+      hasCode(exception.getResponse())
+    ) {
       response.status(exception.getStatus()).json(exception.getResponse());
       return;
     }
@@ -62,4 +65,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         PG_INVALID_TEXT_REPRESENTATION
     );
   }
+}
+
+function hasCode(body: unknown): boolean {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    typeof (body as { code?: unknown }).code === 'string'
+  );
 }
