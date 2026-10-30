@@ -5,6 +5,7 @@ import {
   FindOptionsSelect,
   MoreThanOrEqual,
   Repository,
+  In,
 } from 'typeorm';
 import { CompletedWorkout } from '../workouts/entities/completed-workout.entity';
 import { PlannedWorkout } from '../workouts/entities/planned-workout.entity';
@@ -176,6 +177,34 @@ export class StatsService {
       totalVolume,
       estimatedCalories: round(sum(exercises, (e) => e.estimatedCalories)),
     };
+  }
+
+  /**
+   * Calories of some of the user's workouts, by id, computed exactly as
+   * GET /stats/workout/:id does: same formula, the user's body weight (or
+   * the default), same rounding. Lets lists show the figure instead of the
+   * app computing its own.
+   */
+  async caloriesOf(
+    userId: string,
+    workoutIds: string[],
+  ): Promise<Map<string, number>> {
+    if (!workoutIds.length) return new Map();
+    const [weightKg, workouts] = await Promise.all([
+      this.resolveBodyWeight(userId),
+      this.completedRepo.find({
+        where: { id: In(workoutIds), user: { id: userId } },
+        relations: ['exercises', 'exercises.exercise'],
+        select: WORKOUT_STATS_SELECT,
+      }),
+    ]);
+
+    return new Map(
+      workouts.map((w) => [
+        w.id,
+        this.workoutTotals(w, weightKg).estimatedCalories,
+      ]),
+    );
   }
 
   /**
@@ -811,18 +840,49 @@ export class StatsService {
         ORDER BY 1`,
       [user.id, `${year}-01-01`, `${year + 1}-01-01`],
     );
-    const days = this.calculator.heatmapDays(rows);
+    const caloriesByDay = await this.caloriesByDay(user.id, year);
+    const days = this.calculator.heatmapDays(rows, caloriesByDay);
 
     return {
       year,
       totalWorkouts: rows.reduce((acc, r) => acc + r.workouts, 0),
       activeDays: rows.length,
       totalDurationSeconds: rows.reduce((acc, r) => acc + r.durationSeconds, 0),
+      totalCalories: round(sum(days, (d) => d.calories)),
       maxWorkoutsInDay: Math.max(0, ...rows.map((r) => r.workouts)),
       longestStreakDays: this.calculator.longestStreak(rows.map((r) => r.day)),
       maxLevel: HEATMAP_MAX_LEVEL,
       days,
     };
+  }
+
+  /**
+   * Calories of each training day of the year, workout by workout as in
+   * caloriesOf. Days are keyed like the heatmap SQL (to_char of the stored
+   * timestamp), which the driver reads back as local time.
+   */
+  private async caloriesByDay(userId: string, year: number) {
+    const [weightKg, workouts] = await Promise.all([
+      this.resolveBodyWeight(userId),
+      this.fetchWorkoutsInRange(userId, {
+        start: new Date(year, 0, 1),
+        end: new Date(year, 11, 31, 23, 59, 59, 999),
+      }),
+    ]);
+    const byDay = new Map<string, number>();
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    for (const workout of workouts) {
+      const d = workout.completionDate;
+      const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+      byDay.set(
+        day,
+        (byDay.get(day) ?? 0) +
+          this.workoutTotals(workout, weightKg).estimatedCalories,
+      );
+    }
+    return byDay;
   }
 
   /** Runs a read-only SQL reduction and types its rows. */

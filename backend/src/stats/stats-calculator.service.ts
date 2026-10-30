@@ -592,7 +592,10 @@ export class StatsCalculatorService {
    * longest day of the year. A day is active as soon as one workout is logged,
    * so it never gets level 0 (reserved for the days absent from the result).
    */
-  heatmapDays(rows: HeatmapRow[]): HeatmapDayDto[] {
+  heatmapDays(
+    rows: HeatmapRow[],
+    caloriesByDay: Map<string, number> = new Map(),
+  ): HeatmapDayDto[] {
     const longest = Math.max(0, ...rows.map((r) => r.durationSeconds));
 
     return [...rows]
@@ -601,6 +604,7 @@ export class StatsCalculatorService {
         date: r.day,
         workouts: r.workouts,
         durationSeconds: r.durationSeconds,
+        calories: round(caloriesByDay.get(r.day) ?? 0),
         level: longest
           ? Math.min(
               HEATMAP_MAX_LEVEL,

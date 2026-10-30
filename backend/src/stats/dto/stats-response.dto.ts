@@ -557,6 +557,11 @@ export class HeatmapDayDto {
   @ApiProperty() durationSeconds: number;
   @ApiProperty({
     description:
+      'Estimated kcal of the day, workout by workout as GET /stats/workout/:id',
+  })
+  calories: number;
+  @ApiProperty({
+    description:
       'Intensity from 1 to maxLevel, relative to the longest day of the year',
   })
   level: number;
@@ -567,6 +572,8 @@ export class HeatmapDto {
   @ApiProperty() totalWorkouts: number;
   @ApiProperty() activeDays: number;
   @ApiProperty() totalDurationSeconds: number;
+  @ApiProperty({ description: 'Estimated kcal of the year' })
+  totalCalories: number;
   @ApiProperty() maxWorkoutsInDay: number;
   @ApiProperty({ description: 'Longest run of consecutive days in the year' })
   longestStreakDays: number;

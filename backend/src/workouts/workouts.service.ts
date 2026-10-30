@@ -19,10 +19,12 @@ import {
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { ListCompletedWorkoutsQueryDto } from './dto/list-completed-workouts-query.dto';
+import { CompletedWorkoutListDto } from './dto/list-completed-workout.dto';
 import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { PhotosService } from 'src/photos/photos.service';
 import { PostPartnersService } from 'src/posts/post-partners.service';
 import { PostsService } from 'src/posts/posts.service';
+import { StatsService } from 'src/stats/stats.service';
 
 type WorkoutPhotoUrls<T = string> = { photoUrl: T; photoThumbnailUrl: T };
 
@@ -46,6 +48,7 @@ export class WorkoutService {
     private readonly photos: PhotosService,
     private readonly postPartners: PostPartnersService,
     private readonly posts: PostsService,
+    private readonly stats: StatsService,
   ) {}
 
   async createPlannedWorkout(user: AuthUser, dto: CreatePlannedWorkoutDto) {
@@ -282,7 +285,14 @@ export class WorkoutService {
         { before: page.before },
       );
     if (page.limit) qb.limit(page.limit);
-    return qb.getRawMany();
+    const rows =
+      await qb.getRawMany<Omit<CompletedWorkoutListDto, 'calories'>>();
+    const calories = await this.stats.caloriesOf(
+      user.id,
+      rows.map((r) => r.id),
+    );
+
+    return rows.map((row) => ({ ...row, calories: calories.get(row.id) ?? 0 }));
   }
 
   async getPlannedWorkoutById(workoutId: string) {

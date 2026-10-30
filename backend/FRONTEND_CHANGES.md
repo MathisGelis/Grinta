@@ -700,3 +700,10 @@ Un `400` de validation a maintenant ce format, **au premier niveau** :
 | `NOT_ENOUGH_HISTORY` | Pas encore assez d'historique pour comparer |
 | `WORKOUTS_ON_TRACK` / `WORKOUTS_ABOVE_USUAL` / `WORKOUTS_BELOW_USUAL` | Nombre de séances dans la moyenne, au-dessus ou en dessous |
 | `VOLUME_ON_TRACK` / `VOLUME_ABOVE_USUAL` / `VOLUME_BELOW_USUAL` | Volume dans la moyenne, au-dessus ou en dessous |
+
+### B-09 Calories calculées par le serveur
+
+- `GET /workouts/completed` : chaque séance a **`calories`** (kcal estimées).
+- `GET /stats/heatmap` : chaque jour a **`calories`**, et la réponse a **`totalCalories`** pour l'année.
+- C'est exactement le même chiffre que `estimatedCalories` de `GET /stats/workout/:id` : même formule (MET par type d'exercice × poids de corps × durée), même poids de corps (celui du profil, sinon 70 kg), même arrondi. Le test e2e le vérifie.
+- **L'app ne doit plus calculer les calories elle-même.** C'est son calcul local qui donnait 31 au lieu de 47 kcal.
