@@ -14,7 +14,9 @@ type Props = {
   posts: ProfilePost[];
   authorName: string;
   authorId?: string;
-  onDeleted: (postId: string) => void;
+  onDeleted?: (postId: string) => void;
+  /** Profil d'un autre utilisateur : ni ajout, ni suppression, ni partage. */
+  readOnly?: boolean;
   onOpenPost?: (post: Post) => void;
   onShowLikes?: (postId: string) => void;
   onShowComments?: (postId: string) => void;
@@ -25,6 +27,7 @@ export default function MyPostsSection({
   authorName,
   authorId,
   onDeleted,
+  readOnly = false,
   onOpenPost,
   onShowLikes,
   onShowComments,
@@ -60,7 +63,7 @@ export default function MyPostsSection({
             try {
               setDeletingId(postId);
               await PostsService.deletePost(postId);
-              onDeleted(postId);
+              onDeleted?.(postId);
             } catch {
               Alert.alert(t.error, t.cannotDeletePost);
             } finally {
@@ -93,14 +96,16 @@ export default function MyPostsSection({
         <Text className="text-xl font-semibold text-ink">
           {`${t.myPostsTitle} (${posts.length})`}
         </Text>
-        <PressableScale
-          onPress={() => {}}
-          accessibilityRole="button"
-          accessibilityLabel={t.add}
-          className="h-10 w-10 items-center justify-center rounded-full bg-accent"
-        >
-          <Ionicons name="add" size={22} color={WorkoutTheme.text.primary} />
-        </PressableScale>
+        {readOnly ? null : (
+          <PressableScale
+            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel={t.add}
+            className="h-10 w-10 items-center justify-center rounded-full bg-accent"
+          >
+            <Ionicons name="add" size={22} color={WorkoutTheme.text.primary} />
+          </PressableScale>
+        )}
       </View>
 
       {posts.length === 0 ? (
@@ -121,8 +126,8 @@ export default function MyPostsSection({
                 post={asPost}
                 authorPressable={false}
                 deleting={deletingId === post.id}
-                onDelete={() => confirmDelete(post.id)}
-                onShare={() => sharePost(post.id)}
+                onDelete={readOnly ? undefined : () => confirmDelete(post.id)}
+                onShare={readOnly ? undefined : () => sharePost(post.id)}
                 onPress={onOpenPost ? () => onOpenPost(asPost) : undefined}
                 onShowLikes={onShowLikes ? () => onShowLikes(post.id) : undefined}
                 onShowComments={onShowComments ? () => onShowComments(post.id) : undefined}

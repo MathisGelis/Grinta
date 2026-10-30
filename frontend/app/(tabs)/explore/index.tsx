@@ -14,6 +14,7 @@ import { usePostInteractions } from "@/components/explorePage/PostInteractions";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
+import Button from "@/components/ui/Button";
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
   if (hour < 12) return "goodMorning";
@@ -165,10 +166,39 @@ export default function ExploreScreen() {
                 ))}
               </View>
             ) : (
-              <View className="min-h-[330px] items-center justify-center rounded-card bg-surface p-8">
-                <Text className="text-center text-base font-semibold text-ink-muted">
-                  {t.noPopularPosts}
-                </Text>
+              <View className="min-h-[330px] items-center justify-center gap-4 rounded-card bg-surface p-8">
+                {postFeed === "followed" ? (
+                  <>
+                    <Text className="text-center text-base font-semibold text-ink-muted">
+                      {t.noFollowedPosts}
+                    </Text>
+                    <Button
+                      icon="search"
+                      label={t.findAthletes}
+                      onPress={() => router.push("/(tabs)/explore/search" as any)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-center text-lg font-semibold text-ink">
+                      {t.createFirstWorkoutTitle}
+                    </Text>
+                    <Text className="text-center text-sm text-ink-muted">
+                      {t.createFirstWorkoutHint}
+                    </Text>
+                    <Button
+                      icon="add"
+                      label={t.createFirstWorkoutBtn}
+                      onPress={() => router.push("/(tabs)/workouts/create/workout" as any)}
+                    />
+                    <Button
+                      variant="secondary"
+                      icon="search"
+                      label={t.findAthletes}
+                      onPress={() => router.push("/(tabs)/explore/search" as any)}
+                    />
+                  </>
+                )}
               </View>
             )}
           </>

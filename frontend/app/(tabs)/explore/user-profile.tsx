@@ -10,6 +10,9 @@ import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
+import MyPostsSection from "@/components/profile/MyPostsSection";
+import { usePostInteractions } from "@/components/explorePage/PostInteractions";
+import ErrorState from "@/components/ui/ErrorState";
 import { useTranslation } from "@/contexts/LanguageContext";
 export default function UserProfileScreen() {
   const { t } = useTranslation();
@@ -18,6 +21,12 @@ export default function UserProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [followStatus, setFollowStatus] = useState<string>("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [myId, setMyId] = useState("");
+  const { openLikes, openComments, modals } = usePostInteractions(myId);
+
+  useEffect(() => {
+    UserService.getMyId().then((id) => setMyId(id ?? "")).catch(() => {});
+  }, []);
 
   const fetchProfile = useCallback(async () => {
     if (!params.userId) {
@@ -152,14 +161,34 @@ export default function UserProfileScreen() {
             </View>
           </View>
 
-          {profile.isPrivate && (
+          {profile.isPrivate ? (
             <View className="flex-row items-center justify-center bg-surface rounded-tile mx-4 p-5 gap-2">
               <Ionicons name="lock-closed" size={20} color={WorkoutTheme.text.tertiary} />
               <Text className="text-ink-muted text-sm">{t.privateProfile}</Text>
             </View>
+          ) : (
+            <View className="px-5">
+              <MyPostsSection
+                readOnly
+                posts={profile.posts ?? []}
+                authorName={profile.displayName}
+                authorId={profile.id}
+                onOpenPost={(post) =>
+                  router.push({
+                    pathname: "/(tabs)/explore/userPost",
+                    params: { postId: post.id, post: JSON.stringify(post) },
+                  } as any)
+                }
+                onShowLikes={openLikes}
+                onShowComments={openComments}
+              />
+            </View>
           )}
         </ScrollView>
-      ) : null}
+      ) : (
+        <ErrorState className="mx-5" onRetry={fetchProfile} />
+      )}
+      {modals}
     </View>
   );
 }
