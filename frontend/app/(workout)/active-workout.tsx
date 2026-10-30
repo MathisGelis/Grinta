@@ -423,6 +423,13 @@ export default function ActiveWorkoutScreen() {
     ]);
   };
 
+  // Ferme tout le groupe (workout) (choix de séance + séance en direct) et revient
+  // sur l'onglet stats sans rien laisser dans la pile.
+  const leaveWorkout = () => {
+    if (router.canDismiss()) router.dismissAll();
+    router.navigate("/(tabs)/stats");
+  };
+
   const handleMinimize = async () => {
     await persistSession();
     router.replace("/(tabs)/explore");
@@ -485,7 +492,7 @@ export default function ActiveWorkoutScreen() {
       }
       await clearActiveSession();
 
-      const goToStats = () => router.replace("/(tabs)/stats");
+      const goToStats = leaveWorkout;
       const records = saved.badges ?? [];
       setShowCompletionModal(false);
       if (records.length > 0) {
@@ -509,7 +516,7 @@ export default function ActiveWorkoutScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1">
-        <ScreenBackground />
+        <ScreenBackground flat />
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
         </View>
@@ -519,7 +526,7 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <StatusBar barStyle="light-content" />
 
       <WorkoutSessionHeader
@@ -705,7 +712,7 @@ export default function ActiveWorkoutScreen() {
         onClose={() => {
           setNewBadges([]);
           if (photoFailedRef.current) Alert.alert(t.error, t.photoNotSent);
-          router.replace("/(tabs)/stats");
+          leaveWorkout();
         }}
       />
     </SafeAreaView>

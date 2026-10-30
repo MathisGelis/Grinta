@@ -10,30 +10,27 @@ import {
   PlannedWorkout,
   fullPlannedWorkout,
 } from "@/services/workouts.service";
+import { getTodayProgramme, type ProgrammeToday } from "@/services/programms.service";
+import { getWorkoutSuggestion, type WorkoutSuggestion } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
+import { localDate } from "@/utils/date";
+import { format } from "@/i18n/translations";
 import Modal from "@/components/ui/AppModal";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 import IconButton from "@/components/ui/IconButton";
+import Button from "@/components/ui/Button";
 import MuscleMap from "@/components/ui/MuscleMap";
 import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
-import Button from "@/components/ui/Button";
+import { getExercisesById, type Exercise } from "@/services/exercises.service";
 const SECONDS_PER_SET = 45;
-
-function formatRest(seconds: number) {
-  if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-
-  return rest ? `${mins}min${rest}` : `${mins}min`;
-}
 
 export default function CurrentWorkoutScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
   const [selectedWorkout, setSelectedWorkout] =
     useState<fullPlannedWorkout | null>(null);
@@ -42,9 +39,28 @@ export default function CurrentWorkoutScreen() {
   );
   const [searchQuery, setSearchQuery] = useState("");
   const muscleData = usePlannedMuscleData(selectedWorkout?.exercises);
+  const [areaHeight, setAreaHeight] = useState(0);
+  const [listContentHeight, setListContentHeight] = useState(0);
+  const [exercisesById, setExercisesById] = useState<Map<string, Exercise>>(new Map());
+  const [focusedExerciseId, setFocusedExerciseId] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    getExercisesById()
+      .then((map) => !cancelled && setExercisesById(map))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [muscleData]);
+
+  // Changer de séance remet la carte en vue d'ensemble.
+  useEffect(() => setFocusedExerciseId(null), [selectedWorkoutId]);
+
   const [pickerVisible, setPickerVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [today, setToday] = useState<ProgrammeToday | null>(null);
+  const [suggestion, setSuggestion] = useState<WorkoutSuggestion | null>(null);
 
   const loadWorkoutDetail = useCallback(
     async (workoutId: string, token?: string) => {
@@ -66,12 +82,22 @@ export default function CurrentWorkoutScreen() {
     try {
       setLoading(true);
       const token = await TokenService.get();
-      const plannedWorkouts = await getPlannedWorkouts(token || undefined);
+      const date = localDate();
+      const [plannedWorkouts, programme, suggested] = await Promise.all([
+        getPlannedWorkouts(token || undefined),
+        getTodayProgramme(date).catch(() => null),
+        getWorkoutSuggestion(date).catch(() => null),
+      ]);
       setWorkouts(plannedWorkouts);
+      setToday(programme);
+      setSuggestion(suggested);
 
-      if (plannedWorkouts.length > 0) {
-        setSelectedWorkoutId(plannedWorkouts[0].id);
-        loadWorkoutDetail(plannedWorkouts[0].id, token || undefined);
+      // Programme en cours : la séance du jour est proposée par défaut.
+      // Sinon rien n'est présélectionné, l'écran le dit clairement.
+      const planned = programme?.status === "workout" ? programme.workout : null;
+      if (planned) {
+        setSelectedWorkoutId(planned.id);
+        loadWorkoutDetail(planned.id, token || undefined);
       }
     } catch (error) {
       console.error("Erreur lors du chargement des workouts:", error);
@@ -107,6 +133,29 @@ export default function CurrentWorkoutScreen() {
     router.back();
   };
 
+  const fromProgramme =
+    today?.status === "workout" && !!today.workout && selectedWorkoutId === today.workout.id;
+
+  // La carte fait la hauteur de la liste (au plus la zone disponible au-dessus du bouton), comme avant.
+  // Avec l'en-tête (titre + icône, 36 px + écart de 8) et le padding de la carte (24) en plus. La silhouette (200 × 400 à l'échelle 1) reste sous 44 % de la largeur.
+  const maxBodyScale = Math.max(0.3, (windowWidth * 0.44 - 24) / 200);
+  const bodyScale = Math.min(
+    maxBodyScale,
+    Math.max(0.3, (Math.min(listContentHeight || 300, areaHeight || Infinity) - 24 - 44) / 400),
+  );
+
+  const focusedExercise = focusedExerciseId ? exercisesById.get(focusedExerciseId) : undefined;
+
+  const suggestedId = suggestion?.suggestion?.workout.id;
+  const suggestedChosen = !!suggestedId && selectedWorkoutId === suggestedId;
+  const firstMuscle = suggestion?.suggestion?.muscles[0];
+  const suggestedWhy = firstMuscle
+    ? format(t.sgMuscleLine, {
+        muscle: t.muscleNames[firstMuscle.muscle] ?? firstMuscle.muscle.replace(/_/g, " "),
+        n: Math.round(firstMuscle.workedSets * 10) / 10,
+      })
+    : "";
+
   const filteredWorkouts = workouts.filter((workout) =>
     workout.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
@@ -137,7 +186,7 @@ export default function CurrentWorkoutScreen() {
       <SafeAreaView
         className="flex-1"
       >
-      <ScreenBackground />
+      <ScreenBackground flat />
         <View
           className="flex-1 justify-center items-center"
         >
@@ -152,7 +201,7 @@ export default function CurrentWorkoutScreen() {
       edges={["top"]}
       className="flex-1"
     >
-      <ScreenBackground />
+      <ScreenBackground flat />
       <View className="flex-row items-center gap-3 px-4 pb-3 pt-1">
         {workouts.length > 0 ? (
           <Pressable
@@ -162,13 +211,20 @@ export default function CurrentWorkoutScreen() {
             className="flex-1 flex-row items-center gap-3 rounded-tile bg-surface px-4 py-3 active:opacity-70"
           >
             <View className="flex-1">
-              <Text className="text-xs text-ink-muted">{t.selectWorkout}</Text>
+              <Text className="text-xs text-ink-muted">
+                {fromProgramme && today
+                  ? format(t.cmFromProgramme, { n: today.dayNumber ?? 1, total: today.cycleLength })
+                  : t.selectWorkout}
+              </Text>
               <Text
                 numberOfLines={1}
-                className="mt-0.5 text-lg font-semibold text-ink"
+                className={`mt-0.5 text-lg font-semibold ${selectedWorkout ? "text-ink" : "text-ink-muted"}`}
               >
-                {selectedWorkout?.title ?? "–"}
+                {selectedWorkout?.title ?? t.cmNone}
               </Text>
+              {!selectedWorkoutId && today?.status === "rest" ? (
+                <Text className="mt-0.5 text-xs text-accent-text">{t.cmNoneRest}</Text>
+              ) : null}
             </View>
             <View className="h-9 w-9 items-center justify-center rounded-full bg-raised">
               <Ionicons
@@ -208,148 +264,105 @@ export default function CurrentWorkoutScreen() {
         </View>
       ) : (
         <>
-          <ScrollView
-            className="flex-1"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-          >
-            {selectedWorkout && (
-              <>
-                {selectedWorkout.description ? (
-                  <Text
-                    className="text-sm text-ink-soft"
-                  >
-                    {selectedWorkout.description}
+          <View className="flex-1 px-4 pb-3">
+            {suggestion?.suggestion ? (
+              <View className="mb-6 mt-5 flex-row items-center gap-3 rounded-tile bg-accent-tint p-3.5">
+                <Ionicons name="sparkles" size={20} color={WorkoutTheme.accent.purple} />
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-ink" numberOfLines={1}>
+                    {suggestion.suggestion.workout.title}
                   </Text>
-                ) : null}
+                  <Text className="text-xs text-accent-text" numberOfLines={1}>
+                    {suggestedWhy || t.sgTitle}
+                  </Text>
+                </View>
+                <PressableScale
+                  onPress={() => !suggestedChosen && handleSelectWorkout(suggestion.suggestion!.workout.id)}
+                  accessibilityRole="button"
+                  className={`h-10 flex-row items-center justify-center gap-1.5 rounded-full px-4 ${suggestedChosen ? "bg-raised" : "bg-accent"}`}
+                >
+                  {suggestedChosen ? (
+                    <Ionicons name="checkmark" size={16} color={WorkoutTheme.text.primary} />
+                  ) : null}
+                  <Text className="text-sm font-semibold text-ink">
+                    {suggestedChosen ? t.cmChosen : t.cmChoose}
+                  </Text>
+                </PressableScale>
+              </View>
+            ) : null}
 
-                {summary && (
+            {selectedWorkout && summary ? (
+              <Text className="mb-3 px-1 text-sm text-ink-muted">
+                {format(t.exercisesCount, { n: summary.exercises })} ·{" "}
+                {format(t.setsCount, { n: summary.sets })} · ~{summary.minutes} min
+              </Text>
+            ) : null}
+            <View className="flex-1" onLayout={(e) => setAreaHeight(e.nativeEvent.layout.height)}>
+              {loadingDetail ? (
+                <ActivityIndicator
+                  size="small"
+                  color={WorkoutTheme.accent.purple}
+                  style={{ marginTop: 24 }}
+                />
+              ) : selectedWorkout ? (
+                <View className="flex-1 flex-row gap-3">
+                {muscleData.length > 0 ? (
                   <View
-                    className="flex-row mt-4 mb-5 rounded-full bg-raised border border-line py-3"
+                    className="justify-start self-start rounded-card bg-surface p-3"
+                    style={{ width: Math.max(bodyScale * 200, 96) + 24 }}
                   >
-                    {[
-                      { value: `${summary.exercises}`, label: t.exercises },
-                      { value: `${summary.sets}`, label: t.sets },
-                      {
-                        value:
-                          summary.volume >= 1000
-                            ? `${(summary.volume / 1000).toFixed(1)}t`
-                            : `${summary.volume}kg`,
-                        label: t.volumeLabel,
-                      },
-                      { value: `~${summary.minutes}min`, label: t.duration },
-                    ].map((stat, index) => (
-                      <View
-                        key={stat.label}
-                        style={{
-                          flex: 1,
-                          alignItems: "center",
-                          borderLeftWidth: index === 0 ? 0 : 1,
-                          borderLeftColor: WorkoutTheme.border,
-                        }}
-                      >
-                        <Text
-                          className="text-[17px] font-bold text-ink"
-                        >
-                          {stat.value}
-                        </Text>
-                        <Text
-                          className="text-[10px] mt-0.5 tracking-[0.4px] uppercase text-ink-muted"
-                        >
-                          {stat.label}
-                        </Text>
-                      </View>
-                    ))}
+                    <MuscleMap
+                      data={muscleData}
+                      scale={bodyScale}
+                      compact
+                      focus={
+                        focusedExercise
+                          ? {
+                              primary: [focusedExercise.primary_muscle],
+                              secondary: focusedExercise.secondary_muscles ?? [],
+                            }
+                          : null
+                      }
+                    />
                   </View>
-                )}
-
-                {muscleData.length > 0 && (
-                  <View className="mb-5 gap-3 rounded-card bg-surface p-4">
-                    <Text className="text-base font-semibold text-ink">
-                      {t.musclesWorkedTitle}
-                    </Text>
-                    <MuscleMap data={muscleData} unit={t.sets.toLowerCase()} />
-                  </View>
-                )}
-
-                {loadingDetail ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={WorkoutTheme.accent.purple}
-                    style={{ marginTop: 24 }}
-                  />
-                ) : (
-                  <View className="gap-2.5">
-                    {selectedWorkout.exercises.map((exercise, index) => (
-                      <View
+                ) : null}
+                  <ScrollView
+                    className="flex-1"
+                    showsVerticalScrollIndicator={false}
+                    contentContainerClassName="gap-2"
+                    onContentSizeChange={(_, height) => setListContentHeight(height)}
+                  >
+                  {selectedWorkout.exercises.map((exercise) => {
+                    const focused = focusedExerciseId === exercise.exerciseId;
+                    return (
+                      <PressableScale
                         key={exercise.exerciseId}
-                        className="bg-raised rounded-tile border border-line p-3.5"
+                        halo={false}
+                        onPress={() =>
+                          setFocusedExerciseId(focused ? null : exercise.exerciseId)
+                        }
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: focused }}
+                        className={`rounded-tile px-3.5 py-3 ${focused ? "bg-accent-tint" : "bg-surface"}`}
                       >
-                        <View
-                          className="flex-row items-center gap-2.5"
-                        >
-                          <Text
-                            className="text-xs font-bold text-ink-muted w-[18px]"
-                          >
-                            {index + 1}
-                          </Text>
-                          <Text
-                            numberOfLines={1}
-                            className="flex-1 text-[15px] font-semibold text-ink"
-                          >
-                            {exercise.exerciseName}
-                          </Text>
-                          {exercise.plannedRestSeconds ? (
-                            <View
-                              className="flex-row items-center gap-1"
-                            >
-                              <Ionicons
-                                name="time-outline"
-                                size={13}
-                                color={WorkoutTheme.text.tertiary}
-                              />
-                              <Text
-                                className="text-xs font-semibold text-ink-muted"
-                              >
-                                {formatRest(exercise.plannedRestSeconds)}
-                              </Text>
-                            </View>
-                          ) : null}
-                        </View>
-
-                        <View
-                          className="flex-row flex-wrap gap-1.5 mt-2.5 ml-7"
-                        >
-                          {exercise.sets.map((set, setIndex) => (
-                            <View
-                              key={setIndex}
-                              className="px-[9px] py-[5px] rounded-[7px] bg-background"
-                            >
-                              <Text
-                                className="text-xs font-semibold text-ink"
-                              >
-                                {set.weight > 0
-                                  ? `${set.reps} × ${set.weight}`
-                                  : `${set.reps} ${t.repsUnit}`}
-                                {set.weight > 0 ? (
-                                  <Text
-                                    className="text-ink-muted"
-                                  >
-                                    {" "}
-                                    kg
-                                  </Text>
-                                ) : null}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </>
-            )}
-          </ScrollView>
+                        <Text numberOfLines={2} className="text-sm font-semibold text-ink">
+                          {exercise.exerciseName}
+                        </Text>
+                        <Text className="mt-0.5 text-xs font-medium text-ink-muted">
+                          {format(t.setsCount, { n: exercise.sets.length })}
+                        </Text>
+                      </PressableScale>
+                    );
+                  })}
+                  </ScrollView>
+                </View>
+              ) : (
+                <View className="flex-1 items-center justify-center">
+                  <Ionicons name="barbell-outline" size={56} color={WorkoutTheme.text.disabled} />
+                </View>
+              )}
+            </View>
+          </View>
 
           <Modal
             isVisible={pickerVisible}

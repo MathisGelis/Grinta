@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import Body, { type ExtendedBodyPart } from "react-native-body-highlighter";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
@@ -12,6 +12,8 @@ import {
   preferredSide,
 } from "@/utils/muscles";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import PressableScale from "@/components/ui/PressableScale";
+import { Ionicons } from "@expo/vector-icons";
 
 const LEVEL_OPACITIES = [0.3, 0.5, 0.75, 1];
 const LEVEL_COLORS = LEVEL_OPACITIES.map((opacity) =>
@@ -24,6 +26,10 @@ type Props = {
   legend?: { color: string; label: string }[];
   gender?: "male" | "female";
   scale?: number;
+  /** Silhouette seule (sans sélecteur, détail ni légende), avec une icône pour changer de côté. */
+  compact?: boolean;
+  /** Muscles d'un exercice à mettre en évidence : la carte passe sur leur côté et atténue le reste. */
+  focus?: { primary: string[]; secondary?: string[] } | null;
   className?: string;
 };
 
@@ -37,6 +43,8 @@ export default function MuscleMap({
   legend,
   gender = "male",
   scale = 0.85,
+  compact = false,
+  focus = null,
   className = "",
 }: Props) {
   const { t } = useTranslation();
@@ -51,8 +59,37 @@ export default function MuscleMap({
     [grouped],
   );
 
-  const bodyData = useMemo<ExtendedBodyPart[]>(
-    () =>
+  const focusGroups = useMemo(() => {
+    if (!focus) return null;
+    const toValues = (muscles: string[] = []) => muscles.map((muscle) => ({ muscle, value: 1 }));
+    return {
+      primary: groupMusclesBySlug(toValues(focus.primary)).groups,
+      secondary: groupMusclesBySlug(toValues(focus.secondary)).groups,
+    };
+  }, [focus]);
+
+  // Un exercice choisi : on affiche le côté du corps qui porte son muscle principal.
+  useEffect(() => {
+    if (focusGroups && focusGroups.primary.length > 0) {
+      setPickedSide(preferredSide(focusGroups.primary));
+    }
+  }, [focusGroups]);
+
+  const bodyData = useMemo<ExtendedBodyPart[]>(() => {
+    if (focusGroups) {
+      const colors = new Map<string, string>();
+      for (const group of grouped.groups) {
+        colors.set(group.slug, withAlpha(WorkoutTheme.accent.purple, 0.18));
+      }
+      for (const group of focusGroups.secondary) {
+        colors.set(group.slug, withAlpha(WorkoutTheme.accent.purple, 0.6));
+      }
+      for (const group of focusGroups.primary) {
+        colors.set(group.slug, WorkoutTheme.accent.purpleLight);
+      }
+      return [...colors.entries()].map(([slug, color]) => ({ slug, color }) as ExtendedBodyPart);
+    }
+    return (
       grouped.groups.map((group) =>
         group.color
           ? { slug: group.slug, color: group.color }
@@ -60,9 +97,9 @@ export default function MuscleMap({
               slug: group.slug,
               intensity: intensityLevel(group.value, max, LEVEL_COLORS.length),
             },
-      ),
-    [grouped, max],
-  );
+      )
+    );
+  }, [grouped, max, focusGroups]);
 
   const muscleName = (key: string) => t.muscleNames[key] ?? key.replace(/_/g, " ");
   const withUnit = (value: number) =>
@@ -80,6 +117,36 @@ export default function MuscleMap({
       : `${group.muscles.map(muscleName).join(" · ")} — ${withUnit(group.value)}`;
 
   const selectedGroup = grouped.groups.find((group) => group.slug === selected);
+
+  if (compact) {
+    return (
+      <View className={`items-center gap-2 ${className}`}>
+        <View className="h-9 w-full flex-row items-center justify-between">
+          <Text className="text-lg font-semibold text-ink">
+            {side === "front" ? t.bodyFrontLabel : t.bodyBackLabel}
+          </Text>
+          <PressableScale
+            onPress={() => setPickedSide(side === "front" ? "back" : "front")}
+            accessibilityRole="button"
+            accessibilityLabel={side === "front" ? t.bodyBackLabel : t.bodyFrontLabel}
+            className="h-9 w-9 items-center justify-center rounded-full bg-raised"
+          >
+            <Ionicons name="sync" size={18} color={WorkoutTheme.text.primary} />
+          </PressableScale>
+        </View>
+        <Body
+          data={bodyData}
+          colors={LEVEL_COLORS}
+          side={side}
+          gender={gender}
+          scale={scale}
+          border="none"
+          defaultFill={WorkoutTheme.backgroundTertiary}
+          hiddenParts={["hair"]}
+        />
+      </View>
+    );
+  }
 
   return (
     <View className={`gap-4 ${className}`}>
