@@ -75,6 +75,8 @@ export interface V3Strings {
   createFirstWorkoutTitle: string;
   createFirstWorkoutHint: string;
   createFirstWorkoutBtn: string;
+  prgToday: string;
+  prgStartDay: string;
   loadFailedTitle: string;
   newsTab: string;
   newsBetaTag: string;
@@ -243,6 +245,8 @@ const en: V3Strings = {
   createFirstWorkoutTitle: "Create your first workout",
   createFirstWorkoutHint: "Build a session, train, then share it with the community.",
   createFirstWorkoutBtn: "New workout",
+  prgToday: "Today",
+  prgStartDay: "Start",
   loadFailedTitle: "Unable to load",
   newsTab: "News",
   newsBetaTag: "Beta",
@@ -412,6 +416,8 @@ const fr: V3Strings = {
   createFirstWorkoutTitle: "Créez votre première séance",
   createFirstWorkoutHint: "Composez une séance, entraînez-vous, puis partagez-la avec la communauté.",
   createFirstWorkoutBtn: "Nouvelle séance",
+  prgToday: "Aujourd'hui",
+  prgStartDay: "Démarrer",
   loadFailedTitle: "Impossible de charger",
   newsTab: "Actualités",
   newsBetaTag: "Bêta",

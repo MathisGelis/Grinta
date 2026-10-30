@@ -16,12 +16,17 @@ interface ProgrammeDayEditorProps {
   days: ProgrammeDay[];
   onChangeDays: (days: ProgrammeDay[]) => void;
   availableWorkouts: PlannedWorkout[];
+  /** Jour du programme suivi correspondant à aujourd'hui. */
+  currentDay?: number;
+  onStartDay?: (workout: { id: string; title: string }) => void;
 }
 
 export default function ProgrammeDayEditor({
   days,
   onChangeDays,
   availableWorkouts,
+  currentDay,
+  onStartDay,
 }: ProgrammeDayEditorProps) {
   const { t } = useTranslation();
   const [showWorkoutPicker, setShowWorkoutPicker] = useState(false);
@@ -90,11 +95,24 @@ export default function ProgrammeDayEditor({
             >
               {format(t.dayN, { n: item.dayNumber })} · {item.workout?.title ?? t.restDay}
             </Text>
-            <Text className="mt-0.5 text-xs text-ink-muted">
-              {item.workout ? t.scheduledWorkout : t.restDay}
+            <Text
+              className={`mt-0.5 text-xs ${item.dayNumber === currentDay ? "font-semibold text-accent-light" : "text-ink-muted"}`}
+            >
+              {item.dayNumber === currentDay ? t.prgToday : item.workout ? t.scheduledWorkout : t.restDay}
             </Text>
           </View>
         </View>
+        {item.workout && onStartDay ? (
+          <PressableScale
+            onPress={() => onStartDay({ id: item.workout!.id, title: item.workout!.title })}
+            accessibilityRole="button"
+            accessibilityLabel={`${t.prgStartDay} ${item.workout.title}`}
+            className="mr-2 h-10 flex-row items-center gap-1 rounded-full bg-accent px-3"
+          >
+            <Ionicons name="play" size={14} color={WorkoutTheme.text.primary} />
+            <Text className="text-xs font-semibold text-ink">{t.prgStartDay}</Text>
+          </PressableScale>
+        ) : null}
         <PressableScale
           onPress={() => removeDay(item.dayNumber)}
           accessibilityRole="button"

@@ -6,7 +6,9 @@ import {
   getPlannedWorkouts,
   PlannedWorkout,
 } from "@/services/workouts.service";
+import { router } from "expo-router";
 import {
+  getTodayProgramme,
   getProgrammeById,
   SmallProgramm,
   updateProgramme,
@@ -45,6 +47,7 @@ function ProgrammCard({
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [fullProgram, setFullProgram] = useState<Programm | null>(null);
+  const [currentDay, setCurrentDay] = useState<number | undefined>();
 
   const handleExpand = useCallback(async () => {
     if (isExpanded) {
@@ -55,12 +58,14 @@ function ProgrammCard({
     try {
       setLoading(true);
 
-      const [fetchedProgram, workouts] = await Promise.all([
+      const [fetchedProgram, workouts, today] = await Promise.all([
         getProgrammeById(program.id),
         TokenService.get().then((token) =>
           getPlannedWorkouts(token || undefined),
         ),
+        getTodayProgramme(localDate()).catch(() => null),
       ]);
+      setCurrentDay(today?.programme.id === program.id ? today.dayNumber : undefined);
 
       setFullProgram(fetchedProgram);
       setDays(
@@ -109,7 +114,8 @@ function ProgrammCard({
   const handleStart = useCallback(async () => {
     try {
       setStarting(true);
-      await startProgramme(program.id, localDate());
+      const started = await startProgramme(program.id, localDate());
+      setCurrentDay(started.dayNumber);
       Alert.alert(t.prgStarted, t.prgStartedMessage);
     } catch (error) {
       Alert.alert(t.error, error instanceof Error ? error.message : t.loadingError);
@@ -194,6 +200,13 @@ function ProgrammCard({
             days={days}
             onChangeDays={setDays}
             availableWorkouts={availableWorkouts}
+            currentDay={currentDay}
+            onStartDay={(workout) =>
+              router.push({
+                pathname: "/(workout)/active-workout",
+                params: { workoutId: workout.id, workoutName: workout.title },
+              } as any)
+            }
           />
 
           <Button
