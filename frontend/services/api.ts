@@ -14,9 +14,8 @@ export async function checkServerHealth(): Promise<boolean> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
   try {
-    const response = await fetch(`${BASE_URL}/`, { signal: controller.signal });
-    // Le serveur est joignable dès qu'il répond (GET / renvoie 404 sur ce backend).
-    return response.status < 500;
+    await fetch(`${BASE_URL}/health`, { signal: controller.signal });
+    return true;
   } catch {
     return false;
   } finally {
