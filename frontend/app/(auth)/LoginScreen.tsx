@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { clearUserSession } from "@/services/session.service";
 import { LinearGradient } from "expo-linear-gradient";
 import { AuthService } from "@/services/auth.service";
@@ -5,7 +6,6 @@ import { TokenService } from "@/services/token.service";
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Image, Dimensions, ScrollView } from "react-native";
 import { router } from "expo-router";
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
@@ -130,12 +130,6 @@ export default function LoginScreen() {
         </View>
 
         <View className="flex-row items-center px-6 pt-6 gap-3">
-          <PressableScale className="w-14 h-14 rounded-full bg-raised items-center justify-center">
-            <FontAwesome name="apple" size={22} color={WorkoutTheme.text.primary} />
-          </PressableScale>
-          <PressableScale className="w-14 h-14 rounded-full bg-raised items-center justify-center">
-            <FontAwesome name="google" size={20} color={WorkoutTheme.text.primary} />
-          </PressableScale>
           <PressableScale
             className="flex-1 h-14 bg-accent rounded-full flex-row items-center justify-center"
             onPress={handleLogin}
