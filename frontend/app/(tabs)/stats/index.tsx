@@ -17,6 +17,7 @@ import SectionHeader from "@/components/ui/SectionHeader";
 import IconButton from "@/components/ui/IconButton";
 import PressableScale from "@/components/ui/PressableScale";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import ErrorState from "@/components/ui/ErrorState";
 import StatsCalendar, {
   CalendarView,
   dayKey,
@@ -34,6 +35,7 @@ export default function StatsScreen() {
   const [anchor, setAnchor] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [consistency, setConsistency] = useState<Consistency | null>(null);
   const [completedWorkouts, setCompletedWorkouts] = useState<
     CompletedWorkout[]
@@ -55,6 +57,7 @@ export default function StatsScreen() {
 
   const fetchData = useCallback(async () => {
     try {
+      setError(null);
       const [consistencyData, workoutsData, published] = await Promise.all([
         StatsService.getConsistency(),
         WorkoutService.getCompleted({ limit: COMPLETED_PAGE_SIZE }),
@@ -64,11 +67,12 @@ export default function StatsScreen() {
       setCompletedWorkouts(workoutsData);
       setHasMore(workoutsData.length === COMPLETED_PAGE_SIZE);
       setPublishedPosts(published);
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.loadingError);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -217,6 +221,14 @@ export default function StatsScreen() {
 
       {loading ? (
         <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      ) : error ? (
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            setLoading(true);
+            fetchData();
+          }}
+        />
       ) : (
         <>
           {tab === "data" && (

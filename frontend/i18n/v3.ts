@@ -43,6 +43,7 @@ export interface V3Strings {
   dupDoneMessage: string;
   dupView: string;
 
+  loadFailedTitle: string;
   newsTab: string;
   newsBetaTag: string;
   newsBetaTitle: string;
@@ -162,6 +163,7 @@ const en: V3Strings = {
   dupDoneMessage: "It was added to your planned workouts.",
   dupView: "View",
 
+  loadFailedTitle: "Unable to load",
   newsTab: "News",
   newsBetaTag: "Beta",
   newsBetaTitle: "Grinta is in beta!",
@@ -282,6 +284,7 @@ const fr: V3Strings = {
   dupDoneMessage: "Elle a été ajoutée à vos séances planifiées.",
   dupView: "Voir",
 
+  loadFailedTitle: "Impossible de charger",
   newsTab: "Actualités",
   newsBetaTag: "Bêta",
   newsBetaTitle: "Grinta est en bêta !",

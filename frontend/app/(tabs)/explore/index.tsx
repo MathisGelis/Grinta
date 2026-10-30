@@ -13,6 +13,7 @@ import PostCard from "@/components/explorePage/PostCard";
 import { usePostInteractions } from "@/components/explorePage/PostInteractions";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import ErrorState from "@/components/ui/ErrorState";
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
   if (hour < 12) return "goodMorning";
@@ -26,6 +27,7 @@ export default function ExploreScreen() {
   const { t } = useTranslation();
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState("");
   const { openLikes, openComments, modals } = usePostInteractions(userId);
 
@@ -76,6 +78,7 @@ export default function ExploreScreen() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const me = await UserService.getMe();
       setUserId(me.id);
       if (me.displayName) {
@@ -88,11 +91,12 @@ export default function ExploreScreen() {
           ? await PostsService.getTopPosts(5)
           : await PostsService.getFollowedPosts(5);
       setTopPosts(postsData);
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.loadingError);
     } finally {
       setLoading(false);
     }
-  }, [postFeed]);
+  }, [postFeed, t]);
 
   useEffect(() => {
     fetchData();
@@ -135,6 +139,8 @@ export default function ExploreScreen() {
             color={WorkoutTheme.accent.purple}
             style={{ marginTop: 40 }}
           />
+        ) : error ? (
+          <ErrorState message={error} onRetry={fetchData} />
         ) : (
           <>
             {topPosts.length > 0 ? (

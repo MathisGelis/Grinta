@@ -15,6 +15,7 @@ import MyPostsSection from "@/components/profile/MyPostsSection";
 import { usePostInteractions } from "@/components/explorePage/PostInteractions";
 import GlobalStatsSection from "@/components/profile/GlobalStatsSection";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import ErrorState from "@/components/ui/ErrorState";
 
 function formatJoinDate(dateStr: string, months: string[]): string {
   const d = new Date(dateStr);
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [tab, setTab] = useState<"stats" | "posts">("stats");
@@ -35,14 +37,16 @@ export default function ProfileScreen() {
 
   const fetchData = useCallback(async () => {
     try {
+      setError(null);
       const me = await UserService.getMe();
       setUser(me);
       setProfile(await UserService.getProfile(me.id));
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.loadingError);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,7 +66,7 @@ export default function ProfileScreen() {
     );
   };
 
-  const userName = user?.displayName ?? t.athlete;
+  const userName = user?.displayName ?? "";
   const joinedDate = user?.createdAt
     ? formatJoinDate(user.createdAt, t.months)
     : "";
@@ -102,6 +106,14 @@ export default function ProfileScreen() {
 
         {loading ? (
           <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        ) : error || !user ? (
+          <ErrorState
+            message={error ?? undefined}
+            onRetry={() => {
+              setLoading(true);
+              fetchData();
+            }}
+          />
         ) : (
           <>
             <View className="-mt-4 items-center gap-1">

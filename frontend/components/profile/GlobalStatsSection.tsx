@@ -1,3 +1,4 @@
+import ErrorState from "@/components/ui/ErrorState";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
@@ -60,6 +61,8 @@ export default function GlobalStatsSection() {
   const { t } = useTranslation();
   const [period, setPeriod] = useState<StatsPeriod>("week");
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [summary, setSummary] = useState<PeriodSummary | null>(null);
   const [distribution, setDistribution] = useState<MuscleDistribution | null>(null);
   const muscleData = useMemo<MuscleValue[]>(
@@ -77,13 +80,17 @@ export default function GlobalStatsSection() {
   useEffect(() => {
     StatsService.getConsistency().then(setConsistency).catch(() => {});
     StatsService.getMuscleFrequency().then(setFrequency).catch(() => {});
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     Promise.all([
-      StatsService.getSummary(period).catch(() => null),
+      StatsService.getSummary(period).catch(() => {
+        if (!cancelled) setFailed(true);
+        return null;
+      }),
       StatsService.getMuscleDistribution(period).catch(() => null),
       StatsService.getBalance(period).catch(() => null),
     ]).then(([sum, dist, bal]) => {
@@ -96,7 +103,7 @@ export default function GlobalStatsSection() {
     return () => {
       cancelled = true;
     };
-  }, [period]);
+  }, [period, reloadKey]);
 
   const statusColor: Record<MuscleRecoveryStatus, string> = {
     recovering: WorkoutTheme.status.danger,
@@ -149,7 +156,7 @@ export default function GlobalStatsSection() {
   const weekly = consistency?.weeklyActivity.slice(-12) ?? [];
   const weeklyMax = Math.max(1, ...weekly.map((w) => w.workoutCount));
 
-  const empty = !loading && !summary && !consistency && !frequency;
+  const empty = !loading && !failed && !summary && !consistency && !frequency;
 
   return (
     <View className="gap-4">
@@ -167,13 +174,17 @@ export default function GlobalStatsSection() {
         />
       </View>
 
+      {failed && !loading ? (
+        <ErrorState onRetry={() => setReloadKey((key) => key + 1)} />
+      ) : null}
+
       {empty ? (
         <View className="items-center rounded-card bg-surface p-8">
           <Text className="text-base text-ink-muted">{t.noStatsYet}</Text>
         </View>
       ) : null}
 
-      {loading ? (
+      {failed && !loading ? null : loading ? (
         <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} />
       ) : (
         <>
