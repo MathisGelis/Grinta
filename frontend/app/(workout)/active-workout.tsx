@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { ApiError } from "@/services/api";
 import {
   View,
   ScrollView,
@@ -507,7 +508,10 @@ export default function ActiveWorkoutScreen() {
       }
     } catch (error) {
       console.error("Erreur:", error);
-      Alert.alert(t.error, t.cannotSaveWorkout);
+      Alert.alert(
+        t.error,
+        error instanceof ApiError && error.status === 400 ? error.message : t.cannotSaveWorkout,
+      );
     } finally {
       setIsSubmitting(false);
     }

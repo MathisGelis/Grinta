@@ -64,7 +64,7 @@ export default function CurrentExerciseSection({
   }, [currentSetIndex, plannedSetData, lastWeight, lastReps]);
 
   const handleCompleteSet = () => {
-    const w = parseFloat(weight) || 0;
+    const w = Math.round((parseFloat(weight) || 0) * 100) / 100;
     const r = Math.max(1, parseInt(reps) || 1);
     onCompleteSet(r, w);
   };
@@ -122,7 +122,9 @@ export default function CurrentExerciseSection({
             className="w-full py-0 text-center text-[40px] font-semibold text-ink"
             style={{ fontVariant: ["tabular-nums"], height: 52 }}
             value={weight}
-            onChangeText={setWeight}
+            onChangeText={(input) =>
+              setWeight(input.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1").replace(/(\.\d{2})\d+/, "$1"))
+            }
             onBlur={() => !weight.trim() && setWeight("0")}
             selectTextOnFocus
             keyboardType="decimal-pad"

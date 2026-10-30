@@ -29,7 +29,7 @@ export default function NumericInput({
 
   const handleChange = (input: string) => {
     const cleaned = decimal
-      ? input.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1")
+      ? input.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1").replace(/(\.\d{2})\d+/, "$1")
       : input.replace(/[^0-9]/g, "");
     setText(cleaned);
     const parsed = decimal ? parseFloat(cleaned) : parseInt(cleaned, 10);
