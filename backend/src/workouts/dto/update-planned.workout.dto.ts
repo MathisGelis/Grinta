@@ -6,21 +6,9 @@ import {
   ValidateNested,
   IsUUID,
   IsInt,
-  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export class SetPairDto {
-  @ApiProperty()
-  @IsInt()
-  @Min(1)
-  reps: number;
-
-  @ApiProperty()
-  @IsInt()
-  @Min(0)
-  weight: number;
-}
+import { SetPairDto } from './set-pair.dto';
 
 export class PlannedWorkoutExerciseDto {
   @ApiProperty()

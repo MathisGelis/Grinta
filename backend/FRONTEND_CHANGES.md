@@ -614,3 +614,10 @@ Une entrée par tâche de l'audit (B-xx).
 
 - `GET /health` → `200 { status: "ok", database: "ok" }`. Elle exécute un `SELECT 1` sur la base. Pas de token ni de limite de débit. Elle répond `503 { status: "error", database: "unreachable" }` si la base ne répond pas. **C'est la route à utiliser pour `checkServerHealth`.**
 - `GET /` → `200 { status: "ok" }`, sans vérifier la base. Elle répondait `Hello World!` avant, ou `404` sur le backend périmé.
+
+### B-01 Charges décimales
+
+- `weight` accepte maintenant **jusqu'à 2 décimales**, de 0 à 1000 kg, dans les séances terminées et planifiées (création et modification). Exemples : `62.5`, `1.25`. Les `reps` restent entières.
+- 3 décimales, une charge négative ou une charge au-dessus de 1000 kg donnent un `400`.
+- Les charges sont relues telles quelles. Volume, 1RM, records, badges et stats sont calculés sans arrondi de la charge (résultats arrondis à 2 décimales).
+- Côté app : autoriser la virgule et le point dans le champ de charge, et envoyer un nombre (pas une chaîne).

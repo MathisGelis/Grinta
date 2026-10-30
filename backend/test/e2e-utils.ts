@@ -2,6 +2,8 @@ import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
+import { DataSource } from 'typeorm';
+import { seedExercises } from '../src/exercise/seed/exercise.seed';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 
@@ -49,4 +51,25 @@ export async function createUser(
   const token = app.get(JwtService).sign({ sub: id, email, uniqueName });
 
   return { id, email, uniqueName, password, token };
+}
+
+/** Loads the real exercise catalogue once, as `npm run seed` does. */
+export async function ensureCatalogue(app: NestExpressApplication) {
+  const dataSource = app.get(DataSource);
+  const [{ count }] = await dataSource.query<Array<{ count: number }>>(
+    'SELECT COUNT(*)::int AS count FROM exercises',
+  );
+
+  if (!count) await seedExercises(dataSource);
+}
+
+export async function exerciseId(app: NestExpressApplication, name: string) {
+  const [row] = await app
+    .get(DataSource)
+    .query<
+      Array<{ id: string }>
+    >('SELECT id FROM exercises WHERE name = $1', [name]);
+
+  if (!row) throw new Error(`Exercise ${name} missing from the catalogue`);
+  return row.id;
 }
