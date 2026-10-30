@@ -11,9 +11,11 @@ import {
   SmallProgramm,
   updateProgramme,
   deleteProgramme,
+  startProgramme,
   Programm,
   ProgrammeDay,
 } from "@/services/programms.service";
+import { localDate } from "@/utils/date";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
 
 import { WorkoutTheme } from "@/constants/Colors";
@@ -41,6 +43,7 @@ function ProgrammCard({
   );
   const [days, setDays] = useState<ProgrammeDay[]>([]);
   const [saving, setSaving] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [fullProgram, setFullProgram] = useState<Programm | null>(null);
 
   const handleExpand = useCallback(async () => {
@@ -102,6 +105,18 @@ function ProgrammCard({
       setSaving(false);
     }
   }, [t, days, onUpdate, program, fullProgram]);
+
+  const handleStart = useCallback(async () => {
+    try {
+      setStarting(true);
+      await startProgramme(program.id, localDate());
+      Alert.alert(t.prgStarted, t.prgStartedMessage);
+    } catch (error) {
+      Alert.alert(t.error, error instanceof Error ? error.message : t.loadingError);
+    } finally {
+      setStarting(false);
+    }
+  }, [t, program.id]);
 
   const handleDelete = useCallback(() => {
     Alert.alert(t.confirmDeletion, t.deleteProgrammeConfirm, [
@@ -179,6 +194,14 @@ function ProgrammCard({
             days={days}
             onChangeDays={setDays}
             availableWorkouts={availableWorkouts}
+          />
+
+          <Button
+            variant="secondary"
+            icon="play-outline"
+            label={t.prgStart}
+            loading={starting}
+            onPress={handleStart}
           />
 
           <View className="w-full flex-row items-center gap-3">

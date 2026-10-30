@@ -23,6 +23,8 @@ import ExerciseAnimation from "@/components/workout/exercises/ExerciseAnimation"
 import BadgeList from "@/components/workout/badges/BadgeList";
 import { Badge, BadgesService } from "@/services/badges.service";
 import type { MuscleValue } from "@/utils/muscles";
+import CompareSheet from "@/components/workout/exercises/CompareSheet";
+import Button from "@/components/ui/Button";
 
 export default function ExerciseDetailScreen() {
   const { t } = useTranslation();
@@ -34,6 +36,7 @@ export default function ExerciseDetailScreen() {
   const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [compareVisible, setCompareVisible] = useState(false);
 
   const load = useCallback(async () => {
     if (!exerciseId) return;
@@ -91,7 +94,7 @@ export default function ExerciseDetailScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <ScreenHeader
         title={exercise?.name ?? ""}
         right={
@@ -257,8 +260,23 @@ export default function ExerciseDetailScreen() {
               <BadgeList badges={badges} showDate />
             </Card>
           ) : null}
+          {exerciseId ? (
+            <Button
+              variant="secondary"
+              icon="people-outline"
+              label={t.cmpButton}
+              onPress={() => setCompareVisible(true)}
+            />
+          ) : null}
         </ScrollView>
       )}
+      {exerciseId ? (
+        <CompareSheet
+          exerciseId={exerciseId}
+          visible={compareVisible}
+          onClose={() => setCompareVisible(false)}
+        />
+      ) : null}
     </View>
   );
 }
