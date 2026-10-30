@@ -110,7 +110,7 @@ export default function ProfileScreen() {
               </View>
               <Text className="text-xl font-semibold text-ink">{userName}</Text>
               {user?.uniqueName ? (
-                <Text className="text-sm font-medium text-accent">
+                <Text className="text-sm font-medium text-accent-light">
                   @{user.uniqueName}
                 </Text>
               ) : null}
@@ -162,6 +162,24 @@ export default function ProfileScreen() {
                 />
               </View>
             </View>
+
+            <PressableScale
+              className="flex-row items-center gap-3 rounded-tile bg-surface p-4"
+              accessibilityRole="button"
+              onPress={() => router.push("/(tabs)/profile/groups" as any)}
+            >
+              <MaterialCommunityIcons
+                name="account-group-outline"
+                size={22}
+                color={WorkoutTheme.accent.purple}
+              />
+              <Text className="flex-1 text-base font-medium text-ink">{t.grpTitle}</Text>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={22}
+                color={WorkoutTheme.text.tertiary}
+              />
+            </PressableScale>
 
             <SegmentedControl
               id="profile-tab"
