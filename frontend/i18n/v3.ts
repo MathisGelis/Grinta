@@ -77,6 +77,9 @@ export interface V3Strings {
   createFirstWorkoutBtn: string;
   prgToday: string;
   prgStartDay: string;
+  zeroWeightTitle: string;
+  zeroWeightMessage: string;
+  zeroWeightConfirm: string;
   loadFailedTitle: string;
   newsTab: string;
   newsBetaTag: string;
@@ -247,6 +250,9 @@ const en: V3Strings = {
   createFirstWorkoutBtn: "New workout",
   prgToday: "Today",
   prgStartDay: "Start",
+  zeroWeightTitle: "0 kg entered",
+  zeroWeightMessage: "You usually lift weight on this exercise. Validate this set at 0?",
+  zeroWeightConfirm: "Validate",
   loadFailedTitle: "Unable to load",
   newsTab: "News",
   newsBetaTag: "Beta",
@@ -418,6 +424,9 @@ const fr: V3Strings = {
   createFirstWorkoutBtn: "Nouvelle séance",
   prgToday: "Aujourd'hui",
   prgStartDay: "Démarrer",
+  zeroWeightTitle: "0 kg saisi",
+  zeroWeightMessage: "Vous soulevez habituellement une charge sur cet exercice. Valider cette série à 0 ?",
+  zeroWeightConfirm: "Valider",
   loadFailedTitle: "Impossible de charger",
   newsTab: "Actualités",
   newsBetaTag: "Bêta",

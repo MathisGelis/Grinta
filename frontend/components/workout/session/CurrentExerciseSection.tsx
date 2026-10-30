@@ -69,6 +69,13 @@ export default function CurrentExerciseSection({
   const handleCompleteSet = () => {
     const w = toKg(parseFloat(weight) || 0);
     const r = Math.max(1, parseInt(reps) || 1);
+    if (w === 0 && ((lastWeight ?? 0) > 0 || (lastStats?.prWeight ?? 0) > 0)) {
+      Alert.alert(t.zeroWeightTitle, t.zeroWeightMessage, [
+        { text: t.cancel, style: "cancel" },
+        { text: t.zeroWeightConfirm, onPress: () => onCompleteSet(r, w) },
+      ]);
+      return;
+    }
     onCompleteSet(r, w);
   };
 

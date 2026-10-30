@@ -106,6 +106,7 @@ export default function FloatingTabBar({
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const labels: Record<string, string> = {
+    "workout-trigger": t.startWorkout,
     explore: t.tabExplore,
     workouts: t.sessions,
     stats: t.tabStats,

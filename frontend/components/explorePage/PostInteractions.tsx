@@ -25,6 +25,8 @@ import Chip from "@/components/ui/Chip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 
+const COMMENT_MAX_LENGTH = 500;
+
 const REPORT_REASONS: ReportReason[] = [
   "spam",
   "harassment",
@@ -488,6 +490,7 @@ export function usePostInteractions(
                   <TextInput
                     value={commentDraft}
                     onChangeText={setCommentDraft}
+                    maxLength={COMMENT_MAX_LENGTH}
                     placeholder={t.writeComment}
                     placeholderTextColor={WorkoutTheme.text.tertiary}
                     multiline

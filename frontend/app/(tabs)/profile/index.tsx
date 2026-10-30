@@ -6,6 +6,7 @@ import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme } from "@/constants/Colors";
 import Screen from "@/components/ui/Screen";
+import { FEATURES } from "@/constants/features";
 import Avatar from "@/components/ui/Avatar";
 import Stat from "@/components/ui/Stat";
 import Glass from "@/components/ui/Glass";
@@ -85,6 +86,7 @@ export default function ProfileScreen() {
     <>
       <Screen>
         <View className="flex-row items-center justify-between">
+          {FEATURES.premium ? (
           <PressableScale
             onPress={() => router.push("/(tabs)/profile/premium" as any)}
             accessibilityRole="button"
@@ -102,6 +104,9 @@ export default function ProfileScreen() {
               />
             </Glass>
           </PressableScale>
+          ) : (
+            <View />
+          )}
 
           <IconButton
             icon="settings-outline"
