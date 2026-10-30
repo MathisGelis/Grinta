@@ -119,7 +119,7 @@ export default function CreateProgrammScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <ScreenHeader title={t.newProgramme} />
       <ScrollView
         className="flex-1"

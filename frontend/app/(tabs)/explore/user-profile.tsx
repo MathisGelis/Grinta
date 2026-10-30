@@ -98,7 +98,7 @@ export default function UserProfileScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <View className="flex-row items-center px-4 pt-16 pb-4 justify-between">
         <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
           <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
@@ -121,7 +121,7 @@ export default function UserProfileScreen() {
               <Avatar uri={profile.avatarUrl} name={profile.displayName} size={88} />
             </View>
             <Text className="text-ink text-xl font-bold mb-0.5">{profile.displayName}</Text>
-            <Text className="text-accent text-sm font-medium">@{profile.uniqueName}</Text>
+            <Text className="text-accent-light text-sm font-medium">@{profile.uniqueName}</Text>
           </View>
 
           <View className="items-center mb-5">

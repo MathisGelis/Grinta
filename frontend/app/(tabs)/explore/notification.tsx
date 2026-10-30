@@ -19,7 +19,7 @@ export default function NotificationsScreen() {
   return (
     <GestureDetector gesture={swipeLeftToClose}>
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <View className="flex-row items-center justify-between px-4 pt-16 pb-4">
         <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
           <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />

@@ -122,7 +122,7 @@ export default function CreateExerciseScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <ScreenHeader title={isEditing ? t.editExercise : t.newExercise} />
       {!ready ? (
         <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />

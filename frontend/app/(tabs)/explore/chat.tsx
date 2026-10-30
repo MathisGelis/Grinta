@@ -16,7 +16,7 @@ export default function ChatScreen() {
       
       className="flex-1"
     >
-      <ScreenBackground />
+      <ScreenBackground flat />
       <View
         className="flex-row items-center justify-between px-4 py-3 border-b border-b-surface"
         

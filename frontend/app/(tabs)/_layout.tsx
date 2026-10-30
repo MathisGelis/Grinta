@@ -14,7 +14,7 @@ export default function Layout() {
 
   return (
     <View className="flex-1 bg-background">
-      <ScreenBackground />
+      <ScreenBackground glow />
       <Tabs
         tabBar={(props) => (
           <FloatingTabBar {...props} sessionActive={session != null} />

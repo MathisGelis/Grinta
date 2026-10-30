@@ -13,7 +13,7 @@ const BG: Record<Variant, string> = {
   danger: "bg-danger-tint",
 };
 const FG: Record<Variant, string> = {
-  primary: "text-ink",
+  primary: "text-on-accent",
   secondary: "text-ink",
   dark: "text-ink",
   danger: "text-danger",
@@ -59,7 +59,9 @@ export default function Button({
               color={
                 variant === "danger"
                   ? WorkoutTheme.status.danger
-                  : WorkoutTheme.text.primary
+                  : variant === "primary"
+                    ? WorkoutTheme.text.onAccent
+                    : WorkoutTheme.text.primary
               }
             />
           )}

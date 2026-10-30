@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { Directions, Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { WorkoutTheme, withAlpha } from "@/constants/Colors";
+import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import Screen from "@/components/ui/Screen";
 import ScreenHeader from "@/components/ui/ScreenHeader";
@@ -28,14 +28,13 @@ export default function PremiumScreen() {
   return (
     <GestureDetector gesture={swipeLeftToClose}>
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <ScreenHeader title={t.premiumTitle} />
 
       <Screen topInset={false}>
         <Card size="hero" className="items-center gap-3 py-8">
           <View
-            className="h-24 w-24 items-center justify-center rounded-full"
-            style={{ backgroundColor: withAlpha(WorkoutTheme.status.warning, 0.15) }}
+            className="h-24 w-24 items-center justify-center rounded-full bg-warning-tint"
           >
             <MaterialCommunityIcons
               name="crown"
@@ -58,8 +57,7 @@ export default function PremiumScreen() {
               className="flex-row items-center gap-3 rounded-card bg-surface p-4"
             >
               <View
-                className="h-10 w-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: withAlpha(WorkoutTheme.status.warning, 0.15) }}
+                className="h-10 w-10 items-center justify-center rounded-full bg-warning-tint"
               >
                 <Ionicons
                   name="checkmark"

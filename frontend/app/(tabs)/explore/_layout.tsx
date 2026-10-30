@@ -140,13 +140,20 @@ export default function ExploreLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: "transparent" },
+            contentStyle: { backgroundColor: WorkoutTheme.background },
           }}
         >
-          <Stack.Screen name="index" />
+          <Stack.Screen
+            name="index"
+            options={{ contentStyle: { backgroundColor: "transparent" } }}
+          />
           <Stack.Screen
             name="search"
-            options={{ animation: "none", gestureEnabled: false }}
+            options={{
+              animation: "none",
+              gestureEnabled: false,
+              contentStyle: { backgroundColor: "transparent" },
+            }}
           />
           <Stack.Screen
             name="notification"

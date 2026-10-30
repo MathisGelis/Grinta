@@ -102,7 +102,7 @@ export default function CreateWorkoutScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <ScreenHeader title={t.newSession} />
       <ScrollView
         className="flex-1"

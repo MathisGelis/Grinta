@@ -15,6 +15,8 @@ declare const palette: {
   warning: string;
   danger: string;
   info: string;
+  warningTint: string;
+  onAccent: string;
   successTint: string;
   dangerTint: string;
   dangerBorder: string;

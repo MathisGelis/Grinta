@@ -53,7 +53,7 @@ export default function WorkoutSummaryScreen() {
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <StatusBar barStyle="light-content" />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
