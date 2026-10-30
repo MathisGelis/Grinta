@@ -69,4 +69,13 @@ export class User {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   @ApiProperty()
   createdAt: Date;
+
+  /**
+   * Last password change or reset. Tokens issued before it are refused by
+   * JwtStrategy, so a reset logs out every other session.
+   */
+  @Column({ type: 'timestamp', nullable: true })
+  @Exclude({ toPlainOnly: true })
+  @ApiHideProperty()
+  passwordChangedAt?: Date | null;
 }

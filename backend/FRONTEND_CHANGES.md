@@ -721,3 +721,32 @@ Un `400` de validation a maintenant ce format, **au premier niveau** :
 
 - La limite générale (60 requêtes par minute) renvoie le même format avec `code: "RATE_LIMITED"`.
 - Côté app : afficher le délai à partir de `retryAfterSeconds`, par exemple un compte à rebours sur le bouton de connexion.
+
+### B-05 Mot de passe oublié et changement de mot de passe
+
+Trois routes :
+
+| Route | Corps | Réponse |
+| --- | --- | --- |
+| `POST /auth/forgot-password` | `{ email }` | **toujours `204`**, que le compte existe ou non |
+| `POST /auth/reset-password` | `{ token, password }` | `204` |
+| `PATCH /users/me/password` (connecté) | `{ currentPassword, newPassword }` | `200 { access_token }` |
+
+**Mot de passe oublié**
+- L'e-mail contient un lien `grinta://reset-password?token=…`. Le préfixe est réglable côté serveur (`RESET_PASSWORD_URL`), par exemple un lien web si l'app gère les universal links.
+- Le lien marche **une fois, pendant 1 h**. Une nouvelle demande remplace l'ancien lien.
+- L'app doit ouvrir un écran « Nouveau mot de passe » sur ce lien, puis appeler `reset-password` avec le `token`.
+- Erreurs de `reset-password` :
+  - `400 { code: "RESET_TOKEN_INVALID" }` : lien inconnu, déjà utilisé ou expiré. Proposer de redemander un lien ;
+  - `400` avec `errors: [{ field: "password", code: "PASSWORD_TOO_SHORT" }]` : moins de 8 caractères.
+- Après une réinitialisation, **toutes les sessions du compte sont déconnectées**. Les anciens tokens répondent `401`. L'utilisateur se reconnecte avec le nouveau mot de passe.
+
+**Changement de mot de passe connecté**
+- Il renvoie un **nouveau `access_token`** : l'app doit le stocker à la place de l'ancien, qui est désormais refusé, comme ceux des autres appareils.
+- Mot de passe actuel incorrect : `400 { code: "CURRENT_PASSWORD_INVALID" }`. C'est volontairement un 400 et pas un 401, pour ne pas déclencher la déconnexion de l'app.
+
+**Limites de débit** : `429 { code: "TOO_MANY_ATTEMPTS", retryAfterSeconds }`.
+- 3 demandes de lien par heure par e-mail et par adresse, 10 par adresse ;
+- 5 changements par 15 min par utilisateur.
+
+**À savoir** : `PATCH /users/:id` accepte encore `password` sans demander l'actuel, pour ne pas casser l'app. Il faudrait passer à `PATCH /users/me/password`, puis retirer `password` de `PATCH /users/:id`.

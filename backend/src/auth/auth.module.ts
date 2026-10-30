@@ -5,12 +5,19 @@ import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '../users/entities/users.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { PasswordController } from './password.controller';
+import { PasswordResetService } from './password-reset.service';
+import { PasswordStateService } from './password-state.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JWT_ALGORITHM, JWT_EXPIRES_IN, readJwtSecret } from './auth.constants';
 
 @Module({
   imports: [
     UsersModule,
+    TypeOrmModule.forFeature([User, PasswordResetToken]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -22,8 +29,13 @@ import { JWT_ALGORITHM, JWT_EXPIRES_IN, readJwtSecret } from './auth.constants';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy],
-  controllers: [AuthController],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    PasswordResetService,
+    PasswordStateService,
+  ],
+  controllers: [AuthController, PasswordController],
   exports: [AuthService],
 })
 export class AuthModule {}

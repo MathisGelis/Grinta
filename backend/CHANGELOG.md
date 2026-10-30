@@ -6,6 +6,16 @@
   - `GET /health` vérifie la base (`SELECT 1`), sans authentification ni limite de débit, et répond 503 si la base ne répond pas. `GET /` répond `{ status: "ok" }`. Le contrôleur racine est enregistré.
   - La configuration HTTP (proxy, compression, validation, format des erreurs) est extraite dans `configureApp` (`src/app.setup.ts`), commune à `main.ts` et aux tests e2e.
   - Les tests e2e (`npm run test:e2e`) démarrent toute l'API sur une base jetable. Ils refusent de tourner si `DB_NAME` ne contient pas « e2e » ou « test », ce qui empêche un `.env` de prod d'être utilisé par erreur.
+- **B-05 (sécurité)** : réinitialisation et changement du mot de passe.
+  - `POST /auth/forgot-password` répond toujours 204, que l'e-mail ait un compte ou non, et aussi vite : l'envoi part en arrière-plan.
+  - Le jeton de 256 bits est stocké en SHA-256 dans `password_reset_tokens` (migration réversible `AddPasswordReset`). Il sert une fois, pendant 1 h, et une nouvelle demande supprime les précédents.
+  - `POST /auth/reset-password` change le mot de passe sous verrou de ligne.
+  - `PATCH /users/me/password` exige le mot de passe actuel (400 `CURRENT_PASSWORD_INVALID`, pas 401) et renvoie un nouveau token.
+  - **Invalidation des JWT** : `users.passwordChangedAt` est mis à jour à chaque changement, et `JwtStrategy` refuse les tokens émis avant (seconde du changement exclue). Il refuse aussi désormais les tokens d'un compte supprimé. L'état est mis en cache 30 s par utilisateur et vidé immédiatement sur le process qui fait le changement.
+  - **E-mails** : `MailService` avec SMTP (nodemailer, variables `SMTP_*`, `MAIL_FROM`) ou log. Le transport log n'écrit jamais les liens quand `NODE_ENV=production`.
+  - **Limites dédiées** : le garde de B-08 est généralisé en `@AttemptLimit(...)`.
+  - **Reste à faire** : `PATCH /users/:id` accepte encore `password` sans le mot de passe actuel, par compatibilité avec l'app. À retirer une fois l'app passée à `PATCH /users/me/password`.
+  - Tests unitaires et 7 scénarios e2e.
 - **B-08 (sécurité)** :
   - Le login est limité par un garde dédié (`LoginThrottleGuard`), dans le stockage du throttler. La limite est de 5 tentatives par 15 min par couple identifiant + adresse, au lieu de 5 par adresse, si bien que les utilisateurs derrière un même NAT ne se bloquent plus entre eux. Une seconde limite, de 50 par 15 min par adresse tous comptes confondus, freine le test de mots de passe sur de nombreux comptes. L'identifiant est haché dans les clés.
   - Les 429 (login et limite globale, via `AppThrottlerGuard`) portent `Retry-After` et `{ code, message, retryAfterSeconds }`.

@@ -60,6 +60,17 @@ $ DB_HOST=localhost DB_NAME=grinta_e2e DB_SSL=false npm run test:e2e
 $ npm run test:cov
 ```
 
+## Emails (password reset)
+
+| Variable | Role |
+| --- | --- |
+| `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_SECURE` (`true` for 465), `SMTP_USER`, `SMTP_PASSWORD` | SMTP server |
+| `MAIL_FROM` | Sender, e.g. `Grinta <no-reply@example.com>` (required with SMTP) |
+| `MAIL_TRANSPORT` | `smtp` or `log`; defaults to `smtp` when `SMTP_HOST` is set, else `log` |
+| `RESET_PASSWORD_URL` | Base of the reset link, `?token=...` is appended. Default `grinta://reset-password` |
+
+With `log`, emails are written to the log in development, reset links included. In production (`NODE_ENV=production`) the log transport writes only a warning, so links never end up in the process log.
+
 ## Validation errors
 
 A body or query that fails validation gets a `400` with a stable code per error, for the app to translate:

@@ -16,12 +16,14 @@ import { ModerationModule } from './moderation/moderation.module';
 import { BadgesModule } from './badges/badges.module';
 import { GroupsModule } from './groups/groups.module';
 import { AppController } from './app.controller';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     DatabaseModule,
+    MailModule,
     AuthModule,
     UsersModule,
     ExerciseModule,
