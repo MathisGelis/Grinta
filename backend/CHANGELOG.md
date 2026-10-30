@@ -6,6 +6,7 @@
   - `GET /health` vérifie la base (`SELECT 1`), sans authentification ni limite de débit, et répond 503 si la base ne répond pas. `GET /` répond `{ status: "ok" }`. Le contrôleur racine est enregistré.
   - La configuration HTTP (proxy, compression, validation, format des erreurs) est extraite dans `configureApp` (`src/app.setup.ts`), commune à `main.ts` et aux tests e2e.
   - Les tests e2e (`npm run test:e2e`) démarrent toute l'API sur une base jetable. Ils refusent de tourner si `DB_NAME` ne contient pas « e2e » ou « test », ce qui empêche un `.env` de prod d'être utilisé par erreur.
+- **B-13 (sécurité)** : le test e2e `auth-guard` découvre toutes les routes par les métadonnées Nest. Il vérifie que la liste des routes publiques est exactement celle attendue (8), puis que chacune des 88 routes protégées répond 401 à un jeton absent, expiré, mal signé, malformé, `alg: none` ou d'un compte supprimé. Une route qui perdrait sa garde ferait échouer le test.
 - **B-05 (sécurité)** : réinitialisation et changement du mot de passe.
   - `POST /auth/forgot-password` répond toujours 204, que l'e-mail ait un compte ou non, et aussi vite : l'envoi part en arrière-plan.
   - Le jeton de 256 bits est stocké en SHA-256 dans `password_reset_tokens` (migration réversible `AddPasswordReset`). Il sert une fois, pendant 1 h, et une nouvelle demande supprime les précédents.

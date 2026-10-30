@@ -750,3 +750,9 @@ Trois routes :
 - 5 changements par 15 min par utilisateur.
 
 **À savoir** : `PATCH /users/:id` accepte encore `password` sans demander l'actuel, pour ne pas casser l'app. Il faudrait passer à `PATCH /users/me/password`, puis retirer `password` de `PATCH /users/:id`.
+
+### B-13 Jeton invalide ou expiré → 401 partout
+
+- Toutes les routes protégées (88 aujourd'hui) répondent `401` avec un jeton absent, expiré, mal signé, malformé, en `alg: none`, ou appartenant à un compte supprimé. Un test e2e le vérifie route par route et découvre les routes automatiquement. Une route ajoutée plus tard sera testée, et toute nouvelle route publique doit y être déclarée.
+- Les seules routes publiques : `GET /`, `GET /health`, `GET /exercises`, `GET /exercises/:id`, `POST /users/register`, `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/reset-password`.
+- Nouveau depuis B-05 : un jeton est aussi refusé après une réinitialisation ou un changement de mot de passe, ou si le compte a été supprimé. Le `handleSessionExpired` de l'app sur `401` couvre ces cas.

@@ -1,3 +1,4 @@
+import { ModuleMetadata } from '@nestjs/common';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -10,9 +11,10 @@ import { configureApp } from '../src/app.setup';
 /** The whole API, configured as in production, on the e2e database. */
 export async function createE2eApp(
   override: (builder: TestingModuleBuilder) => TestingModuleBuilder = (b) => b,
+  extraImports: ModuleMetadata['imports'] = [],
 ): Promise<NestExpressApplication> {
   const moduleRef = await override(
-    Test.createTestingModule({ imports: [AppModule] }),
+    Test.createTestingModule({ imports: [AppModule, ...extraImports] }),
   ).compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>();
 
