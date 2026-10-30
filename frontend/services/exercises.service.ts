@@ -1,4 +1,4 @@
-import { api, isNotFound } from "./api";
+import { api, isNotFound, API_BASE_URL } from "./api";
 import { TokenService } from "./token.service";
 import { getItem, saveItem, removeItem } from "@/core/services/storage";
 
@@ -21,9 +21,17 @@ export interface ExerciseDetail extends Exercise {
 }
 
 // v2 : le catalogue a été renommé (équipement dans le nom) et étendu côté serveur.
-const EXERCISES_STORAGE_KEY = "exercises_cache_v2";
-const EXERCISES_CACHED_AT_KEY = "exercises_cache_v2_at";
-const LEGACY_CACHE_KEYS = ["exercises_cache", "exercises_cache_at"];
+// Le cache est propre à chaque serveur : les identifiants d'exercices diffèrent d'une
+// base à l'autre (prod, local…), les mélanger casse les noms et la carte musculaire.
+const SERVER_TAG = API_BASE_URL.replace(/[^a-z0-9]+/gi, "_");
+const EXERCISES_STORAGE_KEY = `exercises_cache_v2:${SERVER_TAG}`;
+const EXERCISES_CACHED_AT_KEY = `exercises_cache_v2_at:${SERVER_TAG}`;
+const LEGACY_CACHE_KEYS = [
+  "exercises_cache",
+  "exercises_cache_at",
+  "exercises_cache_v2",
+  "exercises_cache_v2_at",
+];
 const USER_CREATED_EXERCISES_KEY = "user_created_exercises";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -78,6 +86,9 @@ export const getAllExercises = async (): Promise<Exercise[]> => {
     return memoryCache ?? [];
   }
 };
+
+/** Recharge le catalogue depuis le serveur (ignore le cache). */
+export const refreshExercises = (): Promise<Exercise[]> => fetchAndStoreExercises();
 
 let byIdCache: Map<string, Exercise> | null = null;
 let byIdSource: Exercise[] | null = null;
@@ -227,4 +238,38 @@ export const getExerciseStats = async (
 export const getAllExerciseStats = async (): Promise<ExerciseStats[]> => {
   const token = await TokenService.get();
   return api.get<ExerciseStats[]>("/exercises/stats", token ?? undefined);
+};
+
+export interface CompareStats {
+  heaviestWeight: number | null;
+  estimatedOneRepMax: number | null;
+  bestSessionVolume: number | null;
+  maxReps: number | null;
+  totalSessions: number;
+  lastPerformedAt: string | null;
+}
+
+export interface ExerciseComparison {
+  exercise: { id: string; name: string };
+  me: CompareStats;
+  user: {
+    id: string;
+    uniqueName: string;
+    displayName: string;
+    avatarThumbnailUrl?: string | null;
+  };
+  /** Uniquement les séances publiées par la personne. */
+  them: CompareStats;
+}
+
+/** `403` si je ne suis pas cette personne, `400` si c'est moi, `404` pour un exercice inconnu. */
+export const compareExerciseStats = async (
+  exerciseId: string,
+  userId: string,
+): Promise<ExerciseComparison> => {
+  const token = await TokenService.get();
+  return api.get<ExerciseComparison>(
+    `/exercises/${exerciseId}/stats/compare/${userId}`,
+    token ?? undefined,
+  );
 };

@@ -1,8 +1,39 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
 import { type PostPartner } from "./user.service";
+import type { RealLifeComparison } from "@/utils/realLife";
+import type { CompletedWorkoutDetail } from "./workout.service";
 
 export type { PostPartner };
+
+/** Résumé d'un exercice dans les fils ; les séries complètes sont dans `getPostWorkout`. */
+export interface FeedExercise {
+  exerciseId: string,
+  name: string,
+  sets: number,
+  bestSet: { reps: number, weight: number } | null,
+}
+
+export interface FeedStats {
+  durationSeconds: number,
+  totalVolume: number,
+  totalSets: number,
+  totalReps: number,
+  recordsCount: number,
+}
+
+export interface PostWorkout {
+  workoutId: string,
+  totalExercises: number,
+  exercises: CompletedWorkoutDetail["workout"]["exercises"],
+  stats: {
+    estimatedCalories: number,
+    totalVolume: number,
+    totalSets: number,
+    totalReps: number,
+    realLifeComparison?: RealLifeComparison | null,
+  },
+}
 
 export interface Post {
   id: string,
@@ -23,6 +54,8 @@ export interface Post {
   workoutPhotoUrl?: string | null,
   workoutPhotoThumbnailUrl?: string | null,
   partners?: PostPartner[],
+  exercises?: FeedExercise[],
+  stats?: FeedStats,
   workout?: {
     id?: string,
     title?: string,
@@ -42,6 +75,8 @@ export interface MyPost {
   likesCount?: number,
   commentsCount?: number,
   partners?: PostPartner[],
+  exercises?: FeedExercise[],
+  stats?: FeedStats,
 }
 
 export type ReportReason =
@@ -89,6 +124,12 @@ export const PostsService = {
   async deletePost(postId: string): Promise<void> {
     const token = await TokenService.get();
     return api.delete(`/posts/${postId}`, token ?? undefined);
+  },
+
+  /** Séance d'un post : mêmes règles de visibilité que le post (`404` sinon). */
+  async getPostWorkout(postId: string): Promise<PostWorkout> {
+    const token = await TokenService.get();
+    return api.get<PostWorkout>(`/posts/${encodeURIComponent(postId)}/workout`, token ?? undefined);
   },
 
   async getPostById(postId: string): Promise<Post | null> {

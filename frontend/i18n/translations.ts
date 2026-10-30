@@ -1,6 +1,8 @@
+import { v3Strings, type V3Strings } from "./v3";
+
 export type Lang = "en" | "es" | "zh" | "ja" | "fr" | "de" | "ru" | "pt" | "it" | "ko";
 
-export interface Strings {
+export interface Strings extends V3Strings {
   hello: string;
   goodMorning: string;
   goodAfternoon: string;
@@ -462,7 +464,7 @@ export interface Strings {
   premiumNote: string;
 }
 
-const en: Strings = {
+const en: BaseStrings = {
   hello: "Hello",
   goodMorning: "Good morning",
   goodAfternoon: "Good afternoon",
@@ -979,7 +981,7 @@ const en: Strings = {
   premiumNote: "Subscriptions will be available soon. Nothing is charged for now.",
 };
 
-const fr: Strings = {
+const fr: BaseStrings = {
   hello: "Bonjour",
   goodMorning: "Bonne matinée",
   goodAfternoon: "Bon après-midi",
@@ -1496,7 +1498,7 @@ const fr: Strings = {
   premiumNote: "Les abonnements arriveront bientôt. Rien n'est facturé pour le moment.",
 };
 
-const es: Strings = {
+const es: BaseStrings = {
   hello: "Hola",
   goodMorning: "Buenos días",
   goodAfternoon: "Buenas tardes",
@@ -2013,7 +2015,7 @@ const es: Strings = {
   premiumNote: "Las suscripciones llegarán pronto. De momento no se cobra nada.",
 };
 
-const de: Strings = {
+const de: BaseStrings = {
   hello: "Hallo",
   goodMorning: "Guten Morgen",
   goodAfternoon: "Guten Tag",
@@ -2530,7 +2532,7 @@ const de: Strings = {
   premiumNote: "Abos folgen bald. Aktuell wird nichts berechnet.",
 };
 
-const it: Strings = {
+const it: BaseStrings = {
   hello: "Ciao",
   goodMorning: "Buongiorno",
   goodAfternoon: "Buon pomeriggio",
@@ -3047,7 +3049,7 @@ const it: Strings = {
   premiumNote: "Gli abbonamenti arriveranno presto. Per ora non viene addebitato nulla.",
 };
 
-const pt: Strings = {
+const pt: BaseStrings = {
   hello: "Olá",
   goodMorning: "Bom dia",
   goodAfternoon: "Boa tarde",
@@ -3564,7 +3566,7 @@ const pt: Strings = {
   premiumNote: "As subscrições chegarão em breve. Por agora, nada é cobrado.",
 };
 
-const ru: Strings = {
+const ru: BaseStrings = {
   hello: "Привет",
   goodMorning: "Доброе утро",
   goodAfternoon: "Добрый день",
@@ -4081,7 +4083,7 @@ const ru: Strings = {
   premiumNote: "Подписки скоро появятся. Пока ничего не списывается.",
 };
 
-const zh: Strings = {
+const zh: BaseStrings = {
   hello: "你好",
   goodMorning: "早上好",
   goodAfternoon: "下午好",
@@ -4598,7 +4600,7 @@ const zh: Strings = {
   premiumNote: "订阅即将上线。目前不会收取任何费用。",
 };
 
-const ja: Strings = {
+const ja: BaseStrings = {
   hello: "こんにちは",
   goodMorning: "おはようございます",
   goodAfternoon: "こんにちは",
@@ -5115,7 +5117,7 @@ const ja: Strings = {
   premiumNote: "サブスクリプションは近日公開予定です。現時点で課金はありません。",
 };
 
-const ko: Strings = {
+const ko: BaseStrings = {
   hello: "안녕하세요",
   goodMorning: "좋은 아침이에요",
   goodAfternoon: "좋은 오후예요",
@@ -5632,6 +5634,8 @@ const ko: Strings = {
   premiumNote: "구독은 곧 제공됩니다. 현재는 어떤 요금도 청구되지 않습니다.",
 };
 
+type BaseStrings = Omit<Strings, keyof V3Strings>;
+
 export function format(
   template: string,
   vars: Record<string, string | number>,
@@ -5639,7 +5643,11 @@ export function format(
   return template.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
 }
 
-export const translations: Record<Lang, Strings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };
+const base: Record<Lang, BaseStrings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };
+
+export const translations = Object.fromEntries(
+  (Object.keys(base) as Lang[]).map((lang) => [lang, { ...base[lang], ...v3Strings(lang) }]),
+) as Record<Lang, Strings>;
 
 export const LANGUAGE_OPTIONS: { code: Lang; label: string; nativeLabel: string }[] = [
   { code: "en", label: "English", nativeLabel: "English" },

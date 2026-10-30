@@ -1,5 +1,6 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
+import type { FeedExercise, FeedStats } from "./posts.service";
 
 export interface PostPartner {
   id: string;
@@ -16,6 +17,9 @@ export interface ProfilePost {
   commentsCount?: number;
   isLiked?: boolean;
   partners?: PostPartner[];
+  workoutId?: string;
+  exercises?: FeedExercise[];
+  stats?: FeedStats;
 }
 
 export interface UserProfile {

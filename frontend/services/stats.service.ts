@@ -1,5 +1,6 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
+import type { RealLifeComparison } from "@/utils/realLife";
 
 export type StatsPeriod = "week" | "month";
 
@@ -104,6 +105,7 @@ export interface WorkoutStats {
   averageVolumePerSet: number;
   musclesWorked: string[];
   exercises: WorkoutExerciseStats[];
+  realLifeComparison?: RealLifeComparison | null;
 }
 
 export const StatsService = {

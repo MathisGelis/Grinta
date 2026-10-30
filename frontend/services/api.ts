@@ -1,8 +1,12 @@
+import { File } from "expo-file-system";
 import { router } from "expo-router";
 import { getStrings } from "@/i18n/current";
 import { TokenService } from "./token.service";
 const DEV_API = "https://grinta-backend.duckdns.org";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API;
+
+/** Adresse du serveur utilisé (sert à ne pas mélanger les caches de deux serveurs). */
+export const API_BASE_URL = BASE_URL;
 
 const HEALTH_TIMEOUT_MS = 4000;
 
@@ -11,7 +15,8 @@ export async function checkServerHealth(): Promise<boolean> {
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
   try {
     const response = await fetch(`${BASE_URL}/`, { signal: controller.signal });
-    return response.ok;
+    // Le serveur est joignable dès qu'il répond (GET / renvoie 404 sur ce backend).
+    return response.status < 500;
   } catch {
     return false;
   } finally {
@@ -148,7 +153,8 @@ async function request<T>(
  */
 async function upload<T>(endpoint: string, uri: string, token: string): Promise<T> {
   const form = new FormData();
-  form.append("photo", { uri, name: "photo.jpg", type: "image/jpeg" } as any);
+  // Le fetch d'Expo n'accepte pas `{ uri }` : il faut un `File` (Blob-like).
+  form.append("photo", new File(uri) as any);
   const response = await send(endpoint, {
     method: "PUT",
     headers: { Accept: "application/json", Authorization: `Bearer ${token}` },

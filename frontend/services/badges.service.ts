@@ -1,5 +1,6 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
+import type { RealLifeComparison } from "@/utils/realLife";
 
 export type BadgeType =
   | "heaviest_weight"
@@ -20,6 +21,8 @@ export interface Badge {
   weight: number | null;
   reps: number | null;
   achievedAt: string;
+  /** Seulement pour la charge max et le volume ; `null` sinon. */
+  realLifeComparison?: RealLifeComparison | null;
 }
 
 export const BadgesService = {

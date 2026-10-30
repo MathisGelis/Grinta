@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { saveItem, getItem } from "@/core/services/storage";
+import { saveItem, getItem, removeItem } from "@/core/services/storage";
 import { TokenService } from "./token.service";
 import { createListCache } from "./listCache";
 
@@ -212,3 +212,41 @@ export async function getWorkoutById(id: string, token?: string): Promise<fullPl
 export const plannedWorkoutsList = createListCache<PlannedWorkout>(async () =>
   getPlannedWorkouts((await TokenService.get()) || undefined),
 );
+
+/**
+ * Crée une séance planifiée à partir d'un post visible ou d'une de ses séances
+ * terminées : même titre, mêmes exercices, sans séries ni charges.
+ */
+async function duplicate(endpoint: string): Promise<string> {
+  const token = await TokenService.get();
+  const response = await api.post<APIWorkoutResponse>(endpoint, undefined, token ?? undefined);
+  await removeItem(PLANNED_WORKOUTS_CACHE_KEY);
+  return response.workout.id;
+}
+
+export const duplicateWorkoutFromPost = (postId: string) =>
+  duplicate(`/workouts/planned/from-post/${encodeURIComponent(postId)}`);
+
+export const duplicateWorkoutFromCompleted = (completedId: string) =>
+  duplicate(`/workouts/planned/from-completed/${encodeURIComponent(completedId)}`);
+
+export interface SuggestedWorkout {
+  workout: { id: string; title: string; description: string | null; totalExercises: number };
+  score: number;
+  muscles: { muscle: string; plannedSets: number; workedSets: number }[];
+}
+
+export interface WorkoutSuggestion {
+  period: "week" | "month";
+  workedMuscles: { muscle: string; effectiveSets: number }[];
+  suggestion: SuggestedWorkout | null;
+  alternatives: SuggestedWorkout[];
+}
+
+export async function getWorkoutSuggestion(date: string): Promise<WorkoutSuggestion> {
+  const token = await TokenService.get();
+  return api.get<WorkoutSuggestion>(
+    `/workouts/planned/suggestion?period=week&date=${date}`,
+    token ?? undefined,
+  );
+}

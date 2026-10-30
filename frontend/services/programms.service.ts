@@ -1,6 +1,7 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
 import { createListCache } from "./listCache";
+import { isNotFound } from "./api";
 
 export interface SmallProgramm {
   id: string;
@@ -117,3 +118,46 @@ export async function deleteProgramme(id: string): Promise<void> {
 }
 
 export const programmsList = createListCache<SmallProgramm>(getProgramms);
+
+export interface TodayWorkout {
+  id: string;
+  title: string;
+  description?: string | null;
+  exercises: { id: string; exercise?: { id: string; name: string }; sets?: unknown }[];
+}
+
+export interface ProgrammeToday {
+  programme: { id: string; title: string };
+  startedOn: string;
+  date: string;
+  cycleLength: number;
+  status: "workout" | "rest" | "not_started";
+  dayNumber?: number;
+  cycle?: number;
+  daysUntilStart?: number;
+  workout: TodayWorkout | null;
+}
+
+/** `date` : jour local de l'utilisateur (AAAA-MM-JJ), sinon c'est la date UTC qui sert. */
+export async function startProgramme(id: string, startDate?: string): Promise<ProgrammeToday> {
+  const token = await TokenService.get();
+  return api.post<ProgrammeToday>(
+    `/programmes/${encodeURIComponent(id)}/start`,
+    startDate ? { startDate } : {},
+    token ?? undefined,
+  );
+}
+
+/** `null` quand aucun programme n'est suivi (`404`). */
+export async function getTodayProgramme(date: string): Promise<ProgrammeToday | null> {
+  const token = await TokenService.get();
+  try {
+    return await api.get<ProgrammeToday>(
+      `/programmes/active/today?date=${date}`,
+      token ?? undefined,
+    );
+  } catch (error) {
+    if (isNotFound(error)) return null;
+    throw error;
+  }
+}
