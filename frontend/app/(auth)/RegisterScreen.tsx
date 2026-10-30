@@ -104,7 +104,7 @@ export default function RegisterScreen() {
 
         <View className="px-6 pt-7">
           <View className="mb-6">
-            <Text className="text-accent text-xs mb-2">{t.name}</Text>
+            <Text className="text-accent-light text-xs mb-2">{t.name}</Text>
             <TextInput
               className="text-ink text-base py-1.5"
               placeholder={t.yourName}
@@ -117,7 +117,7 @@ export default function RegisterScreen() {
           </View>
 
           <View className="mb-6">
-            <Text className="text-accent text-xs mb-2">{t.email}</Text>
+            <Text className="text-accent-light text-xs mb-2">{t.email}</Text>
             <TextInput
               className="text-ink text-base py-1.5"
               placeholder={t.emailPlaceholder}
@@ -132,7 +132,7 @@ export default function RegisterScreen() {
           </View>
 
           <View className="mb-6">
-            <Text className="text-accent text-xs mb-2">{t.passwordLabel}</Text>
+            <Text className="text-accent-light text-xs mb-2">{t.passwordLabel}</Text>
             <View className="flex-row items-center h-14 rounded-full bg-surface px-5">
               <TextInput
                 className="text-ink text-base flex-1 h-full"
@@ -159,7 +159,7 @@ export default function RegisterScreen() {
           </View>
 
           <View className="mb-6">
-            <Text className="text-accent text-xs mb-2">{t.passwordAgain}</Text>
+            <Text className="text-accent-light text-xs mb-2">{t.passwordAgain}</Text>
             <View className="flex-row items-center h-14 rounded-full bg-surface px-5">
               <TextInput
                 className="text-ink text-base flex-1 h-full"

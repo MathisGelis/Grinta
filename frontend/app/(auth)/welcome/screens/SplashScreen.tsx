@@ -21,7 +21,7 @@ export default function SplashScreen() {
   return (
     <View className="flex-1 justify-center items-center">
       <ScreenBackground />
-      <Animated.Text className="text-[42px] text-accent font-bold" style={{ opacity }}>Grinta</Animated.Text>
+      <Animated.Text className="text-[42px] text-accent-light font-bold" style={{ opacity }}>Grinta</Animated.Text>
     </View>
   );
 }

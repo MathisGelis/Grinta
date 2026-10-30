@@ -139,7 +139,7 @@ export default function UserProfileScreen() {
               <Avatar uri={profile.avatarUrl} name={profile.displayName} size={88} />
             </View>
             <Text className="text-ink text-xl font-bold mb-0.5">{profile.displayName}</Text>
-            <Text className="text-accent text-sm font-medium">@{profile.uniqueName}</Text>
+            <Text className="text-accent-light text-sm font-medium">@{profile.uniqueName}</Text>
           </View>
 
           <View className="items-center mb-5">{renderFollowButton()}</View>

@@ -39,7 +39,7 @@ export default function SettingsNotificationsScreen() {
       <Text className="text-ink-faint text-[13px] text-center mt-8 px-8 leading-[20px]">
         {t.phoneSettingsNote}{" "}
         <Text
-          className="text-accent"
+          className="text-accent-light"
           onPress={() => Linking.openSettings()}
         >
           {t.phoneSettingsLink}

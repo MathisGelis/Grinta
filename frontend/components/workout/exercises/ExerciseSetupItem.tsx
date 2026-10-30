@@ -163,7 +163,7 @@ export default function ExerciseSetupItem({
         className="h-11 flex-row items-center justify-center gap-2 rounded-full bg-accent-tint"
       >
         <Ionicons name="add" size={18} color={WorkoutTheme.accent.purple} />
-        <Text className="text-sm font-semibold text-accent">
+        <Text className="text-sm font-semibold text-accent-light">
           {t.addSet}
         </Text>
       </PressableScale>

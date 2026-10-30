@@ -162,7 +162,7 @@ export default function EditProfileScreen() {
 
         <View className="px-6">
           <View className="mb-7">
-            <Text className="text-accent text-xs mb-2.5">{t.name}</Text>
+            <Text className="text-accent-light text-xs mb-2.5">{t.name}</Text>
             <TextInput
               className="text-ink text-base py-1.5"
               value={displayName}
@@ -175,9 +175,9 @@ export default function EditProfileScreen() {
           </View>
 
           <View className="mb-7">
-            <Text className="text-accent text-xs mb-2.5">{t.usernameLabel}</Text>
+            <Text className="text-accent-light text-xs mb-2.5">{t.usernameLabel}</Text>
             <View className="flex-row items-center">
-              <Text className="text-accent text-base font-bold mr-1">@</Text>
+              <Text className="text-accent-light text-base font-bold mr-1">@</Text>
               <TextInput
                 className="text-ink text-base py-1.5 flex-1"
                 value={uniqueName}
@@ -195,7 +195,7 @@ export default function EditProfileScreen() {
           </View>
 
           <View className="mb-7">
-            <Text className="text-accent text-xs mb-2.5">{t.email}</Text>
+            <Text className="text-accent-light text-xs mb-2.5">{t.email}</Text>
             <TextInput
               className="text-ink text-base py-1.5"
               value={email}

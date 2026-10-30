@@ -24,7 +24,7 @@ export default function SectionHeader({
           accessibilityRole="link"
           className="min-h-[44px] justify-center"
         >
-          <Text className="text-sm font-medium text-accent">{actionLabel}</Text>
+          <Text className="text-sm font-medium text-accent-light">{actionLabel}</Text>
         </PressableScale>
       ) : null}
     </View>

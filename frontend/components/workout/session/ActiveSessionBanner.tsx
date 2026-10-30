@@ -66,7 +66,7 @@ export default function ActiveSessionBanner({
           </View>
 
           <Text
-            className="mr-2 text-sm font-semibold text-accent"
+            className="mr-2 text-sm font-semibold text-accent-light"
             style={{ fontVariant: ["tabular-nums"] }}
           >
             {formatSessionTime(elapsed)}

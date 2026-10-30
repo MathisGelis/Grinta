@@ -34,7 +34,7 @@ export default function MentionText({
         return (
           <React.Fragment key={i}>
             <Text
-              className="font-semibold text-accent"
+              className="font-semibold text-accent-light"
               accessibilityRole="link"
               onPress={() =>
                 router.push({

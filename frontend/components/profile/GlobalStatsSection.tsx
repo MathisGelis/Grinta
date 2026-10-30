@@ -28,7 +28,7 @@ function formatDuration(seconds: number): string {
 }
 
 function formatVolume(volume: number): string {
-  return volume >= 1000 ? `${(volume / 1000).toFixed(1)}t` : `${Math.round(volume)}kg`;
+  return volume >= 1000 ? `${(volume / 1000).toFixed(1)}T` : `${Math.round(volume)}kg`;
 }
 
 function Bar({ percent, color }: { percent: number; color: string }) {

@@ -121,7 +121,7 @@ export default function LoginScreen() {
           </View>
 
           <PressableScale className="self-end -mt-4 mb-2">
-            <Text className="text-accent text-[13px]">{t.forgotPassword}</Text>
+            <Text className="text-accent-light text-[13px]">{t.forgotPassword}</Text>
           </PressableScale>
 
           {error ? <Text className="text-danger text-[13px] text-center mt-2">{error}</Text> : null}

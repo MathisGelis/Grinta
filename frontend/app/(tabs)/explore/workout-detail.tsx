@@ -77,7 +77,7 @@ export default function WorkoutDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text className="text-2xl font-bold text-ink mb-1.5">{title}</Text>
-        {category ? <Text className="text-sm text-accent font-semibold mb-4">{t.workoutsLabel} · {category}</Text> : null}
+        {category ? <Text className="text-sm text-accent-light font-semibold mb-4">{t.workoutsLabel} · {category}</Text> : null}
 
         {(duration || calories) && (
           <View className="flex-row gap-2.5 mb-4">
@@ -112,7 +112,7 @@ export default function WorkoutDetailScreen() {
               <View className="flex-1">
                 <Text className="text-ink text-sm font-semibold mb-1">{ex.name}</Text>
                 {ex.muscleGroup && (
-                  <Text className="text-accent text-[13px] font-medium">{ex.muscleGroup}</Text>
+                  <Text className="text-accent-light text-[13px] font-medium">{ex.muscleGroup}</Text>
                 )}
               </View>
               <Text className="text-ink-muted text-[22px] pl-2">›</Text>
