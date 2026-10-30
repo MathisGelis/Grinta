@@ -7,6 +7,8 @@ import { router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
+import SkipLink from "@/components/ui/SkipLink";
+import { saveItem } from "@/core/services/storage";
 import { useTranslation } from "@/contexts/LanguageContext";
 const { width } = Dimensions.get("window");
 
@@ -22,9 +24,12 @@ export default function OnboardingScreen() {
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const handleStart = () => {
-    router.replace("/(auth)/LoginScreen");
+  const finish = (route: "/(auth)/RegisterScreen" | "/(auth)/LoginScreen") => {
+    void saveItem("hasSeenOnboarding", "true");
+    router.replace(route);
   };
+
+  const handleStart = () => finish("/(auth)/RegisterScreen");
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
@@ -70,6 +75,12 @@ export default function OnboardingScreen() {
             {isLastSlide ? t.startNowBtn : t.nextBtn}
           </Text>
         </PressableScale>
+
+        <SkipLink
+          className="mt-2"
+          label={isLastSlide ? t.haveAccount : t.skipBtn}
+          onPress={() => finish(isLastSlide ? "/(auth)/LoginScreen" : "/(auth)/RegisterScreen")}
+        />
       </View>
     </View>
   );

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Dimensions, NativeSyntheticEvent, N
 import { router, useLocalSearchParams } from "expo-router";
 
 import { WorkoutTheme } from "@/constants/Colors";
+import SkipLink from "@/components/ui/SkipLink";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -53,6 +54,7 @@ export default function WeightScreen() {
   return (
     <View className="flex-1 pt-20 px-8">
       <ScreenBackground />
+      <SkipLink className="absolute right-6 top-12" label={t.skipBtn} onPress={() => router.push({ pathname: "/(auth)/onboarding/HeightScreen", params: { gender: params.gender, age: params.age } })} />
       <Text className="text-[28px] font-bold text-ink mb-3">{t.whatsYourWeight}</Text>
       <Text className="text-[15px] text-ink-muted mb-12">{t.changeLaterHint}</Text>
 

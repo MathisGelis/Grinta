@@ -8,6 +8,7 @@ import { getItem } from "@/core/services/storage";
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
+import SkipLink from "@/components/ui/SkipLink";
 import { useTranslation } from "@/contexts/LanguageContext";
 const GOALS = [
   { id: "gain_weight", label: "goalGainWeight" },
@@ -28,19 +29,22 @@ export default function GoalScreen() {
   const [goalIndex, setGoalIndex] = useState(2);
   const [loading, setLoading] = useState(false);
 
-  const handleFinish = async () => {
+  const handleFinish = async (withGoal = true) => {
     setLoading(true);
     try {
       const userId = await getItem("user_id");
-      if (userId) {
-        const birthYear = new Date().getFullYear() - parseInt(params.age);
-        await UserService.updateProfile(userId, {
-          birthDate: `${birthYear}-01-01`,
-          height: parseInt(params.height),
-          weight: parseInt(params.weight),
-          gender: params.gender as Gender,
-          goal: GOALS[goalIndex].id,
-        });
+      const age = parseInt(params.age);
+      const height = parseInt(params.height);
+      const weight = parseInt(params.weight);
+      const data = {
+        ...(Number.isNaN(age) ? {} : { birthDate: `${new Date().getFullYear() - age}-01-01` }),
+        ...(Number.isNaN(height) ? {} : { height }),
+        ...(Number.isNaN(weight) ? {} : { weight }),
+        ...(params.gender ? { gender: params.gender as Gender } : {}),
+        ...(withGoal ? { goal: GOALS[goalIndex].id } : {}),
+      };
+      if (userId && Object.keys(data).length > 0) {
+        await UserService.updateProfile(userId, data);
       }
       router.replace("/(tabs)/explore");
     } catch (err) {
@@ -53,6 +57,7 @@ export default function GoalScreen() {
   return (
     <View className="flex-1 pt-20 px-8">
       <ScreenBackground />
+      <SkipLink className="absolute right-6 top-12" label={t.skipBtn} onPress={() => handleFinish(false)} />
       <Text className="text-[28px] font-bold text-ink mb-3">{t.whatsYourGoal}</Text>
       <Text className="text-[15px] text-ink-muted mb-10">{t.personalizedPlanHint}</Text>
 
@@ -70,7 +75,7 @@ export default function GoalScreen() {
         </PressableScale>
         <PressableScale
           className="bg-accent py-4 px-10 rounded-full min-w-[130px] items-center"
-          onPress={handleFinish}
+          onPress={() => handleFinish()}
           disabled={loading}
         >
           {loading ? (

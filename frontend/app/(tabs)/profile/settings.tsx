@@ -58,7 +58,7 @@ export default function SettingsScreen() {
       setDeleting(true);
       await UserService.deleteAccount();
       await clearUserSession();
-      router.replace("/(auth)/LandingScreen");
+      router.replace("/(auth)/LoginScreen");
     } catch (error) {
       Alert.alert(t.error, error instanceof Error ? error.message : t.error);
     } finally {

@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 import { WorkoutTheme } from "@/constants/Colors";
+import SkipLink from "@/components/ui/SkipLink";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -24,6 +25,7 @@ export default function GenderScreen() {
   return (
     <View className="flex-1 pt-20 px-8">
       <ScreenBackground />
+      <SkipLink className="absolute right-6 top-12" label={t.preferNotToSay} onPress={() => router.push("/(auth)/onboarding/AgeScreen")} />
       <Text className="text-[28px] font-bold text-ink text-center mb-3">{t.tellAboutYourself}</Text>
       <Text className="text-[15px] text-ink-muted text-center leading-[22px] mb-[60px]">
         {t.genderIntro}
@@ -63,8 +65,17 @@ export default function GenderScreen() {
         </PressableScale>
       </View>
 
-      <View className="flex-row items-center pb-12 pt-4">
-        <View className="flex-1" />
+      <View className="flex-row items-center justify-between pb-12 pt-4">
+        {router.canGoBack() ? (
+          <PressableScale
+            className="w-[52px] h-[52px] rounded-[26px] bg-raised items-center justify-center"
+            onPress={() => router.back()}
+          >
+            <Text className="text-ink text-xl">←</Text>
+          </PressableScale>
+        ) : (
+          <View />
+        )}
         <PressableScale
           className={`bg-accent py-4 px-10 rounded-full ${!selected ? "opacity-[0.4]" : ""}`}
           onPress={handleNext}

@@ -5,7 +5,6 @@ export default function AuthNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="welcome/screens/SplashScreen" />
       <Stack.Screen name="welcome/screens/OnboardingScreen" />
-      <Stack.Screen name="LandingScreen" />
       <Stack.Screen name="LoginScreen" options={{ animation: "none" }} />
       <Stack.Screen name="RegisterScreen" options={{ animation: "none" }} />
       <Stack.Screen name="ForgotPasswordScreen" />

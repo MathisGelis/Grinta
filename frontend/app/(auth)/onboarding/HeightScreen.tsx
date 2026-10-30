@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { DrumRollPicker } from "@/components/DrumRollPicker";
 
+import SkipLink from "@/components/ui/SkipLink";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -38,6 +39,7 @@ export default function HeightScreen() {
   return (
     <View className="flex-1 pt-20 px-8">
       <ScreenBackground />
+      <SkipLink className="absolute right-6 top-12" label={t.skipBtn} onPress={() => router.push({ pathname: "/(auth)/onboarding/GoalScreen", params: { gender: params.gender, age: params.age, weight: params.weight } })} />
       <Text className="text-[28px] font-bold text-ink mb-3">{t.whatsYourHeight}</Text>
       <Text className="text-[15px] text-ink-muted mb-10">{t.personalizedPlanHint}</Text>
 

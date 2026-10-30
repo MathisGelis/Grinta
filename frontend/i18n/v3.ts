@@ -61,6 +61,15 @@ export interface V3Strings {
   resetTokenInvalid: string;
   resetRequestNew: string;
 
+  skipBtn: string;
+  preferNotToSay: string;
+  haveAccount: string;
+  slide1Title: string;
+  slide1Subtitle: string;
+  slide2Title: string;
+  slide2Subtitle: string;
+  slide3Title: string;
+  slide3Subtitle: string;
   loadFailedTitle: string;
   newsTab: string;
   newsBetaTag: string;
@@ -215,6 +224,15 @@ const en: V3Strings = {
   resetTokenInvalid: "This link is invalid or has expired.",
   resetRequestNew: "Request a new link",
 
+  skipBtn: "Skip",
+  preferNotToSay: "Prefer not to say",
+  haveAccount: "I already have an account",
+  slide1Title: "Track your progress,",
+  slide1Subtitle: "Push your limits",
+  slide2Title: "Don't train alone,",
+  slide2Subtitle: "Join the Grinta community",
+  slide3Title: "Set your goals",
+  slide3Subtitle: "Achieve them with Grinta",
   loadFailedTitle: "Unable to load",
   newsTab: "News",
   newsBetaTag: "Beta",
@@ -370,6 +388,15 @@ const fr: V3Strings = {
   resetTokenInvalid: "Ce lien est invalide ou a expiré.",
   resetRequestNew: "Demander un nouveau lien",
 
+  skipBtn: "Passer",
+  preferNotToSay: "Je préfère ne pas dire",
+  haveAccount: "J'ai déjà un compte",
+  slide1Title: "Suivez vos progrès,",
+  slide1Subtitle: "Repoussez vos limites",
+  slide2Title: "Ne vous entraînez pas seul,",
+  slide2Subtitle: "Rejoignez la communauté Grinta",
+  slide3Title: "Fixez vos objectifs",
+  slide3Subtitle: "Atteignez-les avec Grinta",
   loadFailedTitle: "Impossible de charger",
   newsTab: "Actualités",
   newsBetaTag: "Bêta",
