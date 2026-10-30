@@ -43,6 +43,11 @@ export interface V3Strings {
   dupDoneMessage: string;
   dupView: string;
 
+  newsTab: string;
+  newsBetaTag: string;
+  newsBetaTitle: string;
+  newsBetaBody: string;
+
   grpTitle: string;
   grpEmpty: string;
   grpCreate: string;
@@ -157,6 +162,12 @@ const en: V3Strings = {
   dupDoneMessage: "It was added to your planned workouts.",
   dupView: "View",
 
+  newsTab: "News",
+  newsBetaTag: "Beta",
+  newsBetaTitle: "Grinta is in beta!",
+  newsBetaBody:
+    "Welcome to the first version of Grinta. Some features are still being polished and you may run into a few bugs. Your feedback helps us improve the app, so don't hesitate to share it. Thanks for being part of the adventure!",
+
   grpTitle: "Groups",
   grpEmpty: "You are not in any group yet.",
   grpCreate: "Create a group",
@@ -270,6 +281,12 @@ const fr: V3Strings = {
   dupDone: "Séance dupliquée",
   dupDoneMessage: "Elle a été ajoutée à vos séances planifiées.",
   dupView: "Voir",
+
+  newsTab: "Actualités",
+  newsBetaTag: "Bêta",
+  newsBetaTitle: "Grinta est en bêta !",
+  newsBetaBody:
+    "Bienvenue dans la première version de Grinta. Certaines fonctionnalités sont encore en cours de finition et vous pouvez rencontrer quelques bugs. Vos retours nous aident à améliorer l'application, n'hésitez pas à nous les partager. Merci de faire partie de l'aventure !",
 
   grpTitle: "Groupes",
   grpEmpty: "Vous n'êtes dans aucun groupe pour l'instant.",

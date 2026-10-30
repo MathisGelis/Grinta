@@ -1,5 +1,6 @@
-import React from "react";
-import { View, Text } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ScrollView } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { router } from "expo-router";
@@ -8,8 +9,11 @@ import { Directions, Gesture, GestureDetector } from "react-native-gesture-handl
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import Card from "@/components/ui/Card";
 export default function NotificationsScreen() {
   const { t } = useTranslation();
+  const [tab, setTab] = useState<"notifications" | "news">("notifications");
 
   const swipeLeftToClose = Gesture.Fling()
     .direction(Directions.LEFT)
@@ -28,10 +32,39 @@ export default function NotificationsScreen() {
         <View className="w-10" />
       </View>
 
-      <View className="items-center mt-20 gap-3">
-        <Ionicons name="notifications-off-outline" size={48} color={WorkoutTheme.text.disabled} />
-        <Text className="text-ink-faint text-base">{t.noNotifications}</Text>
+      <View className="px-5 pb-4">
+        <SegmentedControl
+          id="notification-tab"
+          options={[
+            { value: "notifications", label: t.notifications },
+            { value: "news", label: t.newsTab },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
       </View>
+
+      {tab === "notifications" ? (
+        <View className="items-center mt-20 gap-3">
+          <Ionicons name="notifications-off-outline" size={48} color={WorkoutTheme.text.disabled} />
+          <Text className="text-ink-faint text-base">{t.noNotifications}</Text>
+        </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="gap-4 px-5 pb-10">
+          <Card size="card" className="gap-3 overflow-hidden p-0">
+            <Image
+              source={require("@/assets/onboarding1.jpg")}
+              contentFit="cover"
+              style={{ width: "100%", height: 180 }}
+            />
+            <View className="gap-2 px-5 pb-5">
+              <Text className="text-xs font-semibold uppercase text-accent-light">{t.newsBetaTag}</Text>
+              <Text className="text-xl font-bold text-ink">{t.newsBetaTitle}</Text>
+              <Text className="text-sm leading-5 text-ink-soft">{t.newsBetaBody}</Text>
+            </View>
+          </Card>
+        </ScrollView>
+      )}
     </View>
     </GestureDetector>
   );
