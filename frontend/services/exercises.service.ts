@@ -1,6 +1,7 @@
 import { api, isNotFound, API_BASE_URL } from "./api";
 import { TokenService } from "./token.service";
 import { getItem, saveItem, removeItem } from "@/core/services/storage";
+import { onSessionCleared } from "@/core/services/sessionReset";
 
 export interface Exercise {
   id: string;
@@ -39,6 +40,10 @@ let memoryCache: Exercise[] | null = null;
 let memoryCachedAt = 0;
 let refreshing: Promise<Exercise[]> | null = null;
 let createdIdsCache: string[] | null = null;
+
+onSessionCleared(() => {
+  createdIdsCache = null;
+});
 
 export const peekExercises = (): Exercise[] | null => memoryCache;
 

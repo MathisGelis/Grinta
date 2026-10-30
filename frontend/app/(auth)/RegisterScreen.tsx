@@ -1,3 +1,4 @@
+import { clearUserSession } from "@/services/session.service";
 import { LinearGradient } from "expo-linear-gradient";
 import { AuthService } from "@/services/auth.service";
 import { TokenService } from "@/services/token.service";
@@ -51,6 +52,7 @@ export default function RegisterScreen() {
     try {
       setLoading(true);
       const response = await AuthService.register(email, password, name);
+      await clearUserSession();
       await TokenService.save(response.access_token);
       await saveItem("user_id", response.id);
       await saveItem("user_name", name);

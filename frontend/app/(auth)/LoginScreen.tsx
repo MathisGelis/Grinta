@@ -1,3 +1,4 @@
+import { clearUserSession } from "@/services/session.service";
 import { LinearGradient } from "expo-linear-gradient";
 import { AuthService } from "@/services/auth.service";
 import { TokenService } from "@/services/token.service";
@@ -30,6 +31,7 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       const response = await AuthService.login(email, password);
+      await clearUserSession();
       await TokenService.save(response.access_token);
       router.replace("/(tabs)/explore");
     } catch (err: any) {

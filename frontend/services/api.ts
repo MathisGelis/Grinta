@@ -1,7 +1,7 @@
 import { File } from "expo-file-system";
 import { router } from "expo-router";
 import { getStrings } from "@/i18n/current";
-import { TokenService } from "./token.service";
+import { clearUserSession } from "./session.service";
 const DEV_API = "https://grinta-backend.duckdns.org";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API;
 
@@ -51,7 +51,7 @@ async function handleSessionExpired() {
   if (redirectingToLogin) return;
   redirectingToLogin = true;
   try {
-    await TokenService.remove();
+    await clearUserSession();
     router.replace("/(auth)/LoginScreen");
   } finally {
     setTimeout(() => {

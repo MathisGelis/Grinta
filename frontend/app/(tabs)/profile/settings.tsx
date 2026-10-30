@@ -2,8 +2,7 @@ import React, { useCallback, useState } from "react";
 import { Alert, Switch, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { clearAll } from "@/core/services/storage";
-import { TokenService } from "@/services/token.service";
+import { clearUserSession } from "@/services/session.service";
 import { UserService } from "@/services/user.service";
 import { WorkoutTheme } from "@/constants/Colors";
 import Screen from "@/components/ui/Screen";
@@ -47,7 +46,7 @@ export default function SettingsScreen() {
         text: t.signOut,
         style: "destructive",
         onPress: async () => {
-          await TokenService.remove();
+          await clearUserSession();
           router.replace("/(auth)/LoginScreen");
         },
       },
@@ -58,8 +57,7 @@ export default function SettingsScreen() {
     try {
       setDeleting(true);
       await UserService.deleteAccount();
-      await TokenService.remove();
-      await clearAll();
+      await clearUserSession();
       router.replace("/(auth)/LandingScreen");
     } catch (error) {
       Alert.alert(t.error, error instanceof Error ? error.message : t.error);
