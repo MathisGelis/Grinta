@@ -1,6 +1,6 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
@@ -32,6 +32,10 @@ import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
 import { mediaUrl } from "@/services/api";
 import { PhotoService } from "@/services/photo.service";
 import type { Badge } from "@/services/badges.service";
+import { UserService } from "@/services/user.service";
+import { duplicateWorkoutFromCompleted } from "@/services/workouts.service";
+import { realLifeText } from "@/utils/realLife";
+import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCardSheet";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -41,7 +45,7 @@ function formatDuration(seconds: number): string {
 
 function formatVolume(volume: number): string {
   return volume >= 1000
-    ? `${(volume / 1000).toFixed(1)} t`
+    ? `${(volume / 1000).toFixed(1)} T`
     : `${Math.round(volume)} kg`;
 }
 
@@ -62,6 +66,9 @@ export default function CompletedWorkoutDetailScreen() {
   // undefined : photo inchangée, null : photo retirée, chaîne : nouvelle photo locale.
   const [draftPhoto, setDraftPhoto] = useState<string | null | undefined>(undefined);
   const [newBadges, setNewBadges] = useState<Badge[]>([]);
+  const [duplicating, setDuplicating] = useState(false);
+  const [shareVisible, setShareVisible] = useState(false);
+  const [myUsername, setMyUsername] = useState<string | null>(null);
   const [exercisesById, setExercisesById] = useState<Map<string, Exercise>>(
     new Map(),
   );
@@ -92,6 +99,50 @@ export default function CompletedWorkoutDetailScreen() {
   );
 
   const workout = detail?.workout;
+
+  useEffect(() => {
+    let cancelled = false;
+    UserService.getMe()
+      .then((me) => !cancelled && setMyUsername(me.uniqueName))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const duplicate = async () => {
+    if (!workout || duplicating) return;
+    try {
+      setDuplicating(true);
+      await duplicateWorkoutFromCompleted(workout.id);
+      Alert.alert(t.dupDone, t.dupDoneMessage, [
+        { text: "OK", style: "cancel" },
+        { text: t.dupView, onPress: () => router.navigate("/(tabs)/workouts/(list)" as any) },
+      ]);
+    } catch (err) {
+      Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
+  const shareData: ShareCardData | null =
+    workout && stats
+      ? {
+          title: workout.title,
+          username: myUsername ?? undefined,
+          photoUrl: workout.photoUrl,
+          durationSeconds: workout.totalDurationSeconds,
+          totalVolume: stats.totalVolume,
+          totalSets: stats.totalSets,
+          totalReps: stats.totalReps,
+          realLife: stats.realLifeComparison,
+          exercises: workout.exercises.map((entry) => ({
+            name: entry.exercise?.name ?? "–",
+            sets: entry.sets ?? [],
+          })),
+        }
+      : null;
 
   const startEditing = () => {
     if (!workout) return;
@@ -221,7 +272,7 @@ export default function CompletedWorkoutDetailScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <ScreenHeader
         title={workout?.title ?? ""}
         right={
@@ -384,6 +435,14 @@ export default function CompletedWorkoutDetailScreen() {
                     ))}
                   </View>
 
+                  {realLifeText(t, stats.realLifeComparison) ? (
+                    <Card tone="accentTint" size="tile" className="flex-row items-center gap-3">
+                      <Text className="flex-1 text-sm font-semibold text-ink">
+                        {t.rlTitle} · {realLifeText(t, stats.realLifeComparison)}
+                      </Text>
+                    </Card>
+                  ) : null}
+
                   {stats.workoutsCompletedThatDay > 1 ? (
                     <Card tone="accentTint" size="tile" className="gap-1">
                       <Stat
@@ -460,10 +519,34 @@ export default function CompletedWorkoutDetailScreen() {
                   </Card>
                 );
               })}
+
+              <View className="flex-row gap-3">
+                <Button
+                  className="flex-1"
+                  variant="secondary"
+                  icon="copy-outline"
+                  label={t.dupButton}
+                  loading={duplicating}
+                  onPress={duplicate}
+                />
+                <Button
+                  className="flex-1"
+                  variant="secondary"
+                  icon="share-outline"
+                  label={t.shrCard}
+                  disabled={!shareData}
+                  onPress={() => setShareVisible(true)}
+                />
+              </View>
             </>
           )}
         </ScrollView>
       )}
+      <ShareCardSheet
+        visible={shareVisible}
+        data={shareData}
+        onClose={() => setShareVisible(false)}
+      />
       <NewRecordsSheet
         badges={newBadges}
         visible={newBadges.length > 0}

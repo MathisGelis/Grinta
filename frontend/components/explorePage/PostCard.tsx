@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LOCALES } from "@/i18n/labels";
+import { format } from "@/i18n/translations";
 import { Post, PostsService } from "@/services/posts.service";
 import { mediaUrl } from "@/services/api";
 import Avatar from "@/components/ui/Avatar";
@@ -22,11 +23,14 @@ type Props = {
   onShowLikes?: () => void;
   onShowComments?: () => void;
   onDelete?: () => void;
+  /** Bouton de partage, affiché sur nos propres posts. */
+  onShare?: () => void;
   deleting?: boolean;
   authorPressable?: boolean;
 };
 
-const PAGE_HEIGHT = 176;
+const PAGE_GAP = 2;
+const MAX_EXERCISES = 5;
 
 const details = new Map<string, Post>();
 
@@ -37,6 +41,7 @@ export default function PostCard({
   onShowLikes,
   onShowComments,
   onDelete,
+  onShare,
   deleting = false,
   authorPressable = true,
 }: Props) {
@@ -64,7 +69,9 @@ export default function PostCard({
   const userId = detail?.userId ?? post.userId;
   const title = detail?.workoutTitle ?? detail?.workout?.title ?? t.completedWorkoutTitle;
   const description = detail?.workoutDescription ?? detail?.workout?.description;
-  const duration = detail?.workoutDurationSeconds;
+  const duration = post.stats?.durationSeconds ?? detail?.workoutDurationSeconds;
+  const exercises = post.exercises ?? detail?.exercises;
+  const stats = post.stats ?? detail?.stats;
   const totalExercises = detail?.workout?.totalExercises;
   const photo = mediaUrl(detail?.workoutPhotoThumbnailUrl ?? post.workoutPhotoThumbnailUrl);
   const partners = (detail?.partners ?? post.partners)?.filter((p) => p.id !== declinedBy);
@@ -96,6 +103,16 @@ export default function PostCard({
             {new Date(post.createdAt).toLocaleDateString(LOCALES[lang])}
           </Text>
         </View>
+        {onShare ? (
+          <PressableScale
+            onPress={onShare}
+            accessibilityRole="button"
+            accessibilityLabel={t.shrCard}
+            className="h-10 w-10 items-center justify-center rounded-full bg-raised"
+          >
+            <Ionicons name="share-outline" size={18} color={WorkoutTheme.text.primary} />
+          </PressableScale>
+        ) : null}
         {onDelete ? (
           <PressableScale
             onPress={onDelete}
@@ -113,60 +130,78 @@ export default function PostCard({
         {pageWidth > 0 && (
           <ScrollView
             horizontal
-            pagingEnabled
+            snapToInterval={pageWidth + PAGE_GAP}
+            decelerationRate="fast"
             nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: PAGE_GAP }}
             onMomentumScrollEnd={(e) =>
-              setPage(Math.round(e.nativeEvent.contentOffset.x / pageWidth))
+              setPage(Math.round(e.nativeEvent.contentOffset.x / (pageWidth + PAGE_GAP)))
             }
           >
-            <PressableScale
-              halo={false}
-              onPress={onPress}
-              className="overflow-hidden rounded-tile bg-accent-tint"
-              style={{ width: pageWidth, height: PAGE_HEIGHT }}
-            >
-              {photo ? (
-                <>
-                  <Image
-                    source={{ uri: photo }}
-                    cachePolicy="disk"
-                    contentFit="cover"
-                    transition={150}
-                    style={{ width: pageWidth, height: PAGE_HEIGHT }}
-                  />
-                  <LinearGradient
-                    pointerEvents="none"
-                    colors={["transparent", withAlpha(WorkoutTheme.backgroundSecondary, 0.9)]}
-                    className="absolute inset-x-0 bottom-0 h-[65%]"
-                  />
-                  <View className="absolute inset-x-0 bottom-0 p-4">
-                    <Text className="text-lg font-semibold text-ink" numberOfLines={2}>
-                      {title}
-                    </Text>
-                  </View>
-                </>
-              ) : (
-                <View className="flex-1 items-center justify-center gap-2 px-4">
-                  <Ionicons name="barbell" size={40} color={WorkoutTheme.accent.purple} />
-                  <Text className="text-center text-lg font-semibold text-ink" numberOfLines={2}>
+            {photo ? (
+              <PressableScale
+                halo={false}
+                onPress={onPress}
+                className="overflow-hidden rounded-tile bg-accent-tint"
+                style={{ width: pageWidth, height: pageWidth }}
+              >
+                <Image
+                  source={{ uri: photo }}
+                  cachePolicy="disk"
+                  contentFit="cover"
+                  transition={150}
+                  style={{ width: pageWidth, height: pageWidth }}
+                />
+                <LinearGradient
+                  pointerEvents="none"
+                  colors={["transparent", withAlpha(WorkoutTheme.backgroundSecondary, 0.9)]}
+                  className="absolute inset-x-0 bottom-0 h-[65%]"
+                />
+                <View className="absolute inset-x-0 bottom-0 p-4">
+                  <Text className="text-lg font-semibold text-ink" numberOfLines={2}>
                     {title}
                   </Text>
                 </View>
-              )}
-            </PressableScale>
+              </PressableScale>
+            ) : null}
 
             <PressableScale
               halo={false}
               onPress={onPress}
               className="justify-center gap-2 rounded-tile bg-raised p-5"
-              style={{ width: pageWidth, height: PAGE_HEIGHT }}
+              style={{ width: pageWidth, height: pageWidth }}
             >
               <View className="flex-row items-center gap-2">
                 <Ionicons name="list" size={20} color={WorkoutTheme.text.tertiary} />
                 <Text className="text-xs text-ink-muted">{t.exercises}</Text>
               </View>
-              {totalExercises != null ? (
+              {exercises && exercises.length > 0 ? (
+                <View className="gap-2.5">
+                  {exercises.slice(0, MAX_EXERCISES).map((exercise) => (
+                    <View key={exercise.exerciseId} className="flex-row items-center gap-3">
+                      <Text className="flex-1 text-sm font-semibold text-ink" numberOfLines={1}>
+                        {exercise.name}
+                      </Text>
+                      <Text
+                        className="text-xs text-ink-muted"
+                        style={{ fontVariant: ["tabular-nums"] }}
+                        numberOfLines={1}
+                      >
+                        {format(t.pcSetsCount, { n: exercise.sets })}
+                        {exercise.bestSet
+                          ? ` · ${exercise.bestSet.weight} kg × ${exercise.bestSet.reps}`
+                          : ""}
+                      </Text>
+                    </View>
+                  ))}
+                  {exercises.length > MAX_EXERCISES ? (
+                    <Text className="text-xs text-ink-muted">
+                      {format(t.pcMoreExercises, { n: exercises.length - MAX_EXERCISES })}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : totalExercises != null ? (
                 <Text className="text-base text-ink">{totalExercises}</Text>
               ) : (
                 <MentionText
@@ -181,35 +216,53 @@ export default function PostCard({
             <PressableScale
               halo={false}
               onPress={onPress}
-              className="flex-row items-center rounded-tile bg-raised p-5"
-              style={{ width: pageWidth, height: PAGE_HEIGHT }}
+              className="justify-center gap-5 rounded-tile bg-raised p-5"
+              style={{ width: pageWidth, height: pageWidth }}
             >
-              <Stat
-                size="md"
-                label={t.duration}
-                value={duration != null ? `${Math.round(duration / 60)} min` : "–"}
-                className="flex-1"
-              />
-              <Stat
-                size="md"
-                label={t.completedLabel}
-                value={
-                  detail?.workoutCompletionDate
-                    ? new Date(detail.workoutCompletionDate).toLocaleDateString(LOCALES[lang], {
-                        day: "numeric",
-                        month: "short",
-                      })
-                    : "–"
-                }
-                className="flex-1"
-              />
+              <View className="flex-row">
+                <Stat
+                  size="md"
+                  label={t.duration}
+                  value={duration != null ? `${Math.round(duration / 60)} min` : "–"}
+                  className="flex-1"
+                />
+                <Stat
+                  size="md"
+                  label={t.completedLabel}
+                  value={
+                    detail?.workoutCompletionDate
+                      ? new Date(detail.workoutCompletionDate).toLocaleDateString(LOCALES[lang], {
+                          day: "numeric",
+                          month: "short",
+                        })
+                      : "–"
+                  }
+                  className="flex-1"
+                />
+              </View>
+              {stats ? (
+                <View className="flex-row">
+                  <Stat
+                    size="md"
+                    label={t.pcVolume}
+                    value={
+                      stats.totalVolume >= 1000
+                        ? `${(stats.totalVolume / 1000).toFixed(1)} T`
+                        : `${Math.round(stats.totalVolume)} kg`
+                    }
+                    className="flex-1"
+                  />
+                  <Stat size="md" label={t.sets} value={stats.totalSets} className="flex-1" />
+                  <Stat size="md" label={t.pcRecords} value={stats.recordsCount} className="flex-1" />
+                </View>
+              ) : null}
             </PressableScale>
           </ScrollView>
         )}
       </View>
 
       <View className="flex-row justify-center gap-1.5">
-        {[0, 1, 2].map((i) => (
+        {Array.from({ length: photo ? 3 : 2 }, (_, i) => i).map((i) => (
           <View
             key={i}
             className={`h-1.5 rounded-full ${i === page ? "w-4 bg-accent" : "w-1.5 bg-raised"}`}

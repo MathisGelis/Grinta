@@ -7,6 +7,8 @@ import { Post, PostsService } from "@/services/posts.service";
 import type { ProfilePost } from "@/services/user.service";
 import PressableScale from "@/components/ui/PressableScale";
 import PostCard from "@/components/explorePage/PostCard";
+import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCardSheet";
+import { buildPostShareData } from "@/components/share/postShareData";
 
 type Props = {
   posts: ProfilePost[];
@@ -29,6 +31,23 @@ export default function MyPostsSection({
 }: Props) {
   const { t } = useTranslation();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [shareData, setShareData] = useState<ShareCardData | null>(null);
+
+  const sharePost = useCallback(
+    async (postId: string) => {
+      try {
+        const [detail, workout] = await Promise.all([
+          PostsService.getPostById(postId),
+          PostsService.getPostWorkout(postId),
+        ]);
+        if (!detail) return;
+        setShareData(buildPostShareData(detail, workout, t.completedWorkoutTitle));
+      } catch (err) {
+        Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
+      }
+    },
+    [t],
+  );
 
   const confirmDelete = useCallback(
     (postId: string) => {
@@ -64,6 +83,8 @@ export default function MyPostsSection({
     isLiked: post.isLiked,
     workoutPhotoThumbnailUrl: post.workoutPhotoThumbnailUrl,
     partners: post.partners,
+    exercises: post.exercises,
+    stats: post.stats,
   });
 
   return (
@@ -101,6 +122,7 @@ export default function MyPostsSection({
                 authorPressable={false}
                 deleting={deletingId === post.id}
                 onDelete={() => confirmDelete(post.id)}
+                onShare={() => sharePost(post.id)}
                 onPress={onOpenPost ? () => onOpenPost(asPost) : undefined}
                 onShowLikes={onShowLikes ? () => onShowLikes(post.id) : undefined}
                 onShowComments={onShowComments ? () => onShowComments(post.id) : undefined}
@@ -109,6 +131,12 @@ export default function MyPostsSection({
           })}
         </View>
       )}
+
+      <ShareCardSheet
+        visible={shareData !== null}
+        data={shareData}
+        onClose={() => setShareData(null)}
+      />
     </View>
   );
 }

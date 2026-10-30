@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import type { Badge, BadgeType } from "@/services/badges.service";
+import { realLifeText } from "@/utils/realLife";
 
 const ICON: Record<BadgeType, keyof typeof Ionicons.glyphMap> = {
   heaviest_weight: "barbell-outline",
@@ -62,6 +63,11 @@ export default function BadgeList({ badges, showDate = false }: Props) {
                     ? new Date(badge.achievedAt).toLocaleDateString(lang)
                     : `${round(badge.previousValue)} → ${round(badge.value)} ${unit(badge)}`}
                 </Text>
+                {realLifeText(t, badge.realLifeComparison) ? (
+                  <Text className="mt-0.5 text-xs text-accent-text" numberOfLines={1}>
+                    {realLifeText(t, badge.realLifeComparison)}
+                  </Text>
+                ) : null}
               </View>
               <View className="items-end gap-1">
                 <Text
