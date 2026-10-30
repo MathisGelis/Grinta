@@ -7,7 +7,10 @@ import {
   IsNumber,
   IsDateString,
   Matches,
+  IsEnum,
 } from 'class-validator';
+import { Gender } from '../enums/gender.enum';
+import { Goal } from '../enums/goal.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { toLowerTrimmed } from 'src/common/utils/normalize';
@@ -57,4 +60,24 @@ export class UpdateUserDto {
   @IsOptional()
   @IsNumber()
   weight?: number;
+
+  @ApiProperty({
+    enum: Gender,
+    required: false,
+    nullable: true,
+    description: 'Private, null clears it',
+  })
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender | null;
+
+  @ApiProperty({
+    enum: Goal,
+    required: false,
+    nullable: true,
+    description: 'Private, null clears it',
+  })
+  @IsOptional()
+  @IsEnum(Goal)
+  goal?: Goal | null;
 }

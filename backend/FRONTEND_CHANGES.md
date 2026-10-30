@@ -658,3 +658,12 @@ Un `400` de validation a maintenant ce format, **au premier niveau** :
 - `estimatedDurationMinutes` est accepté en option dans `POST /workouts/planned` et `PATCH /workouts/planned/:id` : un entier de 1 à 600. `null` en `PATCH` l'efface. Il est aussi relu dans `GET /workouts/planned/:id`.
 - Hors bornes : `400` avec le code `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` ou `INTEGER_EXPECTED`.
 - Côté app : envoyer le champ « Durée estimée » du formulaire.
+
+### B-06 Genre et objectif
+
+- `PATCH /users/:id` accepte :
+  - `gender` : `male`, `female` ou `other` ;
+  - `goal` : `gain_weight`, `lose_weight`, `get_fitter`, `flexibility` ou `learn_basics`.
+- Les deux sont optionnels. `null` les efface. Une autre valeur donne `400` avec le code `VALUE_NOT_ALLOWED`.
+- Ils sont relus dans `GET /users/:id` **pour son propre compte uniquement**. Les autres utilisateurs ne les voient jamais.
+- Côté app : envoyer les réponses de l'onboarding par `PATCH /users/:id` une fois le compte créé. L'inscription (`POST /users/register`) ne les accepte pas : l'audit ne demandait que l'édition. Dis-le si l'onboarding a lieu avant l'inscription.

@@ -1,6 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
+import { Gender } from '../enums/gender.enum';
+import { Goal } from '../enums/goal.enum';
 
 @Entity('users')
 @Unique(['email'])
@@ -44,6 +46,15 @@ export class User {
   @Column({ type: 'float', nullable: true })
   @ApiProperty({ required: false })
   weight?: number;
+
+  /** Onboarding answers, private like the body measurements. */
+  @Column({ type: 'enum', enum: Gender, nullable: true })
+  @ApiProperty({ enum: Gender, required: false, nullable: true })
+  gender?: Gender | null;
+
+  @Column({ type: 'enum', enum: Goal, nullable: true })
+  @ApiProperty({ enum: Goal, required: false, nullable: true })
+  goal?: Goal | null;
 
   /** Set through PUT /users/me/avatar only, never through PATCH /users/:id. */
   @Column({ type: 'text', nullable: true })
