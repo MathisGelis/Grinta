@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,7 @@ const round = (n: number) => Math.round(n * 10) / 10;
 /** Compare mes stats à celles d'une personne suivie (ses séances publiées uniquement). */
 export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
   const { t, lang } = useTranslation();
+  const { formatWeight } = useUnits();
   const myId = useCurrentUserId();
   const [following, setFollowing] = useState<UserListItem[] | null>(null);
   const [comparison, setComparison] = useState<ExerciseComparison | null>(null);
@@ -78,7 +80,11 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
   ];
 
   const cell = (value: number | null, unit: string) =>
-    value == null ? "–" : `${round(value)}${unit ? ` ${unit}` : ""}`;
+    value == null
+      ? "–"
+      : unit === "kg"
+        ? formatWeight(value)
+        : `${round(value)}${unit ? ` ${unit}` : ""}`;
 
   return (
     <Modal

@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import ErrorState from "@/components/ui/ErrorState";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
@@ -28,10 +29,6 @@ function formatDuration(seconds: number): string {
   return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
 }
 
-function formatVolume(volume: number): string {
-  return volume >= 1000 ? `${(volume / 1000).toFixed(1)}T` : `${Math.round(volume)}kg`;
-}
-
 function Bar({ percent, color }: { percent: number; color: string }) {
   return (
     <View className="h-1.5 overflow-hidden rounded-full bg-raised">
@@ -59,6 +56,7 @@ function Delta({ pct }: { pct: number | null | undefined }) {
 
 export default function GlobalStatsSection() {
   const { t } = useTranslation();
+  const { formatVolume } = useUnits();
   const [period, setPeriod] = useState<StatsPeriod>("week");
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);

@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useMemo, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
@@ -28,6 +29,7 @@ import CompareSheet from "@/components/workout/exercises/CompareSheet";
 import Button from "@/components/ui/Button";
 
 export default function ExerciseDetailScreen() {
+  const { formatWeight } = useUnits();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
@@ -91,7 +93,7 @@ export default function ExerciseDetailScreen() {
     { color: withAlpha(WorkoutTheme.accent.purple, 0.5), label: t.secondaryMuscles },
   ];
   const hasStats = !!stats && stats.totalSessions > 0;
-  const kg = (v: number | null | undefined) => (v != null ? `${Math.round(v * 10) / 10} kg` : "–");
+  const kg = (v: number | null | undefined) => (v != null ? formatWeight(v) : "–");
 
   return (
     <View className="flex-1">

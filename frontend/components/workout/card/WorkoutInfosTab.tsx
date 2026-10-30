@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,6 +49,7 @@ export default function WorkoutInfosTab({
   onAddExercise,
 }: WorkoutInfosTabProps) {
   const { t } = useTranslation();
+  const { formatWeight } = useUnits();
   const [showAddModal, setShowAddModal] = React.useState(false);
 
   return (
@@ -141,7 +143,7 @@ export default function WorkoutInfosTab({
                       {t.setLabel} {setIndex + 1}
                     </Text>
                     <Text className="text-sm font-semibold text-ink">
-                      {set.weight} kg × {set.reps}
+                      {formatWeight(set.weight)} × {set.reps}
                     </Text>
                   </View>
                 ))}

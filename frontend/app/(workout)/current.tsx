@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, Text, ScrollView, ActivityIndicator, TextInput, Alert, Pressable, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -40,6 +41,7 @@ function repsRange(sets: { reps: number }[]): string {
 }
 
 export default function CurrentWorkoutScreen() {
+  const { formatWeight } = useUnits();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
@@ -417,7 +419,7 @@ export default function CurrentWorkoutScreen() {
                         { value: String(focusedEntry.sets.length), label: t.sets },
                         { value: repsRange(focusedEntry.sets), label: t.repsLabel },
                         maxWeight(focusedEntry.sets) > 0
-                          ? { value: `${maxWeight(focusedEntry.sets)} kg`, label: t.heaviestWeightLabel }
+                          ? { value: formatWeight(maxWeight(focusedEntry.sets)), label: t.heaviestWeightLabel }
                           : null,
                       ]
                         .filter((tile): tile is { value: string; label: string } => !!tile)

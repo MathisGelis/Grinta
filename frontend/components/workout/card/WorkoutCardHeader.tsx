@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -43,6 +44,7 @@ function WorkoutCardHeader({
   hasWorkout,
 }: WorkoutCardHeaderProps) {
   const { t } = useTranslation();
+  const { formatVolume } = useUnits();
   return (
     <Pressable
       onPress={onToggleExpand}
@@ -79,7 +81,7 @@ function WorkoutCardHeader({
           <StatPill
             icon="barbell"
             color={WorkoutTheme.status.success}
-            label={`${stats.totalWeight} kg`}
+            label={formatVolume(stats.totalWeight)}
           />
         )}
         {!!totalExercises && totalExercises > 0 && (

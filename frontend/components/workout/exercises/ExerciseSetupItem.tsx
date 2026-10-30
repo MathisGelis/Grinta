@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,6 +31,7 @@ export default function ExerciseSetupItem({
   tone = "surface",
 }: ExerciseSetupItemProps) {
   const { t } = useTranslation();
+  const { fromKg, toKg, weightUnit } = useUnits();
   const handleAddSet = () => {
     const newSet = {
       reps: exercise.sets[exercise.sets.length - 1]?.reps || 10,
@@ -128,12 +130,12 @@ export default function ExerciseSetupItem({
 
             <View className="flex-1">
               <Text className="mb-1 text-center text-[11px] text-ink-muted">
-                {t.weightKgLabel}
+                {t.weightKgLabel.replace(/kg/i, weightUnit)}
               </Text>
               <NumericInput
                 className={`h-10 rounded-full px-2 py-0 text-center text-[15px] font-semibold text-ink ${tone === "raised" ? "bg-raised" : "bg-surface"}`}
-                value={set.weight}
-                onValueChange={(value) => handleSetWeightChange(index, value)}
+                value={fromKg(set.weight)}
+                onValueChange={(value) => handleSetWeightChange(index, toKg(value))}
                 decimal
                 maxLength={5}
               />

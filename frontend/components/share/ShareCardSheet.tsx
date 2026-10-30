@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Text, View, ScrollView, useWindowDimensions, type LayoutChangeEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -46,9 +47,6 @@ const MAX_SETS_EXERCISES = 6;
 const MAX_SETS_PER_EXERCISE = 6;
 const MAX_TOP_LIFTS = 4;
 const CHECKER = 12;
-
-const volume = (kg: number) =>
-  kg >= 1000 ? `${(kg / 1000).toFixed(1)} T` : `${Math.round(kg)} kg`;
 
 const bestSet = (sets: { weight: number; reps: number }[]) =>
   sets.reduce<{ weight: number; reps: number } | null>(
@@ -150,6 +148,7 @@ const infoLine = (data: ShareCardData, t: Strings) =>
 /** Les chiffres en clair (sans badges) au centre, titre et ligne séries/reps en bas de la card. */
 function ClassicLayout(props: LayoutProps) {
   const { data, theme, shadow, t } = props;
+  const { formatVolume: volume } = useUnits();
   return (
     <View className="flex-1 justify-between p-6">
       <Header {...props} />
@@ -251,6 +250,7 @@ function SetsLayout(props: LayoutProps) {
 /** Un seul chiffre en grand : le volume total, avec la comparaison avec la vie réelle. */
 function PosterLayout(props: LayoutProps) {
   const { data, theme, shadow, t } = props;
+  const { formatVolume: volume } = useUnits();
   const comparison = realLifeText(t, data.realLife);
   const footer = [
     data.durationSeconds != null ? `${Math.round(data.durationSeconds / 60)} min` : null,
@@ -295,6 +295,7 @@ function PosterLayout(props: LayoutProps) {
 /** Classement des plus grosses charges, au même format de liste que les autres cards. */
 function TopLayout(props: LayoutProps) {
   const { data, theme, shadow } = props;
+  const { formatWeight } = useUnits();
   const lifts = data.exercises
     .map((exercise) => ({ name: exercise.name, best: bestSet(exercise.sets) }))
     .filter((lift): lift is { name: string; best: { weight: number; reps: number } } => !!lift.best)
@@ -314,7 +315,7 @@ function TopLayout(props: LayoutProps) {
                 {index + 1}. {lift.name}
               </Text>
               <Text className="text-xs" style={[{ color: theme.soft }, shadow]}>
-                {lift.best.weight} kg × {lift.best.reps}
+                {formatWeight(lift.best.weight)} × {lift.best.reps}
               </Text>
             </View>
           ))}

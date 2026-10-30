@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { runSessionResets } from "@/core/services/sessionReset";
 
-const KEPT_KEYS = ["app_language", "hasSeenWelcome", "hasSeenOnboarding"];
+const KEPT_KEYS = ["app_language", "units", "hasSeenWelcome", "hasSeenOnboarding"];
 const KEPT_PREFIX = "pending_";
 
 /** Efface tout ce qui appartient au compte connecté (jeton, séance en cours, caches). */

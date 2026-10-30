@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
@@ -18,10 +19,10 @@ import BadgeList from "@/components/workout/badges/BadgeList";
 
 type Tab = "exercises" | "badges";
 
-const kg = (v: number | null) => (v != null ? `${Math.round(v * 10) / 10}` : "–");
-
 export default function RecordsScreen() {
   const { t, lang } = useTranslation();
+  const { fromKg, weightUnit } = useUnits();
+  const kg = (v: number | null) => (v != null ? String(fromKg(v)) : "–");
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>("exercises");
   const [loading, setLoading] = useState(true);
@@ -125,10 +126,10 @@ export default function RecordsScreen() {
                   </View>
                   <View className="flex-row gap-3">
                     <View className="flex-1 rounded-tile bg-accent-tint p-3">
-                      <Stat size="md" value={kg(s.prWeight)} unit="kg" label={t.personalRecordLabel} />
+                      <Stat size="md" value={kg(s.prWeight)} unit={weightUnit} label={t.personalRecordLabel} />
                     </View>
                     <View className="flex-1 rounded-tile bg-raised p-3">
-                      <Stat size="md" value={kg(s.bestEstimatedOneRepMax)} unit="kg" label={t.recordOneRm} />
+                      <Stat size="md" value={kg(s.bestEstimatedOneRepMax)} unit={weightUnit} label={t.recordOneRm} />
                     </View>
                     <View className="flex-1 rounded-tile bg-raised p-3">
                       <Stat size="md" value={s.totalSessions} label={t.sessions} />

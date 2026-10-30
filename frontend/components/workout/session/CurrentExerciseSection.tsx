@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -44,6 +45,8 @@ export default function CurrentExerciseSection({
   lastStats,
 }: CurrentExerciseSectionProps) {
   const { t } = useTranslation();
+  const { fromKg, toKg, weightUnit } = useUnits();
+  const { formatWeight } = useUnits();
   const initialValues = (index: number) => {
     const planned = plannedSetData[index];
     return {
@@ -59,12 +62,12 @@ export default function CurrentExerciseSection({
 
   useEffect(() => {
     const planned = plannedSetData[currentSetIndex];
-    setWeight(String(planned?.weight || lastWeight || 0));
+    setWeight(String(fromKg(planned?.weight || lastWeight || 0)));
     setReps(String(planned?.reps || lastReps || 1));
-  }, [currentSetIndex, plannedSetData, lastWeight, lastReps]);
+  }, [currentSetIndex, plannedSetData, lastWeight, lastReps, fromKg]);
 
   const handleCompleteSet = () => {
-    const w = Math.round((parseFloat(weight) || 0) * 100) / 100;
+    const w = toKg(parseFloat(weight) || 0);
     const r = Math.max(1, parseInt(reps) || 1);
     onCompleteSet(r, w);
   };
@@ -99,7 +102,7 @@ export default function CurrentExerciseSection({
             <View className="flex-1 rounded-tile bg-raised px-4 py-3">
               <Text className="text-xs text-ink-muted">{t.lastPerformanceLabel}</Text>
               <Text className="mt-0.5 text-base font-semibold text-ink">
-                {lastStats.lastWeight} kg
+                {formatWeight(lastStats.lastWeight)}
                 {lastStats.lastReps != null ? ` × ${lastStats.lastReps}` : ""}
               </Text>
             </View>
@@ -108,7 +111,7 @@ export default function CurrentExerciseSection({
             <View className="flex-1 rounded-tile bg-accent-tint px-4 py-3">
               <Text className="text-xs text-accent-text">{t.personalRecordLabel}</Text>
               <Text className="mt-0.5 text-base font-semibold text-ink">
-                {lastStats.prWeight} kg
+                {formatWeight(lastStats.prWeight)}
               </Text>
             </View>
           ) : null}
@@ -130,7 +133,7 @@ export default function CurrentExerciseSection({
             keyboardType="decimal-pad"
             maxLength={5}
           />
-          <Text className="mt-1 text-sm text-ink-muted">kg</Text>
+          <Text className="mt-1 text-sm text-ink-muted">{weightUnit}</Text>
         </View>
         <View className="flex-1 items-center rounded-card bg-accent-tint px-3 py-5">
           <Text className="mb-2 text-xs text-accent-text">{t.repsLabel}</Text>

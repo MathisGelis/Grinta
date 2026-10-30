@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useEffect, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
@@ -21,11 +22,9 @@ import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { LOCALES } from "@/i18n/labels";
-const formatVolume = (volume: number) =>
-  volume >= 1000 ? `${(volume / 1000).toFixed(1)} T` : `${Math.round(volume)} kg`;
-
 export default function UserPostScreen() {
   const { t, lang } = useTranslation();
+  const { formatWeight, formatVolume } = useUnits();
   const params = useLocalSearchParams<{ post?: string }>();
   const serializedPost = Array.isArray(params.post)
     ? params.post[0]
@@ -288,7 +287,7 @@ export default function UserPostScreen() {
                             {t.setLabel} {index + 1}
                           </Text>
                           <Text className="text-ink text-sm font-semibold">
-                            {set.weight} kg × {set.reps}
+                            {formatWeight(set.weight)} × {set.reps}
                           </Text>
                         </View>
                       ))}

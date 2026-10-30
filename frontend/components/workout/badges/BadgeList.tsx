@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +24,7 @@ type Props = {
 /** Records regroupés par exercice : une séance peut en battre plusieurs (charge max + 1RM). */
 export default function BadgeList({ badges, showDate = false }: Props) {
   const { t, lang } = useTranslation();
+  const { fromKg, weightUnit } = useUnits();
 
   const label: Record<BadgeType, string> = {
     heaviest_weight: t.recordHeaviest,
@@ -30,7 +32,8 @@ export default function BadgeList({ badges, showDate = false }: Props) {
     best_session_volume: t.recordSessionVolume,
     most_reps: t.recordMostReps,
   };
-  const unit = (b: Badge) => (b.unit === "kg" ? "kg" : t.repsUnit);
+  const unit = (b: Badge) => (b.unit === "kg" ? weightUnit : t.repsUnit);
+  const val = (b: Badge, n: number) => (b.unit === "kg" ? fromKg(n) : round(n));
 
   const groups = new Map<string, { name: string; items: Badge[] }>();
   for (const badge of badges) {
@@ -51,7 +54,7 @@ export default function BadgeList({ badges, showDate = false }: Props) {
               key={badge.id}
               className="flex-row items-center gap-3 rounded-tile bg-raised p-3"
               accessible
-              accessibilityLabel={`${label[badge.type]}: ${round(badge.value)} ${unit(badge)}`}
+              accessibilityLabel={`${label[badge.type]}: ${val(badge, badge.value)} ${unit(badge)}`}
             >
               <View className="h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
                 <Ionicons name={ICON[badge.type]} size={20} color={WorkoutTheme.accent.purple} />
@@ -61,7 +64,7 @@ export default function BadgeList({ badges, showDate = false }: Props) {
                 <Text className="mt-0.5 text-xs text-ink-muted" numberOfLines={1}>
                   {showDate
                     ? new Date(badge.achievedAt).toLocaleDateString(lang)
-                    : `${round(badge.previousValue)} → ${round(badge.value)} ${unit(badge)}`}
+                    : `${val(badge, badge.previousValue)} → ${val(badge, badge.value)} ${unit(badge)}`}
                 </Text>
                 {realLifeText(t, badge.realLifeComparison) ? (
                   <Text className="mt-0.5 text-xs text-accent-text" numberOfLines={1}>
@@ -74,7 +77,7 @@ export default function BadgeList({ badges, showDate = false }: Props) {
                   className="text-base font-semibold text-ink"
                   style={{ fontVariant: ["tabular-nums"] }}
                 >
-                  {round(badge.value)} {unit(badge)}
+                  {val(badge, badge.value)} {unit(badge)}
                 </Text>
                 {badge.improvementPct > 0 ? (
                   <View className="rounded-full bg-success-tint px-2 py-0.5">

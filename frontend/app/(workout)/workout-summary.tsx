@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, StatusBar, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,6 +11,7 @@ import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 export default function WorkoutSummaryScreen() {
   const { t } = useTranslation();
+  const { fromKg, weightUnit } = useUnits();
   const params = useLocalSearchParams();
   const workoutName = params.workoutName as string;
   const totalTime = parseInt(params.totalTime as string) || 0;
@@ -170,8 +172,8 @@ export default function WorkoutSummaryScreen() {
                 {t.totalVolume}
               </Text>
               <Text className="text-xl font-bold text-ink">
-                {stats.volume.toLocaleString()}
-                <Text className="text-sm text-ink-muted"> kg</Text>
+                {fromKg(stats.volume, 0).toLocaleString()}
+                <Text className="text-sm text-ink-muted"> {weightUnit}</Text>
               </Text>
             </View>
           </View>

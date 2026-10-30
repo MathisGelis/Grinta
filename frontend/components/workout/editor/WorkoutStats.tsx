@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -40,6 +41,7 @@ export default function WorkoutStats({
   estimatedTime,
 }: WorkoutStatsProps) {
   const { t } = useTranslation();
+  const { formatVolume } = useUnits();
   const totalWeight = exercises.reduce((total, ex) => {
     return total + ex.sets.reduce((sum, set) => sum + set.weight * set.reps, 0);
   }, 0);
@@ -54,7 +56,7 @@ export default function WorkoutStats({
       <View className="flex-row gap-3">
         <StatItem
           icon="barbell"
-          value={`${totalWeight.toFixed(0)}kg`}
+          value={formatVolume(totalWeight)}
           label={t.totalWeight}
         />
         <StatItem icon="repeat" value={String(totalSets)} label={t.sets} />

@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
@@ -44,14 +45,9 @@ function formatDuration(seconds: number): string {
   return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m} min`;
 }
 
-function formatVolume(volume: number): string {
-  return volume >= 1000
-    ? `${(volume / 1000).toFixed(1)} T`
-    : `${Math.round(volume)} kg`;
-}
-
 export default function CompletedWorkoutDetailScreen() {
   const { t, lang } = useTranslation();
+  const { formatWeight, formatVolume } = useUnits();
   const insets = useSafeAreaInsets();
   const { workoutId } = useLocalSearchParams<{ workoutId: string }>();
   const [detail, setDetail] = useState<CompletedWorkoutDetail | null>(null);
@@ -488,14 +484,14 @@ export default function CompletedWorkoutDetailScreen() {
                         <View className="flex-1 rounded-tile bg-raised p-3">
                           <Stat
                             size="md"
-                            value={`${exerciseStats.heaviestWeight} kg`}
+                            value={formatWeight(exerciseStats.heaviestWeight)}
                             label={t.heaviestWeightLabel}
                           />
                         </View>
                         <View className="flex-1 rounded-tile bg-raised p-3">
                           <Stat
                             size="md"
-                            value={`${Math.round(exerciseStats.estimatedOneRepMax)} kg`}
+                            value={formatWeight(exerciseStats.estimatedOneRepMax, 0)}
                             label={t.oneRepMaxLabel}
                           />
                         </View>
@@ -512,7 +508,7 @@ export default function CompletedWorkoutDetailScreen() {
                             {t.setLabel} {index + 1}
                           </Text>
                           <Text className="text-base font-semibold text-ink">
-                            {set.weight} kg × {set.reps}
+                            {formatWeight(set.weight)} × {set.reps}
                           </Text>
                         </View>
                       ))}

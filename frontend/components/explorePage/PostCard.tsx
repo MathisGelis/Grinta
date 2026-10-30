@@ -1,3 +1,4 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
@@ -46,6 +47,7 @@ export default function PostCard({
   authorPressable = true,
 }: Props) {
   const { t, lang } = useTranslation();
+  const { formatWeight, formatVolume } = useUnits();
   const [pageWidth, setPageWidth] = useState(0);
   const [page, setPage] = useState(0);
   const [detail, setDetail] = useState<Post | undefined>(details.get(post.id));
@@ -190,7 +192,7 @@ export default function PostCard({
                       >
                         {format(t.pcSetsCount, { n: exercise.sets })}
                         {exercise.bestSet
-                          ? ` · ${exercise.bestSet.weight} kg × ${exercise.bestSet.reps}`
+                          ? ` · ${formatWeight(exercise.bestSet.weight)} × ${exercise.bestSet.reps}`
                           : ""}
                       </Text>
                     </View>
@@ -246,9 +248,7 @@ export default function PostCard({
                     size="md"
                     label={t.pcVolume}
                     value={
-                      stats.totalVolume >= 1000
-                        ? `${(stats.totalVolume / 1000).toFixed(1)} T`
-                        : `${Math.round(stats.totalVolume)} kg`
+                      formatVolume(stats.totalVolume)
                     }
                     className="flex-1"
                   />
