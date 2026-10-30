@@ -123,11 +123,6 @@ export default function SettingsScreen() {
             onPress={() => router.push("/(tabs)/profile/settings-units")}
           />
           <SettingsRow
-            icon="notifications-outline"
-            label={t.notificationsSettings}
-            onPress={() => router.push("/(tabs)/profile/settings-notifications")}
-          />
-          <SettingsRow
             icon="language-outline"
             label={t.language}
             onPress={() => router.push("/(tabs)/profile/settings-language")}
