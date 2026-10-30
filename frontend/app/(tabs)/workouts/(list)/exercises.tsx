@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
@@ -171,7 +172,7 @@ export default function ExercisesScreen() {
   );
 
   return (
-    <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 px-4">
+    <SafeAreaView edges={["left", "right"]} className="flex-1 px-4">
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <Text className="text-ink-muted">{t.loadingExercises}</Text>
@@ -185,7 +186,7 @@ export default function ExercisesScreen() {
           <Text className="text-ink-muted">{t.noExerciseFound}</Text>
         </View>
       ) : (
-        <FlatList
+        <FlatList {...chromeScrollProps}
           data={rows}
           keyExtractor={(row) => row.key}
           renderItem={renderItem}

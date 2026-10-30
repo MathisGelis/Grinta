@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
@@ -74,7 +75,7 @@ export default function RecordsScreen() {
           <Text className="text-danger">{error}</Text>
         </View>
       ) : (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-4 px-5"
           contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}

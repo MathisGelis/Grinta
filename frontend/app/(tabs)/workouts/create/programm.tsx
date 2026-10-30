@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { SelectList } from "react-native-dropdown-select-list";
@@ -15,7 +16,7 @@ import Button from "@/components/ui/Button";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { FormField, TextField } from "@/components/ui/FormField";
 import { selectStyles } from "@/components/ui/selectStyles";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -28,6 +29,7 @@ import {
 export default function CreateProgrammScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
   const DIFFICULTY_OPTIONS = DIFFICULTY_KEYS.map((key) => ({
     key,
     value: difficultyLabel(t, key),
@@ -120,12 +122,12 @@ export default function CreateProgrammScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader title={t.newProgramme} />
-      <ScrollView
+      <ScreenHeader floating title={t.newProgramme} />
+      <ScrollView {...chromeScrollProps}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="gap-5 px-5"
-        contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
         <Text className="text-sm text-ink-muted">

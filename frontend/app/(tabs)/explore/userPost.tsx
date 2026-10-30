@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -167,7 +168,7 @@ export default function UserPostScreen() {
         <View className="w-10" />
       </View>
 
-      <ScrollView
+      <ScrollView {...chromeScrollProps}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
       >

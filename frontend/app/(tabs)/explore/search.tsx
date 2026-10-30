@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,7 +27,7 @@ export default function SearchScreen() {
     <View
       className="flex-1"
     >
-      <ScrollView
+      <ScrollView {...chromeScrollProps}
         className="flex-1 px-5"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

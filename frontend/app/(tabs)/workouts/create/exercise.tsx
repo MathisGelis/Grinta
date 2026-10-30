@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import {
@@ -15,13 +16,14 @@ import Chip from "@/components/ui/Chip";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { FormField, TextField } from "@/components/ui/FormField";
 import { selectStyles } from "@/components/ui/selectStyles";
 import { useTranslation } from "@/contexts/LanguageContext";
 export default function CreateExerciseScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
   const { exerciseId } = useLocalSearchParams<{ exerciseId?: string }>();
   const isEditing = !!exerciseId;
   const [ready, setReady] = useState(!exerciseId);
@@ -123,15 +125,15 @@ export default function CreateExerciseScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader title={isEditing ? t.editExercise : t.newExercise} />
+      <ScreenHeader floating title={isEditing ? t.editExercise : t.newExercise} />
       {!ready ? (
         <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
       ) : (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           className="flex-1"
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-5 px-5"
-        contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
           keyboardShouldPersistTaps="handled"
         >
           <FormField label={t.name} required>

@@ -29,7 +29,7 @@ type Props = {
   authorPressable?: boolean;
 };
 
-const PAGE_GAP = 2;
+const PAGE_GAP = 8;
 const MAX_EXERCISES = 5;
 
 const details = new Map<string, Post>();

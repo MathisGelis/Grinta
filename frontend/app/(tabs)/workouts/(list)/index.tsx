@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, FlatList, RefreshControl, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import PressableScale from "@/components/ui/PressableScale";
@@ -142,7 +143,7 @@ export default function WorkoutScreen() {
           </PressableScale>
         </View>
       ) : workouts.length > 0 ? (
-        <FlatList
+        <FlatList {...chromeScrollProps}
           data={data}
           keyExtractor={(w) => w.id}
           renderItem={renderItem}

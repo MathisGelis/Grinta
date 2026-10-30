@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, ScrollView, Alert } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -18,10 +19,11 @@ import Button from "@/components/ui/Button";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 export default function CreateWorkoutScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedExercises, setSelectedExercises] = useState<
@@ -103,12 +105,12 @@ export default function CreateWorkoutScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader title={t.newSession} />
-      <ScrollView
+      <ScreenHeader floating title={t.newSession} />
+      <ScrollView {...chromeScrollProps}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="gap-5 px-5"
-        contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
         <WorkoutFormFields

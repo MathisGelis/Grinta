@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
@@ -73,7 +74,7 @@ export default function ProgramsScreen() {
   );
 
   return (
-    <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1">
+    <SafeAreaView edges={["left", "right"]} className="flex-1">
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <Text className="text-ink-muted">{t.loadingProgrammes}</Text>
@@ -87,7 +88,7 @@ export default function ProgramsScreen() {
           <Text className="text-ink-muted">{t.noProgrammeFound}</Text>
         </View>
       ) : (
-        <FlatList
+        <FlatList {...chromeScrollProps}
           data={data}
           keyExtractor={(p) => p.id}
           renderItem={renderItem}

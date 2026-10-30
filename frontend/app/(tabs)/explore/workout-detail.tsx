@@ -1,4 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Dimensions, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -71,7 +72,7 @@ export default function WorkoutDetailScreen() {
         </SafeAreaView>
       </View>
 
-      <ScrollView
+      <ScrollView {...chromeScrollProps}
         className="flex-1 bg-surface rounded-tl-[24px] rounded-tr-[24px] -mt-6"
         contentContainerStyle={styles.sheetContent}
         showsVerticalScrollIndicator={false}

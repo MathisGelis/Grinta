@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
@@ -293,7 +294,7 @@ export default function CompletedWorkoutDetailScreen() {
           <Text className="text-danger">{error ?? t.loadingError}</Text>
         </View>
       ) : (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-4 px-5"
           contentContainerStyle={{

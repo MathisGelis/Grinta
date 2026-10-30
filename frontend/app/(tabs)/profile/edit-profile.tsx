@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -115,7 +116,7 @@ export default function EditProfileScreen() {
 
   return (
     <View className="flex-1">
-      <ScrollView
+      <ScrollView {...chromeScrollProps}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
         contentContainerStyle={{ paddingBottom: 60 }}

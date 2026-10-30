@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -120,7 +121,7 @@ export default function ExerciseDetailScreen() {
           <Text className="text-danger">{error ?? t.noExerciseFound}</Text>
         </View>
       ) : (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-4 px-5"
           contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}

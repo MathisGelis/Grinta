@@ -20,6 +20,8 @@ import Glass from "./Glass";
 import PressableScale from "./PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { usePathname } from "expo-router";
+import { chromeCompact, expandChrome, resetChrome } from "./chromeScroll";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -110,6 +112,12 @@ export default function FloatingTabBar({
     profile: t.profile,
   };
   const [width, setWidth] = useState(0);
+  const pathname = usePathname();
+
+  // Nouvelle page : la barre repart à sa taille normale.
+  useEffect(() => {
+    resetChrome();
+  }, [pathname]);
 
   const routes = state.routes.filter(
     (r) =>
@@ -146,13 +154,19 @@ export default function FloatingTabBar({
     transform: [{ scale: 1 + 0.6 * pulse.value }],
   }));
 
+  // Réduite en descendant l'accueil, rétablie en remontant (ancrée en bas).
+  const shrinkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - 0.2 * chromeCompact.get() }],
+  }));
+
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
-    <View
+    <Animated.View
       pointerEvents="box-none"
       className="absolute inset-x-0 bottom-0 px-5"
-      style={{ paddingBottom: insets.bottom + 8 }}
+      style={[{ paddingBottom: insets.bottom + 8, transformOrigin: "50% 100%" }, shrinkStyle]}
+      onTouchStart={expandChrome}
     >
       <Glass
         intensity={50}
@@ -193,6 +207,7 @@ export default function FloatingTabBar({
                 target: route.key,
                 canPreventDefault: true,
               });
+              resetChrome();
               if (process.env.EXPO_OS === "ios") Haptics.selectionAsync();
               if (!focused && !event.defaultPrevented) {
                 navigateToTab(route.key);
@@ -236,6 +251,6 @@ export default function FloatingTabBar({
           })}
         </View>
       </Glass>
-    </View>
+    </Animated.View>
   );
 }

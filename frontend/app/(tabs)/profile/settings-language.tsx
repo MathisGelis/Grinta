@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, FlatList, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -33,7 +34,7 @@ export default function SettingsLanguageScreen() {
         />
       </View>
 
-      <FlatList
+      <FlatList {...chromeScrollProps}
         data={filtered}
         keyExtractor={(item) => item.code}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}

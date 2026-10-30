@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -112,7 +113,7 @@ export default function UserProfileScreen() {
       {loading ? (
         <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: 60 }} />
       ) : profile ? (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 120 }}
         >
