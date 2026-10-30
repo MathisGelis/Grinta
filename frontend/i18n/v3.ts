@@ -80,6 +80,7 @@ export interface V3Strings {
   zeroWeightTitle: string;
   zeroWeightMessage: string;
   zeroWeightConfirm: string;
+  restBetweenSets: string;
   loadFailedTitle: string;
   newsTab: string;
   newsBetaTag: string;
@@ -253,6 +254,7 @@ const en: V3Strings = {
   zeroWeightTitle: "0 kg entered",
   zeroWeightMessage: "You usually lift weight on this exercise. Validate this set at 0?",
   zeroWeightConfirm: "Validate",
+  restBetweenSets: "Rest between sets",
   loadFailedTitle: "Unable to load",
   newsTab: "News",
   newsBetaTag: "Beta",
@@ -427,6 +429,7 @@ const fr: V3Strings = {
   zeroWeightTitle: "0 kg saisi",
   zeroWeightMessage: "Vous soulevez habituellement une charge sur cet exercice. Valider cette série à 0 ?",
   zeroWeightConfirm: "Valider",
+  restBetweenSets: "Repos entre les séries",
   loadFailedTitle: "Impossible de charger",
   newsTab: "Actualités",
   newsBetaTag: "Bêta",

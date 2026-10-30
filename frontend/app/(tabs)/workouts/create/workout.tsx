@@ -4,7 +4,7 @@ import { View, ScrollView, Alert } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
-import { Exercise } from "@/services/exercises.service";
+import { Exercise, getExerciseStats } from "@/services/exercises.service";
 import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
 import {
   createPlannedWorkout,
@@ -31,6 +31,7 @@ export default function CreateWorkoutScreen() {
   >([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [estimatedTime, setEstimatedTime] = useState("45");
+  const [restSeconds, setRestSeconds] = useState("60");
   const [loading, setLoading] = useState(false);
 
   const handleSelectExercise = (exercise: Exercise) => {
@@ -53,6 +54,20 @@ export default function CreateWorkoutScreen() {
     };
     setSelectedExercises((prev) => [...prev, newExercise]);
     setShowExerciseSelector(false);
+
+    getExerciseStats(exercise.id)
+      .then((stats) => {
+        const weight = stats?.lastWeight;
+        if (!weight) return;
+        setSelectedExercises((prev) =>
+          prev.map((ex) =>
+            ex.id === exercise.id && ex.sets.every((set) => set.weight === 0)
+              ? { ...ex, sets: ex.sets.map((set) => ({ ...set, weight })) }
+              : ex,
+          ),
+        );
+      })
+      .catch(() => {});
   };
 
   const handleUpdateExercise = (updated: ExerciseSetupData) => {
@@ -74,7 +89,7 @@ export default function CreateWorkoutScreen() {
     exercises: selectedExercises.map((exercise) => ({
       exerciseId: exercise.id,
       sets: exercise.sets,
-      plannedRestSeconds: 60,
+      plannedRestSeconds: Math.min(600, Math.max(0, parseInt(restSeconds, 10) || 0)),
     })),
   });
 
@@ -123,6 +138,8 @@ export default function CreateWorkoutScreen() {
           onDescriptionChange={setDescription}
           estimatedTime={estimatedTime}
           onEstimatedTimeChange={setEstimatedTime}
+          restSeconds={restSeconds}
+          onRestSecondsChange={setRestSeconds}
         />
 
         <ExerciseSection

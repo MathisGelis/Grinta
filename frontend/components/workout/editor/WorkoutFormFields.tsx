@@ -9,6 +9,8 @@ interface WorkoutFormFieldsProps {
   onDescriptionChange: (v: string) => void;
   estimatedTime: string;
   onEstimatedTimeChange: (v: string) => void;
+  restSeconds: string;
+  onRestSecondsChange: (v: string) => void;
 }
 
 export default function WorkoutFormFields({
@@ -18,6 +20,8 @@ export default function WorkoutFormFields({
   onDescriptionChange,
   estimatedTime,
   onEstimatedTimeChange,
+  restSeconds,
+  onRestSecondsChange,
 }: WorkoutFormFieldsProps) {
   const { t } = useTranslation();
   return (
@@ -47,6 +51,18 @@ export default function WorkoutFormFields({
           placeholder="45"
           value={estimatedTime}
           onChangeText={onEstimatedTimeChange}
+          keyboardType="number-pad"
+          maxLength={3}
+        />
+      </FormField>
+
+      <FormField label={t.restBetweenSets}>
+        <TextField
+          icon="hourglass-outline"
+          suffix="s"
+          placeholder="60"
+          value={restSeconds}
+          onChangeText={onRestSecondsChange}
           keyboardType="number-pad"
           maxLength={3}
         />
