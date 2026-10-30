@@ -127,7 +127,10 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <PressableScale className="self-end -mt-4 mb-2">
+          <PressableScale
+            className="self-end -mt-4 mb-2"
+            onPress={() => router.push("/(auth)/ForgotPasswordScreen")}
+          >
             <Text className="text-accent-light text-[13px]">{t.forgotPassword}</Text>
           </PressableScale>
 

@@ -8,6 +8,7 @@ export default function AuthNavigator() {
       <Stack.Screen name="LandingScreen" />
       <Stack.Screen name="LoginScreen" options={{ animation: "none" }} />
       <Stack.Screen name="RegisterScreen" options={{ animation: "none" }} />
+      <Stack.Screen name="ForgotPasswordScreen" />
       <Stack.Screen name="onboarding/GenderScreen" />
       <Stack.Screen name="onboarding/AgeScreen" />
       <Stack.Screen name="onboarding/WeightScreen" />

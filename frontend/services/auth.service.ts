@@ -15,6 +15,14 @@ export const AuthService = {
     return api.post<LoginResponse>("/auth/login", { identifier, password });
   },
 
+  forgotPassword(email: string) {
+    return api.post<void>("/auth/forgot-password", { email: email.trim() });
+  },
+
+  resetPassword(token: string, password: string) {
+    return api.post<void>("/auth/reset-password", { token, password });
+  },
+
   async register(email: string, password: string, name: string): Promise<RegisterResponse> {
     const user = await api.post<{ id: string }>("/users/register", {
       email: email.trim(),
