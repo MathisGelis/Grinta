@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import compression from 'compression';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { validationExceptionFactory } from './common/validation/validation-errors';
 
 /**
  * HTTP settings every request goes through: proxy, compression, validation
@@ -21,13 +22,19 @@ export function configureApp(app: NestExpressApplication) {
   // Photos are already compressed and are left alone.
   app.use(compression());
 
-  // Unknown properties in a body or query are rejected with a 400 rather than
-  // silently stripped, so a client typo surfaces instead of being ignored.
+  // The only ValidationPipe. Unknown properties in a body or query are
+  // rejected with a 400 rather than silently stripped, so a client typo
+  // surfaces instead of being ignored. Failures come back as
+  // { statusCode, code: 'VALIDATION_ERROR', message, errors: [{ field, code,
+  // message }] }, see common/validation/validation-errors.ts. The target is
+  // kept on each error to find the decorator behind it; values are left out.
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      validationError: { target: true, value: false },
+      exceptionFactory: validationExceptionFactory,
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());

@@ -60,6 +60,51 @@ $ DB_HOST=localhost DB_NAME=grinta_e2e DB_SSL=false npm run test:e2e
 $ npm run test:cov
 ```
 
+## Validation errors
+
+A body or query that fails validation gets a `400` with a stable code per error, for the app to translate:
+
+```json
+{
+  "statusCode": 400,
+  "code": "VALIDATION_ERROR",
+  "message": "Adresse e-mail invalide.",
+  "errors": [
+    { "field": "email", "code": "EMAIL_INVALID", "message": "Adresse e-mail invalide." },
+    { "field": "exercises.0.sets.1.weight", "code": "VALUE_TOO_LARGE", "message": "« exercises.0.sets.1.weight » doit être inférieur ou égal à 1000." }
+  ]
+}
+```
+
+`message` is the first error's message, in French. `field` is the path in the body or the query string.
+
+| Code | Meaning |
+| --- | --- |
+| `FIELD_REQUIRED` | Missing or empty value |
+| `FIELD_NOT_ALLOWED` | Unknown field, not accepted by the route |
+| `FIELD_TOO_SHORT` | Text shorter than allowed |
+| `FIELD_TOO_LONG` | Text longer than allowed (e.g. a comment over 500 characters) |
+| `EMAIL_INVALID` | Not an email address |
+| `PASSWORD_TOO_SHORT` | Password under 8 characters (`password`, `newPassword`, `currentPassword`) |
+| `PASSWORD_TOO_LONG` | Password over 72 characters |
+| `USERNAME_INVALID` | Username not 3 to 30 characters among `a-z 0-9 _ .`, or a dot at either end |
+| `STRING_EXPECTED` | Text expected |
+| `NUMBER_INVALID` | Number expected, 2 decimals at most |
+| `INTEGER_EXPECTED` | Whole number expected |
+| `BOOLEAN_EXPECTED` | `true` or `false` expected |
+| `VALUE_TOO_SMALL` | Number under the minimum |
+| `VALUE_TOO_LARGE` | Number over the maximum |
+| `VALUE_NOT_ALLOWED` | Not one of the accepted values (enum) |
+| `DATE_INVALID` | Not a valid date |
+| `ID_INVALID` | Not a valid identifier (uuid) |
+| `FORMAT_INVALID` | Does not match the expected format |
+| `ARRAY_EXPECTED` | List expected |
+| `ARRAY_TOO_SHORT` | List with too few items |
+| `ARRAY_TOO_LONG` | List with too many items |
+| `INVALID` | Any other rule |
+
+Other errors (`401`, `403`, `404`, `409`, `429`, ...) keep the format `{ statusCode, message: { message, ... } }`.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

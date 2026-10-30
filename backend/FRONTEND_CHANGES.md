@@ -621,3 +621,25 @@ Une entrée par tâche de l'audit (B-xx).
 - 3 décimales, une charge négative ou une charge au-dessus de 1000 kg donnent un `400`.
 - Les charges sont relues telles quelles. Volume, 1RM, records, badges et stats sont calculés sans arrondi de la charge (résultats arrondis à 2 décimales).
 - Côté app : autoriser la virgule et le point dans le champ de charge, et envoyer un nombre (pas une chaîne).
+
+### B-02 Erreurs de validation structurées
+
+Un `400` de validation a maintenant ce format, **au premier niveau** :
+
+```json
+{
+  "statusCode": 400,
+  "code": "VALIDATION_ERROR",
+  "message": "Adresse e-mail invalide.",
+  "errors": [
+    { "field": "email", "code": "EMAIL_INVALID", "message": "Adresse e-mail invalide." },
+    { "field": "password", "code": "PASSWORD_TOO_SHORT", "message": "Le mot de passe doit contenir au moins 8 caractères." }
+  ]
+}
+```
+
+- `message` est une chaîne : le premier message, en français. `extractMessage` le lit déjà sans changement.
+- `errors[].code` est stable : c'est lui qu'il faut traduire. La liste complète est dans `backend/README.md`, section « Validation errors ». Les plus utiles : `EMAIL_INVALID`, `PASSWORD_TOO_SHORT`, `USERNAME_INVALID`, `FIELD_TOO_LONG`, `FIELD_REQUIRED`, `FIELD_NOT_ALLOWED`, `NUMBER_INVALID`, `VALUE_TOO_LARGE`.
+- `errors[].field` donne le chemin du champ, y compris imbriqué (`exercises.0.sets.1.weight`), pour afficher l'erreur sous le bon champ.
+- Les autres erreurs (`401`, `403`, `404`, `409`, `429`…) gardent leur format `{ statusCode, message: { message, … } }`.
+- Il n'y avait déjà qu'un seul `ValidationPipe` sur cette branche. Le doublon signalé par l'audit vient du backend périmé de la branche front (voir B-00).

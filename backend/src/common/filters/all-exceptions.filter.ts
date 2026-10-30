@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { QueryFailedError } from 'typeorm';
+import { ValidationFailedException } from '../validation/validation-errors';
 
 // Postgres error code for a malformed value, e.g. a non-uuid string compared
 // against a uuid column.
@@ -20,6 +21,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+
+    // Validation errors keep their structured body at the top level:
+    // { statusCode, code, message, errors }.
+    if (exception instanceof ValidationFailedException) {
+      response.status(exception.getStatus()).json(exception.getResponse());
+      return;
+    }
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: unknown = { message: 'Internal server error' };
