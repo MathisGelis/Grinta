@@ -1,5 +1,25 @@
 # Changelog backend
 
+## Non publié : suivre un programme et suggestions de séance
+
+- **`POST /programmes/:id/start`** commence un de mes programmes (migration réversible `AddActiveProgrammes`, table `active_programmes`). Un seul programme est suivi à la fois : en démarrer un autre le remplace. `startDate` (`AAAA-MM-JJ`) est le jour 1, aujourd'hui en UTC par défaut. Le suivi disparaît avec le programme ou le compte.
+- **`GET /programmes/active/today?date=`** renvoie la séance planifiée du jour.
+  - Le jour se compte en jours calendaires depuis le départ, entraînement ou non, et le programme recommence après son dernier jour (`cycle`).
+  - Un jour absent du programme ou sans séance est un jour de repos.
+  - `status` vaut `workout`, `rest` ou `not_started`.
+  - Les dates sont des dates de calendrier sans heure : l'app envoie la date locale de l'utilisateur, faute de quoi la date UTC s'applique.
+- **`GET /workouts/planned/suggestion?period=week|month&date=`** classe mes séances planifiées selon les muscles qu'elles travaillent et que la période a délaissés.
+  - Séries effectives par muscle comme `/stats/muscle-distribution`.
+  - Chaque muscle d'une séance pèse ses séries prévues × 1 / (1 + séries déjà faites).
+  - `score` entre 0 et 1, deux alternatives, et le détail par muscle.
+  - Une séance planifiée sans séries compte une série par exercice.
+- Vérifié sur le programme Push Pull Legs de la démo, en 22 contrôles HTTP :
+  - jour 3 = Legs, jour 4 = repos, jour 8 = Push du cycle 2, date avant le départ ;
+  - remplacement du programme suivi, arrêt par suppression ;
+  - suggestion identique au calcul de `/stats/muscle-distribution` ;
+  - séance d'un muscle non travaillé classée en tête avec un score de 1 ;
+  - utilisateur sans séance planifiée.
+
 ## Non publié : groupes, comparaisons, duplication, séance d'un post
 
 - **Fil populaire** : `GET /posts/feed/top` n'affiche plus les posts de l'utilisateur connecté.

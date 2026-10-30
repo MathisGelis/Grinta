@@ -39,6 +39,8 @@ import {
 } from './dto/stats-response.dto';
 import { StatsCalculatorService } from './stats-calculator.service';
 import { compareToRealLife } from '../common/utils/real-life-comparison';
+import { rankByNeglectedMuscles } from './utils/workout-suggestion';
+import { StatsPeriod } from './dto/period-query.dto';
 import {
   BestSetRow,
   BreakdownRow,
@@ -199,6 +201,73 @@ export class StatsService {
       totalSets,
       totalReps,
       realLifeComparison: compareToRealLife(totalVolume),
+    };
+  }
+
+  /**
+   * Picks, among the user's planned workouts, the one that works best the
+   * muscles left aside over the period (this week by default). The muscles
+   * trained so far are counted in effective sets, as in
+   * GET /stats/muscle-distribution; a planned workout counts its planned
+   * sets the same way, one per exercise when it plans none. Comes with two
+   * alternatives and the reasons: each muscle the workout works with what it
+   * already got this period.
+   */
+  async suggestPlannedWorkout(
+    user: AuthUser,
+    period: StatsPeriod = StatsPeriod.WEEK,
+    date?: string,
+  ) {
+    const range = resolvePeriodRange(period, date);
+    const [workouts, planned] = await Promise.all([
+      this.fetchWorkoutsInRange(user.id, range),
+      this.plannedRepo.find({
+        where: { user: { id: user.id } },
+        relations: ['exercises'],
+      }),
+    ]);
+    const { perMuscle } = this.calculator.effectiveSetsByMuscle(workouts);
+    const ranked = rankByNeglectedMuscles(
+      perMuscle,
+      planned.map((workout) => {
+        const targets = new Map<DetailedMuscleGroup, number>();
+
+        for (const pwe of workout.exercises ?? []) {
+          const sets = Math.max(1, pwe.sets?.length ?? 0);
+
+          for (const { muscle, weight } of this.calculator.muscleContributions(
+            pwe,
+          ))
+            targets.set(muscle, (targets.get(muscle) ?? 0) + sets * weight);
+        }
+        return { id: workout.id, targets };
+      }),
+    );
+    const byId = new Map(planned.map((w) => [w.id, w]));
+    const withWorkout = (r: (typeof ranked)[number]) => {
+      const workout = byId.get(r.id)!;
+
+      return {
+        workout: {
+          id: workout.id,
+          title: workout.title,
+          description: workout.description ?? null,
+          totalExercises: workout.exercises.length,
+        },
+        score: r.score,
+        muscles: r.muscles,
+      };
+    };
+
+    return {
+      period,
+      rangeStart: range.start,
+      rangeEnd: range.end,
+      workedMuscles: [...perMuscle.entries()]
+        .map(([muscle, sets]) => ({ muscle, effectiveSets: round(sets) }))
+        .sort((a, b) => b.effectiveSets - a.effectiveSets),
+      suggestion: ranked.length ? withWorkout(ranked[0]) : null,
+      alternatives: ranked.slice(1, 3).map(withWorkout),
     };
   }
 

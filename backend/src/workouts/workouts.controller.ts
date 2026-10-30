@@ -23,12 +23,17 @@ import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { WorkoutService } from './workouts.service';
 import { PhotoUpload } from '../photos/photo-upload.decorator';
+import { StatsService } from '../stats/stats.service';
+import { WorkoutSuggestionQueryDto } from './dto/workout-suggestion-query.dto';
 
 @ApiTags('workouts')
 @Auth()
 @Controller('workouts')
 export class WorkoutsController {
-  constructor(private readonly workoutService: WorkoutService) {}
+  constructor(
+    private readonly workoutService: WorkoutService,
+    private readonly statsService: StatsService,
+  ) {}
 
   @Post('planned')
   @ApiOperation({ summary: 'Create a planned workout' })
@@ -129,6 +134,29 @@ export class WorkoutsController {
     @Query() page: ListCompletedWorkoutsQueryDto,
   ): Promise<CompletedWorkoutListDto[]> {
     return this.workoutService.getCompletedWorkouts(req.user, page);
+  }
+
+  // Before planned/:id, which would take "suggestion" for an id.
+  @Get('planned/suggestion')
+  @ApiOperation({
+    summary: 'Which of my planned workouts to do, for the muscles left aside',
+    description:
+      'Counts the effective sets each muscle got over the period (this week by default, or this month), as GET /stats/muscle-distribution does, and picks the planned workout that works best the muscles trained least. `score` goes from 0 to 1 (1: none of its muscles was trained). `muscles` lists what the workout works, the least trained first, with `workedSets` over the period. `suggestion` is null without a planned workout; `alternatives` holds the next two.',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      '{ period, rangeStart, rangeEnd, workedMuscles: [{ muscle, effectiveSets }], suggestion: { workout: { id, title, description, totalExercises }, score, muscles: [{ muscle, plannedSets, workedSets }] } | null, alternatives: [same as suggestion] }',
+  })
+  suggestPlanned(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: WorkoutSuggestionQueryDto,
+  ) {
+    return this.statsService.suggestPlannedWorkout(
+      req.user,
+      query.period,
+      query.date,
+    );
   }
 
   @Get('planned/:id')

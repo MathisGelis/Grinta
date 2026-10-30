@@ -151,7 +151,10 @@ export class StatsCalculatorService {
     return { perMuscle, total };
   }
 
-  muscleContributions(cwe: CompletedWorkoutExercise): MuscleContribution[] {
+  /** Muscles an exercise works, from a completed or a planned workout. */
+  muscleContributions(
+    cwe: Pick<CompletedWorkoutExercise, 'exercise'>,
+  ): MuscleContribution[] {
     if (!cwe.exercise) return [];
     const contributions: MuscleContribution[] = [
       { muscle: cwe.exercise.primary_muscle, weight: 1 },

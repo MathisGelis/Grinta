@@ -538,7 +538,59 @@ Données disponibles :
 - `GET /posts/:postId/workout`, ou `GET /stats/workout/:id` pour ses propres séances : séries, totaux, comparaison avec la vie réelle ;
 - les `badges` de la séance pour ses records.
 
-### 7.9 Checklist
+### 7.9 Suivre un programme
+
+Un programme (liste de jours, repos compris) peut maintenant être « commencé ». Un seul est suivi à la fois.
+
+- **`POST /programmes/:id/start`** `{ startDate?: "2026-10-30" }` démarre un de mes programmes. `startDate` est le jour 1, aujourd'hui par défaut. Le programme remplace celui suivi jusque-là. La réponse est la même que la route suivante, pour le jour de départ.
+- **`GET /programmes/active/today?date=2026-10-30`** renvoie la séance prévue pour ce jour :
+  - le jour se compte **au calendrier** : le jour de départ est le jour 1, le lendemain le jour 2, qu'on se soit entraîné ou non ;
+  - après le dernier jour, le programme **recommence** au jour 1, et `cycle` compte les tours.
+
+```json
+{
+  "programme": { "id": "uuid", "title": "Programme Push Pull Legs" },
+  "startedOn": "2026-10-26", "date": "2026-10-28", "cycleLength": 7,
+  "status": "workout", "dayNumber": 3, "cycle": 1,
+  "workout": { "id": "uuid", "title": "Legs", "description": "...", "exercises": [ ... ] }
+}
+```
+
+- `status` peut prendre trois valeurs :
+  - `workout` : la séance du jour est dans `workout`, au format de `GET /workouts/planned/:id` (le champ `workout` de cette route) ;
+  - `rest` : jour de repos, `workout` vaut `null` ;
+  - `not_started` : la date est avant le départ, avec `daysUntilStart`.
+- **Envoyez toujours `date`, la date locale de l'utilisateur** (`AAAA-MM-JJ`). Sans elle, c'est la date UTC qui sert. En France, entre minuit et 1 h ou 2 h du matin, ce serait encore la veille. Même conseil pour `startDate`.
+- Erreurs :
+  - `404` `Aucun programme en cours.` si rien n'est commencé ;
+  - `404` pour démarrer le programme de quelqu'un d'autre ;
+  - `400` pour une date qui n'est pas au format `AAAA-MM-JJ`.
+- Supprimer le programme suivi l'arrête. Une séance planifiée supprimée transforme son jour en jour de repos.
+- Il n'y a pas de route pour arrêter un programme sans le supprimer : ce n'était pas demandé.
+
+### 7.10 Suggérer une séance selon les muscles délaissés
+
+**`GET /workouts/planned/suggestion?period=week&date=2026-10-30`** choisit, parmi mes séances planifiées, celle qui travaille le plus les muscles **les moins entraînés sur la période**. La période est la semaine en cours par défaut, ou le mois avec `period=month`.
+
+```json
+{
+  "period": "week", "rangeStart": "...", "rangeEnd": "...",
+  "workedMuscles": [{ "muscle": "quads", "effectiveSets": 12.5 }],
+  "suggestion": {
+    "workout": { "id": "uuid", "title": "Push", "description": null, "totalExercises": 6 },
+    "score": 1,
+    "muscles": [{ "muscle": "triceps", "plannedSets": 7, "workedSets": 0 }]
+  },
+  "alternatives": [ { "...": "même format, les deux suivantes" } ]
+}
+```
+
+- `workedMuscles` : séries effectives par muscle sur la période (1 par série pour le muscle principal, 0,5 pour un secondaire). C'est le même calcul que `GET /stats/muscle-distribution`.
+- `score` va de 0 à 1. Il vaut 1 quand aucun des muscles de la séance n'a été travaillé sur la période.
+- `muscles` donne le pourquoi : les muscles de la séance, du moins entraîné au plus entraîné. Exemple d'affichage : « Triceps : 0 série cette semaine ».
+- `suggestion` vaut `null` si je n'ai aucune séance planifiée.
+
+### 7.11 Checklist
 
 - [ ] Fil populaire : rien à faire (mes posts n'y sont plus).
 - [ ] Cartes de post : afficher `exercises` (nom, séries, meilleure série) et `stats`.
@@ -549,3 +601,5 @@ Données disponibles :
 - [ ] Groupes : liste, création, invitations (reçues et envoyées), fil d'activité (`type` `workout` et `share`), départ, suppression par le créateur.
 - [ ] « Envoyer dans un groupe » sur un post (gérer `409` déjà partagé), et « Retirer » sur mes partages dans le fil.
 - [ ] Cards de partage (7.8).
+- [ ] Bouton « Commencer ce programme » (`POST /programmes/:id/start`), et carte « Séance du jour » (`GET /programmes/active/today?date=` avec la date locale) : séance, repos ou départ à venir.
+- [ ] « Que faire aujourd'hui ? » : `GET /workouts/planned/suggestion` avec la raison (`muscles`) et les alternatives.

@@ -11,6 +11,7 @@ import {
 } from './dto/create-programme.dto';
 import { UpdateProgrammeDto } from './dto/update-programme.dto';
 import { omitUndefined } from 'src/common/utils/omit-undefined';
+import { programmePositionOn, todayUtc } from './utils/programme-day';
 
 @Injectable()
 export class ProgrammesService {
@@ -123,6 +124,89 @@ export class ProgrammesService {
             }
           : null,
       })),
+    };
+  }
+
+  /**
+   * Starts following one of the user's programmes, from `startDate` (day 1),
+   * today by default. It replaces the programme followed until now, if any.
+   * Returns what the start date holds, as GET /programmes/active/today.
+   */
+  async startProgramme(
+    user: AuthUser,
+    programmeId: string,
+    startDate?: string,
+  ) {
+    const owned = await this.programmeRepo.exists({
+      where: { id: programmeId, user: { id: user.id } },
+    });
+
+    if (!owned) throw new NotFoundException('Programme not found');
+    const startedOn = startDate ?? todayUtc();
+
+    await this.programmeRepo.manager.query(
+      `INSERT INTO active_programmes ("userId", "programmeId", "startedOn")
+       VALUES ($1, $2, $3)
+       ON CONFLICT ("userId") DO UPDATE
+         SET "programmeId" = EXCLUDED."programmeId",
+             "startedOn" = EXCLUDED."startedOn",
+             "createdAt" = now()`,
+      [user.id, programmeId, startedOn],
+    );
+    return this.todaysWorkout(user, startedOn);
+  }
+
+  /**
+   * The workout the followed programme plans for a date, today by default.
+   * The day is counted in calendar days from the start, whether or not the
+   * user trained, and the programme starts over after its last day; a day
+   * missing from the programme is a rest day. `status` is `workout`, `rest`,
+   * or `not_started` for a date before the start.
+   */
+  async todaysWorkout(user: AuthUser, date = todayUtc()) {
+    // to_char: the pg driver would turn a DATE into a Date at local midnight.
+    const [active] = await this.programmeRepo.manager.query<
+      Array<{ programmeId: string; startedOn: string }>
+    >(
+      `SELECT "programmeId", to_char("startedOn", 'YYYY-MM-DD') AS "startedOn"
+         FROM active_programmes WHERE "userId" = $1`,
+      [user.id],
+    );
+
+    if (!active) throw new NotFoundException('Aucun programme en cours.');
+    const programme = await this.programmeRepo.findOneOrFail({
+      where: { id: active.programmeId },
+      relations: ['days', 'days.workout', 'days.workout.exercises'],
+    });
+    // A programme edited down to no day at all is all rest.
+    const cycleLength = Math.max(1, ...programme.days.map((d) => d.dayNumber));
+    const position = programmePositionOn(active.startedOn, date, cycleLength);
+    const base = {
+      programme: { id: programme.id, title: programme.title },
+      startedOn: active.startedOn,
+      date,
+      cycleLength,
+    };
+
+    if (position.status === 'not_started')
+      return {
+        ...base,
+        status: 'not_started' as const,
+        daysUntilStart: position.daysUntilStart,
+        dayNumber: null,
+        cycle: null,
+        workout: null,
+      };
+    const workout =
+      programme.days.find((d) => d.dayNumber === position.dayNumber)?.workout ??
+      null;
+
+    return {
+      ...base,
+      status: workout ? ('workout' as const) : ('rest' as const),
+      dayNumber: position.dayNumber,
+      cycle: position.cycle,
+      workout,
     };
   }
 
