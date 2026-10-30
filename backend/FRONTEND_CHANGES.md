@@ -649,3 +649,12 @@ Un `400` de validation a maintenant ce format, **au premier niveau** :
 - Un commentaire fait **1 à 500 caractères**, à la création comme à la modification. La limite existait déjà côté serveur, elle est maintenant documentée et renvoie un code exploitable.
 - Au-delà : `400` avec `errors: [{ field: "content", code: "FIELD_TOO_LONG", message: "« content » ne doit pas dépasser 500 caractères." }]`.
 - Côté app : `maxLength={500}` sur le champ, et un compteur à l'approche de la limite.
+
+### B-03 Résumé des séances planifiées
+
+- `GET /workouts/planned` renvoie en plus :
+  - `totalSets` : séries prévues de tous les exercices, `0` pour un exercice sans séries ;
+  - `estimatedDurationMinutes` : nombre ou `null`.
+- `estimatedDurationMinutes` est accepté en option dans `POST /workouts/planned` et `PATCH /workouts/planned/:id` : un entier de 1 à 600. `null` en `PATCH` l'efface. Il est aussi relu dans `GET /workouts/planned/:id`.
+- Hors bornes : `400` avec le code `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` ou `INTEGER_EXPECTED`.
+- Côté app : envoyer le champ « Durée estimée » du formulaire.

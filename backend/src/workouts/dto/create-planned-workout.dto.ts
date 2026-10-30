@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
@@ -6,6 +6,8 @@ import {
   ValidateNested,
   IsUUID,
   IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SetPairDto } from './set-pair.dto';
@@ -43,4 +45,16 @@ export class CreatePlannedWorkoutDto {
   @ValidateNested({ each: true })
   @Type(() => PlannedWorkoutExerciseDto)
   exercises: PlannedWorkoutExerciseDto[];
+
+  @ApiPropertyOptional({
+    minimum: 1,
+    maximum: 600,
+    nullable: true,
+    description: 'Expected duration in minutes',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(600)
+  estimatedDurationMinutes?: number | null;
 }

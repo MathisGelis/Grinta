@@ -53,6 +53,7 @@ export class WorkoutService {
       user: { id: user.id },
       title: dto.title,
       description: dto.description,
+      estimatedDurationMinutes: dto.estimatedDurationMinutes ?? null,
     });
 
     const byId = await this.resolveExercises(
@@ -213,21 +214,32 @@ export class WorkoutService {
   // SQL. Loading every exercise row (with its eager Exercise join and the sets
   // JSON) just to read `.length` made this the heaviest read for active users.
   async getPlannedWorkouts(user: AuthUser) {
-    return this.plannedRepo
-      .createQueryBuilder('w')
-      .select([
-        'w.id AS id',
-        'w.title AS title',
-        'w.description AS description',
-      ])
-      .addSelect(
-        '(SELECT COUNT(*)::int FROM planned_workout_exercises e WHERE e."workoutId" = w.id)',
-        'totalExercises',
-      )
-      .where('w."userId" = :userId', { userId: user.id })
-      .orderBy('w."createdAt"', 'DESC')
-      .addOrderBy('w.id', 'DESC')
-      .getRawMany();
+    return (
+      this.plannedRepo
+        .createQueryBuilder('w')
+        .select([
+          'w.id AS id',
+          'w.title AS title',
+          'w.description AS description',
+        ])
+        .addSelect('w."estimatedDurationMinutes"', 'estimatedDurationMinutes')
+        .addSelect(
+          '(SELECT COUNT(*)::int FROM planned_workout_exercises e WHERE e."workoutId" = w.id)',
+          'totalExercises',
+        )
+        // Planned sets of every exercise; an exercise planned without sets
+        // counts none.
+        .addSelect(
+          `(SELECT COALESCE(SUM(CASE WHEN jsonb_typeof(e.sets) = 'array'
+                                   THEN jsonb_array_length(e.sets) ELSE 0 END), 0)::int
+            FROM planned_workout_exercises e WHERE e."workoutId" = w.id)`,
+          'totalSets',
+        )
+        .where('w."userId" = :userId', { userId: user.id })
+        .orderBy('w."createdAt"', 'DESC')
+        .addOrderBy('w.id', 'DESC')
+        .getRawMany()
+    );
   }
 
   /**

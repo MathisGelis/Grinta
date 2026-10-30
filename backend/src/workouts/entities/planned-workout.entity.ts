@@ -32,6 +32,11 @@ export class PlannedWorkout {
   @ApiProperty({ required: false })
   description?: string;
 
+  /** Duration the user expects, in minutes (1 to 600), as they entered it. */
+  @Column({ type: 'int', nullable: true })
+  @ApiProperty({ required: false, nullable: true, minimum: 1, maximum: 600 })
+  estimatedDurationMinutes?: number | null;
+
   @OneToMany(() => PlannedWorkoutExercise, (pwe) => pwe.workout, {
     cascade: true,
   })
