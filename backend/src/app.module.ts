@@ -14,6 +14,7 @@ import { StatsModule } from './stats/stats.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { BadgesModule } from './badges/badges.module';
 import { GroupsModule } from './groups/groups.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { GroupsModule } from './groups/groups.module';
     BadgesModule,
     GroupsModule,
   ],
+  controllers: [AppController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },

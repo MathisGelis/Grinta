@@ -603,3 +603,14 @@ Un programme (liste de jours, repos compris) peut maintenant être « commencé 
 - [ ] Cards de partage (7.8).
 - [ ] Bouton « Commencer ce programme » (`POST /programmes/:id/start`), et carte « Séance du jour » (`GET /programmes/active/today?date=` avec la date locale) : séance, repos ou départ à venir.
 - [ ] « Que faire aujourd'hui ? » : `GET /workouts/planned/suggestion` avec la raison (`muscles`) et les alternatives.
+
+---
+
+## 8. Corrections de l'audit front (branche `feat/backend-v3`)
+
+Une entrée par tâche de l'audit (B-xx).
+
+### B-04 Route de santé
+
+- `GET /health` → `200 { status: "ok", database: "ok" }`. Elle exécute un `SELECT 1` sur la base. Pas de token ni de limite de débit. Elle répond `503 { status: "error", database: "unreachable" }` si la base ne répond pas. **C'est la route à utiliser pour `checkServerHealth`.**
+- `GET /` → `200 { status: "ok" }`, sans vérifier la base. Elle répondait `Hello World!` avant, ou `404` sur le backend périmé.

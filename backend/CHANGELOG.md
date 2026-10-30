@@ -1,5 +1,12 @@
 # Changelog backend
 
+## Non publié : corrections de l'audit front
+
+- **B-04** :
+  - `GET /health` vérifie la base (`SELECT 1`), sans authentification ni limite de débit, et répond 503 si la base ne répond pas. `GET /` répond `{ status: "ok" }`. Le contrôleur racine est enregistré.
+  - La configuration HTTP (proxy, compression, validation, format des erreurs) est extraite dans `configureApp` (`src/app.setup.ts`), commune à `main.ts` et aux tests e2e.
+  - Les tests e2e (`npm run test:e2e`) démarrent toute l'API sur une base jetable. Ils refusent de tourner si `DB_NAME` ne contient pas « e2e » ou « test », ce qui empêche un `.env` de prod d'être utilisé par erreur.
+
 ## Non publié : suivre un programme et suggestions de séance
 
 - **`POST /programmes/:id/start`** commence un de mes programmes (migration réversible `AddActiveProgrammes`, table `active_programmes`). Un seul programme est suivi à la fois : en démarrer un autre le remplace. `startDate` (`AAAA-MM-JJ`) est le jour 1, aujourd'hui en UTC par défaut. Le suivi disparaît avec le programme ou le compte.

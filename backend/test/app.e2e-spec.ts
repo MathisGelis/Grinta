@@ -1,25 +1,25 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { createE2eApp, http } from './e2e-utils';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+describe('Health (e2e)', () => {
+  let app: NestExpressApplication;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+  beforeAll(async () => {
+    app = await createE2eApp();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
+  afterAll(() => app.close());
+
+  it('GET / answers 200 without a token', () =>
+    http(app).get('/').expect(200).expect({ status: 'ok' }));
+
+  it('GET /health checks the database', () =>
+    http(app)
+      .get('/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect({ status: 'ok', database: 'ok' }));
+
+  it('is never rate limited', async () => {
+    for (let i = 0; i < 70; i++) await http(app).get('/health').expect(200);
   });
 });

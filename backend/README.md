@@ -50,8 +50,11 @@ $ npm run start:prod
 # unit tests
 $ npm run test
 
-# e2e tests
-$ npm run test:e2e
+# e2e tests: the whole API on a disposable Postgres database, whose name
+# must contain "e2e" or "test" (the tests refuse to run otherwise).
+# Migrations run at startup.
+$ createdb grinta_e2e
+$ DB_HOST=localhost DB_NAME=grinta_e2e DB_SSL=false npm run test:e2e
 
 # test coverage
 $ npm run test:cov
