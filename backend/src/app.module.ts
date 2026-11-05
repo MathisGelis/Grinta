@@ -10,6 +10,7 @@ import { ExerciseModule } from './exercise/exercise.module';
 import { WorkoutsModule } from './workouts/workouts.module';
 import { ProgrammesModule } from './programmes/programmes.module';
 import { WorkoutTemplatesModule } from './workout-templates/workout-templates.module';
+import { WorkoutImportModule } from './workout-import/workout-import.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { PostsModule } from './posts/posts.module';
 import { StatsModule } from './stats/stats.module';
@@ -31,6 +32,7 @@ import { MailModule } from './mail/mail.module';
     WorkoutsModule,
     ProgrammesModule,
     WorkoutTemplatesModule,
+    WorkoutImportModule,
     ConnectionsModule,
     PostsModule,
     StatsModule,

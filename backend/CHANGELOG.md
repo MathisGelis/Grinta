@@ -17,6 +17,7 @@
   - Le profil public renvoie `createdAt`.
 - **Onboarding** : champs facultatifs `level`, `trainingDaysPerWeek` (1 à 7) et `trainingLocation` sur l'utilisateur, privés. Migration `1792605872873-AddUserTrainingProfile` (réversible).
 - **Modèles de séances** : `GET /workouts/templates` (7 modèles classés selon l'objectif, le niveau, les jours et le lieu) et `POST /workouts/templates/:key/use` (séances planifiées et programme non démarré).
+- **Import de notes** : `POST /workouts/import` lit des notes FR/EN (« dc 45x8 », « tractions 3x10 », jours « Lundi », « Jour 2 ») et renvoie un brouillon de séances, et de programme s'il y a des jours, avec les lignes non comprises. Rien n'est enregistré ; texte limité à 10 000 caractères et 300 lignes.
 
 ## Non publié : corrections de l'audit front
 

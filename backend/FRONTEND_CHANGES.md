@@ -834,3 +834,55 @@ Côté app : sur le profil d'un autre, appeler les mêmes routes avec `?userId=<
 - Crée une séance planifiée par séance du modèle (charges à 0, à remplir par l'utilisateur ; durées des exercices chronométrés dans la `description`).
 - Crée aussi un programme de 7 jours (repos compris), **non démarré** : l'app le lance avec `POST /programmes/:id/start`.
 - Renvoie le programme avec ses jours et leurs séances. 404 si la clé est inconnue.
+
+### 9.4 Import d'un programme depuis des notes
+
+**`POST /workouts/import`** `{ text }` (10 000 caractères au plus) lit des notes en français ou en anglais et renvoie un **brouillon, rien n'est enregistré**. Lecture par règles fixes, sans IA.
+
+Ce que le serveur comprend :
+- **Exercices** : abréviations et noms courants, FR et EN (`dc`, `di`, `dm`, `sdt`, `rdl`, `tractions`, `pompes`, `dips`, `rowing`, `tirage vertical`, `curl`, `presse`, `fentes`, `mollets`, `gainage`, `vélo`, `rameur`…), le nom exact du catalogue, ou le nom le plus proche.
+- **Variantes** : `haltères`, `barre`, `poulie`, `machine`, `smith`, `incliné`, `assis`, `pdc`, `lesté`, `corde`… (« dc haltères » donne Bench Press (Dumbbell)).
+- **Séries** :
+  - `3x10` : 3 séries de 10 ;
+  - `45x8` ou `45kg x 8` : 1 série de 8 à 45 kg (le premier nombre est une charge s'il dépasse 12 ou porte une unité) ;
+  - `4x8 à 60kg`, `4x8 60kg`, `60kg 4x8`, `4x8 @60`, `4x8x60`, `140x5x3` ;
+  - `3 séries de 12`, `3 sets of 12`, `12/10/8`, `3x8-10` (8 retenu), `20 reps` ;
+  - `22,5kg`, `225 lbs` (converti en kg) ;
+  - `3x45s`, `20 min` (exercices chronométrés), `repos 90s`, `rest 2min`.
+- Une ligne de séries seule (`45x8`) s'ajoute à l'exercice de la ligne du dessus (« Développé couché : » puis une série par ligne).
+- **Jours** : `Lundi`…`Dimanche` (FR/EN), `Jour 2`, `J2`, `Day 2`, `Séance A`, `Push`, `Pecs / triceps`, une ligne finissant par `:` ; `repos`, `rest`, `off` font un jour de repos. Avec au moins deux jours, le brouillon contient aussi un programme.
+
+Réponse :
+
+```json
+{
+  "workouts": [
+    {
+      "title": "Push",
+      "exercises": [
+        {
+          "exerciseId": "…",
+          "name": "Bench Press (Barbell)",
+          "sets": [{ "reps": 8, "weight": 60 }],
+          "durationSeconds": null,
+          "plannedRestSeconds": null,
+          "line": 2
+        }
+      ]
+    }
+  ],
+  "programme": {
+    "title": "Programme importé",
+    "days": [{ "dayNumber": 1, "label": "Lundi : Push", "workoutIndex": 0 }]
+  },
+  "unrecognized": [{ "line": 5, "text": "blabla", "reason": "unknown_exercise" }]
+}
+```
+
+- `programme` vaut `null` quand les notes n'ont pas de jours. Avec des jours de semaine, les 7 jours sont listés et ceux que les notes omettent sont des repos.
+- `workoutIndex` pointe dans `workouts` ; `null` est un repos.
+- `reason` vaut `unknown_exercise` (exercice inconnu) ou `no_exercise` (des séries sans exercice au-dessus).
+
+Pour enregistrer après validation :
+1. `POST /workouts/planned` pour chaque séance, en n'envoyant que `exerciseId`, `sets` et `plannedRestSeconds` par exercice (les champs en trop sont refusés) ;
+2. puis, s'il y a un programme, `POST /programmes` avec les `workoutId` obtenus.
