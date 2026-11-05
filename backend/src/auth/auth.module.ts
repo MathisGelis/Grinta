@@ -13,11 +13,19 @@ import { PasswordResetService } from './password-reset.service';
 import { PasswordStateService } from './password-state.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JWT_ALGORITHM, JWT_EXPIRES_IN, readJwtSecret } from './auth.constants';
+import { SocialAuthController } from './social/social-auth.controller';
+import { SocialAuthService } from './social/social-auth.service';
+import {
+  remoteKeySets,
+  SOCIAL_KEY_SETS,
+  SocialTokenVerifier,
+} from './social/social-token.verifier';
+import { UserIdentity } from './social/user-identity.entity';
 
 @Module({
   imports: [
     UsersModule,
-    TypeOrmModule.forFeature([User, PasswordResetToken]),
+    TypeOrmModule.forFeature([User, PasswordResetToken, UserIdentity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -34,8 +42,11 @@ import { JWT_ALGORITHM, JWT_EXPIRES_IN, readJwtSecret } from './auth.constants';
     JwtStrategy,
     PasswordResetService,
     PasswordStateService,
+    SocialAuthService,
+    SocialTokenVerifier,
+    { provide: SOCIAL_KEY_SETS, useFactory: remoteKeySets },
   ],
-  controllers: [AuthController, PasswordController],
+  controllers: [AuthController, PasswordController, SocialAuthController],
   exports: [AuthService],
 })
 export class AuthModule {}

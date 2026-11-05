@@ -774,7 +774,7 @@ Trois routes :
   - Google : identifiants OAuth iOS et Android.
 - Il faut aussi décider comment rattacher un compte existant (même e-mail) ou un e-mail masqué par Apple.
 - Rappel : si l'app propose Google, l'App Store impose aussi « Se connecter avec Apple ».
-- **Recommandation** : retirer les deux boutons pour l'instant, puis les ajouter ensemble quand le produit l'aura décidé.
+- **Mis à jour** : les routes existent désormais, voir la section 9.5.
 
 
 ---
@@ -886,3 +886,30 @@ Réponse :
 Pour enregistrer après validation :
 1. `POST /workouts/planned` pour chaque séance, en n'envoyant que `exerciseId`, `sets` et `plannedRestSeconds` par exercice (les champs en trop sont refusés) ;
 2. puis, s'il y a un programme, `POST /programmes` avec les `workoutId` obtenus.
+
+### 9.5 Connexion Apple et Google
+
+Deux routes publiques renvoient `{ access_token, isNewUser }`, le même jeton qu'à `POST /auth/login` :
+
+- **`POST /auth/apple`** `{ identityToken, fullName? }`
+  - `identityToken` : celui de Sign in with Apple.
+  - `fullName` : `{ givenName, familyName }`. Apple ne le donne qu'à la première connexion : l'envoyer à ce moment-là, il devient le nom affiché.
+- **`POST /auth/google`** `{ idToken }` : celui de Google Sign-In.
+
+Comportement :
+1. Compte Apple ou Google déjà relié : connexion à ce compte.
+2. Sinon, un compte Grinta a la même adresse e-mail, vérifiée par Apple ou Google : il est relié automatiquement, puis connecté.
+3. Sinon, un compte est créé : pseudo généré à partir du nom (ou du début de l'e-mail), mot de passe aléatoire. « Mot de passe oublié » permet d'en définir un.
+
+`isNewUser: true` : afficher l'onboarding (puis `PATCH /users/:id` pour le pseudo, l'objectif, le niveau, etc.).
+
+Erreurs :
+
+| Statut | `code` | Cas |
+|---|---|---|
+| 401 | `SOCIAL_TOKEN_INVALID` | Signature, émetteur, audience ou expiration invalides |
+| 401 | `SOCIAL_EMAIL_NOT_VERIFIED` | Compte inconnu et e-mail absent ou non vérifié |
+| 503 | `SOCIAL_LOGIN_NOT_CONFIGURED` | Identifiants client absents côté serveur |
+| 429 | `TOO_MANY_LOGIN_ATTEMPTS` | 30 essais par 15 min et par adresse IP |
+
+**À faire avant la mise en production** : renseigner `APPLE_CLIENT_IDS` (bundle id de l'app) et `GOOGLE_CLIENT_IDS` (identifiants OAuth iOS / Android / web) sur le serveur. Sans eux, les routes répondent 503 et l'app peut masquer les boutons.

@@ -75,6 +75,17 @@ Every figure leaves the API rounded by one rule per kind (`src/common/utils/numb
 
 With `log`, emails are written to the log in development, reset links included. In production (`NODE_ENV=production`) the log transport writes only a warning, so links never end up in the process log.
 
+## Sign in with Apple and Google
+
+`POST /auth/apple` `{ identityToken, fullName? }` and `POST /auth/google` `{ idToken }` check the token signature against the provider's published keys (JWKS), its issuer, expiry and audience.
+
+| Variable | Role |
+| --- | --- |
+| `APPLE_CLIENT_IDS` | Accepted audiences, comma-separated: the app bundle id (and the Services ID if the web uses it) |
+| `GOOGLE_CLIENT_IDS` | Accepted audiences, comma-separated: the iOS, Android and web OAuth client ids |
+
+A provider without client ids answers `503 SOCIAL_LOGIN_NOT_CONFIGURED`. The linked accounts live in `user_identities` (provider + `sub`).
+
 ## Validation errors
 
 A body or query that fails validation gets a `400` with a stable code per error, for the app to translate:

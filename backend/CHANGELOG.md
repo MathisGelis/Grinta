@@ -18,6 +18,12 @@
 - **Onboarding** : champs facultatifs `level`, `trainingDaysPerWeek` (1 à 7) et `trainingLocation` sur l'utilisateur, privés. Migration `1792605872873-AddUserTrainingProfile` (réversible).
 - **Modèles de séances** : `GET /workouts/templates` (7 modèles classés selon l'objectif, le niveau, les jours et le lieu) et `POST /workouts/templates/:key/use` (séances planifiées et programme non démarré).
 - **Import de notes** : `POST /workouts/import` lit des notes FR/EN (« dc 45x8 », « tractions 3x10 », jours « Lundi », « Jour 2 ») et renvoie un brouillon de séances, et de programme s'il y a des jours, avec les lignes non comprises. Rien n'est enregistré ; texte limité à 10 000 caractères et 300 lignes.
+- **Connexion Apple et Google** (sécurité) : `POST /auth/apple` et `POST /auth/google`.
+  - Le jeton est vérifié côté serveur : signature RS256 avec les clés publiées par Apple et Google (JWKS), émetteur, expiration, et audience limitée à nos identifiants client (`APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS`). Sans eux, 503.
+  - Un compte existant n'est relié que si le fournisseur certifie l'e-mail (`email_verified`) ; sinon 401. Les comptes reliés sont identifiés par le `sub` du fournisseur (table `user_identities`, migration réversible `1792605872874-AddUserIdentities`), pas par l'e-mail.
+  - Un nouveau compte reçoit un mot de passe aléatoire haché (bcrypt), inutilisable tant que l'utilisateur n'en définit pas un.
+  - Les jetons ne sont jamais journalisés. Limite : 30 essais par 15 min et par adresse IP.
+  - Les deux routes sont ajoutées à la liste des routes publiques du test `auth-guard`.
 
 ## Non publié : corrections de l'audit front
 
