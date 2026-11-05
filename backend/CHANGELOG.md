@@ -11,6 +11,10 @@
   - Les dates étaient déjà homogènes (ISO 8601 UTC, jours `AAAA-MM-JJ`).
   - Un test e2e compare une même séance sur neuf routes.
   - Les erreurs de typage du test `auth-guard` sont corrigées.
+- **Stats d'un autre utilisateur** : `?userId=` sur `/stats/summary`, `/stats/muscle-distribution`, `/stats/balance`, `/stats/consistency` et `/stats/muscle-frequency`.
+  - Sécurité : même visibilité que les posts du profil (public, ou suivi), sinon 404 pour qu'un id ne puisse pas être sondé.
+  - Seules les séances publiées comptent, et les calories utilisent 70 kg : le poids, privé, ne fuit pas par les calories.
+  - Le profil public renvoie `createdAt`.
 
 ## Non publié : corrections de l'audit front
 

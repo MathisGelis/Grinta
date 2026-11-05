@@ -4,6 +4,7 @@ import {
   Between,
   FindOptionsSelect,
   MoreThanOrEqual,
+  Raw,
   Repository,
   In,
 } from 'typeorm';
@@ -24,7 +25,12 @@ import {
 } from './constants/muscle-groups';
 import { AdherenceQueryDto } from './dto/adherence-query.dto';
 import { HeatmapQueryDto } from './dto/heatmap-query.dto';
-import { PeriodQueryDto } from './dto/period-query.dto';
+import {
+  PeriodQueryDto,
+  StatsSubjectQueryDto,
+  SubjectPeriodQueryDto,
+} from './dto/period-query.dto';
+import { StatsSubject } from './stats-subject';
 import {
   ProgressionPeriod,
   ProgressionQueryDto,
@@ -260,7 +266,7 @@ export class StatsService {
   ) {
     const range = resolvePeriodRange(period, date);
     const [workouts, planned] = await Promise.all([
-      this.fetchWorkoutsInRange(user.id, range),
+      this.fetchWorkoutsInRange(ownStats(user.id), range),
       this.plannedRepo.find({
         where: { user: { id: user.id } },
         relations: ['exercises'],
@@ -311,9 +317,10 @@ export class StatsService {
     };
   }
 
-  async getMuscleDistribution(user: AuthUser, query: PeriodQueryDto) {
+  async getMuscleDistribution(user: AuthUser, query: SubjectPeriodQueryDto) {
+    const subject = await this.resolveSubject(user, query.userId);
     const range = resolvePeriodRange(query.period, query.date);
-    const workouts = await this.fetchWorkoutsInRange(user.id, range);
+    const workouts = await this.fetchWorkoutsInRange(subject, range);
     const { perMuscle, total } =
       this.calculator.effectiveSetsByMuscle(workouts);
     const distribution = [...perMuscle.entries()]
@@ -334,13 +341,14 @@ export class StatsService {
     };
   }
 
-  async getPeriodSummary(user: AuthUser, query: PeriodQueryDto) {
+  async getPeriodSummary(user: AuthUser, query: SubjectPeriodQueryDto) {
+    const subject = await this.resolveSubject(user, query.userId);
     const current = resolvePeriodRange(query.period, query.date);
     const previous = previousPeriodRange(query.period, query.date);
     const [weightKg, currentWorkouts, previousWorkouts] = await Promise.all([
-      this.resolveBodyWeight(user.id),
-      this.fetchWorkoutsInRange(user.id, current),
-      this.fetchWorkoutsInRange(user.id, previous),
+      this.subjectBodyWeight(subject),
+      this.fetchWorkoutsInRange(subject, current),
+      this.fetchWorkoutsInRange(subject, previous),
     ]);
 
     const currentTotals = this.calculator.aggregateTotals(
@@ -381,11 +389,12 @@ export class StatsService {
     };
   }
 
-  async getConsistency(user: AuthUser) {
+  async getConsistency(user: AuthUser, query: StatsSubjectQueryDto = {}) {
+    const subject = await this.resolveSubject(user, query.userId);
     const since = startOfDay(addDays(new Date(), -365));
     const workouts = await this.completedRepo.find({
       where: {
-        user: { id: user.id },
+        ...this.subjectWhere(subject),
         completionDate: MoreThanOrEqual(since),
       },
       select: ['id', 'completionDate'],
@@ -441,14 +450,15 @@ export class StatsService {
     };
   }
 
-  async getMuscleFrequency(user: AuthUser) {
+  async getMuscleFrequency(user: AuthUser, query: StatsSubjectQueryDto = {}) {
+    const subject = await this.resolveSubject(user, query.userId);
     const now = new Date();
     const since = startOfDay(addDays(now, -90));
     const sevenDaysAgo = addDays(now, -7);
     const thirtyDaysAgo = addDays(now, -30);
     const workouts = await this.completedRepo.find({
       where: {
-        user: { id: user.id },
+        ...this.subjectWhere(subject),
         completionDate: MoreThanOrEqual(since),
       },
       relations: ['exercises', 'exercises.exercise'],
@@ -518,9 +528,10 @@ export class StatsService {
     return { generatedAt: now, muscles };
   }
 
-  async getTrainingBalance(user: AuthUser, query: PeriodQueryDto) {
+  async getTrainingBalance(user: AuthUser, query: SubjectPeriodQueryDto) {
+    const subject = await this.resolveSubject(user, query.userId);
     const range = resolvePeriodRange(query.period, query.date);
-    const workouts = await this.fetchWorkoutsInRange(user.id, range);
+    const workouts = await this.fetchWorkoutsInRange(subject, range);
     const { perMuscle, total } =
       this.calculator.effectiveSetsByMuscle(workouts);
     const categoryTotals = new Map<MuscleCategory, number>();
@@ -752,8 +763,8 @@ export class StatsService {
     const [weightKg, currentWorkouts, windowWorkouts, first] =
       await Promise.all([
         this.resolveBodyWeight(user.id),
-        this.fetchWorkoutsInRange(user.id, current),
-        this.fetchWorkoutsInRange(user.id, window),
+        this.fetchWorkoutsInRange(ownStats(user.id), current),
+        this.fetchWorkoutsInRange(ownStats(user.id), window),
         this.completedRepo
           .createQueryBuilder('w')
           .select('MIN(w."completionDate")', 'first')
@@ -877,7 +888,7 @@ export class StatsService {
   private async caloriesByDay(userId: string, year: number) {
     const [weightKg, workouts] = await Promise.all([
       this.resolveBodyWeight(userId),
-      this.fetchWorkoutsInRange(userId, {
+      this.fetchWorkoutsInRange(ownStats(userId), {
         start: new Date(year, 0, 1),
         end: new Date(year, 11, 31, 23, 59, 59, 999),
       }),
@@ -942,13 +953,56 @@ export class StatsService {
     return user?.weight ?? DEFAULT_BODY_WEIGHT_KG;
   }
 
+  /**
+   * Whose stats the caller reads: their own, or those of `targetId` when the
+   * caller may see that profile's posts (public profile, or followed). Any
+   * other case answers 404, like a private profile's posts, so an id cannot
+   * be probed.
+   */
+  async resolveSubject(
+    viewer: AuthUser,
+    targetId?: string,
+  ): Promise<StatsSubject> {
+    if (!targetId || targetId === viewer.id) return ownStats(viewer.id);
+
+    const [row] = await this.rows<{ visible: boolean }>(
+      `SELECT (u."isPublic" OR EXISTS (
+         SELECT 1 FROM connections c
+         WHERE c."followerId" = $2 AND c."followingId" = u.id
+       )) AS visible
+       FROM users u WHERE u.id = $1`,
+      [targetId, viewer.id],
+    );
+
+    if (!row?.visible) throw new NotFoundException('Utilisateur introuvable');
+    return { userId: targetId, publishedOnly: true };
+  }
+
+  private subjectWhere(subject: StatsSubject) {
+    return {
+      user: { id: subject.userId },
+      ...(subject.publishedOnly && {
+        id: Raw(
+          (id) => `EXISTS (SELECT 1 FROM posts p WHERE p."workoutId" = ${id})`,
+        ),
+      }),
+    };
+  }
+
+  // Another user's body weight is private: their calories use the default.
+  private subjectBodyWeight(subject: StatsSubject): Promise<number> {
+    return subject.publishedOnly
+      ? Promise.resolve(DEFAULT_BODY_WEIGHT_KG)
+      : this.resolveBodyWeight(subject.userId);
+  }
+
   private fetchWorkoutsInRange(
-    userId: string,
+    subject: StatsSubject,
     range: DateRange,
   ): Promise<CompletedWorkout[]> {
     return this.completedRepo.find({
       where: {
-        user: { id: userId },
+        ...this.subjectWhere(subject),
         completionDate: Between(range.start, range.end),
       },
       relations: ['exercises', 'exercises.exercise'],
@@ -956,6 +1010,11 @@ export class StatsService {
     });
   }
 }
+
+const ownStats = (userId: string): StatsSubject => ({
+  userId,
+  publishedOnly: false,
+});
 
 const BREAKDOWN_COLUMNS = {
   exercise_type: 'ex.exercise_type',

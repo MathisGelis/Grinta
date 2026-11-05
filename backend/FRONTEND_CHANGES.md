@@ -796,3 +796,17 @@ Chaque chiffre sort de l'API **déjà arrondi**, avec une règle par type de val
 - Une même séance a **les mêmes calories, le même volume et le même 1RM** sur toutes les routes : `/stats/workout/:id`, `/workouts/completed`, `/posts/:id/workout`, les feeds, `/exercises/:id/stats`, `/stats/records`, `/stats/summary` et la heatmap. Un test e2e le vérifie.
 - **Dates** : les horodatages sont en ISO 8601 UTC (`2026-11-05T18:05:00.000Z`) et les jours en `AAAA-MM-JJ` (heatmap, progression, `startedOn`, `birthDate`). C'était déjà le cas, sans exception : l'app doit simplement utiliser un seul formateur de dates.
 - Changements visibles : un 1RM de `77.08` devient `77.1`, un volume de `762.5` devient `763`.
+
+### 9.2 Profil et statistiques d'un autre utilisateur
+
+- `GET /users/:id/profile` renvoie en plus `createdAt` (date d'inscription, ISO 8601). Les infos privées (email, poids, taille, genre, objectif) restent réservées à leur propriétaire.
+- Les routes de l'onglet Stats acceptent un paramètre facultatif `userId` :
+  - `GET /stats/summary`, `/stats/muscle-distribution`, `/stats/balance` (avec `period`, `date`) ;
+  - `GET /stats/consistency`, `/stats/muscle-frequency`.
+- Visibilité identique aux posts du profil : son propre compte, un profil public, ou un profil privé que l'on suit. Sinon **404** (même réponse qu'un id inconnu). Un `userId` qui n'est pas un UUID donne **400**.
+- Pour un autre utilisateur :
+  - seules ses séances **publiées** (avec un post) comptent ;
+  - les calories utilisent le poids par défaut (**70 kg**), car son poids est privé.
+- Sans `userId` (ou avec son propre id), rien ne change.
+
+Côté app : sur le profil d'un autre, appeler les mêmes routes avec `?userId=<id>` et afficher l'onglet Stats seulement si `isPrivate` vaut `false`.

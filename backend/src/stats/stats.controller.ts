@@ -4,7 +4,11 @@ import { Auth } from '../auth/auth.decorators';
 import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { AdherenceQueryDto } from './dto/adherence-query.dto';
 import { HeatmapQueryDto } from './dto/heatmap-query.dto';
-import { PeriodQueryDto } from './dto/period-query.dto';
+import {
+  PeriodQueryDto,
+  StatsSubjectQueryDto,
+  SubjectPeriodQueryDto,
+} from './dto/period-query.dto';
 import { ProgressionQueryDto } from './dto/progression-query.dto';
 import {
   AdherenceDto,
@@ -50,20 +54,27 @@ export class StatsController {
   @Get('summary')
   @ApiOperation({
     summary: 'Weekly/monthly training summary',
+    description: 'Pass `userId` to read the stats of another visible user.',
   })
+  @ApiResponse({ status: 404, description: 'User not found or not visible' })
   @ApiResponse({
     status: 200,
     description: 'Summary returned',
     type: PeriodSummaryDto,
   })
-  getSummary(@Req() req: AuthenticatedRequest, @Query() query: PeriodQueryDto) {
+  getSummary(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: SubjectPeriodQueryDto,
+  ) {
     return this.statsService.getPeriodSummary(req.user, query);
   }
 
   @Get('muscle-distribution')
   @ApiOperation({
     summary: 'Weekly/monthly muscle distribution',
+    description: 'Pass `userId` to read the stats of another visible user.',
   })
+  @ApiResponse({ status: 404, description: 'User not found or not visible' })
   @ApiResponse({
     status: 200,
     description: 'Distribution returned',
@@ -71,7 +82,7 @@ export class StatsController {
   })
   getMuscleDistribution(
     @Req() req: AuthenticatedRequest,
-    @Query() query: PeriodQueryDto,
+    @Query() query: SubjectPeriodQueryDto,
   ) {
     return this.statsService.getMuscleDistribution(req.user, query);
   }
@@ -79,40 +90,55 @@ export class StatsController {
   @Get('balance')
   @ApiOperation({
     summary: 'Training balance (push/pull, upper/lower)',
+    description: 'Pass `userId` to read the stats of another visible user.',
   })
+  @ApiResponse({ status: 404, description: 'User not found or not visible' })
   @ApiResponse({
     status: 200,
     description: 'Balance returned',
     type: TrainingBalanceDto,
   })
-  getBalance(@Req() req: AuthenticatedRequest, @Query() query: PeriodQueryDto) {
+  getBalance(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: SubjectPeriodQueryDto,
+  ) {
     return this.statsService.getTrainingBalance(req.user, query);
   }
 
   @Get('consistency')
   @ApiOperation({
     summary: 'Consistency and streaks',
+    description: 'Pass `userId` to read the stats of another visible user.',
   })
+  @ApiResponse({ status: 404, description: 'User not found or not visible' })
   @ApiResponse({
     status: 200,
     description: 'Consistency returned',
     type: ConsistencyDto,
   })
-  getConsistency(@Req() req: AuthenticatedRequest) {
-    return this.statsService.getConsistency(req.user);
+  getConsistency(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: StatsSubjectQueryDto,
+  ) {
+    return this.statsService.getConsistency(req.user, query);
   }
 
   @Get('muscle-frequency')
   @ApiOperation({
     summary: 'Muscle training frequency and recovery',
+    description: 'Pass `userId` to read the stats of another visible user.',
   })
+  @ApiResponse({ status: 404, description: 'User not found or not visible' })
   @ApiResponse({
     status: 200,
     description: 'Frequency returned',
     type: MuscleFrequencyDto,
   })
-  getMuscleFrequency(@Req() req: AuthenticatedRequest) {
-    return this.statsService.getMuscleFrequency(req.user);
+  getMuscleFrequency(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: StatsSubjectQueryDto,
+  ) {
+    return this.statsService.getMuscleFrequency(req.user, query);
   }
 
   @Get('progression')

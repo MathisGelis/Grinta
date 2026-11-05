@@ -269,6 +269,7 @@ export class UsersService {
       uniqueName: user.uniqueName,
       avatarUrl: user.avatarUrl ?? null,
       avatarThumbnailUrl: user.avatarThumbnailUrl ?? null,
+      createdAt: user.createdAt,
       ...counts,
       followStatus,
       posts,
