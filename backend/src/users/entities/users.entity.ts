@@ -3,6 +3,8 @@ import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import { Gender } from '../enums/gender.enum';
 import { Goal } from '../enums/goal.enum';
+import { TrainingLevel } from '../enums/level.enum';
+import { TrainingLocation } from '../enums/training-location.enum';
 
 @Entity('users')
 @Unique(['email'])
@@ -55,6 +57,18 @@ export class User {
   @Column({ type: 'enum', enum: Goal, nullable: true })
   @ApiProperty({ enum: Goal, required: false, nullable: true })
   goal?: Goal | null;
+
+  @Column({ type: 'enum', enum: TrainingLevel, nullable: true })
+  @ApiProperty({ enum: TrainingLevel, required: false, nullable: true })
+  level?: TrainingLevel | null;
+
+  @Column({ type: 'smallint', nullable: true })
+  @ApiProperty({ minimum: 1, maximum: 7, required: false, nullable: true })
+  trainingDaysPerWeek?: number | null;
+
+  @Column({ type: 'enum', enum: TrainingLocation, nullable: true })
+  @ApiProperty({ enum: TrainingLocation, required: false, nullable: true })
+  trainingLocation?: TrainingLocation | null;
 
   /** Set through PUT /users/me/avatar only, never through PATCH /users/:id. */
   @Column({ type: 'text', nullable: true })

@@ -15,6 +15,8 @@
   - Sécurité : même visibilité que les posts du profil (public, ou suivi), sinon 404 pour qu'un id ne puisse pas être sondé.
   - Seules les séances publiées comptent, et les calories utilisent 70 kg : le poids, privé, ne fuit pas par les calories.
   - Le profil public renvoie `createdAt`.
+- **Onboarding** : champs facultatifs `level`, `trainingDaysPerWeek` (1 à 7) et `trainingLocation` sur l'utilisateur, privés. Migration `1792605872873-AddUserTrainingProfile` (réversible).
+- **Modèles de séances** : `GET /workouts/templates` (7 modèles classés selon l'objectif, le niveau, les jours et le lieu) et `POST /workouts/templates/:key/use` (séances planifiées et programme non démarré).
 
 ## Non publié : corrections de l'audit front
 

@@ -810,3 +810,27 @@ Chaque chiffre sort de l'API **déjà arrondi**, avec une règle par type de val
 - Sans `userId` (ou avec son propre id), rien ne change.
 
 Côté app : sur le profil d'un autre, appeler les mêmes routes avec `?userId=<id>` et afficher l'onglet Stats seulement si `isPrivate` vaut `false`.
+
+### 9.3 Onboarding et modèles de séances
+
+**Nouveaux champs d'onboarding** (facultatifs, privés comme `gender` et `goal`), via `PATCH /users/:id` :
+
+| Champ | Valeurs |
+|---|---|
+| `level` | `beginner`, `intermediate`, `advanced` |
+| `trainingDaysPerWeek` | entier de 1 à 7 |
+| `trainingLocation` | `gym`, `home` |
+
+`null` efface la valeur. Ils ne sont visibles que par leur propriétaire (`GET /users/:id`).
+
+**`GET /workouts/templates`** : la liste des modèles, le plus adapté en premier.
+- Le classement utilise l'objectif, le niveau, les jours par semaine et le lieu. Chaque critère vaut par défaut la réponse enregistrée sur le profil, et peut être forcé en query : `goal`, `level`, `daysPerWeek`, `location` (pratique pendant l'onboarding, avant l'enregistrement).
+- Réponse : `{ criteria, templates[] }`. Chaque modèle contient `key`, `title`, `description`, `goals`, `levels`, `daysPerWeek`, `location`, `recommended` (les 2 meilleurs), `workouts[]` et `week[]`.
+  - Un `workout` contient `key`, `title`, `estimatedDurationMinutes` et `exercises[]` (`exerciseId`, `name`, `sets` avec `weight: 0`, `plannedRestSeconds`, `durationSeconds` pour les exercices chronométrés, sinon `null`).
+  - `week[]` contient 7 jours `{ dayNumber, workoutKey | null }`, lundi en premier, `null` pour le repos.
+- Modèles : Push Pull Legs (6 j), Haut / Bas (4 j), Full body (3 j), Débutant (2 j), Maison sans matériel (3 j), Renforcement + cardio (4 j), Mobilité et souplesse (3 j).
+
+**`POST /workouts/templates/:key/use`** : copie le modèle dans le compte.
+- Crée une séance planifiée par séance du modèle (charges à 0, à remplir par l'utilisateur ; durées des exercices chronométrés dans la `description`).
+- Crée aussi un programme de 7 jours (repos compris), **non démarré** : l'app le lance avec `POST /programmes/:id/start`.
+- Renvoie le programme avec ses jours et leurs séances. 404 si la clé est inconnue.

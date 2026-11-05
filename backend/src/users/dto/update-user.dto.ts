@@ -8,9 +8,14 @@ import {
   IsDateString,
   Matches,
   IsEnum,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import { Gender } from '../enums/gender.enum';
 import { Goal } from '../enums/goal.enum';
+import { TrainingLevel } from '../enums/level.enum';
+import { TrainingLocation } from '../enums/training-location.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { toLowerTrimmed } from 'src/common/utils/normalize';
@@ -80,4 +85,38 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(Goal)
   goal?: Goal | null;
+
+  @ApiProperty({
+    enum: TrainingLevel,
+    required: false,
+    nullable: true,
+    description: 'Private, null clears it',
+  })
+  @IsOptional()
+  @IsEnum(TrainingLevel)
+  level?: TrainingLevel | null;
+
+  @ApiProperty({
+    example: 3,
+    minimum: 1,
+    maximum: 7,
+    required: false,
+    nullable: true,
+    description: 'Private, null clears it',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(7)
+  trainingDaysPerWeek?: number | null;
+
+  @ApiProperty({
+    enum: TrainingLocation,
+    required: false,
+    nullable: true,
+    description: 'Private, null clears it',
+  })
+  @IsOptional()
+  @IsEnum(TrainingLocation)
+  trainingLocation?: TrainingLocation | null;
 }
