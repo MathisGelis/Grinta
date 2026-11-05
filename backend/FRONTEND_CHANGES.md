@@ -619,7 +619,7 @@ Une entrée par tâche de l'audit (B-xx).
 
 - `weight` accepte maintenant **jusqu'à 2 décimales**, de 0 à 1000 kg, dans les séances terminées et planifiées (création et modification). Exemples : `62.5`, `1.25`. Les `reps` restent entières.
 - 3 décimales, une charge négative ou une charge au-dessus de 1000 kg donnent un `400`.
-- Les charges sont relues telles quelles. Volume, 1RM, records, badges et stats sont calculés sans arrondi de la charge (résultats arrondis à 2 décimales).
+- Les charges sont relues telles quelles. Volume, 1RM, records, badges et stats sont calculés sur les charges exactes, puis arrondis selon les règles de la section 9 « Nombres cohérents ».
 - Côté app : autoriser la virgule et le point dans le champ de charge, et envoyer un nombre (pas une chaîne).
 
 ### B-02 Erreurs de validation structurées
@@ -775,3 +775,24 @@ Trois routes :
 - Il faut aussi décider comment rattacher un compte existant (même e-mail) ou un e-mail masqué par Apple.
 - Rappel : si l'app propose Google, l'App Store impose aussi « Se connecter avec Apple ».
 - **Recommandation** : retirer les deux boutons pour l'instant, puis les ajouter ensemble quand le produit l'aura décidé.
+
+
+---
+
+## 9. Deuxième lot (branche `feat/backend-v3`)
+
+### 9.1 Nombres cohérents : le serveur est la source de vérité
+
+Chaque chiffre sort de l'API **déjà arrondi**, avec une règle par type de valeur. L'app ne fait plus que formater (séparateur décimal, unité) : elle n'arrondit plus et ne recalcule plus.
+
+| Type de valeur | Règle | Exemples de champs |
+| --- | --- | --- |
+| Charge saisie ou soulevée | telle quelle, 2 décimales au plus | `weight`, `heaviestWeight`, `prWeight`, `lastWeight`, `bestSet.weight`, badge `heaviest_weight` |
+| Estimation ou moyenne | **1 décimale** | 1RM (`estimatedOneRepMax`, `bestEstimatedOneRepMax`, badge `best_estimated_1rm`), `averageWeightPerSet`, `averageVolumePerSet`, `averageWorkoutsPerWeek`, moyennes et `expectedByNow` des comparaisons |
+| Volume (reps × charge) | **entier** | `totalVolume`, `volume`, `bestSessionVolume`, badge `best_session_volume`, `fullDayLoad` |
+| Calories | **entier** | `estimatedCalories`, `calories`, `totalCalories` |
+| Pourcentage, ratio | 1 décimale, 2 décimales | inchangé |
+
+- Une même séance a **les mêmes calories, le même volume et le même 1RM** sur toutes les routes : `/stats/workout/:id`, `/workouts/completed`, `/posts/:id/workout`, les feeds, `/exercises/:id/stats`, `/stats/records`, `/stats/summary` et la heatmap. Un test e2e le vérifie.
+- **Dates** : les horodatages sont en ISO 8601 UTC (`2026-11-05T18:05:00.000Z`) et les jours en `AAAA-MM-JJ` (heatmap, progression, `startedOn`, `birthDate`). C'était déjà le cas, sans exception : l'app doit simplement utiliser un seul formateur de dates.
+- Changements visibles : un 1RM de `77.08` devient `77.1`, un volume de `762.5` devient `763`.

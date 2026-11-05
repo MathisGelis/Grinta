@@ -6,12 +6,13 @@ import {
   ExerciseRecords,
 } from '../exercise/exercise-stats.service';
 import { compareToRealLife } from '../common/utils/real-life-comparison';
-import { percentChange, round } from '../stats/utils/stats.util';
+import { percentChange } from '../stats/utils/stats.util';
 import { BadgeDto } from './dto/badge.dto';
 import { ListBadgesQueryDto } from './dto/list-badges-query.dto';
 import { Badge } from './entities/badge.entity';
 import { BADGE_UNIT, BadgeType } from './enums/badge-type.enum';
 import { detectPersonalRecords } from './utils/personal-records.util';
+import { roundBadgeValue } from './utils/badge-rounding';
 
 const DEFAULT_LIMIT = 50;
 
@@ -117,9 +118,9 @@ function toDto(badge: Badge, workoutId: string): BadgeDto {
     exercise: { id: badge.exercise.id, name: badge.exercise.name },
     workoutId,
     unit: BADGE_UNIT[badge.type],
-    value: badge.value,
-    previousValue: badge.previousValue,
-    improvement: round(badge.value - badge.previousValue),
+    value: roundBadgeValue(badge.type, badge.value),
+    previousValue: roundBadgeValue(badge.type, badge.previousValue),
+    improvement: roundBadgeValue(badge.type, badge.value - badge.previousValue),
     improvementPct: percentChange(badge.value, badge.previousValue),
     weight: badge.weight,
     reps: badge.reps,

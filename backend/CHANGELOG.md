@@ -1,5 +1,17 @@
 # Changelog backend
 
+## Non publié : deuxième lot de l'audit front
+
+- **Nombres cohérents** : une règle d'arrondi par type de valeur, appliquée à la sortie seulement (`src/common/utils/numbers.ts`).
+  - Charges telles que saisies (2 décimales au plus).
+  - 1RM et moyennes à 1 décimale.
+  - Volumes et calories entiers.
+  - Les totaux d'une séance (volume, calories) sont calculés sur les valeurs exactes et non sur la somme des exercices arrondis, si bien qu'une séance a les mêmes chiffres partout.
+  - Les badges sont arrondis selon leur type (`roundBadgeValue`), aussi dans le fil des groupes.
+  - Les dates étaient déjà homogènes (ISO 8601 UTC, jours `AAAA-MM-JJ`).
+  - Un test e2e compare une même séance sur neuf routes.
+  - Les erreurs de typage du test `auth-guard` sont corrigées.
+
 ## Non publié : corrections de l'audit front
 
 - **B-04** :

@@ -12,6 +12,7 @@ import { PostsService } from '../posts/posts.service';
 import { GroupInvitation } from './entities/group-invitation.entity';
 import { GroupMember } from './entities/group-member.entity';
 import { Group, GROUP_MAX_MEMBERS } from './entities/group.entity';
+import { roundBadgeValue } from '../badges/utils/badge-rounding';
 
 const DEFAULT_ACTIVITY_LIMIT = 20;
 
@@ -429,7 +430,7 @@ export class GroupsService {
         .map((r) => ({
           exercise: { id: r.exerciseId, name: r.exerciseName },
           type: r.type,
-          value: r.value,
+          value: roundBadgeValue(r.type, r.value),
           unit: BADGE_UNIT[r.type],
         })),
     }));

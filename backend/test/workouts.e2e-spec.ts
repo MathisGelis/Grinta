@@ -59,10 +59,11 @@ describe('Workouts with decimal weights (e2e)', () => {
       .auth(user.token, { type: 'bearer' })
       .expect(200);
 
-    expect(stats.body).toMatchObject({ totalVolume: 762.5, totalReps: 12 });
+    // Loads as entered; volume whole, 1RM with 1 decimal (common/utils/numbers).
+    expect(stats.body).toMatchObject({ totalVolume: 763, totalReps: 12 });
     expect((stats.body as { exercises: object[] }).exercises[0]).toMatchObject({
       heaviestWeight: 65,
-      estimatedOneRepMax: 77.08,
+      estimatedOneRepMax: 77.1,
     });
 
     const exerciseStats = await http(app)
@@ -72,8 +73,8 @@ describe('Workouts with decimal weights (e2e)', () => {
 
     expect(exerciseStats.body).toMatchObject({
       prWeight: 65,
-      bestEstimatedOneRepMax: 77.08,
-      totalVolume: 762.5,
+      bestEstimatedOneRepMax: 77.1,
+      totalVolume: 763,
     });
   });
 

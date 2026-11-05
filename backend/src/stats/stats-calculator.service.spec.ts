@@ -42,11 +42,11 @@ describe('progression', () => {
       ProgressionMetric.ONE_REP_MAX,
     );
 
-    // 60x10 = 80, 70x8 = 88.67, 80x3 = 88 -> the 70x8 set wins
-    expect(day1.value).toBe(88.67);
+    // 60x10 = 80, 70x8 = 88.67, 80x3 = 88 -> the 70x8 set wins (88.7)
+    expect(day1.value).toBe(88.7);
     expect(day1.bestSet).toEqual({ reps: 8, weight: 70 });
-    // 100x5 = 116.67
-    expect(day2.value).toBe(116.67);
+    // 100x5 = 116.67, returned with 1 decimal
+    expect(day2.value).toBe(116.7);
   });
 
   it('summarises an empty series without inventing numbers', () => {
@@ -156,7 +156,7 @@ describe('exerciseRecords', () => {
 
     expect(records.map((r) => r.exerciseId)).toEqual(['squat', 'bench']);
     expect(records[0].bestSessionVolume).toEqual({
-      value: 4200.46,
+      value: 4200,
       workoutId: 'w9',
       achievedAt: date('2026-01-12'),
     });
@@ -434,7 +434,7 @@ describe('breakdownSlices', () => {
         type: 'weight_reps',
         exercises: 5,
         sets: 30,
-        volume: 12345.68,
+        volume: 12346,
         percentageOfSets: 75,
       },
       {

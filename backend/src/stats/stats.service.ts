@@ -65,6 +65,11 @@ import {
   startOfWeek,
   sum,
 } from './utils/stats.util';
+import {
+  roundCalories,
+  roundEstimate,
+  roundVolume,
+} from '../common/utils/numbers';
 
 /**
  * Columns the calculator reads. The workouts are loaded with one join row per
@@ -129,13 +134,13 @@ export class StatsService {
     ]);
     const { exercises, totalSets, totalReps, totalVolume, estimatedCalories } =
       this.workoutTotals(workout, weightKg);
-    const fullDayLoad = round(
+    const fullDayLoad = roundVolume(
       dayWorkouts.reduce((acc, w) => acc + this.calculator.workoutVolume(w), 0),
     );
 
     const allSets = workout.exercises.flatMap((e) => e.sets ?? []);
     const averageWeightPerSet = allSets.length
-      ? round(sum(allSets, (s) => s.weight) / allSets.length)
+      ? roundEstimate(sum(allSets, (s) => s.weight) / allSets.length)
       : 0;
 
     return {
@@ -152,7 +157,9 @@ export class StatsService {
       workoutsCompletedThatDay: dayWorkouts.length,
       numberOfExercises: workout.exercises.length,
       averageWeightPerSet,
-      averageVolumePerSet: totalSets ? round(totalVolume / totalSets) : 0,
+      averageVolumePerSet: totalSets
+        ? roundEstimate(totalVolume / totalSets)
+        : 0,
       musclesWorked: this.calculator.collectMuscles(workout.exercises),
       exercises,
     };
@@ -168,14 +175,18 @@ export class StatsService {
     const exercises = workout.exercises.map((cwe, i) =>
       this.calculator.computeExerciseStats(cwe, durations[i], bodyWeightKg),
     );
-    const totalVolume = round(sum(exercises, (e) => e.volume));
+    // Totals from the exact values, not from the rounded ones of each
+    // exercise, so a workout has the same calories wherever they show.
+    const totalVolume = roundVolume(this.calculator.workoutVolume(workout));
 
     return {
       exercises,
       totalSets: sum(exercises, (e) => e.sets),
       totalReps: sum(exercises, (e) => e.reps),
       totalVolume,
-      estimatedCalories: round(sum(exercises, (e) => e.estimatedCalories)),
+      estimatedCalories: roundCalories(
+        this.calculator.workoutCalories(workout, bodyWeightKg),
+      ),
     };
   }
 
@@ -416,9 +427,8 @@ export class StatsService {
 
       weeklyActivity.push({ weekStart, workoutCount: count });
     }
-    const averageWorkoutsPerWeek = round(
+    const averageWorkoutsPerWeek = roundEstimate(
       sum(weeklyActivity, (w) => w.workoutCount) / 12,
-      1,
     );
 
     return {
@@ -687,7 +697,10 @@ export class StatsService {
         longestWorkout: longest[0] ?? null,
         highestVolumeWorkout:
           volumeRecord && Number(volumeRecord.value) > 0
-            ? { ...volumeRecord, value: round(Number(volumeRecord.value)) }
+            ? {
+                ...volumeRecord,
+                value: roundVolume(Number(volumeRecord.value)),
+              }
             : null,
         longestStreakDays: this.calculator.longestStreak(dayKeys),
         totalTrainingDays: dayKeys.length,
@@ -848,7 +861,7 @@ export class StatsService {
       totalWorkouts: rows.reduce((acc, r) => acc + r.workouts, 0),
       activeDays: rows.length,
       totalDurationSeconds: rows.reduce((acc, r) => acc + r.durationSeconds, 0),
-      totalCalories: round(sum(days, (d) => d.calories)),
+      totalCalories: roundCalories(sum(days, (d) => d.calories)),
       maxWorkoutsInDay: Math.max(0, ...rows.map((r) => r.workouts)),
       longestStreakDays: this.calculator.longestStreak(rows.map((r) => r.day)),
       maxLevel: HEATMAP_MAX_LEVEL,

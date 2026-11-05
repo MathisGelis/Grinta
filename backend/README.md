@@ -60,6 +60,10 @@ $ DB_HOST=localhost DB_NAME=grinta_e2e DB_SSL=false npm run test:e2e
 $ npm run test:cov
 ```
 
+## Numbers and dates
+
+Every figure leaves the API rounded by one rule per kind (`src/common/utils/numbers.ts`): loads as entered (2 decimals at most), estimates and averages (1RM, averages) to 1 decimal, volumes and calories as whole numbers. Computations keep full precision, records are detected on exact values. Timestamps are ISO 8601 in UTC, calendar days `YYYY-MM-DD`.
+
 ## Emails (password reset)
 
 | Variable | Role |

@@ -54,6 +54,12 @@ import {
   sum,
 } from './utils/stats.util';
 import { BalanceInsight, ComparisonInsight } from './constants/insights';
+import {
+  roundCalories,
+  roundEstimate,
+  roundLoad,
+  roundVolume,
+} from '../common/utils/numbers';
 
 export type MuscleContribution = {
   muscle: DetailedMuscleGroup;
@@ -83,10 +89,10 @@ export class StatsCalculatorService {
       primaryMuscle: cwe.exercise?.primary_muscle,
       sets: sets.length,
       reps,
-      volume: round(volume),
-      heaviestWeight,
-      estimatedOneRepMax: round(estimatedOneRepMax),
-      estimatedCalories: round(
+      volume: roundVolume(volume),
+      heaviestWeight: roundLoad(heaviestWeight),
+      estimatedOneRepMax: roundEstimate(estimatedOneRepMax),
+      estimatedCalories: roundCalories(
         this.metFor(cwe) * bodyWeightKg * (durationSeconds / 3600),
       ),
       durationSeconds: Math.round(durationSeconds),
@@ -122,8 +128,8 @@ export class StatsCalculatorService {
       reps: sum(workouts, (w) =>
         sum(w.exercises ?? [], (e) => sum(e.sets ?? [], (s) => s.reps)),
       ),
-      volume: round(sum(workouts, (w) => this.workoutVolume(w))),
-      calories: round(
+      volume: roundVolume(sum(workouts, (w) => this.workoutVolume(w))),
+      calories: roundCalories(
         sum(workouts, (w) => this.workoutCalories(w, bodyWeightKg)),
       ),
       avgWorkoutDurationSeconds: workouts.length
@@ -245,7 +251,10 @@ export class StatsCalculatorService {
 
         return {
           date,
-          value: round(value),
+          value:
+            metric === ProgressionMetric.VOLUME
+              ? roundVolume(value)
+              : roundEstimate(value),
           sets: sets.length,
           bestSet: { reps: best.reps, weight: best.weight },
           workoutIds: [...workoutIds],
@@ -273,7 +282,7 @@ export class StatsCalculatorService {
       first,
       latest,
       best,
-      change: round(latest.value - first.value),
+      change: roundEstimate(latest.value - first.value),
       changePct: percentChange(latest.value, first.value),
       trend: this.progressionTrend(points),
     };
@@ -344,7 +353,7 @@ export class StatsCalculatorService {
           name: oneRm.name,
           primaryMuscle: oneRm.primaryMuscle,
           estimatedOneRepMax: {
-            value: round(epley1RM(oneRm.weight, oneRm.reps)),
+            value: roundEstimate(epley1RM(oneRm.weight, oneRm.reps)),
             weight: oneRm.weight,
             reps: oneRm.reps,
             achievedAt: oneRm.achievedAt,
@@ -356,7 +365,7 @@ export class StatsCalculatorService {
           },
           bestSessionVolume: volume
             ? {
-                value: round(volume.volume),
+                value: roundVolume(volume.volume),
                 workoutId: volume.workoutId,
                 achievedAt: volume.achievedAt,
               }
@@ -419,8 +428,8 @@ export class StatsCalculatorService {
         completedSets,
         plannedReps: sum(target.sets, (s) => s.reps),
         completedReps: sum(actual?.sets ?? [], (s) => s.reps),
-        plannedVolume: round(plannedVolume),
-        completedVolume: round(completedVolume),
+        plannedVolume: roundVolume(plannedVolume),
+        completedVolume: roundVolume(completedVolume),
         setAdherencePct,
         volumeAdherencePct: plannedVolume
           ? round((completedVolume / plannedVolume) * 100, 1)
@@ -447,7 +456,7 @@ export class StatsCalculatorService {
         name: actual.name,
         sets: actual.sets.length,
         reps: sum(actual.sets, (s) => s.reps),
-        volume: round(setVolume(actual.sets)),
+        volume: roundVolume(setVolume(actual.sets)),
       });
     }
     totals.extraExercises = extras.length;
@@ -467,8 +476,8 @@ export class StatsCalculatorService {
       rating: score === null ? null : adherenceRating(score),
       totals: {
         ...totals,
-        volumePlanned: round(totals.volumePlanned),
-        volumeCompleted: round(totals.volumeCompleted),
+        volumePlanned: roundVolume(totals.volumePlanned),
+        volumeCompleted: roundVolume(totals.volumeCompleted),
       },
       exercises,
       extras,
@@ -483,7 +492,7 @@ export class StatsCalculatorService {
   averageTotals(totals: PeriodTotals[]): ComparedTotalsDto {
     const n = totals.length || 1;
     const mean = (pick: (t: PeriodTotals) => number) =>
-      round(sum(totals, pick) / n);
+      roundEstimate(sum(totals, pick) / n);
 
     return {
       workouts: mean((t) => t.workouts),
@@ -521,7 +530,7 @@ export class StatsCalculatorService {
         continue;
       }
       const baselineAverage = baseline[metric];
-      const expectedByNow = round(baselineAverage * elapsed);
+      const expectedByNow = roundEstimate(baselineAverage * elapsed);
       const changePct = percentChange(value, expectedByNow);
 
       result[metric] = {
@@ -577,7 +586,7 @@ export class StatsCalculatorService {
         type: r.type,
         exercises: r.exercises,
         sets: r.sets,
-        volume: round(r.volume),
+        volume: roundVolume(r.volume),
         percentageOfSets: totalSets ? round((r.sets / totalSets) * 100, 1) : 0,
       }))
       .sort((a, b) => b.sets - a.sets || a.type.localeCompare(b.type));
@@ -604,7 +613,7 @@ export class StatsCalculatorService {
         date: r.day,
         workouts: r.workouts,
         durationSeconds: r.durationSeconds,
-        calories: round(caloriesByDay.get(r.day) ?? 0),
+        calories: roundCalories(caloriesByDay.get(r.day) ?? 0),
         level: longest
           ? Math.min(
               HEATMAP_MAX_LEVEL,
@@ -625,10 +634,8 @@ export class StatsCalculatorService {
     );
   }
 
-  private workoutCalories(
-    workout: CompletedWorkout,
-    bodyWeightKg: number,
-  ): number {
+  /** Estimated kcal of a workout, unrounded. */
+  workoutCalories(workout: CompletedWorkout, bodyWeightKg: number): number {
     const durations = this.distributeDuration(workout);
 
     return (workout.exercises ?? []).reduce(

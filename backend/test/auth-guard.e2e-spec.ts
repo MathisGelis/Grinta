@@ -42,23 +42,26 @@ function discoverRoutes(app: NestExpressApplication): Route[] {
   const routes: Route[] = [];
 
   for (const wrapper of app.get(DiscoveryService).getControllers()) {
-    const controller = wrapper.metatype as object;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    const controller = wrapper.metatype as Function;
     const prototype = Object.getPrototypeOf(wrapper.instance) as Record<
       string,
-      object
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+      Function
     >;
-    const base = reflector.get<string>(PATH_METADATA, controller) ?? '';
-    const classGuards =
-      reflector.get<unknown[]>(GUARDS_METADATA, controller) ?? [];
+    const base = reflector.get<string | undefined>(PATH_METADATA, controller);
+    const classGuards: unknown[] =
+      reflector.get<unknown[] | undefined>(GUARDS_METADATA, controller) ?? [];
 
     for (const name of scanner.getAllMethodNames(prototype)) {
       const handler = prototype[name];
       const path = reflector.get<string | undefined>(PATH_METADATA, handler);
 
       if (path === undefined) continue;
-      const guards = [
+      const guards: unknown[] = [
         ...classGuards,
-        ...(reflector.get<unknown[]>(GUARDS_METADATA, handler) ?? []),
+        ...(reflector.get<unknown[] | undefined>(GUARDS_METADATA, handler) ??
+          []),
       ];
 
       routes.push({

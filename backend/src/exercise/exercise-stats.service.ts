@@ -27,6 +27,12 @@ import {
   StoredExerciseStats,
   summarizeSession,
 } from './utils/exercise-history.util';
+import { roundEstimate, roundVolume } from '../common/utils/numbers';
+
+const orNull = (
+  value: number | null | undefined,
+  rounding: (v: number) => number,
+) => (value == null ? null : rounding(value));
 
 /** Every session of one exercise for one user. */
 export interface ExerciseHistory {
@@ -383,8 +389,8 @@ function compared(
   return (
     stats && {
       heaviestWeight: stats.prWeight,
-      estimatedOneRepMax: stats.bestEstimatedOneRepMax,
-      bestSessionVolume: stats.bestSessionVolume,
+      estimatedOneRepMax: orNull(stats.bestEstimatedOneRepMax, roundEstimate),
+      bestSessionVolume: orNull(stats.bestSessionVolume, roundVolume),
       maxReps: stats.maxReps,
       totalSessions: stats.totalSessions,
       lastPerformedAt: stats.lastPerformedAt,
@@ -424,13 +430,13 @@ function toDto(
     lastSets: row.last_sets ?? [],
     prWeight: row.PR ?? null,
     prReps: row.pr_reps ?? null,
-    bestEstimatedOneRepMax: row.best_estimated_1rm ?? null,
-    bestSessionVolume: row.best_session_volume ?? null,
+    bestEstimatedOneRepMax: orNull(row.best_estimated_1rm, roundEstimate),
+    bestSessionVolume: orNull(row.best_session_volume, roundVolume),
     maxReps: row.max_reps ?? null,
     totalSessions: row.total_sessions,
     totalSets: row.total_sets,
     totalReps: row.total_reps,
-    totalVolume: row.total_volume,
+    totalVolume: roundVolume(row.total_volume),
     updatedAt: row.updatedAt,
   };
 }

@@ -1,5 +1,6 @@
 import { EntityManager } from 'typeorm';
 import type { SetPair } from '../workouts/entities/completed-workout.entity';
+import { roundVolume } from '../common/utils/numbers';
 
 /**
  * What a feed shows of the workout behind a post: each exercise with its
@@ -71,7 +72,7 @@ export function summarizeWorkout(
     })),
     stats: {
       durationSeconds,
-      totalVolume: Math.round(volume * 100) / 100,
+      totalVolume: roundVolume(volume),
       totalSets: sets.length,
       totalReps: sets.reduce((acc, s) => acc + s.reps, 0),
       recordsCount,
