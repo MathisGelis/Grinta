@@ -63,11 +63,12 @@ export class WorkoutService {
       dto.exercises.map((exDto) => exDto.exerciseId),
     );
 
-    workout.exercises = dto.exercises.map((exDto) =>
+    workout.exercises = dto.exercises.map((exDto, position) =>
       this.plannedExRepo.create({
         exercise: byId.get(exDto.exerciseId),
         sets: exDto.sets,
         plannedRestSeconds: exDto.plannedRestSeconds,
+        position,
       }),
     );
     return this.plannedRepo.save(workout);
@@ -142,11 +143,12 @@ export class WorkoutService {
       );
 
       await this.plannedExRepo.remove(workout.exercises);
-      workout.exercises = exercises.map((exDto) =>
+      workout.exercises = exercises.map((exDto, position) =>
         this.plannedExRepo.create({
           exercise: byId.get(exDto.exerciseId),
           sets: exDto.sets,
           plannedRestSeconds: exDto.plannedRestSeconds,
+          position,
         }),
       );
     }
@@ -336,9 +338,8 @@ export class WorkoutService {
     });
 
     if (!source) throw new NotFoundException('Completed workout not found');
-    // Workouts have no position column: their exercises read back in the
-    // order they were inserted. A cascade save may reorder them, so they go
-    // in with one INSERT, in the source order.
+    // Positions follow the source order. Completed workouts have no
+    // position column: their exercises are copied in the order they load.
     const copy = await this.dataSource.transaction(async (manager) => {
       const workout = await manager.save(
         manager.create(PlannedWorkout, {
@@ -350,9 +351,10 @@ export class WorkoutService {
       if (source.exercises.length)
         await manager.insert(
           PlannedWorkoutExercise,
-          source.exercises.map((e) => ({
+          source.exercises.map((e, position) => ({
             workout: { id: workout.id },
             exercise: { id: e.exercise.id },
+            position,
           })),
         );
       return workout;

@@ -913,3 +913,7 @@ Erreurs :
 | 429 | `TOO_MANY_LOGIN_ATTEMPTS` | 30 essais par 15 min et par adresse IP |
 
 **À faire avant la mise en production** : renseigner `APPLE_CLIENT_IDS` (bundle id de l'app) et `GOOGLE_CLIENT_IDS` (identifiants OAuth iOS / Android / web) sur le serveur. Sans eux, les routes répondent 503 et l'app peut masquer les boutons.
+
+### 9.6 Ordre des exercices d'une séance planifiée
+
+`GET /programmes/active/today` (et la réponse de `POST /programmes/:id/start`) pouvait renvoyer les exercices de la séance du jour dans le désordre. C'est corrigé : partout, les exercices d'une séance planifiée sortent dans l'ordre où ils ont été saisis. Chaque exercice porte en plus `position` (0, 1, 2…). Rien à changer côté app : l'ordre du tableau `exercises` fait foi.

@@ -112,12 +112,12 @@ export class WorkoutTemplatesService {
         );
         const moves = workout.moves.filter((move) => ids.has(move.exercise));
 
-        // No position column: one INSERT keeps the template order.
         if (moves.length)
           await manager.insert(
             PlannedWorkoutExercise,
-            moves.map((move) => ({
+            moves.map((move, position) => ({
               workout: { id: saved.id },
+              position,
               exercise: { id: ids.get(move.exercise) },
               sets: setsOf(move),
               plannedRestSeconds: move.restSeconds,
@@ -150,8 +150,8 @@ export class WorkoutTemplatesService {
         relations: ['days', 'days.workout'],
         order: { days: { dayNumber: 'ASC' } },
       });
-    // Loaded like GET /workouts/planned/:id: through the programme, the
-    // nested joins would not keep the exercises in their inserted order.
+    // Loaded apart, like GET /workouts/planned/:id, so that each workout
+    // comes once with its exercises.
     const workouts = await this.dataSource.getRepository(PlannedWorkout).find({
       where: {
         id: In(

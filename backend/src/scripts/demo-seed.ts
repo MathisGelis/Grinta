@@ -201,13 +201,14 @@ async function insertDemo(
   await insert(
     manager,
     'planned_workout_exercises',
-    ['id', 'workoutId', 'exerciseId', 'sets', 'plannedRestSeconds'],
+    ['id', 'workoutId', 'exerciseId', 'sets', 'plannedRestSeconds', 'position'],
     data.plannedExercises.map((e) => [
       e.id,
       e.workoutId,
       e.exerciseId,
       JSON.stringify(e.sets),
       e.plannedRestSeconds,
+      e.position,
     ]),
   );
   await insert(
