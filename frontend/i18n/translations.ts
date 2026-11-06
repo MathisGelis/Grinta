@@ -1,8 +1,9 @@
 import { v3Strings, type V3Strings } from "./v3";
+import { v4Strings, type V4Strings } from "./v4";
 
 export type Lang = "en" | "es" | "zh" | "ja" | "fr" | "de" | "ru" | "pt" | "it" | "ko";
 
-export interface Strings extends V3Strings {
+export interface Strings extends V3Strings, V4Strings {
   hello: string;
   goodMorning: string;
   goodAfternoon: string;
@@ -403,6 +404,9 @@ export interface Strings extends V3Strings {
   withPartners: string;
   tabExplore: string;
   tabStats: string;
+  tabTraining: string;
+  creation: string;
+  muscleGroupNames: Record<string, string>;
   settingsSectionAccount: string;
   settingsSectionPreferences: string;
   settingsSectionSupport: string;
@@ -920,6 +924,17 @@ const en: BaseStrings = {
   withPartners: "with",
   tabExplore: "Explore",
   tabStats: "Stats",
+  tabTraining: "Training",
+  creation: "Create",
+  muscleGroupNames: {
+    chest: "Chest",
+    back: "Back",
+    shoulders: "Shoulders",
+    arms: "Arms",
+    core: "Core",
+    legs: "Legs",
+    other: "Full body & cardio",
+  },
   settingsSectionAccount: "Account",
   settingsSectionPreferences: "Preferences",
   settingsSectionSupport: "Support & legal",
@@ -1437,6 +1452,17 @@ const fr: BaseStrings = {
   withPartners: "avec",
   tabExplore: "Explorer",
   tabStats: "Stats",
+  tabTraining: "Séance",
+  creation: "Création",
+  muscleGroupNames: {
+    chest: "Pectoraux",
+    back: "Dos",
+    shoulders: "Épaules",
+    arms: "Bras",
+    core: "Abdominaux",
+    legs: "Jambes",
+    other: "Corps entier & cardio",
+  },
   settingsSectionAccount: "Compte",
   settingsSectionPreferences: "Préférences",
   settingsSectionSupport: "Aide et légal",
@@ -1954,6 +1980,17 @@ const es: BaseStrings = {
   withPartners: "con",
   tabExplore: "Explorar",
   tabStats: "Stats",
+  tabTraining: "Entrenamiento",
+  creation: "Creación",
+  muscleGroupNames: {
+    chest: "Pecho",
+    back: "Espalda",
+    shoulders: "Hombros",
+    arms: "Brazos",
+    core: "Core",
+    legs: "Piernas",
+    other: "Cuerpo completo y cardio",
+  },
   settingsSectionAccount: "Cuenta",
   settingsSectionPreferences: "Preferencias",
   settingsSectionSupport: "Ayuda y legal",
@@ -2471,6 +2508,17 @@ const de: BaseStrings = {
   withPartners: "mit",
   tabExplore: "Entdecken",
   tabStats: "Stats",
+  tabTraining: "Training",
+  creation: "Erstellen",
+  muscleGroupNames: {
+    chest: "Brust",
+    back: "Rücken",
+    shoulders: "Schultern",
+    arms: "Arme",
+    core: "Core",
+    legs: "Beine",
+    other: "Ganzkörper & Cardio",
+  },
   settingsSectionAccount: "Konto",
   settingsSectionPreferences: "Präferenzen",
   settingsSectionSupport: "Hilfe & Rechtliches",
@@ -2988,6 +3036,17 @@ const it: BaseStrings = {
   withPartners: "con",
   tabExplore: "Esplora",
   tabStats: "Stats",
+  tabTraining: "Allenamento",
+  creation: "Creazione",
+  muscleGroupNames: {
+    chest: "Petto",
+    back: "Schiena",
+    shoulders: "Spalle",
+    arms: "Braccia",
+    core: "Core",
+    legs: "Gambe",
+    other: "Corpo intero e cardio",
+  },
   settingsSectionAccount: "Account",
   settingsSectionPreferences: "Preferenze",
   settingsSectionSupport: "Assistenza e note legali",
@@ -3505,6 +3564,17 @@ const pt: BaseStrings = {
   withPartners: "com",
   tabExplore: "Explorar",
   tabStats: "Stats",
+  tabTraining: "Treino",
+  creation: "Criação",
+  muscleGroupNames: {
+    chest: "Peito",
+    back: "Costas",
+    shoulders: "Ombros",
+    arms: "Braços",
+    core: "Core",
+    legs: "Pernas",
+    other: "Corpo inteiro e cardio",
+  },
   settingsSectionAccount: "Conta",
   settingsSectionPreferences: "Preferências",
   settingsSectionSupport: "Ajuda e legal",
@@ -4022,6 +4092,17 @@ const ru: BaseStrings = {
   withPartners: "с",
   tabExplore: "Обзор",
   tabStats: "Статистика",
+  tabTraining: "Тренировки",
+  creation: "Создание",
+  muscleGroupNames: {
+    chest: "Грудь",
+    back: "Спина",
+    shoulders: "Плечи",
+    arms: "Руки",
+    core: "Кор",
+    legs: "Ноги",
+    other: "Всё тело и кардио",
+  },
   settingsSectionAccount: "Аккаунт",
   settingsSectionPreferences: "Предпочтения",
   settingsSectionSupport: "Поддержка и документы",
@@ -4539,6 +4620,17 @@ const zh: BaseStrings = {
   withPartners: "与",
   tabExplore: "发现",
   tabStats: "统计",
+  tabTraining: "训练",
+  creation: "创建",
+  muscleGroupNames: {
+    chest: "胸部",
+    back: "背部",
+    shoulders: "肩部",
+    arms: "手臂",
+    core: "核心",
+    legs: "腿部",
+    other: "全身与有氧",
+  },
   settingsSectionAccount: "账户",
   settingsSectionPreferences: "偏好设置",
   settingsSectionSupport: "支持与法律",
@@ -5056,6 +5148,17 @@ const ja: BaseStrings = {
   withPartners: "with",
   tabExplore: "探す",
   tabStats: "統計",
+  tabTraining: "トレーニング",
+  creation: "作成",
+  muscleGroupNames: {
+    chest: "胸",
+    back: "背中",
+    shoulders: "肩",
+    arms: "腕",
+    core: "体幹",
+    legs: "脚",
+    other: "全身・有酸素",
+  },
   settingsSectionAccount: "アカウント",
   settingsSectionPreferences: "環境設定",
   settingsSectionSupport: "サポートと法的情報",
@@ -5573,6 +5676,17 @@ const ko: BaseStrings = {
   withPartners: "함께",
   tabExplore: "탐색",
   tabStats: "통계",
+  tabTraining: "운동",
+  creation: "만들기",
+  muscleGroupNames: {
+    chest: "가슴",
+    back: "등",
+    shoulders: "어깨",
+    arms: "팔",
+    core: "코어",
+    legs: "다리",
+    other: "전신 및 유산소",
+  },
   settingsSectionAccount: "계정",
   settingsSectionPreferences: "환경설정",
   settingsSectionSupport: "지원 및 법적 고지",
@@ -5634,7 +5748,7 @@ const ko: BaseStrings = {
   premiumNote: "구독은 곧 제공됩니다. 현재는 어떤 요금도 청구되지 않습니다.",
 };
 
-type BaseStrings = Omit<Strings, keyof V3Strings>;
+type BaseStrings = Omit<Strings, keyof V3Strings | keyof V4Strings>;
 
 export function format(
   template: string,
@@ -5649,7 +5763,7 @@ export function format(
 const base: Record<Lang, BaseStrings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };
 
 export const translations = Object.fromEntries(
-  (Object.keys(base) as Lang[]).map((lang) => [lang, { ...base[lang], ...v3Strings(lang) }]),
+  (Object.keys(base) as Lang[]).map((lang) => [lang, { ...base[lang], ...v3Strings(lang), ...v4Strings(lang) }]),
 ) as Record<Lang, Strings>;
 
 export const LANGUAGE_OPTIONS: { code: Lang; label: string; nativeLabel: string }[] = [
