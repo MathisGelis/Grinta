@@ -16,6 +16,7 @@ export default function ProfileStack() {
       <Stack.Screen name="edit-profile" />
       <Stack.Screen name="privacy-policy" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="change-password" />
       <Stack.Screen
         name="premium"
         options={{ animation: "slide_from_left", gestureEnabled: false }}
@@ -27,6 +28,7 @@ export default function ProfileStack() {
       <Stack.Screen name="followers" />
       <Stack.Screen name="user-profile" />
       <Stack.Screen name="userPost" />
+      <Stack.Screen name="completed-workouts" />
     </Stack>
   );
 }

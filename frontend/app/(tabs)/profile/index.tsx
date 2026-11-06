@@ -181,13 +181,17 @@ export default function ProfileScreen() {
                   className="items-center"
                 />
               </PressableScale>
-              <View className="flex-1 items-center rounded-tile bg-surface p-4">
+              <PressableScale
+                className="flex-1 items-center rounded-tile bg-surface p-4"
+                accessibilityRole="button"
+                onPress={() => router.push("/(tabs)/profile/completed-workouts" as any)}
+              >
                 <Stat
                   value={workoutsCount}
                   label={t.workoutsLabel}
                   className="items-center"
                 />
-              </View>
+              </PressableScale>
             </View>
 
             <SegmentedControl

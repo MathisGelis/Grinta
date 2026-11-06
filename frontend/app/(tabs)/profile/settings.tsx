@@ -97,6 +97,11 @@ export default function SettingsScreen() {
             onPress={() => router.push("/(tabs)/profile/edit-profile")}
           />
           <SettingsRow
+            icon="key-outline"
+            label={t.pwChange}
+            onPress={() => router.push("/(tabs)/profile/change-password" as any)}
+          />
+          <SettingsRow
             icon={isPublic === false ? "lock-closed-outline" : "eye-outline"}
             label={t.profileVisibility}
             hint={isPublic === false ? t.visibilityPrivateHint : t.visibilityPublicHint}
