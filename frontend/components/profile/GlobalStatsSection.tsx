@@ -16,6 +16,9 @@ import {
   MuscleRecoveryStatus,
 } from "@/services/stats.service";
 import MuscleMap from "@/components/ui/MuscleMap";
+import ComparisonCard from "@/components/stats/ComparisonCard";
+import ProgressionCard from "@/components/stats/ProgressionCard";
+import HeatmapCard from "@/components/stats/HeatmapCard";
 import type { MuscleValue } from "@/utils/muscles";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
@@ -54,7 +57,12 @@ function Delta({ pct }: { pct: number | null | undefined }) {
   );
 }
 
-export default function GlobalStatsSection() {
+type Props = {
+  /** Statistiques d'un autre utilisateur (publiées uniquement). Sans lui : les siennes. */
+  userId?: string;
+};
+
+export default function GlobalStatsSection({ userId }: Props) {
   const { t } = useTranslation();
   const { formatVolume } = useUnits();
   const [period, setPeriod] = useState<StatsPeriod>("week");
@@ -76,21 +84,21 @@ export default function GlobalStatsSection() {
   const [frequency, setFrequency] = useState<MuscleFrequency | null>(null);
 
   useEffect(() => {
-    StatsService.getConsistency().then(setConsistency).catch(() => {});
-    StatsService.getMuscleFrequency().then(setFrequency).catch(() => {});
-  }, [reloadKey]);
+    StatsService.getConsistency(userId).then(setConsistency).catch(() => {});
+    StatsService.getMuscleFrequency(userId).then(setFrequency).catch(() => {});
+  }, [reloadKey, userId]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setFailed(false);
     Promise.all([
-      StatsService.getSummary(period).catch(() => {
+      StatsService.getSummary(period, userId).catch(() => {
         if (!cancelled) setFailed(true);
         return null;
       }),
-      StatsService.getMuscleDistribution(period).catch(() => null),
-      StatsService.getBalance(period).catch(() => null),
+      StatsService.getMuscleDistribution(period, userId).catch(() => null),
+      StatsService.getBalance(period, userId).catch(() => null),
     ]).then(([sum, dist, bal]) => {
       if (cancelled) return;
       setSummary(sum);
@@ -101,7 +109,7 @@ export default function GlobalStatsSection() {
     return () => {
       cancelled = true;
     };
-  }, [period, reloadKey]);
+  }, [period, reloadKey, userId]);
 
   const statusColor: Record<MuscleRecoveryStatus, string> = {
     recovering: WorkoutTheme.status.danger,
@@ -182,6 +190,8 @@ export default function GlobalStatsSection() {
         </View>
       ) : null}
 
+      {!userId ? <ComparisonCard period={period} /> : null}
+
       {failed && !loading ? null : loading ? (
         <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} />
       ) : (
@@ -254,7 +264,7 @@ export default function GlobalStatsSection() {
                 ))}
                 {balance.insights.map((line) => (
                   <Text key={line} className="text-xs text-ink-muted">
-                    {line}
+                    {t.insights[line] ?? line}
                   </Text>
                 ))}
               </View>
@@ -307,6 +317,13 @@ export default function GlobalStatsSection() {
             <MuscleMap data={recoveryData} legend={recoveryLegend} />
           </View>
         </View>
+      ) : null}
+
+      {!userId ? (
+        <>
+          <ProgressionCard />
+          <HeatmapCard />
+        </>
       ) : null}
     </View>
   );

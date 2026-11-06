@@ -10,6 +10,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
+import GlobalStatsSection from "@/components/profile/GlobalStatsSection";
 import MyPostsSection from "@/components/profile/MyPostsSection";
 import { usePostInteractions } from "@/components/explorePage/PostInteractions";
 import ErrorState from "@/components/ui/ErrorState";
@@ -167,7 +168,8 @@ export default function UserProfileScreen() {
               <Text className="text-ink-muted text-sm">{t.privateProfile}</Text>
             </View>
           ) : (
-            <View className="px-5">
+            <View className="gap-6 px-5">
+              <GlobalStatsSection userId={profile.id} />
               <MyPostsSection
                 readOnly
                 posts={profile.posts ?? []}
