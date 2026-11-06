@@ -55,6 +55,8 @@ export interface CurrentUser {
 }
 
 export type Gender = "male" | "female" | "other";
+export type Level = "beginner" | "intermediate" | "advanced";
+export type TrainingLocation = "gym" | "home";
 export type Goal = "gain_weight" | "lose_weight" | "get_fitter" | "flexibility" | "learn_basics";
 
 interface UpdateUserData {
@@ -66,6 +68,9 @@ interface UpdateUserData {
   weight?: number;
   gender?: Gender | null;
   goal?: Goal | null;
+  level?: Level | null;
+  trainingDaysPerWeek?: number | null;
+  trainingLocation?: TrainingLocation | null;
 }
 
 export interface SearchUser {
@@ -98,6 +103,17 @@ export const UserService = {
     const me = await api.get<{ id: string; email: string }>("/auth/me", token ?? undefined);
     const full = await api.get<CurrentUser>(`/users/${me.id}`, token ?? undefined);
     return full;
+  },
+
+  /** Renvoie un nouvel access_token : l'ancien est refusé (B-05). */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const token = await TokenService.get();
+    const res = await api.patch<{ access_token: string }>(
+      "/users/me/password",
+      { currentPassword, newPassword },
+      token ?? undefined,
+    );
+    await TokenService.save(res.access_token);
   },
 
   async toggleVisibility(): Promise<{ isPublic: boolean }> {

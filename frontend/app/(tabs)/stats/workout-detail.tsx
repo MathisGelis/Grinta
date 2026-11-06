@@ -12,7 +12,7 @@ import { format } from "@/i18n/translations";
 import {
   CompletedWorkoutDetail,
   WorkoutService,
-} from "@/services/workout.service";
+} from "@/services/completed-workouts.service";
 import { StatsService, WorkoutStats } from "@/services/stats.service";
 import ExerciseSetupItem, {
   ExerciseSetupData,

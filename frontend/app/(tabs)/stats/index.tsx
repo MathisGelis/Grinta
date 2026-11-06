@@ -7,7 +7,7 @@ import { Image } from "expo-image";
 import { mediaUrl } from "@/services/api";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { StatsService, Consistency } from "@/services/stats.service";
-import { WorkoutService, CompletedWorkout, COMPLETED_PAGE_SIZE } from "@/services/workout.service";
+import { WorkoutService, CompletedWorkout, COMPLETED_PAGE_SIZE } from "@/services/completed-workouts.service";
 import { PostsService } from "@/services/posts.service";
 
 import { WorkoutTheme } from "@/constants/Colors";

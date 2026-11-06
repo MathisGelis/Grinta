@@ -256,3 +256,76 @@ export async function getWorkoutSuggestion(date: string): Promise<WorkoutSuggest
     token ?? undefined,
   );
 }
+
+// ---- Modèles de séances (9.3) et import depuis des notes (9.4) ----
+
+export interface TemplateCriteria {
+  goal?: string;
+  level?: string;
+  daysPerWeek?: number;
+  location?: string;
+}
+
+export interface TemplateExercise {
+  exerciseId: string;
+  name: string;
+  sets: { reps: number; weight: number }[];
+  plannedRestSeconds: number | null;
+  durationSeconds: number | null;
+}
+
+export interface WorkoutTemplate {
+  key: string;
+  title: string;
+  description: string;
+  goals: string[];
+  levels: string[];
+  daysPerWeek: number;
+  location: string;
+  recommended: boolean;
+  workouts: { key: string; title: string; estimatedDurationMinutes: number | null; exercises: TemplateExercise[] }[];
+  week: { dayNumber: number; workoutKey: string | null }[];
+}
+
+/** Modèles classés du plus adapté au moins adapté. Les critères forcent ceux du profil (onboarding). */
+export async function getWorkoutTemplates(criteria: TemplateCriteria = {}) {
+  const token = await TokenService.get();
+  const qs = Object.entries(criteria)
+    .filter(([, v]) => v !== undefined && v !== "")
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+    .join("&");
+  return api.get<{ criteria: TemplateCriteria; templates: WorkoutTemplate[] }>(
+    `/workouts/templates${qs ? `?${qs}` : ""}`,
+    token ?? undefined,
+  );
+}
+
+/** Copie le modèle : séances planifiées + programme de 7 jours non démarré. */
+export async function applyWorkoutTemplate(key: string) {
+  const token = await TokenService.get();
+  const programme = await api.post<{ id: string; [k: string]: unknown }>(
+    `/workouts/templates/${encodeURIComponent(key)}/use`,
+    undefined,
+    token ?? undefined,
+  );
+  await removeItem(PLANNED_WORKOUTS_CACHE_KEY);
+  return programme;
+}
+
+export interface ImportDraft {
+  workouts: {
+    title: string;
+    exercises: (TemplateExercise & { line: number })[];
+  }[];
+  programme: {
+    title: string;
+    days: { dayNumber: number; label: string; workoutIndex: number | null }[];
+  } | null;
+  unrecognized: { line: number; text: string; reason: "unknown_exercise" | "no_exercise" }[];
+}
+
+/** Brouillon uniquement : rien n'est enregistré côté serveur. */
+export async function importWorkoutsFromText(text: string) {
+  const token = await TokenService.get();
+  return api.post<ImportDraft>("/workouts/import", { text }, token ?? undefined);
+}

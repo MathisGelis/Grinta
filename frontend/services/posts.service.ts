@@ -2,7 +2,7 @@ import { api } from "./api";
 import { TokenService } from "./token.service";
 import { type PostPartner } from "./user.service";
 import type { RealLifeComparison } from "@/utils/realLife";
-import type { CompletedWorkoutDetail } from "./workout.service";
+import type { CompletedWorkoutDetail } from "./completed-workouts.service";
 
 export type { PostPartner };
 
