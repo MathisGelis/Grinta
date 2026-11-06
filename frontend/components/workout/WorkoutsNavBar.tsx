@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "@/contexts/LanguageContext";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 
-type Route = "/workouts" | "/workouts/programms" | "/workouts/exercises";
+type Route = "/workouts" | "/workouts/exercises";
 
 export function WorkoutsNavBar() {
   const { t } = useTranslation();
@@ -14,9 +14,7 @@ export function WorkoutsNavBar() {
 
   const active: Route = pathname.includes("exercises")
     ? "/workouts/exercises"
-    : pathname.includes("programms")
-      ? "/workouts/programms"
-      : "/workouts";
+    : "/workouts";
 
   return (
     <View style={{ paddingTop: insets.top + 12 }} className="px-5 pb-4">
@@ -26,8 +24,7 @@ export function WorkoutsNavBar() {
         value={active}
         onChange={(route) => router.navigate(route)}
         options={[
-          { value: "/workouts", label: t.sessions },
-          { value: "/workouts/programms", label: t.programmes },
+          { value: "/workouts", label: t.creation },
           { value: "/workouts/exercises", label: t.exercises },
         ]}
       />

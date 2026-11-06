@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 
-export type WorkoutsSection = "sessions" | "programmes" | "exercises";
+export type WorkoutsSection = "sessions" | "exercises";
 
 type Queries = Record<WorkoutsSection, string>;
 
@@ -19,7 +19,7 @@ type ContextValue = {
   openFilter: (section: WorkoutsSection) => void;
 };
 
-const EMPTY: Queries = { sessions: "", programmes: "", exercises: "" };
+const EMPTY: Queries = { sessions: "", exercises: "" };
 
 const WorkoutsSearchContext = createContext<ContextValue | undefined>(undefined);
 
