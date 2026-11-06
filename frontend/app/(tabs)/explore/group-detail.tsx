@@ -11,7 +11,6 @@ import {
   GroupsService,
   type GroupDetail,
   type GroupEvent,
-  type GroupUser,
 } from "@/services/groups.service";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 import ScreenBackground from "@/components/ui/ScreenBackground";
@@ -22,7 +21,6 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
-import { FormField, TextField } from "@/components/ui/FormField";
 
 const PAGE_SIZE = 20;
 
@@ -37,12 +35,7 @@ export default function GroupDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [renaming, setRenaming] = useState(false);
-  const [draftName, setDraftName] = useState("");
-  const [inviteName, setInviteName] = useState("");
   const [busy, setBusy] = useState(false);
-
-  const isCreator = !!group && group.creatorId === myId;
 
   const load = useCallback(async () => {
     if (!groupId) return;
@@ -96,49 +89,6 @@ export default function GroupDetailScreen() {
     }
   };
 
-  const rename = () => {
-    const name = draftName.trim();
-    if (!groupId || !name) return;
-    run(
-      () => GroupsService.rename(groupId, name),
-      async () => {
-        setRenaming(false);
-        await load();
-      },
-    );
-  };
-
-  const invite = () => {
-    if (!groupId || !inviteName.trim()) return;
-    run(
-      () => GroupsService.invite(groupId, inviteName),
-      async () => {
-        setInviteName("");
-        await load();
-      },
-    );
-  };
-
-  const leave = () =>
-    Alert.alert(t.grpLeave, t.grpLeaveConfirm, [
-      { text: t.cancel, style: "cancel" },
-      {
-        text: t.grpLeave,
-        style: "destructive",
-        onPress: () => groupId && run(() => GroupsService.leave(groupId), () => router.back()),
-      },
-    ]);
-
-  const remove = () =>
-    Alert.alert(t.grpDelete, t.grpDeleteConfirm, [
-      { text: t.cancel, style: "cancel" },
-      {
-        text: t.grpDelete,
-        style: "destructive",
-        onPress: () => groupId && run(() => GroupsService.remove(groupId), () => router.back()),
-      },
-    ]);
-
   const removeShare = (shareId: string) =>
     groupId && run(() => GroupsService.removeShare(groupId, shareId), load);
 
@@ -152,35 +102,24 @@ export default function GroupDetailScreen() {
   const date = (iso: string) =>
     new Date(iso).toLocaleDateString(LOCALES[lang], { day: "numeric", month: "short" });
 
-  const person = (user: GroupUser, subtitle?: string, right?: React.ReactNode) => (
-    <View key={user.id} className="flex-row items-center gap-3 rounded-tile bg-raised p-3">
-      <Avatar uri={user.avatarThumbnailUrl} name={user.displayName} size={36} />
-      <View className="flex-1">
-        <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
-          {user.displayName}
-        </Text>
-        <Text className="text-xs text-ink-muted" numberOfLines={1}>
-          {subtitle ?? `@${user.uniqueName}`}
-        </Text>
-      </View>
-      {right}
-    </View>
-  );
-
   return (
     <View className="flex-1">
       <ScreenBackground flat />
       <ScreenHeader
+        glass
         title={group?.name ?? ""}
         right={
           group ? (
             <IconButton
-              icon="create-outline"
-              label={t.grpRename}
-              onPress={() => {
-                setDraftName(group.name);
-                setRenaming((value) => !value);
-              }}
+              icon="settings-outline"
+              variant="glass"
+              label={t.grpSettings}
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/explore/group-settings",
+                  params: { groupId },
+                } as any)
+              }
             />
           ) : undefined
         }
@@ -199,61 +138,7 @@ export default function GroupDetailScreen() {
           contentContainerClassName="gap-4 px-5"
           contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         >
-          {renaming ? (
-            <Card size="tile" className="gap-3">
-              <TextField value={draftName} onChangeText={setDraftName} maxLength={50} />
-              <Button
-                label={t.save}
-                loading={busy}
-                disabled={!draftName.trim()}
-                onPress={rename}
-              />
-            </Card>
-          ) : null}
-
-          <Card className="gap-3">
-            <Text className="text-lg font-semibold text-ink">
-              {t.grpMembers} · {group.members.length}
-            </Text>
-            {group.members.map((member) =>
-              person(
-                member,
-                member.id === group.creatorId ? t.grpCreator : `@${member.uniqueName}`,
-              ),
-            )}
-          </Card>
-
-          <Card className="gap-3">
-            <FormField label={t.grpInviteLabel}>
-              <TextField
-                placeholder={t.grpInvitePlaceholder}
-                value={inviteName}
-                onChangeText={setInviteName}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!busy}
-              />
-            </FormField>
-            <Button
-              icon="person-add-outline"
-              label={t.grpInviteSend}
-              loading={busy}
-              disabled={!inviteName.trim()}
-              onPress={invite}
-            />
-            {group.invitations.length > 0 ? (
-              <View className="gap-2">
-                <Text className="px-1 text-xs font-semibold uppercase text-ink-soft">
-                  {t.grpPending}
-                </Text>
-                {group.invitations.map((invitation) =>
-                  person(invitation.invitee, `@${invitation.invitee.uniqueName}`),
-                )}
-              </View>
-            ) : null}
-          </Card>
-
-          <Text className="mt-2 text-xl font-semibold text-ink">{t.grpActivity}</Text>
+          
           {events.length === 0 ? (
             <Text className="py-4 text-center text-sm text-ink-muted">{t.grpNoActivity}</Text>
           ) : (
@@ -324,10 +209,6 @@ export default function GroupDetailScreen() {
             />
           ) : null}
 
-          <Button variant="secondary" icon="exit-outline" label={t.grpLeave} onPress={leave} />
-          {isCreator ? (
-            <Button variant="danger" icon="trash-outline" label={t.grpDelete} onPress={remove} />
-          ) : null}
         </ScrollView>
       )}
     </View>

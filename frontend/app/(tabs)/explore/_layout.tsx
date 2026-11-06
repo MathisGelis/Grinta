@@ -132,6 +132,8 @@ export default function ExploreLayout() {
     pathname.endsWith("/notification") ||
     pathname.endsWith("/groups") ||
     pathname.includes("/group-detail") ||
+    pathname.includes("/group-settings") ||
+    pathname.includes("/group-add-member") ||
     pathname.endsWith("/userPost") ||
     pathname.includes("/user-profile");
 
@@ -165,6 +167,8 @@ export default function ExploreLayout() {
           />
           <Stack.Screen name="groups" />
           <Stack.Screen name="group-detail" />
+          <Stack.Screen name="group-settings" />
+          <Stack.Screen name="group-add-member" />
           <Stack.Screen name="userPost" />
         </Stack>
       </View>

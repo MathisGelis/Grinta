@@ -16,6 +16,8 @@ import ScreenHeader from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
+import GroupIcon from "@/components/groups/GroupIcon";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/FormField";
@@ -28,6 +30,7 @@ export default function GroupsScreen() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const [busyInvitation, setBusyInvitation] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -58,6 +61,7 @@ export default function GroupsScreen() {
       setCreating(true);
       const group = await GroupsService.create(trimmed);
       setName("");
+      setShowCreate(false);
       router.push({ pathname: "/(tabs)/explore/group-detail", params: { groupId: group.id } } as any);
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
@@ -86,7 +90,18 @@ export default function GroupsScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader title={t.grpTitle} />
+      <ScreenHeader
+        title={t.grpTitle}
+        glass
+        right={
+          <IconButton
+            icon={showCreate ? "close" : "add"}
+            variant="glass"
+            label={t.grpNewGroup}
+            onPress={() => setShowCreate((value) => !value)}
+          />
+        }
+      />
       {loading ? (
         <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
       ) : (
@@ -137,8 +152,10 @@ export default function GroupsScreen() {
             </View>
           ) : null}
 
+          {showCreate ? (
           <Card size="tile" className="gap-3">
             <TextField
+              autoFocus
               placeholder={t.grpNamePlaceholder}
               value={name}
               onChangeText={setName}
@@ -153,6 +170,7 @@ export default function GroupsScreen() {
               onPress={create}
             />
           </Card>
+          ) : null}
 
           {groups.length === 0 ? (
             <Text className="py-6 text-center text-sm text-ink-muted">{t.grpEmpty}</Text>
@@ -168,14 +186,17 @@ export default function GroupsScreen() {
                     params: { groupId: group.id },
                   } as any)
                 }
-                className="rounded-tile bg-surface p-4"
+                className="flex-row items-center gap-3 rounded-tile bg-surface p-4"
               >
-                <Text className="text-base font-semibold text-ink" numberOfLines={1}>
-                  {group.name}
-                </Text>
-                <Text className="mt-0.5 text-xs text-ink-muted">
-                  {format(t.grpMemberCount, { n: group.memberCount })}
-                </Text>
+                <GroupIcon name={group.name} size={44} />
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-ink" numberOfLines={1}>
+                    {group.name}
+                  </Text>
+                  <Text className="mt-0.5 text-xs text-ink-muted">
+                    {format(t.grpMemberCount, { n: group.memberCount })}
+                  </Text>
+                </View>
               </PressableScale>
             ))
           )}
