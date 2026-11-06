@@ -8,11 +8,15 @@ import { Exercise, getExerciseStats } from "@/services/exercises.service";
 import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
 import {
   createPlannedWorkout,
+  getWorkoutById,
+  plannedWorkoutsList,
+  PlannedWorkout,
   CreateWorkoutRequest,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
 import WorkoutFormFields from "@/components/workout/editor/WorkoutFormFields";
 import ExerciseSection from "@/components/workout/editor/ExerciseSection";
+import WorkoutPickerSheet from "@/components/workout/editor/WorkoutPickerSheet";
 import WorkoutStats from "@/components/workout/editor/WorkoutStats";
 
 import Button from "@/components/ui/Button";
@@ -33,6 +37,36 @@ export default function CreateWorkoutScreen() {
   const [estimatedTime, setEstimatedTime] = useState("45");
   const [restSeconds, setRestSeconds] = useState("60");
   const [loading, setLoading] = useState(false);
+  const [showWorkoutPicker, setShowWorkoutPicker] = useState(false);
+  const [workouts, setWorkouts] = useState<PlannedWorkout[]>(
+    () => plannedWorkoutsList.peek() ?? [],
+  );
+
+  const openWorkoutPicker = () => {
+    setShowWorkoutPicker(true);
+    plannedWorkoutsList.load().then(setWorkouts).catch(() => {});
+  };
+
+  const handleImportWorkout = async (workout: PlannedWorkout) => {
+    setShowWorkoutPicker(false);
+    try {
+      const token = await TokenService.get();
+      const detail = await getWorkoutById(workout.id, token || undefined);
+      setSelectedExercises((prev) => {
+        const known = new Set(prev.map((ex) => ex.id));
+        const added = detail.exercises
+          .filter((ex) => !known.has(ex.exerciseId))
+          .map((ex) => ({
+            id: ex.exerciseId,
+            name: ex.exerciseName ?? "",
+            sets: ex.sets.length ? ex.sets : [{ reps: 10, weight: 0 }],
+          }));
+        return [...prev, ...added];
+      });
+    } catch (err) {
+      Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
+    }
+  };
 
   const handleSelectExercise = (exercise: Exercise) => {
     const exerciseExists = selectedExercises.some(
@@ -145,6 +179,7 @@ export default function CreateWorkoutScreen() {
         <ExerciseSection
           exercises={selectedExercises}
           onAdd={() => setShowExerciseSelector(true)}
+          onImport={openWorkoutPicker}
           onUpdate={handleUpdateExercise}
           onRemove={handleRemoveExercise}
         />
@@ -163,6 +198,17 @@ export default function CreateWorkoutScreen() {
           onPress={createWorkout}
         />
       </ScrollView>
+
+      <WorkoutPickerSheet
+        visible={showWorkoutPicker}
+        workouts={workouts}
+        onClose={() => setShowWorkoutPicker(false)}
+        onSelect={handleImportWorkout}
+        onCreate={() => {
+          setShowWorkoutPicker(false);
+          router.push("/(tabs)/workouts/create/workout");
+        }}
+      />
 
       <ExerciseSearch
         visible={showExerciseSelector}

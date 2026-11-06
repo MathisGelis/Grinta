@@ -11,6 +11,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 interface ExerciseSectionProps {
   exercises: ExerciseSetupData[];
   onAdd: () => void;
+  onImport?: () => void;
   onUpdate: (updated: ExerciseSetupData) => void;
   onRemove: (id: string) => void;
 }
@@ -18,6 +19,7 @@ interface ExerciseSectionProps {
 export default function ExerciseSection({
   exercises,
   onAdd,
+  onImport,
   onUpdate,
   onRemove,
 }: ExerciseSectionProps) {
@@ -31,6 +33,17 @@ export default function ExerciseSection({
             {exercises.length}
           </Text>
         </Text>
+        <View className="flex-row items-center gap-2">
+          {onImport && (
+            <PressableScale
+              onPress={onImport}
+              accessibilityRole="button"
+              accessibilityLabel={t.chooseWorkout}
+              className="h-11 w-11 items-center justify-center rounded-full bg-raised"
+            >
+              <Ionicons name="albums-outline" size={22} color={WorkoutTheme.text.primary} />
+            </PressableScale>
+          )}
         <PressableScale
           onPress={onAdd}
           accessibilityRole="button"
@@ -39,6 +52,7 @@ export default function ExerciseSection({
         >
           <Ionicons name="add" size={24} color={WorkoutTheme.text.primary} />
         </PressableScale>
+        </View>
       </View>
 
       {exercises.length > 0 ? (

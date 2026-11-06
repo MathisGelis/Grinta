@@ -1,7 +1,5 @@
 import React, {
-  startTransition,
   useCallback,
-  useDeferredValue,
   useEffect,
   useMemo,
   useState,
@@ -14,15 +12,24 @@ import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import WorkoutCard from "@/components/workout/card/WorkoutCard";
-import WorkoutSortSheet, { WorkoutSort } from "@/components/workout/WorkoutSortSheet";
+import EmptyHint from "@/components/workout/EmptyHint";
+import WorkoutsListSheet from "@/components/workout/WorkoutsListSheet";
+import IconButton from "@/components/ui/IconButton";
 import {
   plannedWorkoutsList,
   PlannedWorkout,
   fullPlannedWorkout,
 } from "@/services/workouts.service";
+import ProgrammeHero from "@/components/workout/programmes/ProgrammeHero";
+import SectionHeader from "@/components/ui/SectionHeader";
+import ProgrammeRail from "@/components/workout/programmes/ProgrammeRail";
+import {
+  getTodayProgramme,
+  programmsList,
+  SmallProgramm,
+} from "@/services/programms.service";
+import { localDate } from "@/utils/date";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
-import { useSectionQuery } from "@/contexts/WorkoutsSearchContext";
-import { normalizeText } from "@/utils/text";
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
@@ -30,19 +37,29 @@ export default function WorkoutScreen() {
   const [workouts, setWorkouts] = useState<PlannedWorkout[]>(
     () => plannedWorkoutsList.peek() ?? [],
   );
+  const [programmes, setProgrammes] = useState<SmallProgramm[]>(
+    () => programmsList.peek() ?? [],
+  );
+  const [activeProgrammeId, setActiveProgrammeId] = useState<string | undefined>();
+  const [activeDay, setActiveDay] = useState<number | undefined>();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(() => plannedWorkoutsList.peek() === null);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<WorkoutSort>("default");
-  const [sortVisible, setSortVisible] = useState(false);
-  const openSort = useCallback(() => setSortVisible(true), []);
-  const query = useSectionQuery("sessions", openSort);
-  const deferredQuery = useDeferredValue(query);
+  const [sheet, setSheet] = useState<"programmes" | "sessions" | null>(null);
+  const closeSheet = useCallback(() => setSheet(null), []);
 
   const loadWorkouts = useCallback(async () => {
     try {
       setError(null);
-      setWorkouts(await plannedWorkoutsList.load());
+      const [list, programmeList, today] = await Promise.all([
+        plannedWorkoutsList.load(),
+        programmsList.load().catch(() => programmsList.peek() ?? []),
+        getTodayProgramme(localDate()).catch(() => null),
+      ]);
+      setWorkouts(list);
+      setProgrammes(programmeList);
+      setActiveProgrammeId(today?.programme.id);
+      setActiveDay(today?.dayNumber);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.loadingError);
       console.error("Erreur:", err);
@@ -66,18 +83,43 @@ export default function WorkoutScreen() {
     loadWorkouts().finally(() => setRefreshing(false));
   }, [loadWorkouts]);
 
-  const data = useMemo(() => {
-    const needle = normalizeText(deferredQuery.trim());
-    const filtered = needle
-      ? workouts.filter((w) => normalizeText(w.title).includes(needle))
-      : workouts;
-    if (sortBy === "default") return filtered;
-    return [...filtered].sort((a, b) =>
-      sortBy === "name"
-        ? a.title.localeCompare(b.title)
-        : (b.totalExercises ?? 0) - (a.totalExercises ?? 0),
-    );
-  }, [workouts, deferredQuery, sortBy]);
+  const activeProgramme = useMemo(
+    () => programmes.find((p) => p.id === activeProgrammeId),
+    [programmes, activeProgrammeId],
+  );
+
+  const rail = (
+    <View className="gap-6 pb-4">
+      {activeProgramme && activeDay != null && (
+        <ProgrammeHero programme={activeProgramme} dayNumber={activeDay} />
+      )}
+      <ProgrammeRail
+        programmes={programmes.filter((p) => p.id !== activeProgrammeId)}
+        onSearch={() => setSheet("programmes")}
+        empty={programmes.filter((p) => p.id !== activeProgrammeId).length === 0}
+        hasActive={!!activeProgramme}
+      />
+      <SectionHeader
+        title={t.sessions}
+        right={
+          <>
+            <IconButton
+              icon="add"
+              size={40}
+              label={t.createWorkout}
+              onPress={() => router.push("/(tabs)/workouts/create/workout")}
+            />
+            <IconButton
+              icon="search-outline"
+              size={40}
+              label={t.searchLabel}
+              onPress={() => setSheet("sessions")}
+            />
+          </>
+        }
+      />
+    </View>
+  );
 
   const handleDelete = useCallback((id: string) => {
     setWorkouts((prev) => prev.filter((w) => w.id !== id));
@@ -91,12 +133,6 @@ export default function WorkoutScreen() {
       totalExercises: updated.totalExercises,
     };
     setWorkouts((prev) => prev.map((w) => (w.id === updated.id ? next : w)));
-  }, []);
-
-  const closeSort = useCallback(() => setSortVisible(false), []);
-  const selectSort = useCallback((sort: WorkoutSort) => {
-    setSortVisible(false);
-    startTransition(() => setSortBy(sort));
   }, []);
 
   const renderItem = useCallback(
@@ -142,9 +178,18 @@ export default function WorkoutScreen() {
             <Text className="text-sm font-semibold text-ink">{t.retryBtn}</Text>
           </PressableScale>
         </View>
-      ) : workouts.length > 0 ? (
+      ) : (
         <FlatList {...chromeScrollProps}
-          data={data}
+          data={workouts}
+          ListHeaderComponent={rail}
+          ListEmptyComponent={
+            <EmptyHint
+              icon="barbell-outline"
+              message={t.emptyWorkoutsHint}
+              actionLabel={t.createWorkout}
+              onAction={() => router.push("/(tabs)/workouts/create/workout")}
+            />
+          }
           keyExtractor={(w) => w.id}
           renderItem={renderItem}
           initialNumToRender={8}
@@ -154,31 +199,20 @@ export default function WorkoutScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           refreshControl={refreshControl}
-          contentContainerClassName="px-5 pt-1"
+          contentContainerClassName="px-5 pt-2"
           contentContainerStyle={{ paddingBottom: bottomOffset + 80 }}
         />
-      ) : (
-        <View className="flex-1 items-center justify-center px-8 py-[60px]">
-          <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-info-tint">
-            <Ionicons name="barbell-outline" size={48} color={WorkoutTheme.accent.purple} />
-          </View>
-          <Text className="mb-2 text-xl font-bold text-ink">{t.noWorkouts}</Text>
-          <Text className="text-center text-sm leading-[20px] text-ink-muted">{t.createFirstWorkout}</Text>
-          <PressableScale
-            onPress={() => router.push("/(tabs)/workouts/create/workout")}
-            className="mt-7 h-[52px] flex-row items-center gap-2 rounded-full bg-accent px-6"
-          >
-            <Ionicons name="add-circle" size={22} color={WorkoutTheme.text.primary} />
-            <Text className="text-[15px] font-semibold text-ink">{t.createWorkout}</Text>
-          </PressableScale>
-        </View>
       )}
 
-      <WorkoutSortSheet
-        visible={sortVisible}
-        value={sortBy}
-        onClose={closeSort}
-        onSelect={selectSort}
+      <WorkoutsListSheet
+        visible={sheet !== null}
+        kind={sheet ?? "sessions"}
+        onClose={closeSheet}
+        programmes={programmes}
+        workouts={workouts}
+        onDeleteWorkout={handleDelete}
+        onUpdateWorkout={handleUpdate}
+        onProgrammeAdded={loadWorkouts}
       />
     </View>
   );

@@ -12,7 +12,6 @@ import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 
 const ADD_ROUTES = {
   sessions: "/(tabs)/workouts/create/workout",
-  programmes: "/(tabs)/workouts/create/programm",
   exercises: "/(tabs)/workouts/create/exercise",
 } as const;
 
@@ -24,13 +23,13 @@ function SharedSearchBar() {
 
   const section: WorkoutsSection = pathname.includes("exercises")
     ? "exercises"
-    : pathname.includes("programms")
-      ? "programmes"
-      : "sessions";
+    : "sessions";
+
+  // Les séances et programmes ont leur propre barre de recherche dans un slider.
+  if (section === "sessions") return null;
 
   const placeholder = {
     sessions: t.searchWorkout,
-    programmes: t.searchProgrammePlaceholder,
     exercises: t.searchExercise,
   }[section];
 
@@ -47,7 +46,7 @@ function SharedSearchBar() {
         onChangeText={(query) => setQuery(section, query)}
         onAdd={() => router.push(ADD_ROUTES[section] as any)}
         placeholder={placeholder}
-        onFilter={section === "programmes" ? undefined : () => openFilter(section)}
+        onFilter={() => openFilter(section)}
       />
     </Animated.View>
   );
@@ -66,8 +65,7 @@ export default function TabsLayout() {
             headerShown: false,
           }}
         >
-          <Tabs.Screen name="index" options={{ tabBarLabel: t.sessions }} />
-          <Tabs.Screen name="programms" options={{ tabBarLabel: t.programmes }} />
+          <Tabs.Screen name="index" options={{ tabBarLabel: t.creation }} />
           <Tabs.Screen name="exercises" options={{ tabBarLabel: t.exercises }} />
         </Tabs>
         <SharedSearchBar />
