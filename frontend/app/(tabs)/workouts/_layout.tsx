@@ -15,6 +15,18 @@ export default function WorkoutsStack() {
         options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
       />
       <Stack.Screen
+        name="programme-detail"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="import"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="templates"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
         name="create/workout"
         options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
       />

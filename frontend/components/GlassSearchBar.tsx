@@ -9,7 +9,8 @@ import { useTranslation } from "@/contexts/LanguageContext";
 interface GlassSearchBarProps {
   value: string;
   onChangeText: (query: string) => void;
-  onAdd: () => void;
+  /** Sans `onAdd`, le bouton + n'est pas affiché. */
+  onAdd?: () => void;
   placeholder?: string;
   onFilter?: () => void;
 }
@@ -57,14 +58,16 @@ function GlassSearchBar({
         />
       </View>
 
+      {onAdd && (
       <PressableScale
-        onPress={onAdd}
-        accessibilityRole="button"
-        className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-glass-border"
-        style={{ backgroundColor: FILL }}
-      >
-        <Ionicons name="add" size={24} color="grey" />
-      </PressableScale>
+          onPress={onAdd}
+          accessibilityRole="button"
+          className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-glass-border"
+          style={{ backgroundColor: FILL }}
+        >
+          <Ionicons name="add" size={24} color="grey" />
+        </PressableScale>
+      )}
     </View>
   );
 }

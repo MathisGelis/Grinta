@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { SelectList } from "react-native-dropdown-select-list";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
@@ -123,16 +122,23 @@ export default function CreateProgrammScreen() {
     <View className="flex-1">
       <ScreenBackground flat />
       <ScreenHeader floating title={t.newProgramme} />
-      <ScrollView {...chromeScrollProps}
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerClassName="gap-5 px-5"
-        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ProgrammeDayEditor
+        days={days}
+        onChangeDays={setDays}
+        availableWorkouts={availableWorkouts}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+        header={
+          <View style={{ gap: 20, marginBottom: 20 }}>
         <Text className="text-sm text-ink-muted">
           {t.programmeIntro}
         </Text>
+
+        <Button
+          variant="secondary"
+          icon="document-text-outline"
+          label={t.imEntry}
+          onPress={() => router.push("/(tabs)/workouts/import" as any)}
+        />
 
         <FormField label={t.titleLabel} required>
           <TextField
@@ -179,18 +185,18 @@ export default function CreateProgrammScreen() {
           />
         </FormField>
 
-        <ProgrammeDayEditor
-          days={days}
-          onChangeDays={setDays}
-          availableWorkouts={availableWorkouts}
-        />
-
+          </View>
+        }
+        footer={
+          <View style={{ marginTop: 12 }}>
         <Button
           label={t.createProgramme}
           loading={loading}
           onPress={submitProgramme}
         />
-      </ScrollView>
+          </View>
+        }
+      />
     </View>
   );
 }
