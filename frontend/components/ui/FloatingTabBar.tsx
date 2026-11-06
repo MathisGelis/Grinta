@@ -108,7 +108,7 @@ export default function FloatingTabBar({
   const labels: Record<string, string> = {
     "workout-trigger": t.startWorkout,
     explore: t.tabExplore,
-    workouts: t.sessions,
+    workouts: t.tabTraining,
     stats: t.tabStats,
     profile: t.profile,
   };
