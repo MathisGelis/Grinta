@@ -13,6 +13,8 @@ export default function AuthNavigator() {
       <Stack.Screen name="onboarding/WeightScreen" />
       <Stack.Screen name="onboarding/HeightScreen" />
       <Stack.Screen name="onboarding/GoalScreen" />
+      <Stack.Screen name="onboarding/TrainingScreen" />
+      <Stack.Screen name="onboarding/TemplatesScreen" />
     </Stack>
   );
 }

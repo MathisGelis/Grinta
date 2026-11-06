@@ -46,7 +46,7 @@ export default function GoalScreen() {
       if (userId && Object.keys(data).length > 0) {
         await UserService.updateProfile(userId, data);
       }
-      router.replace("/(tabs)/explore");
+      router.replace("/(auth)/onboarding/TrainingScreen" as any);
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
     } finally {
