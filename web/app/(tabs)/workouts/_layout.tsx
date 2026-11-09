@@ -1,0 +1,43 @@
+import { Stack } from "expo-router";
+import { WorkoutTheme } from "@/constants/Colors";
+
+export default function WorkoutsStack() {
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: "transparent" },
+      }}
+    >
+      <Stack.Screen name="(list)" />
+      <Stack.Screen
+        name="exercise-detail"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="programme-detail"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="import"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="templates"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="create/workout"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="create/exercise"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
+        name="create/programm"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+    </Stack>
+  );
+}
