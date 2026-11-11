@@ -18,6 +18,8 @@ export class ExerciseService {
   private catalogue: { loadedAt: number; exercises: Exercise[] } | null = null;
   // Bumped by every write, so a list read before a write is never cached.
   private catalogueVersion = 0;
+  private names: { source: Exercise[]; byId: Map<string, string> } | null =
+    null;
 
   constructor(
     @InjectRepository(Exercise)
@@ -75,6 +77,18 @@ export class ExerciseService {
     if (version === this.catalogueVersion)
       this.catalogue = { loadedAt, exercises };
     return exercises;
+  }
+
+  /** English name of every catalogue exercise, by id, from the cached list. */
+  async namesById(): Promise<Map<string, string>> {
+    const exercises = await this.loadCatalogue();
+
+    if (this.names?.source !== exercises)
+      this.names = {
+        source: exercises,
+        byId: new Map(exercises.map((e) => [e.id, e.name])),
+      };
+    return this.names.byId;
   }
 
   private invalidateCatalogue() {

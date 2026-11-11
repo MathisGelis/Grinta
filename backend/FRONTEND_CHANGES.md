@@ -932,3 +932,16 @@ Erreurs :
   - 403 `{ code: "GROUP_USERS_NOT_MUTUAL", message, userIds }` : pas de suivi mutuel avec ces personnes ;
   - 404 `{ code: "GROUP_USERS_NOT_FOUND", message, userIds }` : comptes inexistants.
 - Sans `userIds`, rien ne change.
+
+### 9.8 Catalogue d'exercices traduit
+
+Le serveur renvoie les exercices dans la langue de l'en-tête **`Accept-Language`**, sur **toutes** les routes : catalogue, détail d'un exercice, séances, programmes, posts, stats, records, badges, groupes, modèles, import.
+
+**À faire côté app** (une ligne dans `services/api.ts`) : ajouter `"Accept-Language": <langue choisie dans l'app>` aux en-têtes de chaque requête (`fr`, `en`, `es`, `de`, `it`, `pt`, `ru`, `zh`, `ja`, `ko`). Quand l'utilisateur change de langue, recharger la liste d'exercices.
+
+- `name` contient le nom traduit. Le nom anglais reste disponible dans `englishName` sur les objets exercice (`{ id, name, englishName }`), par exemple pour la recherche.
+- Langue absente ou non prise en charge : anglais, comme aujourd'hui.
+- `description` et `instructions` de `GET /exercises/:id` sont traduites en français ; les autres langues restent en anglais pour l'instant.
+- Le cache de la liste fonctionne par langue : l'ETag change avec la langue, et la réponse porte `Vary: Accept-Language`.
+- La recherche locale (`ex.name.includes(…)`) cherche donc dans la langue de l'utilisateur. Pour accepter aussi l'anglais, chercher dans `name` et `englishName`.
+- L'import de notes (`POST /workouts/import`) reconnaît aussi les noms traduits.

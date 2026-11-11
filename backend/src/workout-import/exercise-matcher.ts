@@ -9,6 +9,8 @@ import { wordsOf } from './normalize';
 export interface CatalogueExercise {
   id: string;
   name: string;
+  /** Translated names, matched exactly like the catalogue name. */
+  altNames?: string[];
 }
 
 interface Variant extends CatalogueExercise {
@@ -70,6 +72,7 @@ function longestPhrase<T>(
 export class ExerciseMatcher {
   private readonly byBase = new Map<string, Variant[]>();
   private readonly variants: Variant[] = [];
+  private readonly altNames: Array<{ words: string[]; variant: Variant }> = [];
   private readonly aliases = new Map<string, AliasEntry>();
   private readonly modifiers = new Map<string, string>();
   private maxAliasLength = 1;
@@ -103,6 +106,8 @@ export class ExerciseMatcher {
       const key = base.toLowerCase();
 
       this.variants.push(variant);
+      for (const alt of exercise.altNames ?? [])
+        this.altNames.push({ words: this.translated(wordsOf(alt)), variant });
       this.byBase.set(key, [...(this.byBase.get(key) ?? []), variant]);
     }
   }
@@ -127,6 +132,14 @@ export class ExerciseMatcher {
     );
 
     if (exact) return this.result(exact);
+    const translated = this.altNames.find(
+      (alt) =>
+        alt.words.length === query.length &&
+        dice(alt.words, query) === 1 &&
+        new Set(alt.words).size === new Set(query).size,
+    );
+
+    if (translated) return this.result(translated.variant);
     return this.byAlias(words) ?? this.closest(query, 0.7);
   }
 

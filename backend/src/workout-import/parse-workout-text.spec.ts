@@ -60,6 +60,18 @@ describe('ExerciseMatcher', () => {
     expect(matcher.match(text)?.name).toBe(name);
   });
 
+  it('reads a translated catalogue name', () => {
+    const withFrench = new ExerciseMatcher([
+      {
+        id: 'bench',
+        name: 'Bench Press (Barbell)',
+        altNames: ['Développé couché (barre)'],
+      },
+    ]);
+
+    expect(withFrench.match('Développé couché (barre)')?.id).toBe('bench');
+  });
+
   it('does not guess from a single split word', () => {
     expect(matcher.match('push')).toBeNull();
     expect(matcher.match('blabla')).toBeNull();

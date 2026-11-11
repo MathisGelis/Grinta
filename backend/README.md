@@ -75,6 +75,15 @@ Every figure leaves the API rounded by one rule per kind (`src/common/utils/numb
 
 With `log`, emails are written to the log in development, reset links included. In production (`NODE_ENV=production`) the log transport writes only a warning, so links never end up in the process log.
 
+## Exercise translations
+
+Exercises are served in the language of the `Accept-Language` header (en, fr, es, de, it, pt, ru, zh, ja, ko; anything else gives English), on every route, by `ExerciseLocaleInterceptor`. The English name stays the reference in the database. The translations live in `src/exercise/data/i18n/`:
+
+- `<locale>.names.json`: `bases` (the name before the brackets), `qualifiers` (the variants inside them) and `overrides` (whole names that read badly when composed);
+- `<locale>.details.json`: `{ "<English name>": { description, instructions } }`.
+
+`translation-files.spec.ts` fails when a catalogue exercise is missing from a language, or when two exercises end up with the same name. Fixing a translation is a JSON edit and a backend deploy.
+
 ## Sign in with Apple and Google
 
 `POST /auth/apple` `{ identityToken, fullName? }` and `POST /auth/google` `{ idToken }` check the token signature against the provider's published keys (JWKS), its issuer, expiry and audience.

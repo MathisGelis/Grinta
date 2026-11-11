@@ -2,6 +2,11 @@
 
 ## Non publié : deuxième lot de l'audit front
 
+- **Catalogue d'exercices traduit** dans les 10 langues de l'app, d'après l'en-tête `Accept-Language`, sur toutes les routes qui renvoient des exercices. Le nom anglais reste la référence en base et est renvoyé dans `englishName`.
+  - Les traductions sont des fichiers JSON versionnés (`src/exercise/data/i18n/`), chargés en mémoire : pas de table ni de migration. Les noms sont composés à partir de la base et des variantes (« Développé couché » + « incliné, haltères »).
+  - Un intercepteur global traduit les réponses sans modifier les valeurs en cache et en gardant les classes des entités, si bien que les champs exclus (mot de passe) restent masqués.
+  - Les tests vérifient que chaque langue couvre tout le catalogue avec des noms distincts.
+  - L'import de notes reconnaît aussi les noms traduits.
 - **Groupe créé avec une liste de personnes** : `POST /groups` accepte `userIds`. Chacune est invitée dès la création, avec les règles habituelles (suivi mutuel, 20 membres au plus). C'est tout ou rien : 403 `GROUP_USERS_NOT_MUTUAL` ou 404 `GROUP_USERS_NOT_FOUND`, avec les ids en cause.
 - **Ordre des exercices d'une séance planifiée** : `GET /programmes/active/today` (et le retour de `POST /programmes/:id/start`) pouvait renvoyer les exercices dans le désordre. L'ordre dépendait de l'ordre physique des lignes en base, que Postgres ne garantit pas, par exemple avec une jointure de hachage sur une table plus grosse.
   - Nouvelle colonne `position` sur `planned_workout_exercises` (migration réversible `1792605872875-AddPlannedExercisePosition`), qui reprend l'ordre actuel des lignes existantes.

@@ -5,7 +5,8 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      "exercise/data/*.json"
+      "exercise/data/*.json",
+      "exercise/data/i18n/*.json"
     ]
   }
 }
