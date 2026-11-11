@@ -62,6 +62,28 @@ describe('Exercise catalogue in the language of the app (e2e)', () => {
     ).toBe('Bench Press (Barbell)');
   });
 
+  it('translates the description and instructions in French', async () => {
+    const fr = await http(app)
+      .get(`/exercises/${bench}`)
+      .set('Accept-Language', 'fr')
+      .expect(200);
+    const body = fr.body as { description: string; instructions: string[] };
+
+    expect(body.description).toMatch(/pectoraux/);
+    expect(body.instructions[0]).toMatch(/^Allongez-vous/);
+
+    // No German details yet: the English text stays, with the German name.
+    const de = await http(app)
+      .get(`/exercises/${bench}`)
+      .set('Accept-Language', 'de')
+      .expect(200);
+
+    expect(de.body).toMatchObject({ name: 'Bankdrücken (Langhantel)' });
+    expect((de.body as { description: string }).description).toMatch(
+      /horizontal press/,
+    );
+  });
+
   it('answers 304 to the ETag of the same language only', async () => {
     const fr = await list('fr').expect(200);
 

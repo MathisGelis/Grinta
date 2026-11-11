@@ -22,6 +22,16 @@ const read = <T>(file: string): T | null => {
 };
 const locales = SUPPORTED_LOCALES.filter((l) => l !== 'en');
 
+describe('fr details', () => {
+  it('describe every exercise of the catalogue', () => {
+    const fr =
+      read<Record<string, ExerciseDetailsTranslation>>('fr.details.json')!;
+
+    expect(catalogue.filter((n) => !fr[n]?.description)).toEqual([]);
+    expect(catalogue.filter((n) => !fr[n]?.instructions?.length)).toEqual([]);
+  });
+});
+
 describe.each(locales)('%s translations', (locale) => {
   const source = read<NameSource>(`${locale}.names.json`);
   const details = read<Record<string, ExerciseDetailsTranslation>>(
