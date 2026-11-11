@@ -2,6 +2,7 @@
 
 ## Non publié : deuxième lot de l'audit front
 
+- **Groupe créé avec une liste de personnes** : `POST /groups` accepte `userIds`. Chacune est invitée dès la création, avec les règles habituelles (suivi mutuel, 20 membres au plus). C'est tout ou rien : 403 `GROUP_USERS_NOT_MUTUAL` ou 404 `GROUP_USERS_NOT_FOUND`, avec les ids en cause.
 - **Ordre des exercices d'une séance planifiée** : `GET /programmes/active/today` (et le retour de `POST /programmes/:id/start`) pouvait renvoyer les exercices dans le désordre. L'ordre dépendait de l'ordre physique des lignes en base, que Postgres ne garantit pas, par exemple avec une jointure de hachage sur une table plus grosse.
   - Nouvelle colonne `position` sur `planned_workout_exercises` (migration réversible `1792605872875-AddPlannedExercisePosition`), qui reprend l'ordre actuel des lignes existantes.
   - Elle est remplie à chaque écriture : création, modification, duplication, modèles, données de démo. La séance retrie ses exercices à chaque chargement, quelle que soit la route.

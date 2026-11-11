@@ -57,8 +57,18 @@ export class GroupsService {
     return this.groupRepository.manager;
   }
 
-  create(userId: string, name: string) {
+  /**
+   * Creates the group with its creator as first member, and invites
+   * `inviteeIds` under the rules of `invite`: each one must follow the
+   * creator and be followed back. All or nothing: if one of them cannot be
+   * invited, no group is created and the error names who.
+   */
+  create(userId: string, name: string, inviteeIds: string[] = []) {
+    const invitees = [...new Set(inviteeIds)].filter((id) => id !== userId);
+
     return this.manager.transaction(async (manager) => {
+      if (invitees.length)
+        await this.assertInvitable(manager, userId, invitees);
       const group = await manager.save(
         manager.create(Group, { name, creator: { id: userId } }),
       );
@@ -67,8 +77,55 @@ export class GroupsService {
         group: { id: group.id },
         user: { id: userId },
       });
+      if (invitees.length)
+        await manager.insert(
+          GroupInvitation,
+          invitees.map((id) => ({
+            group: { id: group.id },
+            invitee: { id },
+            inviter: { id: userId },
+          })),
+        );
       return this.detail(userId, group.id, manager);
     });
+  }
+
+  /** 404 for unknown users, 403 for those without a mutual follow. */
+  private async assertInvitable(
+    manager: EntityManager,
+    userId: string,
+    inviteeIds: string[],
+  ) {
+    const rows = await manager.query<Array<{ id: string; mutual: boolean }>>(
+      `SELECT u.id,
+              EXISTS (SELECT 1 FROM connections c
+                       WHERE c."followerId" = $2 AND c."followingId" = u.id)
+              AND EXISTS (SELECT 1 FROM connections c
+                       WHERE c."followerId" = u.id AND c."followingId" = $2)
+                AS mutual
+         FROM users u WHERE u.id = ANY($1::uuid[])`,
+      [inviteeIds, userId],
+    );
+    const found = new Set(rows.map((r) => r.id));
+    const unknown = inviteeIds.filter((id) => !found.has(id));
+
+    if (unknown.length)
+      throw new NotFoundException({
+        statusCode: 404,
+        code: 'GROUP_USERS_NOT_FOUND',
+        message: 'Certains utilisateurs sont introuvables.',
+        userIds: unknown,
+      });
+    const notMutual = rows.filter((r) => !r.mutual).map((r) => r.id);
+
+    if (notMutual.length)
+      throw new ForbiddenException({
+        statusCode: 403,
+        code: 'GROUP_USERS_NOT_MUTUAL',
+        message:
+          'Vous devez vous suivre mutuellement avec chaque personne invitée.',
+        userIds: notMutual,
+      });
   }
 
   /** The user's groups, the last one joined first. */

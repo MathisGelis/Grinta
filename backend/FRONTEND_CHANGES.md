@@ -917,3 +917,18 @@ Erreurs :
 ### 9.6 Ordre des exercices d'une séance planifiée
 
 `GET /programmes/active/today` (et la réponse de `POST /programmes/:id/start`) pouvait renvoyer les exercices de la séance du jour dans le désordre. C'est corrigé : partout, les exercices d'une séance planifiée sortent dans l'ordre où ils ont été saisis. Chaque exercice porte en plus `position` (0, 1, 2…). Rien à changer côté app : l'ordre du tableau `exercises` fait foi.
+
+### 9.7 Créer un groupe avec une liste de personnes
+
+`POST /groups` accepte en plus `userIds` (facultatif, 19 ids au plus, sans doublon) :
+
+```json
+{ "name": "Team du mardi", "userIds": ["<id>", "<id>"] }
+```
+
+- Chaque personne de la liste reçoit une **invitation** dès la création, comme avec `POST /groups/:id/invitations`. Elle rejoint le groupe en acceptant. La réponse est le détail du groupe, avec ces invitations dans `invitations`.
+- Mêmes règles : il faut se suivre mutuellement. Son propre id est ignoré.
+- **Tout ou rien** : si une personne ne peut pas être invitée, aucun groupe n'est créé.
+  - 403 `{ code: "GROUP_USERS_NOT_MUTUAL", message, userIds }` : pas de suivi mutuel avec ces personnes ;
+  - 404 `{ code: "GROUP_USERS_NOT_FOUND", message, userIds }` : comptes inexistants.
+- Sans `userIds`, rien ne change.

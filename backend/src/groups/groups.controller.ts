@@ -15,6 +15,7 @@ import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { GroupActivityQueryDto } from './dto/group-activity-query.dto';
 import { GroupNameDto } from './dto/group-name.dto';
 import { InviteToGroupDto } from './dto/invite-to-group.dto';
+import { CreateGroupDto } from './dto/create-group.dto';
 import { ShareToGroupDto } from './dto/share-to-group.dto';
 import { GroupsService } from './groups.service';
 
@@ -32,11 +33,23 @@ export class GroupsController {
   @Post()
   @ApiOperation({
     summary: 'Create a group',
-    description: 'The creator is its first member. 20 members at most.',
+    description:
+      'The creator is its first member. 20 members at most. `userIds` are ' +
+      'invited at once, with the rules of POST /groups/:id/invitations (mutual ' +
+      'follow); they join by accepting. If one of them cannot be invited, ' +
+      'nothing is created and the error lists them in `userIds`.',
   })
   @ApiResponse({ status: 201, description: GROUP_DETAIL })
-  create(@Req() req: AuthenticatedRequest, @Body() dto: GroupNameDto) {
-    return this.groupsService.create(req.user.id, dto.name);
+  @ApiResponse({
+    status: 403,
+    description: '{ code: "GROUP_USERS_NOT_MUTUAL", message, userIds }',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '{ code: "GROUP_USERS_NOT_FOUND", message, userIds }',
+  })
+  create(@Req() req: AuthenticatedRequest, @Body() dto: CreateGroupDto) {
+    return this.groupsService.create(req.user.id, dto.name, dto.userIds);
   }
 
   @Get()
