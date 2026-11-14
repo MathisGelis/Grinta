@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JWT_ALGORITHM, JWT_EXPIRES_IN, readJwtSecret } from './auth.constants';
 
 @Module({
   imports: [
@@ -15,8 +16,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '90d' },
+        secret: readJwtSecret(config),
+        signOptions: { expiresIn: JWT_EXPIRES_IN, algorithm: JWT_ALGORITHM },
+        verifyOptions: { algorithms: [JWT_ALGORITHM] },
       }),
     }),
   ],

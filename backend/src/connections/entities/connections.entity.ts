@@ -4,10 +4,12 @@ import {
   ManyToOne,
   Unique,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/users.entity';
 
 @Entity('connections')
+@Index('IDX_connections_following', ['following'])
 @Unique(['follower', 'following'])
 export class Connection {
   @PrimaryGeneratedColumn('uuid')

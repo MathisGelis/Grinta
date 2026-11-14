@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from 'src/users/entities/users.entity';
@@ -12,6 +13,7 @@ import { LocationType } from '../enums/location-type.enum';
 import { ProgrammeDay } from './programme-day.entity';
 
 @Entity('programmes')
+@Index('IDX_programmes_user', ['user'])
 export class Programme {
   @PrimaryGeneratedColumn('uuid')
   @ApiProperty()

@@ -1,12 +1,6 @@
 import { User } from '../entities/users.entity';
 import { DataSource } from 'typeorm';
-
-function generateBaseUsername(displayName: string): string {
-  return displayName
-    .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/[^a-z0-9]/g, '');
-}
+import { usernameBaseFrom } from '../username';
 
 async function generateUniqueUsername(
   dataSource: DataSource,
@@ -33,7 +27,7 @@ export async function seedUsernames(dataSource: DataSource) {
 
   for (const user of users) {
     if (!user.uniqueName) {
-      const base = generateBaseUsername(user.displayName || 'user');
+      const base = usernameBaseFrom(user.displayName || 'user');
       const uniqueName = await generateUniqueUsername(dataSource, base);
 
       user.uniqueName = uniqueName;
