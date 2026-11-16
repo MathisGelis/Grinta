@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { ActivityIndicator, Alert, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { router } from "expo-router";
-import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import PressableScale from "@/components/ui/PressableScale";
-import SkipLink from "@/components/ui/SkipLink";
+import OnboardingNav from "@/components/ui/OnboardingNav";
 import Chip from "@/components/ui/Chip";
 import { getItem } from "@/core/services/storage";
 import { UserService, type Level, type TrainingLocation } from "@/services/user.service";
@@ -52,7 +50,6 @@ export default function TrainingScreen() {
   return (
     <View className="flex-1 px-8 pt-20">
       <ScreenBackground />
-      <SkipLink className="absolute right-6 top-12" label={t.skipBtn} onPress={next} />
       <Text className="mb-3 text-[28px] font-bold text-ink">{t.obTrainingTitle}</Text>
       <Text className="mb-8 text-[15px] text-ink-muted">{t.obTrainingIntro}</Text>
 
@@ -92,25 +89,13 @@ export default function TrainingScreen() {
         </View>
       </View>
 
-      <View className="flex-row items-center justify-between pb-12 pt-4">
-        <PressableScale
-          className="h-[52px] w-[52px] items-center justify-center rounded-[26px] bg-raised"
-          onPress={() => router.back()}
-        >
-          <Text className="text-xl text-ink">←</Text>
-        </PressableScale>
-        <PressableScale
-          className="min-w-[130px] items-center rounded-full bg-accent px-10 py-4"
-          onPress={save}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={WorkoutTheme.text.primary} />
-          ) : (
-            <Text className="text-base font-bold text-ink">{t.obContinue}</Text>
-          )}
-        </PressableScale>
-      </View>
+      <OnboardingNav
+        onNext={save}
+        nextLabel={t.obContinue}
+        onSkip={next}
+        skipLabel={t.skipBtn}
+        loading={loading}
+      />
     </View>
   );
 }
