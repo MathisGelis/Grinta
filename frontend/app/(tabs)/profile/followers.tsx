@@ -5,12 +5,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { ConnectionsService, UserListItem } from "@/services/connections.service";
 
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
-export default function FollowersScreen() {
+type FollowersViewProps = {
+  /** Où ouvrir un profil depuis la liste : reste dans la pile de l'onglet d'origine. */
+  userProfilePath: string;
+};
+
+export function FollowersView({ userProfilePath }: FollowersViewProps) {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ userId: string; tab: string }>();
   const [activeTab, setActiveTab] = useState<"followers" | "following">(
@@ -38,31 +44,30 @@ export default function FollowersScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenHeader title={activeTab === "followers" ? t.followersLabel : t.followingLabel} />
-
-      <View className="flex-row mx-4 mb-4 gap-2">
-        <PressableScale
-          className={`flex-1 py-2.5 rounded-full items-center ${activeTab === "followers" ? "bg-accent" : "bg-surface"}`}
-          onPress={() => setActiveTab("followers")}
-        >
-          <Text className={`text-[13px] font-semibold ${activeTab === "followers" ? "text-ink" : "text-ink-muted"}`}>
-            {t.followersLabel} ({followers.length})
-          </Text>
-        </PressableScale>
-        <PressableScale
-          className={`flex-1 py-2.5 rounded-full items-center ${activeTab === "following" ? "bg-accent" : "bg-surface"}`}
-          onPress={() => setActiveTab("following")}
-        >
-          <Text className={`text-[13px] font-semibold ${activeTab === "following" ? "text-ink" : "text-ink-muted"}`}>
-            {t.followingLabel} ({following.length})
-          </Text>
-        </PressableScale>
-      </View>
+      <ScreenHeader floating title={activeTab === "followers" ? t.followersLabel : t.followingLabel} />
 
       <ScrollView {...chromeScrollProps}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 16, paddingBottom: 120 }}
       >
+        <View className="flex-row mb-4 gap-2">
+          <PressableScale
+            className={`flex-1 py-2.5 rounded-full items-center ${activeTab === "followers" ? "bg-accent" : "bg-surface"}`}
+            onPress={() => setActiveTab("followers")}
+          >
+            <Text className={`text-[13px] font-semibold ${activeTab === "followers" ? "text-ink" : "text-ink-muted"}`}>
+              {t.followersLabel} ({followers.length})
+            </Text>
+          </PressableScale>
+          <PressableScale
+            className={`flex-1 py-2.5 rounded-full items-center ${activeTab === "following" ? "bg-accent" : "bg-surface"}`}
+            onPress={() => setActiveTab("following")}
+          >
+            <Text className={`text-[13px] font-semibold ${activeTab === "following" ? "text-ink" : "text-ink-muted"}`}>
+              {t.followingLabel} ({following.length})
+            </Text>
+          </PressableScale>
+        </View>
         {loading ? (
           <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: 32 }} />
         ) : list.length === 0 ? (
@@ -77,7 +82,7 @@ export default function FollowersScreen() {
             <PressableScale
               key={u.id}
               className="flex-row items-center bg-surface rounded-tile p-3 mb-2 gap-2.5"
-              onPress={() => router.push({ pathname: "/(tabs)/profile/user-profile", params: { userId: u.id } } as any)}
+              onPress={() => router.push({ pathname: userProfilePath, params: { userId: u.id } } as any)}
             >
               <Avatar uri={u.avatarThumbnailUrl} name={u.displayName} size={40} />
               <View className="flex-1">
@@ -91,4 +96,8 @@ export default function FollowersScreen() {
       </ScrollView>
     </View>
   );
+}
+
+export default function FollowersScreen() {
+  return <FollowersView userProfilePath="/(tabs)/profile/user-profile" />;
 }

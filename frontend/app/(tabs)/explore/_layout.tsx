@@ -131,6 +131,7 @@ export default function ExploreLayout() {
   const hideHeader =
     pathname.endsWith("/notification") ||
     pathname.endsWith("/groups") ||
+    pathname.endsWith("/followers") ||
     pathname.includes("/group-detail") ||
     pathname.includes("/group-settings") ||
     pathname.includes("/group-add-member") ||
@@ -166,6 +167,7 @@ export default function ExploreLayout() {
             options={{ animation: "slide_from_left", gestureEnabled: false }}
           />
           <Stack.Screen name="groups" />
+          <Stack.Screen name="followers" />
           <Stack.Screen name="group-detail" />
           <Stack.Screen name="group-settings" />
           <Stack.Screen name="group-add-member" />

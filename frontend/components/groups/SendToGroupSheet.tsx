@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Modal from "@/components/ui/AppModal";
 import PressableScale from "@/components/ui/PressableScale";
@@ -16,6 +16,7 @@ type Props = {
 /** « Envoyer dans un groupe » : choix parmi `GET /groups`, `409` si déjà partagé. */
 export default function SendToGroupSheet({ postId, onClose }: Props) {
   const { t } = useTranslation();
+  const { height: windowHeight } = useWindowDimensions();
   const [groups, setGroups] = useState<GroupSummary[] | null>(null);
   const [sendingTo, setSendingTo] = useState<string | null>(null);
 
@@ -56,9 +57,12 @@ export default function SendToGroupSheet({ postId, onClose }: Props) {
       onBackdropPress={onClose}
       onSwipeComplete={onClose}
       swipeDirection="down"
-      style={{ justifyContent: "flex-end" }}
+      style={{ justifyContent: "flex-end", margin: 0 }}
     >
-      <View className="max-h-[70%] rounded-t-hero bg-surface px-5 pb-8 pt-3">
+      <View
+        className="rounded-t-hero bg-surface px-5 pb-8 pt-3"
+        style={{ maxHeight: windowHeight * 0.7 }}
+      >
         <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-raised" />
         <Text className="mb-4 text-xl font-semibold text-ink">{t.grpSendTitle}</Text>
         {groups === null ? (

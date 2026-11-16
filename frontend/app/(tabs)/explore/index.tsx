@@ -11,7 +11,6 @@ import Screen, { FLOATING_HEADER_OFFSET } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PostCard from "@/components/explorePage/PostCard";
 import { usePostInteractions } from "@/components/explorePage/PostInteractions";
-import SectionHeader from "@/components/ui/SectionHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
 import Button from "@/components/ui/Button";
@@ -113,17 +112,15 @@ export default function ExploreScreen() {
         <View>
           <Text className="text-sm text-ink-muted">{t[getGreetingKey()]}</Text>
           <Text
-            className="mt-1 text-[32px] font-semibold text-ink"
+            className="mt-0.5 text-[24px] font-semibold text-ink"
             style={{ letterSpacing: -0.5 }}
             numberOfLines={1}
           >
-            {t.hello}
-            {userName ? ` ${userName}` : ""}
+            {userName}
           </Text>
         </View>
 
         <View className="gap-4">
-          <SectionHeader title={t.todaysCommunityFavorite} />
           <SegmentedControl
             value={postFeed}
             onChange={setPostFeed}

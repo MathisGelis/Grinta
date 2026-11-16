@@ -1,15 +1,24 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useEffect, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+import * as Linking from "expo-linking";
+import { UserService } from "@/services/user.service";
+import { format } from "@/i18n/translations";
 import { Post, PostsService, PostWorkout } from "@/services/posts.service";
 import { duplicateWorkoutFromPost } from "@/services/workouts.service";
+import RealLifeValue from "@/components/ui/RealLifeValue";
 import { realLifeText } from "@/utils/realLife";
 import SendToGroupSheet from "@/components/groups/SendToGroupSheet";
 import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCardSheet";
-import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
+import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import Glass from "@/components/ui/Glass";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
@@ -20,11 +29,13 @@ import MentionText from "@/components/explorePage/MentionText";
 import PostPartners from "@/components/explorePage/PostPartners";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { format } from "@/i18n/translations";
 import { LOCALES } from "@/i18n/labels";
 export default function UserPostScreen() {
   const { t, lang } = useTranslation();
   const { formatWeight, formatVolume } = useUnits();
+  const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
+  const [menuOpen, setMenuOpen] = useState(false);
   const params = useLocalSearchParams<{ postId?: string }>();
   const routePostId = Array.isArray(params.postId) ? params.postId[0] : params.postId;
   const [post, setPost] = useState<Post | null>(null);
@@ -40,6 +51,27 @@ export default function UserPostScreen() {
   const [duplicating, setDuplicating] = useState(false);
   const [sendPostId, setSendPostId] = useState<string | null>(null);
   const [shareVisible, setShareVisible] = useState(false);
+  const [myId, setMyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    UserService.getMe()
+      .then((me) => !cancelled && setMyId(me.id))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  // Mes posts : card de partage ; ceux des autres : lien de partage.
+  const isMine = !!myId && post?.userId === myId;
+
+  const shareLink = async () => {
+    if (!post) return;
+    const url = Linking.createURL(`post/${post.id}`);
+    try {
+      await Share.share({ message: format(t.shrLinkMessage, { url }) });
+    } catch {}
+  };
 
   // Un seul appel pour tous les posts : même visibilité que le post (`404` sinon).
   const postId = post?.id;
@@ -155,29 +187,26 @@ export default function UserPostScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <View className="flex-row items-center justify-between px-4 pt-16 pb-4">
-        <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
-          <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
-        </PressableScale>
-        <Text className="text-ink text-lg font-bold flex-1 text-center">{t.postTitle}</Text>
-        <View className="w-10" />
-      </View>
+      <ScreenHeader
+        floating
+        title={t.postTitle}
+        right={
+          workoutPreview ? (
+            <IconButton
+              icon="share-outline"
+              variant="glass"
+              label={t.shrCard}
+              onPress={() => setMenuOpen((open) => !open)}
+            />
+          ) : undefined
+        }
+      />
 
       <ScrollView {...chromeScrollProps}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 16, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
       >
         <View className="bg-surface rounded-card p-[18px]">
-          {photo ? (
-            <Image
-              source={{ uri: photo }}
-              cachePolicy="disk"
-              contentFit="cover"
-              transition={150}
-              accessibilityLabel={workoutPreview?.title}
-              style={{ width: "100%", aspectRatio: 4 / 3, borderRadius: 22, marginBottom: 18 }}
-            />
-          ) : null}
           <View className="flex-row items-center mb-[18px]">
             <Avatar uri={post.avatarThumbnailUrl} name={post.displayName} size={48} className="mr-3" />
 
@@ -193,13 +222,16 @@ export default function UserPostScreen() {
             </View>
           </View>
 
-          <View className="bg-background rounded-tile p-3.5 mb-[18px]">
-            <Text className="text-ink-soft text-xs font-semibold mb-2 uppercase">{t.postDetails}</Text>
-            <Text className="text-ink text-[15px] mb-1.5">
-              {format(t.postedOn, { date: new Date(post.createdAt).toLocaleString(LOCALES[lang]) })}
-            </Text>
-          </View>
-
+          {photo ? (
+            <Image
+              source={{ uri: photo }}
+              cachePolicy="disk"
+              contentFit="cover"
+              transition={150}
+              accessibilityLabel={workoutPreview?.title}
+              style={{ width: "100%", aspectRatio: 4 / 3, borderRadius: 22, marginBottom: 18 }}
+            />
+          ) : null}
           <PostPartners
             postId={post.id}
             partners={partners}
@@ -210,7 +242,7 @@ export default function UserPostScreen() {
           {workoutPreview ? (
             <View className="mt-2">
               <Text className="text-ink-soft text-xs font-semibold mb-2.5 uppercase">{t.linkedWorkout}</Text>
-              <View className="bg-background rounded-tile p-3.5 flex-row items-center">
+              <View className="bg-raised rounded-tile p-3.5 flex-row items-center">
                 <View className="w-11 h-11 rounded-full bg-success-tint items-center justify-center mr-3">
                   <Ionicons name="checkmark-circle" size={26} color={WorkoutTheme.status.success} />
                 </View>
@@ -233,6 +265,17 @@ export default function UserPostScreen() {
                     </Text>
                   )}
                 </View>
+                <PressableScale
+                  halo={false}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel={t.dupButton}
+                  disabled={duplicating}
+                  className={`ml-3 ${duplicating ? "opacity-50" : ""}`}
+                  onPress={duplicate}
+                >
+                  <Ionicons name="copy-outline" size={22} color={WorkoutTheme.text.primary} />
+                </PressableScale>
               </View>
               {postWorkout ? (
                 <View className="flex-row flex-wrap gap-2.5 mt-3.5">
@@ -244,7 +287,7 @@ export default function UserPostScreen() {
                   ].map((tile) => (
                     <View
                       key={tile.label}
-                      className="bg-background rounded-tile p-3.5"
+                      className="bg-raised rounded-tile p-3.5"
                       style={{ width: "48%", flexGrow: 1 }}
                     >
                       <Text className="text-ink text-lg font-bold">{tile.value}</Text>
@@ -257,12 +300,8 @@ export default function UserPostScreen() {
               {realLifeText(t, postWorkout?.stats.realLifeComparison) ? (
                 <View className="mt-2.5 flex-row items-center gap-2 rounded-tile bg-accent-tint p-3.5">
                   <Ionicons name="earth" size={18} color={WorkoutTheme.accent.purple} />
-                  <View className="flex-1">
-                    <Text className="text-ink-muted text-xs">{t.rlTitle}</Text>
-                    <Text className="text-ink text-sm font-semibold">
-                      {realLifeText(t, postWorkout?.stats.realLifeComparison)}
-                    </Text>
-                  </View>
+                  <Text className="flex-1 text-ink-muted text-xs">{t.rlTitle}</Text>
+                  <RealLifeValue comparison={postWorkout?.stats.realLifeComparison} />
                 </View>
               ) : null}
 
@@ -270,14 +309,14 @@ export default function UserPostScreen() {
                 <View className="mt-[18px] gap-2.5">
                   <Text className="text-ink-soft text-xs font-semibold uppercase">{t.exercises}</Text>
                   {postWorkout.exercises.map((entry) => (
-                    <View key={entry.id} className="bg-background rounded-tile p-3.5 gap-2">
+                    <View key={entry.id} className="bg-raised rounded-tile p-3.5 gap-2">
                       <Text className="text-ink text-base font-bold">
                         {entry.exercise?.name ?? "–"}
                       </Text>
                       {(entry.sets ?? []).map((set, index) => (
                         <View
                           key={index}
-                          className="flex-row items-center justify-between rounded-full bg-raised px-4 py-2.5"
+                          className="flex-row items-center justify-between rounded-full bg-line px-4 py-2.5"
                         >
                           <Text className="text-ink-muted text-sm">
                             {t.setLabel} {index + 1}
@@ -293,43 +332,64 @@ export default function UserPostScreen() {
               ) : null}
             </View>
           ) : (
-            <View className="bg-background rounded-tile p-[18px] items-center justify-center">
+            <View className="bg-raised rounded-tile p-[18px] items-center justify-center">
               <Text className="text-ink-muted text-sm">
                 {t.noLinkedWorkout}
               </Text>
             </View>
           )}
 
-          {workoutPreview ? (
-            <View className="mt-[18px] gap-2.5">
-              <View className="flex-row gap-2.5">
-                <Button
-                  className="flex-1"
-                  variant="secondary"
-                  icon="copy-outline"
-                  label={t.dupButton}
-                  loading={duplicating}
-                  onPress={duplicate}
-                />
-                <Button
-                  className="flex-1"
-                  variant="secondary"
-                  icon="people-outline"
-                  label={t.grpSend}
-                  onPress={() => setSendPostId(post.id)}
-                />
-              </View>
-              <Button
-                variant="secondary"
-                icon="share-outline"
-                label={t.shrCard}
-                disabled={!shareData}
-                onPress={() => setShareVisible(true)}
-              />
-            </View>
-          ) : null}
         </View>
       </ScrollView>
+
+      {menuOpen ? (
+        <>
+          <Pressable
+            accessibilityLabel={t.back}
+            style={StyleSheet.absoluteFill}
+            onPress={() => setMenuOpen(false)}
+          />
+          <Animated.View
+            entering={FadeInUp.duration(180)}
+            className="absolute right-5 z-30 w-64"
+            style={{ top: insets.top + 12 + 44 + 8 }}
+          >
+          <Glass className="rounded-card">
+            <PressableScale
+              halo={false}
+              className="flex-row items-center gap-3 px-4 py-4"
+              onPress={() => {
+                setMenuOpen(false);
+                setSendPostId(post.id);
+              }}
+            >
+              <Ionicons name="people-outline" size={20} color={WorkoutTheme.text.primary} />
+              <Text className="flex-1 text-[15px] font-semibold text-ink">{t.grpSend}</Text>
+            </PressableScale>
+            <View className="mx-4 h-[1px] bg-line" />
+            <PressableScale
+              halo={false}
+              disabled={isMine && !shareData}
+              className={`flex-row items-center gap-3 px-4 py-4 ${!isMine || shareData ? "" : "opacity-50"}`}
+              onPress={() => {
+                setMenuOpen(false);
+                if (isMine) setShareVisible(true);
+                else shareLink();
+              }}
+            >
+              <Ionicons
+                name={isMine ? "albums-outline" : "link-outline"}
+                size={20}
+                color={WorkoutTheme.text.primary}
+              />
+              <Text className="flex-1 text-[15px] font-semibold text-ink">
+                {isMine ? t.shrCardTitle : t.shrLinkTitle}
+              </Text>
+            </PressableScale>
+          </Glass>
+          </Animated.View>
+        </>
+      ) : null}
 
       <SendToGroupSheet postId={sendPostId} onClose={() => setSendPostId(null)} />
       <ShareCardSheet

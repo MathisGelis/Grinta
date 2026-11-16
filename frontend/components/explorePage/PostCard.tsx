@@ -1,12 +1,19 @@
 import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { WorkoutTheme, withAlpha } from "@/constants/Colors";
+import * as Haptics from "expo-haptics";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LOCALES } from "@/i18n/labels";
 import { format } from "@/i18n/translations";
@@ -17,6 +24,7 @@ import PressableScale from "@/components/ui/PressableScale";
 import Stat from "@/components/ui/Stat";
 import MentionText from "@/components/explorePage/MentionText";
 import PostPartners from "@/components/explorePage/PostPartners";
+import PostShareMenu from "@/components/share/PostShareMenu";
 
 type Props = {
   post: Post;
@@ -25,14 +33,52 @@ type Props = {
   onShowLikes?: () => void;
   onShowComments?: () => void;
   onDelete?: () => void;
-  /** Bouton de partage, affiché sur nos propres posts. */
-  onShare?: () => void;
   deleting?: boolean;
   authorPressable?: boolean;
 };
 
 const PAGE_GAP = 8;
 const MAX_EXERCISES = 5;
+// Page carrée à padding p-5 : avec MAX_EXERCISES lignes, l'espacement fait exactement remplir la hauteur.
+const PAGE_PADDING = 20;
+const HEADER_ROW_H = 20;
+const HEADER_GAP = 16;
+const EXERCISE_ROW_H = 20;
+
+function LikeHeart({ liked }: { liked: boolean }) {
+  const scale = useSharedValue(1);
+  const first = React.useRef(true);
+
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    scale.set(
+      liked
+        ? withSequence(
+            withTiming(1.3, { duration: 220, easing: Easing.out(Easing.quad) }),
+            withTiming(1, { duration: 280, easing: Easing.out(Easing.quad) }),
+          )
+        : withSequence(
+            withTiming(0.8, { duration: 160, easing: Easing.out(Easing.quad) }),
+            withTiming(1, { duration: 240, easing: Easing.out(Easing.quad) }),
+          ),
+    );
+  }, [liked, scale]);
+
+  const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+
+  return (
+    <Animated.View style={animated}>
+      <Ionicons
+        name={liked ? "heart" : "heart-outline"}
+        size={20}
+        color={WorkoutTheme.status.danger}
+      />
+    </Animated.View>
+  );
+}
 
 const details = new Map<string, Post>();
 
@@ -43,7 +89,6 @@ export default function PostCard({
   onShowLikes,
   onShowComments,
   onDelete,
-  onShare,
   deleting = false,
   authorPressable = true,
 }: Props) {
@@ -53,6 +98,7 @@ export default function PostCard({
   const [page, setPage] = useState(0);
   const [detail, setDetail] = useState<Post | undefined>(details.get(post.id));
   const [declinedBy, setDeclinedBy] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (details.has(post.id)) return;
@@ -78,6 +124,15 @@ export default function PostCard({
   const totalExercises = detail?.workout?.totalExercises;
   const photo = mediaUrl(detail?.workoutPhotoThumbnailUrl ?? post.workoutPhotoThumbnailUrl);
   const partners = (detail?.partners ?? post.partners)?.filter((p) => p.id !== declinedBy);
+
+  // Avec le maximum d'exercices (et la ligne « +N » s'il y en a plus), la liste remplit toute la hauteur.
+  const hasMoreExercises = (exercises?.length ?? 0) > MAX_EXERCISES;
+  const listRows = MAX_EXERCISES + (hasMoreExercises ? 1 : 0);
+  const exerciseGap = Math.max(
+    6,
+    (pageWidth - 2 * PAGE_PADDING - HEADER_ROW_H - HEADER_GAP - listRows * EXERCISE_ROW_H) /
+      (listRows - 1),
+  );
 
   return (
     <View className="w-full gap-3 rounded-card bg-surface p-4">
@@ -106,16 +161,6 @@ export default function PostCard({
             {formatDate(post.createdAt, lang)}
           </Text>
         </View>
-        {onShare ? (
-          <PressableScale
-            onPress={onShare}
-            accessibilityRole="button"
-            accessibilityLabel={t.shrCard}
-            className="h-10 w-10 items-center justify-center rounded-full bg-raised"
-          >
-            <Ionicons name="share-outline" size={18} color={WorkoutTheme.text.primary} />
-          </PressableScale>
-        ) : null}
         {onDelete ? (
           <PressableScale
             onPress={onDelete}
@@ -128,6 +173,20 @@ export default function PostCard({
           </PressableScale>
         ) : null}
       </PressableScale>
+
+      <View className="gap-1 px-1">
+        <Text className="text-lg font-semibold text-ink" numberOfLines={2}>
+          {title}
+        </Text>
+        {description ? (
+          <MentionText
+            className="text-sm text-ink-soft"
+            numberOfLines={3}
+            text={description}
+            partners={partners}
+          />
+        ) : null}
+      </View>
 
       <View onLayout={(e) => setPageWidth(e.nativeEvent.layout.width)}>
         {pageWidth > 0 && (
@@ -143,10 +202,9 @@ export default function PostCard({
             }
           >
             {photo ? (
-              <PressableScale
-                halo={false}
+              <Pressable
                 onPress={onPress}
-                className="overflow-hidden rounded-tile bg-accent-tint"
+                className="overflow-hidden rounded-tile bg-accent-tint active:opacity-80"
                 style={{ width: pageWidth, height: pageWidth }}
               >
                 <Image
@@ -156,33 +214,26 @@ export default function PostCard({
                   transition={150}
                   style={{ width: pageWidth, height: pageWidth }}
                 />
-                <LinearGradient
-                  pointerEvents="none"
-                  colors={["transparent", withAlpha(WorkoutTheme.backgroundSecondary, 0.9)]}
-                  className="absolute inset-x-0 bottom-0 h-[65%]"
-                />
-                <View className="absolute inset-x-0 bottom-0 p-4">
-                  <Text className="text-lg font-semibold text-ink" numberOfLines={2}>
-                    {title}
-                  </Text>
-                </View>
-              </PressableScale>
+              </Pressable>
             ) : null}
 
-            <PressableScale
-              halo={false}
+            <Pressable
               onPress={onPress}
-              className="justify-center gap-2 rounded-tile bg-raised p-5"
-              style={{ width: pageWidth, height: pageWidth }}
+              className="rounded-tile bg-raised p-5 active:opacity-80"
+              style={{ width: pageWidth, height: pageWidth, gap: HEADER_GAP }}
             >
-              <View className="flex-row items-center gap-2">
+              <View className="flex-row items-center gap-2" style={{ height: HEADER_ROW_H }}>
                 <Ionicons name="list" size={20} color={WorkoutTheme.text.tertiary} />
-                <Text className="text-xs text-ink-muted">{t.exercises}</Text>
+                <Text className="flex-1 text-xs text-ink-muted">{t.exercises}</Text>
               </View>
               {exercises && exercises.length > 0 ? (
-                <View className="gap-2.5">
+                <View style={{ gap: exerciseGap }}>
                   {exercises.slice(0, MAX_EXERCISES).map((exercise) => (
-                    <View key={exercise.exerciseId} className="flex-row items-center gap-3">
+                    <View
+                      key={exercise.exerciseId}
+                      className="flex-row items-center gap-3"
+                      style={{ height: EXERCISE_ROW_H }}
+                    >
                       <Text className="flex-1 text-sm font-semibold text-ink" numberOfLines={1}>
                         {exercise.name}
                       </Text>
@@ -198,36 +249,46 @@ export default function PostCard({
                       </Text>
                     </View>
                   ))}
-                  {exercises.length > MAX_EXERCISES ? (
-                    <Text className="text-xs text-ink-muted">
+                  {exercises && exercises.length > MAX_EXERCISES ? (
+                    <Text
+                      className="text-xs text-ink-muted"
+                      style={{ height: EXERCISE_ROW_H, lineHeight: EXERCISE_ROW_H }}
+                    >
                       {format(t.pcMoreExercises, { n: exercises.length - MAX_EXERCISES })}
                     </Text>
                   ) : null}
                 </View>
-              ) : totalExercises != null ? (
-                <Text className="text-base text-ink">{totalExercises}</Text>
               ) : (
-                <MentionText
-                  className="text-base text-ink"
-                  numberOfLines={5}
-                  text={description || "–"}
-                  partners={partners}
-                />
+                <View className="flex-1 justify-center">
+                  {totalExercises != null ? (
+                    <Text className="text-base text-ink">{totalExercises}</Text>
+                  ) : (
+                    <MentionText
+                      className="text-base text-ink"
+                      numberOfLines={5}
+                      text={description || "–"}
+                      partners={partners}
+                    />
+                  )}
+                </View>
               )}
-            </PressableScale>
+            </Pressable>
 
-            <PressableScale
-              halo={false}
+            <Pressable
               onPress={onPress}
-              className="justify-center gap-5 rounded-tile bg-raised p-5"
+              className="gap-2 rounded-tile bg-raised p-5 active:opacity-80"
               style={{ width: pageWidth, height: pageWidth }}
             >
-              <View className="flex-row">
+              <View className="flex-row items-center gap-2" style={{ height: HEADER_ROW_H }}>
+                <Ionicons name="stats-chart" size={20} color={WorkoutTheme.text.tertiary} />
+                <Text className="text-xs text-ink-muted">{t.profileTabStats}</Text>
+              </View>
+              <View className="flex-1 flex-row items-center">
                 <Stat
                   size="md"
                   label={t.duration}
                   value={duration != null ? `${Math.round(duration / 60)} min` : "–"}
-                  className="flex-1"
+                  className="flex-1 items-center"
                 />
                 <Stat
                   size="md"
@@ -240,24 +301,24 @@ export default function PostCard({
                         })
                       : "–"
                   }
-                  className="flex-1"
+                  className="flex-1 items-center"
                 />
               </View>
               {stats ? (
-                <View className="flex-row">
+                <View className="flex-1 flex-row items-center">
                   <Stat
                     size="md"
                     label={t.pcVolume}
                     value={
                       formatVolume(stats.totalVolume)
                     }
-                    className="flex-1"
+                    className="flex-1 items-center"
                   />
-                  <Stat size="md" label={t.sets} value={stats.totalSets} className="flex-1" />
-                  <Stat size="md" label={t.pcRecords} value={stats.recordsCount} className="flex-1" />
+                  <Stat size="md" label={t.sets} value={stats.totalSets} className="flex-1 items-center" />
+                  <Stat size="md" label={t.pcRecords} value={stats.recordsCount} className="flex-1 items-center" />
                 </View>
               ) : null}
-            </PressableScale>
+            </Pressable>
           </ScrollView>
         )}
       </View>
@@ -277,15 +338,19 @@ export default function PostCard({
         <PressableScale
           className="flex-row items-center gap-1 px-6 py-1"
           disabled={!onToggleLike && !onShowLikes}
-          onPress={onToggleLike ?? onShowLikes}
+          onPress={() => {
+            if (onToggleLike) {
+              if (post.isLiked) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              onToggleLike();
+            } else {
+              onShowLikes?.();
+            }
+          }}
           onLongPress={onShowLikes}
           delayLongPress={300}
         >
-          <Ionicons
-            name={post.isLiked ? "heart" : "heart-outline"}
-            size={20}
-            color={WorkoutTheme.status.danger}
-          />
+          <LikeHeart liked={!!post.isLiked} />
           <Text className="text-[16px] text-ink">{post.likesCount}</Text>
         </PressableScale>
         <PressableScale
@@ -296,7 +361,16 @@ export default function PostCard({
           <Ionicons name="chatbubble-outline" size={20} color={WorkoutTheme.accent.purple} />
           <Text className="text-[16px] text-ink">{post.commentsCount}</Text>
         </PressableScale>
+        <PressableScale
+          className="flex-row items-center gap-1 px-6 py-1"
+          accessibilityRole="button"
+          accessibilityLabel={t.shrCard}
+          onPress={() => setShareOpen(true)}
+        >
+          <Ionicons name="share-outline" size={20} color={WorkoutTheme.text.primary} />
+        </PressableScale>
       </View>
+      <PostShareMenu postId={shareOpen ? post.id : null} onClose={() => setShareOpen(false)} />
     </View>
   );
 }
