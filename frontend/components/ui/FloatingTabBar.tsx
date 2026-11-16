@@ -21,7 +21,8 @@ import PressableScale from "./PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { usePathname } from "expo-router";
-import { chromeCompact, expandChrome, resetChrome } from "./chromeScroll";
+import DumbbellIcon from "./DumbbellIcon";
+import { resetChrome } from "./chromeScroll";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -41,7 +42,9 @@ function TabIcon({
   name,
   label,
   focused,
+  dumbbell = false,
 }: {
+  dumbbell?: boolean;
   name: IconName;
   label: string;
   focused: boolean;
@@ -65,11 +68,19 @@ function TabIcon({
   return (
     <View className="h-full w-full items-center justify-center">
       <Animated.View style={iconStyle}>
-        <Ionicons
-          name={name}
-          size={24}
-          color={focused ? WorkoutTheme.text.primary : WorkoutTheme.text.tertiary}
-        />
+        {dumbbell ? (
+          <DumbbellIcon
+            size={24}
+            filled={focused}
+            color={focused ? WorkoutTheme.text.primary : WorkoutTheme.text.tertiary}
+          />
+        ) : (
+          <Ionicons
+            name={name}
+            size={24}
+            color={focused ? WorkoutTheme.text.primary : WorkoutTheme.text.tertiary}
+          />
+        )}
       </Animated.View>
       <Animated.Text
         numberOfLines={1}
@@ -154,18 +165,13 @@ export default function FloatingTabBar({
     transform: [{ scale: 1 + 0.6 * pulse.value }],
   }));
 
-  const shrinkStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 - 0.2 * chromeCompact.get() }],
-  }));
-
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
     <Animated.View
       pointerEvents="box-none"
       className="absolute inset-x-0 bottom-0 px-5"
-      style={[{ paddingBottom: insets.bottom + 8, transformOrigin: "50% 100%" }, shrinkStyle]}
-      onTouchStart={expandChrome}
+      style={{ paddingBottom: insets.bottom + 8 }}
     >
       <Glass
         intensity={50}
@@ -243,6 +249,7 @@ export default function FloatingTabBar({
                     name={icon}
                     label={labels[route.name] ?? route.name}
                     focused={focused}
+                    dumbbell={route.name === "workouts"}
                   />
                 )}
               </PressableScale>
