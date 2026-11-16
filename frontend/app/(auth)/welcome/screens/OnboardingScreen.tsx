@@ -49,6 +49,7 @@ export default function OnboardingScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         pagingEnabled
+        scrollEnabled={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
           { useNativeDriver: false }
