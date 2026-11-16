@@ -54,6 +54,7 @@ export default function OtherExercisesSection({
             </Text>
           </Text>
           <PressableScale
+            bounce={false}
             onPress={() => setShowAddModal(true)}
             accessibilityRole="button"
             accessibilityLabel={t.add}
@@ -79,6 +80,7 @@ export default function OtherExercisesSection({
 
               return (
                 <PressableScale
+                  bounce={false}
                   key={exercise.exerciseId}
                   onPress={() => onSelectExercise(realIndex)}
                   accessibilityRole="button"

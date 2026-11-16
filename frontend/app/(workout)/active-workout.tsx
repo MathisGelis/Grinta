@@ -6,21 +6,13 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
-  Modal,
+  Keyboard,
+  Platform,
   Text,
+  useWindowDimensions,
 } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { TokenService } from "@/services/token.service";
@@ -46,7 +38,10 @@ import {
   getExerciseStats,
 } from "@/services/exercises.service";
 import type { Badge } from "@/services/badges.service";
+import Modal from "@/components/ui/AppModal";
 import ScreenBackground from "@/components/ui/ScreenBackground";
+import TopBlur from "@/components/ui/TopBlur";
+import { chromeScrollProps, resetChrome } from "@/components/ui/chromeScroll";
 import Button from "@/components/ui/Button";
 import PressableScale from "@/components/ui/PressableScale";
 import { FormField, TextField } from "@/components/ui/FormField";
@@ -68,6 +63,11 @@ const dedupeCompletedSets = (state: ExerciseState): ExerciseState => {
 
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const [headerHeight, setHeaderHeight] = useState(180);
+  useEffect(() => {
+    resetChrome();
+  }, []);
   const params = useLocalSearchParams();
   const workoutId = params.workoutId as string;
   const workoutName = params.workoutName as string;
@@ -93,31 +93,22 @@ export default function ActiveWorkoutScreen() {
   const [exerciseStats, setExerciseStats] = useState<
     Record<string, LiveExerciseStats | null>
   >({});
-  const sheetTranslateY = useSharedValue(0);
-
+  const { height: windowHeight } = useWindowDimensions();
+  const [keyboard, setKeyboard] = useState(0);
   useEffect(() => {
-    if (showCompletionModal) sheetTranslateY.set(0);
-  }, [showCompletionModal, sheetTranslateY]);
-
-  const sheetPan = Gesture.Pan()
-    .runOnJS(true)
-    .enabled(!isSubmitting)
-    .activeOffsetY(10)
-    .failOffsetX([-20, 20])
-    .onUpdate((e) => {
-      sheetTranslateY.set(Math.max(0, e.translationY));
-    })
-    .onEnd((e) => {
-      if (e.translationY > 100 || e.velocityY > 800) {
-        setShowCompletionModal(false);
-      } else {
-        sheetTranslateY.set(withSpring(0));
-      }
-    });
-
-  const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: sheetTranslateY.get() }],
-  }));
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboard(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboard(0),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   useEffect(() => {
     totalTimeRef.current = totalWorkoutTime;
@@ -147,7 +138,7 @@ export default function ActiveWorkoutScreen() {
         exerciseData: ex,
         completedSetIndices: [],
         completedSets: [],
-        restTimeSeconds: ex.plannedRestSeconds || 90,
+        restTimeSeconds: ex.plannedRestSeconds ?? 90,
       }));
       setExercisesState(initialState);
     } catch (error) {
@@ -272,19 +263,26 @@ export default function ActiveWorkoutScreen() {
     setExercisesState(newState);
 
     if (isLastSet) {
-      setCompletedExercises([...completedExercises, currentExerciseIndex]);
-      if (isLastExercise) {
+      const nowCompleted = completedExercises.includes(currentExerciseIndex)
+        ? completedExercises
+        : [...completedExercises, currentExerciseIndex];
+      setCompletedExercises(nowCompleted);
+      const remaining = exercisesState.map((_, i) => i).filter((i) => !nowCompleted.includes(i));
+      // Plus aucun exercice à faire : la séance est terminée, pas de repos.
+      if (remaining.length === 0) {
         setShowRestScreen(false);
         setShowCompletionModal(true);
         return;
       }
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      const next = remaining.find((i) => i > currentExerciseIndex) ?? remaining[0];
+      setCurrentExerciseIndex(next);
       setCurrentSetIndex(0);
     } else {
       setCurrentSetIndex(currentSetIndex + 1);
     }
 
-    const restTime = exState.restTimeSeconds || 90;
+    const restTime = exState.restTimeSeconds ?? 90;
+    if (restTime <= 0) return;
     setRestTimeRemaining(restTime);
     setRestTimeTotal(restTime);
     setShowRestScreen(true);
@@ -311,32 +309,6 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  const handleSkipExercise = () => {
-    const newCompletedExercises = Array.isArray(completedExercises)
-      ? [...completedExercises]
-      : [];
-    if (!newCompletedExercises.includes(currentExerciseIndex)) {
-      newCompletedExercises.push(currentExerciseIndex);
-    }
-
-    let nextExerciseIndex = -1;
-    for (let i = currentExerciseIndex + 1; i < exercisesState.length; i++) {
-      if (!newCompletedExercises.includes(i)) {
-        nextExerciseIndex = i;
-        break;
-      }
-    }
-
-    if (nextExerciseIndex === -1) {
-      setCompletedExercises(newCompletedExercises);
-      setShowCompletionModal(true);
-    } else {
-      setCompletedExercises(newCompletedExercises);
-      setCurrentExerciseIndex(nextExerciseIndex);
-      setCurrentSetIndex(0);
-    }
-  };
-
   const handleSelectExercise = (index: number) => {
     setCurrentExerciseIndex(index);
     setCurrentSetIndex(0);
@@ -360,7 +332,7 @@ export default function ActiveWorkoutScreen() {
       exerciseData: exercise,
       completedSetIndices: [],
       completedSets: [],
-      restTimeSeconds: exercise.plannedRestSeconds || 90,
+      restTimeSeconds: exercise.plannedRestSeconds ?? 90,
     });
     setExercisesState(newState);
   };
@@ -524,17 +496,11 @@ export default function ActiveWorkoutScreen() {
       <ScreenBackground flat />
       <StatusBar barStyle="light-content" />
 
-      <WorkoutSessionHeader
-        workoutTitle={workoutName}
-        totalTime={totalWorkoutTime}
-        onMinimize={handleMinimize}
-        onEndWorkout={handleEndWorkout}
-      />
-
       <ScrollView
+        {...chromeScrollProps}
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingTop: headerHeight + 8, paddingBottom: 24 }}
       >
         {currentExercise && (
           <>
@@ -570,7 +536,7 @@ export default function ActiveWorkoutScreen() {
                   />
                 </View>
 
-                <Button
+                <Button bounce={false}
                   icon="play-forward"
                   label={t.skipRest}
                   onPress={handleSkipRest}
@@ -586,7 +552,6 @@ export default function ActiveWorkoutScreen() {
                 onCompleteSet={handleCompleteSet}
                 onAddSet={handleAddSet}
                 onRemoveSet={handleRemoveSet}
-                onSkipExercise={handleSkipExercise}
                 onDeleteExercise={handleDeleteExercise}
                 isLastExercise={isLastExercise}
                 isLastSet={isLastSet}
@@ -607,35 +572,61 @@ export default function ActiveWorkoutScreen() {
         <View className="h-8" />
       </ScrollView>
 
-      <Modal
-        visible={showCompletionModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCompletionModal(false)}
+      <View
+        pointerEvents="box-none"
+        className="absolute inset-x-0 z-10"
+        style={{ top: insets.top }}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
       >
-        <GestureHandlerRootView className="flex-1 justify-end bg-overlay">
-          <Animated.View style={[{ maxHeight: "90%" }, sheetStyle]}>
-            <View className="rounded-t-hero bg-surface px-5 pb-8 pt-3">
-              <GestureDetector gesture={sheetPan}>
-                <View collapsable={false}>
-                  <View className="mb-5 h-6 w-full items-center justify-start">
-                    <View className="h-1.5 w-12 rounded-full bg-raised" />
-                  </View>
+        <View
+          pointerEvents="none"
+          style={{ position: "absolute", top: -insets.top, left: 0, right: 0 }}
+        >
+          <TopBlur height={headerHeight + insets.top + 12} />
+        </View>
+        <WorkoutSessionHeader
+          workoutTitle={workoutName}
+          totalTime={totalWorkoutTime}
+          onMinimize={handleMinimize}
+          onEndWorkout={handleEndWorkout}
+        />
+      </View>
 
-                  <View className="mb-6 items-center">
-                    <View className="h-20 w-20 items-center justify-center rounded-full bg-success-tint">
-                      <Ionicons
-                        name="checkmark"
-                        size={40}
-                        color={WorkoutTheme.status.success}
-                      />
-                    </View>
-                    <Text className="mt-4 text-2xl font-semibold text-ink">
-                      {t.workoutCompleted}
-                    </Text>
-                  </View>
-                </View>
-              </GestureDetector>
+      <Modal
+        isVisible={showCompletionModal}
+        onBackdropPress={() => !isSubmitting && setShowCompletionModal(false)}
+        onSwipeComplete={() => !isSubmitting && setShowCompletionModal(false)}
+        swipeDirection="down"
+        style={{ justifyContent: "flex-end", margin: 0 }}
+      >
+        <View
+          className="rounded-t-hero bg-background px-5 pb-8 pt-3"
+          style={{ maxHeight: windowHeight * 0.9, marginBottom: keyboard }}
+        >
+          <View className="mb-3 h-1.5 w-12 self-center rounded-full bg-raised" />
+          <View className="mb-2 flex-row justify-end">
+            <PressableScale
+              bounce={false}
+              halo={false}
+              hitSlop={12}
+              disabled={isSubmitting}
+              onPress={() => setShowCompletionModal(false)}
+              accessibilityRole="button"
+              accessibilityLabel={t.closeLabel}
+              className={isSubmitting ? "opacity-50" : ""}
+            >
+              <Ionicons name="close" size={26} color={WorkoutTheme.text.primary} />
+            </PressableScale>
+          </View>
+
+          <View className="mb-6 items-center">
+            <View className="h-20 w-20 items-center justify-center rounded-full bg-success-tint">
+              <Ionicons name="checkmark" size={40} color={WorkoutTheme.status.success} />
+            </View>
+            <Text className="mt-4 text-2xl font-semibold text-ink">
+              {t.workoutCompleted}
+            </Text>
+          </View>
 
               <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -669,7 +660,7 @@ export default function ActiveWorkoutScreen() {
                 <View className="gap-3">
                   <View className="flex-row items-center gap-3">
                     <View className="flex-1">
-                      <Button
+                      <Button bounce={false}
                         icon="checkmark"
                         label={t.save}
                         loading={isSubmitting}
@@ -677,6 +668,7 @@ export default function ActiveWorkoutScreen() {
                       />
                     </View>
                     <PressableScale
+                      bounce={false}
                       onPress={isSubmitting ? undefined : handleDiscardWorkout}
                       accessibilityRole="button"
                       accessibilityLabel={t.dontSave}
@@ -689,17 +681,9 @@ export default function ActiveWorkoutScreen() {
                       />
                     </PressableScale>
                   </View>
-                  <Button
-                    variant="secondary"
-                    label={t.back}
-                    disabled={isSubmitting}
-                    onPress={() => setShowCompletionModal(false)}
-                  />
                 </View>
               </ScrollView>
-            </View>
-          </Animated.View>
-        </GestureHandlerRootView>
+        </View>
       </Modal>
       <NewRecordsSheet
         badges={newBadges}

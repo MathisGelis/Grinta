@@ -39,7 +39,7 @@ export default function WorkoutSessionHeader({
   return (
     <View className="gap-5 px-5 pb-2 pt-3">
       <View className="flex-row items-center justify-between">
-        <IconButton
+        <IconButton bounce={false}
           icon="chevron-down"
           variant="glass"
           label={t.minimizeLabel}
@@ -55,6 +55,7 @@ export default function WorkoutSessionHeader({
           </Text>
         </View>
         <PressableScale
+          bounce={false}
           onPress={onEndWorkout}
           accessibilityRole="button"
           accessibilityLabel={t.finishWorkout}

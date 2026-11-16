@@ -1,6 +1,6 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, ScrollView, ActivityIndicator, TextInput, Alert, Pressable, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Alert, Pressable, Keyboard, Platform, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -23,6 +23,8 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 import IconButton from "@/components/ui/IconButton";
+import GlassSearchBar from "@/components/GlassSearchBar";
+import BottomBlur from "@/components/ui/BottomBlur";
 import Button from "@/components/ui/Button";
 import MuscleMap from "@/components/ui/MuscleMap";
 import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
@@ -73,6 +75,21 @@ export default function CurrentWorkoutScreen() {
   }, [selectedWorkout]);
 
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [keyboard, setKeyboard] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboard(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboard(0),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [today, setToday] = useState<ProgrammeToday | null>(null);
@@ -161,6 +178,10 @@ export default function CurrentWorkoutScreen() {
     (exercise) => exercise.exerciseId === focusedExerciseId,
   );
 
+  // La barre de recherche flotte sur la liste : l'espace réservé évite qu'elle cache la dernière séance.
+  const pickerBottomPad = keyboard ? 12 : Math.max(insets.bottom, 14);
+  const barSpace = 48 + pickerBottomPad + 16;
+
   const suggestedId = suggestion?.suggestion?.workout.id;
   const suggestedChosen = !!suggestedId && selectedWorkoutId === suggestedId;
   const firstMuscle = suggestion?.suggestion?.muscles[0];
@@ -171,8 +192,11 @@ export default function CurrentWorkoutScreen() {
       })
     : "";
 
-  const filteredWorkouts = workouts.filter((workout) =>
-    workout.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  // La séance recommandée a sa propre carte au-dessus : on ne la répète pas dans la liste.
+  const filteredWorkouts = workouts.filter(
+    (workout) =>
+      workout.id !== suggestedId &&
+      workout.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const summary = useMemo(() => {
@@ -237,17 +261,12 @@ export default function CurrentWorkoutScreen() {
               >
                 {selectedWorkout?.title ?? t.cmNone}
               </Text>
-              {!selectedWorkoutId && today?.status === "rest" ? (
-                <Text className="mt-0.5 text-xs text-accent-text">{t.cmNoneRest}</Text>
-              ) : null}
             </View>
-            <View className="h-9 w-9 items-center justify-center rounded-full bg-raised">
-              <Ionicons
-                name="swap-horizontal"
-                size={18}
-                color={WorkoutTheme.text.primary}
-              />
-            </View>
+            <Ionicons
+              name="swap-horizontal"
+              size={22}
+              color={WorkoutTheme.text.primary}
+            />
           </Pressable>
         ) : (
           <Text className="flex-1 text-[22px] font-bold tracking-[-0.3px] text-ink">
@@ -321,7 +340,7 @@ export default function CurrentWorkoutScreen() {
                       scrollEnabled={listScrollable}
                       showsVerticalScrollIndicator={false}
                       scrollEventThrottle={16}
-                      contentContainerClassName="gap-2"
+                      contentContainerClassName="gap-4"
                       onContentSizeChange={(_, height) => setListContentHeight(height)}
                       onScroll={(e) => {
                         const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
@@ -332,16 +351,9 @@ export default function CurrentWorkoutScreen() {
                     >
                       {selectedWorkout.exercises.map((exercise, index) => {
                         const focused = focusedExerciseId === exercise.exerciseId;
-                        const details = [
-                          format(t.setsCount, { n: exercise.sets.length }),
-                          exercise.sets.length > 0 ? `${repsRange(exercise.sets)} ${t.repsUnit}` : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ");
                         return (
-                          <PressableScale
+                          <Pressable
                             key={exercise.exerciseId}
-                            halo={false}
                             onPress={() =>
                               setFocusedExerciseId(focused ? null : exercise.exerciseId)
                             }
@@ -361,18 +373,10 @@ export default function CurrentWorkoutScreen() {
                             >
                               <Text className="text-xs font-bold text-ink">{index + 1}</Text>
                             </View>
-                            <View className="flex-1">
-                              <Text numberOfLines={2} className="text-sm font-semibold text-ink">
-                                {exercise.exerciseName}
-                              </Text>
-                              <Text
-                                numberOfLines={1}
-                                className={`mt-0.5 text-xs font-medium ${focused ? "text-accent-text" : "text-ink-muted"}`}
-                              >
-                                {details}
-                              </Text>
-                            </View>
-                          </PressableScale>
+                            <Text numberOfLines={2} className="flex-1 text-sm font-semibold text-ink">
+                              {exercise.exerciseName}
+                            </Text>
+                          </Pressable>
                         );
                       })}
                     </ScrollView>
@@ -446,8 +450,11 @@ export default function CurrentWorkoutScreen() {
                 ) : null}
               </>
             ) : (
-              <View className="flex-1 items-center justify-center">
-                <Ionicons name="barbell-outline" size={56} color={WorkoutTheme.text.disabled} />
+              <View className="flex-1 items-center justify-center gap-4 px-8">
+                <Ionicons name="bed-outline" size={56} color={WorkoutTheme.text.disabled} />
+                {!selectedWorkoutId && today?.status === "rest" ? (
+                  <Text className="text-center text-base text-ink-soft">{t.cmNoneRest}</Text>
+                ) : null}
               </View>
             )}
           </View>
@@ -460,11 +467,8 @@ export default function CurrentWorkoutScreen() {
             style={{ justifyContent: "flex-end", margin: 0 }}
           >
             <View
-              className="rounded-t-hero bg-surface px-5 pt-3"
-              style={{
-                maxHeight: windowHeight * 0.82,
-                paddingBottom: Math.max(insets.bottom, 16),
-              }}
+              className="rounded-t-hero bg-background px-5 pt-3"
+              style={{ maxHeight: windowHeight * 0.82, marginBottom: keyboard }}
             >
               <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
 
@@ -472,36 +476,15 @@ export default function CurrentWorkoutScreen() {
                 <Text className="text-2xl font-semibold text-ink">
                   {t.searchWorkout}
                 </Text>
-                <IconButton
-                  icon="close"
-                  label={t.closeLabel}
+                <PressableScale
                   onPress={() => setPickerVisible(false)}
-                />
-              </View>
-
-              <View className="mb-4 h-12 flex-row items-center gap-2 rounded-full bg-raised px-4">
-                <Ionicons
-                  name="search"
-                  size={18}
-                  color={WorkoutTheme.text.tertiary}
-                />
-                <TextInput
-                  className="flex-1 py-0 text-base text-ink"
-                  placeholder={t.searchWorkout}
-                  placeholderTextColor={WorkoutTheme.text.tertiary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoCorrect={false}
-                />
-                {searchQuery.length > 0 && (
-                  <PressableScale onPress={() => setSearchQuery("")}>
-                    <Ionicons
-                      name="close-circle"
-                      size={18}
-                      color={WorkoutTheme.text.tertiary}
-                    />
-                  </PressableScale>
-                )}
+                  halo={false}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel={t.closeLabel}
+                >
+                  <Ionicons name="close" size={26} color={WorkoutTheme.text.primary} />
+                </PressableScale>
               </View>
 
               {suggestion?.suggestion ? (
@@ -536,7 +519,8 @@ export default function CurrentWorkoutScreen() {
               <ScrollView
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
-                contentContainerClassName="gap-3 pb-2"
+                contentContainerClassName="gap-3"
+                contentContainerStyle={{ paddingBottom: barSpace }}
               >
                 {filteredWorkouts.map((workout) => {
                   const active = selectedWorkoutId === workout.id;
@@ -580,7 +564,7 @@ export default function CurrentWorkoutScreen() {
                   );
                 })}
 
-                {filteredWorkouts.length === 0 && (
+                {filteredWorkouts.length === 0 && !suggestion?.suggestion && (
                   <View className="items-center gap-2 rounded-card bg-raised p-8">
                     <Ionicons
                       name="barbell-outline"
@@ -593,6 +577,19 @@ export default function CurrentWorkoutScreen() {
                   </View>
                 )}
               </ScrollView>
+
+              <BottomBlur height={barSpace + 20} />
+              <View
+                className="absolute inset-x-0 bottom-0 px-5"
+                style={{ paddingBottom: pickerBottomPad }}
+              >
+                <GlassSearchBar
+                  blur
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder={t.searchWorkout}
+                />
+              </View>
             </View>
           </Modal>
 
