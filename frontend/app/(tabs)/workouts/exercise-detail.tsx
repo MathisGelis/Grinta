@@ -16,7 +16,7 @@ import {
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import IconButton from "@/components/ui/IconButton";
 import Card from "@/components/ui/Card";
 import Stat from "@/components/ui/Stat";
@@ -26,12 +26,12 @@ import BadgeList from "@/components/workout/badges/BadgeList";
 import { Badge, BadgesService } from "@/services/badges.service";
 import type { MuscleValue } from "@/utils/muscles";
 import CompareSheet from "@/components/workout/exercises/CompareSheet";
-import Button from "@/components/ui/Button";
 
 export default function ExerciseDetailScreen() {
   const { formatWeight } = useUnits();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
   const [exercise, setExercise] = useState<ExerciseDetail | null>(null);
   const [stats, setStats] = useState<ExerciseStats | null>(null);
@@ -99,34 +99,46 @@ export default function ExerciseDetailScreen() {
     <View className="flex-1">
       <ScreenBackground flat />
       <ScreenHeader
+        floating
         title={exercise?.name ?? ""}
         right={
-          canEdit ? (
-            <IconButton
-              icon="create-outline"
-              label={t.editExercise}
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/workouts/create/exercise",
-                  params: { exerciseId },
-                } as any)
-              }
-            />
-          ) : undefined
+          <View className="flex-row items-center gap-2">
+            {exerciseId ? (
+              <IconButton
+                icon="git-compare-outline"
+                variant="glass"
+                label={t.cmpButton}
+                onPress={() => setCompareVisible(true)}
+              />
+            ) : null}
+            {canEdit ? (
+              <IconButton
+                icon="create-outline"
+                variant="glass"
+                label={t.editExercise}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/workouts/create/exercise",
+                    params: { exerciseId },
+                  } as any)
+                }
+              />
+            ) : null}
+          </View>
         }
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
       ) : error || !exercise ? (
-        <View className="items-center px-5">
+        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
           <Text className="text-danger">{error ?? t.noExerciseFound}</Text>
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-4 px-5"
-          contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         >
           <Card size="hero" className="gap-4">
             <ExerciseAnimation
@@ -262,14 +274,6 @@ export default function ExerciseDetailScreen() {
               <Text className="text-lg font-semibold text-ink">{t.myRecordsTitle}</Text>
               <BadgeList badges={badges} showDate />
             </Card>
-          ) : null}
-          {exerciseId ? (
-            <Button
-              variant="secondary"
-              icon="people-outline"
-              label={t.cmpButton}
-              onPress={() => setCompareVisible(true)}
-            />
           ) : null}
         </ScrollView>
       )}

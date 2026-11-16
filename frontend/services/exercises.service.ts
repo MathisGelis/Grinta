@@ -256,7 +256,8 @@ export interface CompareStats {
 
 export interface ExerciseComparison {
   exercise: { id: string; name: string };
-  me: CompareStats;
+  /** `null` si je n'ai jamais fait cet exercice. */
+  me: CompareStats | null;
   user: {
     id: string;
     uniqueName: string;
@@ -264,7 +265,8 @@ export interface ExerciseComparison {
     avatarThumbnailUrl?: string | null;
   };
   /** Uniquement les séances publiées par la personne. */
-  them: CompareStats;
+  /** `null` si la personne n'a publié aucune séance avec cet exercice. */
+  them: CompareStats | null;
 }
 
 /** `403` si je ne suis pas cette personne, `400` si c'est moi, `404` pour un exercice inconnu. */

@@ -1,20 +1,25 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } from "react";
 import {
   View,
   Text,
-  TextInput,
-  Modal,
   ActivityIndicator,
   Alert,
   FlatList,
+  Keyboard,
+  Platform,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { getAllExercises, Exercise } from "@/services/exercises.service";
-
+import Modal from "@/components/ui/AppModal";
 import PressableScale from "@/components/ui/PressableScale";
-import IconButton from "@/components/ui/IconButton";
+import GlassSearchBar from "@/components/GlassSearchBar";
+import BottomBlur from "@/components/ui/BottomBlur";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { normalizeText } from "@/utils/text";
+
 interface ExerciseSearchProps {
   visible: boolean;
   onClose: () => void;
@@ -22,6 +27,7 @@ interface ExerciseSearchProps {
   existingExerciseIds?: string[];
 }
 
+/** Slider d'ajout d'exercice : même design que la liste des exercices, se ferme en glissant vers le bas. */
 export default function ExerciseSearch({
   visible,
   onClose,
@@ -29,17 +35,33 @@ export default function ExerciseSearch({
   existingExerciseIds = [],
 }: ExerciseSearchProps) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredQuery = useDeferredValue(searchQuery);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
-  const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [loadingExercises, setLoadingExercises] = useState(false);
+  const [keyboard, setKeyboard] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboard(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboard(0),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const loadExercises = useCallback(async () => {
     setLoadingExercises(true);
     try {
-      const allExercises = await getAllExercises();
-      setAvailableExercises(allExercises);
-      setFilteredExercises(allExercises);
+      setAvailableExercises(await getAllExercises());
     } catch (error) {
       Alert.alert(t.error, t.cannotLoadExercises);
       console.error("Erreur:", error);
@@ -54,131 +76,110 @@ export default function ExerciseSearch({
     }
   }, [visible, availableExercises.length, loadExercises]);
 
-  const handleSearch = (text: string) => {
-    setSearchQuery(text);
-    const filtered = availableExercises.filter((ex) =>
-      ex.name.toLowerCase().includes(text.toLowerCase()),
-    );
-    setFilteredExercises(filtered);
-  };
+  useEffect(() => {
+    if (!visible) setSearchQuery("");
+  }, [visible]);
+
+  const filteredExercises = useMemo(() => {
+    const q = normalizeText(deferredQuery.trim());
+    return q
+      ? availableExercises.filter((ex) => normalizeText(ex.name).includes(q))
+      : availableExercises;
+  }, [availableExercises, deferredQuery]);
 
   const handleSelect = (exercise: Exercise) => {
     onSelectExercise(exercise);
-    setSearchQuery("");
     onClose();
   };
 
+  // La barre de recherche flotte sur la liste : l'espace réservé évite qu'elle cache le dernier exercice.
+  const bottomPad = keyboard ? 6 : Math.max(insets.bottom - 10, 6);
+  const barSpace = 48 + bottomPad + 10;
+
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackdropPress={onClose}
+      onSwipeComplete={onClose}
+      swipeDirection="down"
+      animationIn="slideInUp"
+      style={{ justifyContent: "flex-end", margin: 0 }}
     >
-      <View className="flex-1 bg-overlay justify-end">
-        <View className="h-[80%] max-h-[90%] min-h-[50%] rounded-t-hero bg-surface pt-3">
-          <View className="mb-3 h-1.5 w-12 self-center rounded-full bg-raised" />
-          <View className="flex-row items-center justify-between px-5 pb-4">
-            <Text className="text-xl font-semibold text-ink">
-              {t.addExerciseTitle}
-            </Text>
-            <IconButton icon="close" label={t.closeLabel} onPress={onClose} />
-          </View>
+      <View
+        className="rounded-t-hero bg-background pt-3"
+        style={{ height: windowHeight * 0.85, marginBottom: keyboard }}
+      >
+        <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
+        <View className="flex-row items-center justify-between px-5 pb-5">
+          <Text className="text-xl font-semibold text-ink">{t.addExerciseTitle}</Text>
+          <PressableScale
+            onPress={onClose}
+            halo={false}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t.closeLabel}
+          >
+            <Ionicons name="close" size={26} color={WorkoutTheme.text.primary} />
+          </PressableScale>
+        </View>
 
-          <View className="px-5 pb-3">
-            <View className="h-12 flex-row items-center rounded-full bg-raised px-4">
-              <Ionicons
-                name="search"
-                size={18}
-                color={WorkoutTheme.text.secondary}
-              />
-              <TextInput
-                className="h-full flex-1 px-2.5 py-0 text-[15px] text-ink"
-                placeholder={t.searchExercise}
-                placeholderTextColor={WorkoutTheme.text.tertiary}
-                value={searchQuery}
-                onChangeText={handleSearch}
-              />
-              {searchQuery.length > 0 && (
-                <PressableScale onPress={() => handleSearch("")}>
+        {loadingExercises ? (
+          <View className="flex-1 items-center justify-center py-10">
+            <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredExercises}
+            keyExtractor={(item) => item.id}
+            className="flex-1"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace, flexGrow: 1 }}
+            renderItem={({ item }) => {
+              const isDuplicate = existingExerciseIds.includes(item.id);
+              return (
+                <PressableScale
+                  onPress={() =>
+                    isDuplicate
+                      ? Alert.alert(t.duplicateExercise, `"${item.name}" ${t.alreadyAdded}`)
+                      : handleSelect(item)
+                  }
+                  className={`mb-2 flex-row items-center justify-between rounded-tile bg-surface p-4 ${isDuplicate ? "opacity-60" : ""}`}
+                >
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-ink">{item.name}</Text>
+                    <Text className="mt-0.5 text-xs capitalize text-ink-muted">
+                      {t.muscleNames[item.primary_muscle] ??
+                        item.primary_muscle.replace(/_/g, " ")}
+                    </Text>
+                  </View>
                   <Ionicons
-                    name="close-circle"
-                    size={18}
-                    color={WorkoutTheme.text.secondary}
+                    name={isDuplicate ? "checkmark-circle" : "add-circle"}
+                    size={24}
+                    color={
+                      isDuplicate ? WorkoutTheme.status.success : WorkoutTheme.accent.purple
+                    }
                   />
                 </PressableScale>
-              )}
-            </View>
-          </View>
+              );
+            }}
+            ListEmptyComponent={
+              <View className="flex-1 items-center justify-center py-10">
+                <Ionicons name="barbell-outline" size={40} color={WorkoutTheme.text.tertiary} />
+                <Text className="mt-4 text-sm text-ink-soft">{t.noExerciseFound}</Text>
+              </View>
+            }
+          />
+        )}
 
-          {loadingExercises ? (
-            <View className="flex-1 justify-center items-center py-10">
-              <ActivityIndicator
-                size="large"
-                color={WorkoutTheme.accent.purple}
-              />
-            </View>
-          ) : (
-            <FlatList
-              data={filteredExercises}
-              keyExtractor={(item) => item.id}
-              className="flex-1"
-              contentContainerStyle={{
-                paddingHorizontal: 20,
-                paddingVertical: 12,
-                flexGrow: 1,
-              }}
-              renderItem={({ item }) => {
-                const isDuplicate = existingExerciseIds.includes(item.id);
-
-                return (
-                  <PressableScale
-                    onPress={() =>
-                      isDuplicate
-                        ? Alert.alert(
-                            t.duplicateExercise,
-                            `"${item.name}" ${t.alreadyAdded}`,
-                          )
-                        : handleSelect(item)
-                    }
-                    disabled={isDuplicate}
-                    className={`mb-2 flex-row items-center justify-between rounded-tile bg-raised p-4 ${isDuplicate ? "opacity-60" : ""}`}
-                  >
-                    <View className="flex-1">
-                      <Text className="text-base font-semibold text-ink">
-                        {item.name}
-                      </Text>
-                      <Text className="mt-0.5 text-xs capitalize text-ink-muted">
-                        {t.muscleNames[item.primary_muscle] ??
-                          item.primary_muscle.replace(/_/g, " ")}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name={isDuplicate ? "checkmark-circle" : "add-circle"}
-                      size={24}
-                      color={
-                        isDuplicate
-                          ? WorkoutTheme.status.success
-                          : WorkoutTheme.accent.purple
-                      }
-                    />
-                  </PressableScale>
-                );
-              }}
-              ListEmptyComponent={
-                <View className="flex-1 justify-center items-center">
-                  <Ionicons
-                    name="search"
-                    size={40}
-                    color={WorkoutTheme.text.tertiary}
-                  />
-                  <Text className="text-sm text-ink-soft mt-4">
-                    {t.noExerciseFound}
-                  </Text>
-                </View>
-              }
-            />
-          )}
+        <BottomBlur height={barSpace + 20} />
+        <View className="absolute inset-x-0 bottom-0 px-5" style={{ paddingBottom: bottomPad }}>
+          <GlassSearchBar
+            blur
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder={t.searchExercise}
+          />
         </View>
       </View>
     </Modal>

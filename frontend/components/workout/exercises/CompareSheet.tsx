@@ -1,7 +1,7 @@
 import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Modal from "@/components/ui/AppModal";
 import Avatar from "@/components/ui/Avatar";
@@ -15,6 +15,7 @@ import {
   type CompareStats,
   type ExerciseComparison,
 } from "@/services/exercises.service";
+import { UserService, type CurrentUser } from "@/services/user.service";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 
 type Props = {
@@ -30,6 +31,8 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
   const { t, lang } = useTranslation();
   const { formatWeight } = useUnits();
   const myId = useCurrentUserId();
+  const [me, setMe] = useState<CurrentUser | null>(null);
+  const { height: windowHeight } = useWindowDimensions();
   const [following, setFollowing] = useState<UserListItem[] | null>(null);
   const [comparison, setComparison] = useState<ExerciseComparison | null>(null);
   const [loading, setLoading] = useState(false);
@@ -45,6 +48,17 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
       cancelled = true;
     };
   }, [visible, myId]);
+
+  useEffect(() => {
+    if (!visible) return;
+    let cancelled = false;
+    UserService.getMe()
+      .then((data) => !cancelled && setMe(data))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) {
@@ -71,12 +85,12 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
     }
   };
 
-  const rows = (stats: CompareStats) => [
-    { label: t.heaviestWeightLabel, value: stats.heaviestWeight, unit: "kg" },
-    { label: t.oneRepMaxLabel, value: stats.estimatedOneRepMax, unit: "kg" },
-    { label: t.recordSessionVolume, value: stats.bestSessionVolume, unit: "kg" },
-    { label: t.cmpMaxReps, value: stats.maxReps, unit: "" },
-    { label: t.cmpSessions, value: stats.totalSessions, unit: "" },
+  const rows = (stats: CompareStats | null) => [
+    { label: t.heaviestWeightLabel, value: stats?.heaviestWeight ?? null, unit: "kg" },
+    { label: t.oneRepMaxLabel, value: stats?.estimatedOneRepMax ?? null, unit: "kg" },
+    { label: t.recordSessionVolume, value: stats?.bestSessionVolume ?? null, unit: "kg" },
+    { label: t.cmpMaxReps, value: stats?.maxReps ?? null, unit: "" },
+    { label: t.cmpSessions, value: stats?.totalSessions ?? 0, unit: "" },
   ];
 
   const cell = (value: number | null, unit: string) =>
@@ -92,9 +106,12 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
       onBackdropPress={onClose}
       onSwipeComplete={onClose}
       swipeDirection="down"
-      style={{ justifyContent: "flex-end" }}
+      style={{ justifyContent: "flex-end", margin: 0 }}
     >
-      <View className="max-h-[80%] rounded-t-hero bg-surface px-5 pb-8 pt-3">
+      <View
+        className="rounded-t-hero bg-surface px-5 pb-8 pt-3"
+        style={{ maxHeight: windowHeight * 0.8 }}
+      >
         <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-raised" />
         <Text className="mb-4 text-xl font-semibold text-ink">
           {comparison ? comparison.exercise.name : t.cmpPickUser}
@@ -106,53 +123,65 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
           <ActivityIndicator color={WorkoutTheme.accent.purple} />
         ) : comparison ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="gap-3">
-            <PressableScale
-              halo={false}
-              onPress={() => setComparison(null)}
-              className="flex-row items-center gap-3 rounded-tile bg-raised p-3"
-            >
-              <Avatar
-                uri={comparison.user.avatarThumbnailUrl}
-                name={comparison.user.displayName}
-                size={36}
-              />
-              <Text className="flex-1 text-sm font-semibold text-ink" numberOfLines={1}>
-                {comparison.user.displayName}
-              </Text>
-              <Ionicons name="swap-horizontal" size={18} color={WorkoutTheme.text.tertiary} />
-            </PressableScale>
-
-            <View className="flex-row px-1">
-              <View className="flex-1" />
-              <Text className="w-24 text-right text-xs font-semibold text-ink-muted">{t.cmpMe}</Text>
-              <Text className="w-24 text-right text-xs font-semibold text-ink-muted" numberOfLines={1}>
-                @{comparison.user.uniqueName}
-              </Text>
+            <View className="flex-row items-center rounded-tile bg-raised px-3 py-4">
+              <View className="flex-1 items-center gap-1.5">
+                <Avatar uri={me?.avatarThumbnailUrl ?? me?.avatarUrl} name={me?.displayName} size={44} />
+                <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
+                  {me?.displayName ?? t.cmpMe}
+                </Text>
+                <Text className="text-center text-xs text-ink-muted">
+                  {t.cmpLastPerformed} :{" "}
+                  {comparison.me?.lastPerformedAt
+                    ? formatDate(comparison.me.lastPerformedAt, lang)
+                    : t.cmpNever}
+                </Text>
+              </View>
+              <PressableScale
+                halo={false}
+                hitSlop={12}
+                onPress={() => setComparison(null)}
+                accessibilityRole="button"
+                accessibilityLabel={t.cmpPickUser}
+                className="px-3"
+              >
+                <Ionicons name="swap-horizontal" size={20} color={WorkoutTheme.text.tertiary} />
+              </PressableScale>
+              <View className="flex-1 items-center gap-1.5">
+                <Avatar
+                  uri={comparison.user.avatarThumbnailUrl}
+                  name={comparison.user.displayName}
+                  size={44}
+                />
+                <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
+                  {comparison.user.displayName}
+                </Text>
+                <Text className="text-center text-xs text-ink-muted">
+                  {t.cmpLastPerformed} :{" "}
+                  {comparison.them?.lastPerformedAt
+                    ? formatDate(comparison.them.lastPerformedAt, lang)
+                    : t.cmpNever}
+                </Text>
+              </View>
             </View>
+
+            <Text className="px-1 text-center text-xs text-ink-muted">{t.cmpOnlyPublished}</Text>
+
             {rows(comparison.me).map((row, index) => {
               const theirs = rows(comparison.them)[index];
               return (
                 <View key={row.label} className="flex-row items-center rounded-tile bg-raised px-3 py-3">
-                  <Text className="flex-1 text-sm text-ink-muted">{row.label}</Text>
-                  <Text className="w-24 text-right text-sm font-semibold text-ink">
+                  <Text className="flex-1 text-center text-base font-semibold text-ink">
                     {cell(row.value, row.unit)}
                   </Text>
-                  <Text className="w-24 text-right text-sm font-semibold text-ink">
+                  <Text className="flex-[1.3] px-2 text-center text-xs text-ink-muted">
+                    {row.label}
+                  </Text>
+                  <Text className="flex-1 text-center text-base font-semibold text-ink">
                     {cell(theirs.value, theirs.unit)}
                   </Text>
                 </View>
               );
             })}
-            <Text className="px-1 text-xs text-ink-muted">
-              {t.cmpLastPerformed} ·{" "}
-              {comparison.me.lastPerformedAt
-                ? formatDate(comparison.me.lastPerformedAt, lang)
-                : t.cmpNever}{" "}
-              / {comparison.them.lastPerformedAt
-                ? formatDate(comparison.them.lastPerformedAt, lang)
-                : t.cmpNever}
-            </Text>
-            <Text className="px-1 text-xs text-ink-muted">{t.cmpOnlyPublished}</Text>
           </ScrollView>
         ) : following === null ? (
           <ActivityIndicator color={WorkoutTheme.accent.purple} />
