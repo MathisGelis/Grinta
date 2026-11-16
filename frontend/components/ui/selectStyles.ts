@@ -15,6 +15,13 @@ export const selectStyles = {
     borderWidth: 0,
     borderRadius: 22,
     marginTop: 8,
+    // Se superpose au contenu suivant au lieu d'agrandir le champ.
+    position: "absolute" as const,
+    top: 56,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    elevation: 12,
   },
   dropdownItemStyles: {
     backgroundColor: WorkoutTheme.backgroundSecondary,

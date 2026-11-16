@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { SelectList } from "react-native-dropdown-select-list";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
 import { createProgramme, ProgrammeDay } from "@/services/programms.service";
 import {
@@ -12,12 +11,14 @@ import {
 import { TokenService } from "@/services/token.service";
 
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
-import { FormField, TextField } from "@/components/ui/FormField";
-import { selectStyles } from "@/components/ui/selectStyles";
+import { OutlinedField } from "@/components/ui/OutlinedField";
+import DifficultyPicker from "@/components/ui/DifficultyPicker";
+import LocationPicker from "@/components/ui/LocationPicker";
 import { useTranslation } from "@/contexts/LanguageContext";
 import {
   DIFFICULTY_KEYS,
@@ -29,10 +30,6 @@ export default function CreateProgrammScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const headerHeight = useFloatingHeaderHeight();
-  const DIFFICULTY_OPTIONS = DIFFICULTY_KEYS.map((key) => ({
-    key,
-    value: difficultyLabel(t, key),
-  }));
   const LOCATION_OPTIONS = LOCATION_KEYS.map((key) => ({
     key,
     value: locationLabel(t, key),
@@ -121,7 +118,18 @@ export default function CreateProgrammScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader floating title={t.newProgramme} />
+      <ScreenHeader
+        floating
+        title={t.newProgramme}
+        right={
+          <IconButton
+            icon={loading ? "hourglass-outline" : "checkmark"}
+            variant="accent"
+            label={t.createProgramme}
+            onPress={loading ? undefined : submitProgramme}
+          />
+        }
+      />
       <ProgrammeDayEditor
         days={days}
         onChangeDays={setDays}
@@ -134,66 +142,49 @@ export default function CreateProgrammScreen() {
         </Text>
 
         <Button
+          label={t.imEntry}
           variant="secondary"
           icon="document-text-outline"
-          label={t.imEntry}
           onPress={() => router.push("/(tabs)/workouts/import" as any)}
         />
 
-        <FormField label={t.titleLabel} required>
-          <TextField
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t.programmeTitlePlaceholder}
-          />
-        </FormField>
-
-        <FormField label={t.descriptionLabel}>
-          <TextField
-            multiline
-            value={description}
-            onChangeText={setDescription}
-            placeholder={t.programmeDescPlaceholder}
-          />
-        </FormField>
-
-        <FormField label={t.difficultyLabel} required>
-          <SelectList
-            setSelected={(value: string) => setDifficulty(value)}
-            data={DIFFICULTY_OPTIONS}
-            save="key"
-            search={false}
-            placeholder={t.chooseDifficulty}
-            defaultOption={DIFFICULTY_OPTIONS.find(
-              (option) => option.key === difficulty,
-            )}
-            {...selectStyles}
-          />
-        </FormField>
-
-        <FormField label={t.locationLabel} required>
-          <SelectList
-            setSelected={(value: string) => setLocationType(value)}
-            data={LOCATION_OPTIONS}
-            save="key"
-            search={false}
-            placeholder={t.chooseLocation}
-            defaultOption={LOCATION_OPTIONS.find(
-              (option) => option.key === locationType,
-            )}
-            {...selectStyles}
-          />
-        </FormField>
-
-          </View>
-        }
-        footer={
-          <View style={{ marginTop: 12 }}>
-        <Button
-          label={t.createProgramme}
-          loading={loading}
-          onPress={submitProgramme}
+        <OutlinedField
+          label={t.titleLabel}
+          required
+          value={title}
+          onChangeText={setTitle}
+          placeholder={t.programmeTitlePlaceholder}
         />
+
+        <OutlinedField
+          label={t.descriptionLabel}
+          multiline
+          value={description}
+          onChangeText={setDescription}
+          placeholder={t.programmeDescPlaceholder}
+        />
+
+        <View className="flex-row gap-3">
+        <View className="flex-1">
+        <DifficultyPicker
+          label={t.difficultyLabel}
+          level={Math.max(1, DIFFICULTY_KEYS.indexOf(difficulty as any) + 1)}
+          levelLabel={difficultyLabel(t, difficulty)}
+          onChange={(level) => setDifficulty(DIFFICULTY_KEYS[level - 1])}
+        />
+        </View>
+
+        <View className="flex-1">
+        <LocationPicker
+          label={t.locationLabel}
+          required
+          options={LOCATION_OPTIONS.map((o) => ({ key: o.key, label: o.value }))}
+          value={locationType}
+          onChange={setLocationType}
+        />
+        </View>
+        </View>
+
           </View>
         }
       />
