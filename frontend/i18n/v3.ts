@@ -145,6 +145,8 @@ export interface V3Strings {
 
   shrCard: string;
   shrCardTitle: string;
+  shrLinkTitle: string;
+  shrLinkMessage: string;
   shrCardUnavailable: string;
   shrTypeSummary: string;
   shrTypeSets: string;
@@ -190,7 +192,7 @@ const en: V3Strings = {
   cmpNoFollowing: "You don't follow anyone yet.",
   cmpNotFollowing: "You can only compare with people you follow.",
   cmpMe: "Me",
-  cmpOnlyPublished: "Only the workouts they published are counted.",
+  cmpOnlyPublished: "Only published workouts are compared.",
   cmpMaxReps: "Most reps",
   cmpSessions: "Sessions",
   cmpLastPerformed: "Last performed",
@@ -320,6 +322,8 @@ const en: V3Strings = {
 
   shrCard: "Share",
   shrCardTitle: "Share card",
+  shrLinkTitle: "Share link",
+  shrLinkMessage: "Check out this workout on Grinta: {url}",
   shrCardUnavailable: "Sharing is not available on this device.",
   shrTypeSummary: "Classic",
   shrTypeSets: "Working sets",
@@ -365,7 +369,7 @@ const fr: V3Strings = {
   cmpNoFollowing: "Vous ne suivez personne pour l'instant.",
   cmpNotFollowing: "Vous ne pouvez comparer qu'avec les personnes que vous suivez.",
   cmpMe: "Moi",
-  cmpOnlyPublished: "Seules les séances qu'elle a publiées sont comptées.",
+  cmpOnlyPublished: "Seules les séances publiées sont comparées.",
   cmpMaxReps: "Max de reps",
   cmpSessions: "Séances",
   cmpLastPerformed: "Dernière fois",
@@ -495,6 +499,8 @@ const fr: V3Strings = {
 
   shrCard: "Partager",
   shrCardTitle: "Card de partage",
+  shrLinkTitle: "Lien de partage",
+  shrLinkMessage: "Regarde cette séance sur Grinta : {url}",
   shrCardUnavailable: "Le partage n'est pas disponible sur cet appareil.",
   shrTypeSummary: "Classique",
   shrTypeSets: "Séries de travail",

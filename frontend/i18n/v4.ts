@@ -10,6 +10,9 @@ export interface V4Strings {
   emptyWorkoutsHint: string;
   reorderDay: string;
   prgMine: string;
+  prgPickStartDate: string;
+  prgNoneActive: string;
+  prgChooseToStart: string;
   prgPredefined: string;
   sortDayCount: string;
   searchProgramme: string;
@@ -99,6 +102,9 @@ export interface V4Strings {
 }
 
 const en: V4Strings = {
+  prgPickStartDate: "Choose the date you want to start this programme",
+  prgNoneActive: "No programme in progress",
+  prgChooseToStart: "Choose a programme to start",
   grpSettings: "Group settings",
   grpNewGroup: "New group",
   emptyProgrammesHint: "No programme yet. Create one to plan your week.",
@@ -106,7 +112,7 @@ const en: V4Strings = {
   emptyWorkoutsHint: "No workout yet. Create your first one to get started.",
   reorderDay: "Reorder day",
   prgMine: "Mine",
-  prgPredefined: "Predefined",
+  prgPredefined: "Custom",
   sortDayCount: "Number of days",
   searchProgramme: "Search a programme",
   grpAddMember: "Add a member",
@@ -204,6 +210,9 @@ const en: V4Strings = {
 };
 
 const fr: V4Strings = {
+  prgPickStartDate: "Choisissez la date à laquelle vous voulez débuter ce programme",
+  prgNoneActive: "Aucun programme en cours",
+  prgChooseToStart: "Choisissez un programme à commencer",
   grpSettings: "Réglages du groupe",
   grpNewGroup: "Nouveau groupe",
   emptyProgrammesHint: "Aucun programme pour l'instant. Créez-en un pour planifier votre semaine.",
@@ -211,7 +220,7 @@ const fr: V4Strings = {
   emptyWorkoutsHint: "Aucune séance pour l'instant. Créez votre première séance pour commencer.",
   reorderDay: "Réordonner le jour",
   prgMine: "Mes programmes",
-  prgPredefined: "Prédéfinis",
+  prgPredefined: "Personnalisés",
   sortDayCount: "Nombre de jours",
   searchProgramme: "Rechercher un programme",
   grpAddMember: "Ajouter un membre",

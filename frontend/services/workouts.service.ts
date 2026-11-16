@@ -199,7 +199,7 @@ export async function getWorkoutById(id: string, token?: string): Promise<fullPl
       exerciseId: ex.exercise.id,
       exerciseName: ex.exercise.name,
       sets: ex.sets || [],
-      plannedRestSeconds: ex.plannedRestSeconds || 90,
+      plannedRestSeconds: ex.plannedRestSeconds ?? 90,
     }));
 
     return {
