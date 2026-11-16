@@ -13,6 +13,7 @@ type IconButtonProps = {
   size?: number;
   halo?: boolean;
   className?: string;
+  bounce?: boolean;
 };
 
 const BACKGROUND = {
@@ -29,6 +30,7 @@ export default function IconButton({
   size = 44,
   halo = true,
   className = "",
+  bounce = false,
 }: IconButtonProps) {
   const dim = { width: size, height: size, borderRadius: size / 2 };
   const glyph = (
@@ -44,6 +46,7 @@ export default function IconButton({
   );
   return (
     <PressableScale
+      bounce={bounce}
       onPress={onPress}
       halo={halo ? "fill" : false}
       accessibilityRole="button"

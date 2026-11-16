@@ -27,6 +27,7 @@ type ButtonProps = {
   loading?: boolean;
   disabled?: boolean;
   className?: string;
+  bounce?: boolean;
 };
 
 export default function Button({
@@ -37,10 +38,12 @@ export default function Button({
   loading,
   disabled,
   className = "",
+  bounce = false,
 }: ButtonProps) {
   const off = disabled || loading;
   return (
     <PressableScale
+      bounce={bounce}
       haptic
       onPress={off ? undefined : onPress}
       accessibilityRole="button"
