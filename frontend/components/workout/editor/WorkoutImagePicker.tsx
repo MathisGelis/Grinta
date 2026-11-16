@@ -44,7 +44,7 @@ export default function WorkoutImagePicker({
             <View className="absolute right-3 top-3">
               <IconButton
                 icon="close"
-                variant="glass"
+                variant="surface"
                 size={40}
                 label={t.removePhoto}
                 onPress={() => onImageChange(null)}

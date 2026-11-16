@@ -144,7 +144,7 @@ export default function CreateExerciseScreen() {
             />
           </FormField>
 
-          <FormField label={t.equipmentType} required>
+          <FormField label={t.equipmentType} required style={{ zIndex: 30 }}>
             <SelectList
               setSelected={(val: string) => setEquipmentType(val)}
               data={options(t.equipmentNames)}
@@ -163,7 +163,7 @@ export default function CreateExerciseScreen() {
             />
           </FormField>
 
-          <FormField label={t.primaryMuscle} required>
+          <FormField label={t.primaryMuscle} required style={{ zIndex: 20 }}>
             <SelectList
               setSelected={(val: string) => setPrimaryMuscle(val)}
               data={options(t.muscleNames)}
@@ -197,7 +197,7 @@ export default function CreateExerciseScreen() {
             </View>
           </FormField>
 
-          <FormField label={t.exerciseType} required>
+          <FormField label={t.exerciseType} required style={{ zIndex: 10 }}>
             <SelectList
               setSelected={(val: string) => setExerciseType(val)}
               data={options(t.exerciseTypeNames)}

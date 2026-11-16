@@ -1,5 +1,7 @@
 import React from "react";
+import { View } from "react-native";
 import { FormField, TextField } from "@/components/ui/FormField";
+import DurationPicker from "@/components/ui/DurationPicker";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutFormFieldsProps {
@@ -9,8 +11,6 @@ interface WorkoutFormFieldsProps {
   onDescriptionChange: (v: string) => void;
   estimatedTime: string;
   onEstimatedTimeChange: (v: string) => void;
-  restSeconds: string;
-  onRestSecondsChange: (v: string) => void;
 }
 
 export default function WorkoutFormFields({
@@ -20,15 +20,12 @@ export default function WorkoutFormFields({
   onDescriptionChange,
   estimatedTime,
   onEstimatedTimeChange,
-  restSeconds,
-  onRestSecondsChange,
 }: WorkoutFormFieldsProps) {
   const { t } = useTranslation();
   return (
-    <>
+    <View className="gap-5">
       <FormField label={t.workoutNameLabel} required>
         <TextField
-          icon="barbell"
           placeholder={t.workoutNamePlaceholder}
           value={name}
           onChangeText={onNameChange}
@@ -44,29 +41,11 @@ export default function WorkoutFormFields({
         />
       </FormField>
 
-      <FormField label={t.estimatedDuration}>
-        <TextField
-          icon="time"
-          suffix="min"
-          placeholder="45"
-          value={estimatedTime}
-          onChangeText={onEstimatedTimeChange}
-          keyboardType="number-pad"
-          maxLength={3}
-        />
-      </FormField>
-
-      <FormField label={t.restBetweenSets}>
-        <TextField
-          icon="hourglass-outline"
-          suffix="s"
-          placeholder="60"
-          value={restSeconds}
-          onChangeText={onRestSecondsChange}
-          keyboardType="number-pad"
-          maxLength={3}
-        />
-      </FormField>
-    </>
+      <DurationPicker
+        label={t.estimatedDuration}
+        value={estimatedTime}
+        onChange={onEstimatedTimeChange}
+      />
+    </View>
   );
 }

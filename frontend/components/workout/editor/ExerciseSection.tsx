@@ -14,6 +14,7 @@ interface ExerciseSectionProps {
   onImport?: () => void;
   onUpdate: (updated: ExerciseSetupData) => void;
   onRemove: (id: string) => void;
+  defaultRestSeconds?: number;
 }
 
 export default function ExerciseSection({
@@ -22,6 +23,7 @@ export default function ExerciseSection({
   onImport,
   onUpdate,
   onRemove,
+  defaultRestSeconds,
 }: ExerciseSectionProps) {
   const { t } = useTranslation();
   return (
@@ -63,18 +65,17 @@ export default function ExerciseSection({
               exercise={exercise}
               onUpdate={onUpdate}
               onRemove={() => onRemove(exercise.id)}
+              defaultRestSeconds={defaultRestSeconds}
             />
           ))}
         </View>
       ) : (
-        <View className="items-center gap-3 rounded-card bg-surface p-8">
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-raised">
-            <Ionicons
-              name="barbell"
-              size={26}
-              color={WorkoutTheme.text.tertiary}
-            />
-          </View>
+        <View className="items-center gap-3 p-8">
+          <Ionicons
+            name="barbell"
+            size={32}
+            color={WorkoutTheme.text.tertiary}
+          />
           <Text className="text-base font-semibold text-ink-soft">
             {t.noExercisesAdded}
           </Text>

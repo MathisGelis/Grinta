@@ -19,11 +19,13 @@ import ExerciseSection from "@/components/workout/editor/ExerciseSection";
 import WorkoutPickerSheet from "@/components/workout/editor/WorkoutPickerSheet";
 import WorkoutStats from "@/components/workout/editor/WorkoutStats";
 
-import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+const DEFAULT_REST_SECONDS = 60;
+
 export default function CreateWorkoutScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -35,7 +37,6 @@ export default function CreateWorkoutScreen() {
   >([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [estimatedTime, setEstimatedTime] = useState("45");
-  const [restSeconds, setRestSeconds] = useState("60");
   const [loading, setLoading] = useState(false);
   const [showWorkoutPicker, setShowWorkoutPicker] = useState(false);
   const [workouts, setWorkouts] = useState<PlannedWorkout[]>(
@@ -123,7 +124,10 @@ export default function CreateWorkoutScreen() {
     exercises: selectedExercises.map((exercise) => ({
       exerciseId: exercise.id,
       sets: exercise.sets,
-      plannedRestSeconds: Math.min(600, Math.max(0, parseInt(restSeconds, 10) || 0)),
+      plannedRestSeconds: Math.min(
+        600,
+        Math.max(0, exercise.plannedRestSeconds ?? DEFAULT_REST_SECONDS),
+      ),
     })),
   });
 
@@ -157,11 +161,22 @@ export default function CreateWorkoutScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader floating title={t.newSession} />
+      <ScreenHeader
+        floating
+        title={t.newSession}
+        right={
+          <IconButton
+            icon={loading ? "hourglass-outline" : "checkmark"}
+            variant="accent"
+            label={t.createWorkoutBtn}
+            onPress={loading ? undefined : createWorkout}
+          />
+        }
+      />
       <ScrollView {...chromeScrollProps}
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="gap-5 px-5"
+        contentContainerClassName="gap-8 px-5"
         contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
@@ -172,8 +187,6 @@ export default function CreateWorkoutScreen() {
           onDescriptionChange={setDescription}
           estimatedTime={estimatedTime}
           onEstimatedTimeChange={setEstimatedTime}
-          restSeconds={restSeconds}
-          onRestSecondsChange={setRestSeconds}
         />
 
         <ExerciseSection
@@ -182,6 +195,7 @@ export default function CreateWorkoutScreen() {
           onImport={openWorkoutPicker}
           onUpdate={handleUpdateExercise}
           onRemove={handleRemoveExercise}
+          defaultRestSeconds={DEFAULT_REST_SECONDS}
         />
 
         {selectedExercises.length > 0 && (
@@ -190,13 +204,6 @@ export default function CreateWorkoutScreen() {
             estimatedTime={estimatedTime}
           />
         )}
-
-        <Button
-          icon="checkmark-done"
-          label={t.createWorkoutBtn}
-          loading={loading}
-          onPress={createWorkout}
-        />
       </ScrollView>
 
       <WorkoutPickerSheet
