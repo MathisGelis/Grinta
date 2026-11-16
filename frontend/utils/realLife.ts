@@ -8,28 +8,13 @@ export interface RealLifeComparison {
   count: number;
 }
 
-export const REAL_LIFE_EMOJI: Record<RealLifeObject, string> = {
-  bowling_ball: "🎳",
-  golden_retriever: "🐕",
-  washing_machine: "🧺",
-  giant_panda: "🐼",
-  upright_piano: "🎹",
-  horse: "🐴",
-  car: "🚗",
-  white_rhinoceros: "🦏",
-  african_elephant: "🐘",
-  school_bus: "🚌",
-  boeing_737: "✈️",
-  statue_of_liberty: "🗽",
-};
-
-/** « ≈ 2.1 × 🦏 » : l'objet de comparaison est affiché sous forme d'emoji. */
+/** « ≈ 2.1 × rhinocéros blanc » : l'objet de comparaison est affiché par son nom. */
 export function realLifeText(
   t: Strings,
   comparison?: RealLifeComparison | null,
 ): string | null {
   if (!comparison) return null;
-  const emoji = REAL_LIFE_EMOJI[comparison.object];
-  if (!emoji) return null;
-  return format(t.rlLine, { count: comparison.count, object: emoji });
+  const name = t.rlObjects[comparison.object];
+  if (!name) return null;
+  return format(t.rlLine, { count: comparison.count, object: name });
 }

@@ -298,7 +298,7 @@ export default function StatsScreen() {
                 {dayWorkouts.length === 0 && (
                   <Card className="items-center">
                     <Text className="text-sm text-ink-muted">
-                      {t.restDay} 💤
+                      {t.restDay}
                     </Text>
                   </Card>
                 )}

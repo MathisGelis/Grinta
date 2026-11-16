@@ -6,6 +6,8 @@ type StatProps = {
   unit?: string;
   label?: string;
   size?: "xl" | "lg" | "md";
+  /** Position du libellé par rapport à la valeur. */
+  labelPosition?: "top" | "bottom";
   className?: string;
 };
 
@@ -16,10 +18,14 @@ export default function Stat({
   unit,
   label,
   size = "lg",
+  labelPosition = "bottom",
   className = "",
 }: StatProps) {
   return (
     <View className={className}>
+      {label && labelPosition === "top" ? (
+        <Text className="mb-0.5 text-xs text-ink-muted">{label}</Text>
+      ) : null}
       <View className="flex-row items-baseline gap-1">
         <Text
           className={`${VALUE[size]} font-semibold text-ink`}
@@ -29,7 +35,7 @@ export default function Stat({
         </Text>
         {unit ? <Text className="text-sm text-ink-muted">{unit}</Text> : null}
       </View>
-      {label ? <Text className="mt-0.5 text-xs text-ink-muted">{label}</Text> : null}
+      {label && labelPosition === "bottom" ? <Text className="mt-0.5 text-xs text-ink-muted">{label}</Text> : null}
     </View>
   );
 }

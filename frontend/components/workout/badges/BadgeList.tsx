@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import type { Badge, BadgeType } from "@/services/badges.service";
+import RealLifeValue from "@/components/ui/RealLifeValue";
 import { realLifeText } from "@/utils/realLife";
 
 const ICON: Record<BadgeType, keyof typeof Ionicons.glyphMap> = {
@@ -68,9 +69,13 @@ export default function BadgeList({ badges, showDate = false }: Props) {
                     : `${val(badge, badge.previousValue)} → ${val(badge, badge.value)} ${unit(badge)}`}
                 </Text>
                 {realLifeText(t, badge.realLifeComparison) ? (
-                  <Text className="mt-0.5 text-xs text-accent-text" numberOfLines={1}>
-                    {realLifeText(t, badge.realLifeComparison)}
-                  </Text>
+                  <View className="mt-0.5 flex-row">
+                    <RealLifeValue
+                      comparison={badge.realLifeComparison}
+                      size={14}
+                      className="text-xs text-accent-text"
+                    />
+                  </View>
                 ) : null}
               </View>
               <View className="items-end gap-1">

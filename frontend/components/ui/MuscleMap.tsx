@@ -129,9 +129,9 @@ export default function MuscleMap({
             onPress={() => setPickedSide(side === "front" ? "back" : "front")}
             accessibilityRole="button"
             accessibilityLabel={side === "front" ? t.bodyBackLabel : t.bodyFrontLabel}
-            className="h-9 w-9 items-center justify-center rounded-full bg-raised"
+            hitSlop={12}
           >
-            <Ionicons name="sync" size={18} color={WorkoutTheme.text.primary} />
+            <Ionicons name="sync" size={22} color={WorkoutTheme.text.primary} />
           </PressableScale>
         </View>
         <Body
