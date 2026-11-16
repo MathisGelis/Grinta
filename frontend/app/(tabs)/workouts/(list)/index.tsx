@@ -18,9 +18,8 @@ import IconButton from "@/components/ui/IconButton";
 import {
   plannedWorkoutsList,
   PlannedWorkout,
-  fullPlannedWorkout,
 } from "@/services/workouts.service";
-import ProgrammeHero from "@/components/workout/programmes/ProgrammeHero";
+import ProgrammeHero, { ProgrammeHeroEmpty } from "@/components/workout/programmes/ProgrammeHero";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ProgrammeRail from "@/components/workout/programmes/ProgrammeRail";
 import {
@@ -29,6 +28,7 @@ import {
   SmallProgramm,
 } from "@/services/programms.service";
 import { localDate } from "@/utils/date";
+import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
 
 export default function WorkoutScreen() {
@@ -42,6 +42,7 @@ export default function WorkoutScreen() {
   );
   const [activeProgrammeId, setActiveProgrammeId] = useState<string | undefined>();
   const [activeDay, setActiveDay] = useState<number | undefined>();
+  const [startedOn, setStartedOn] = useState<string | undefined>();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(() => plannedWorkoutsList.peek() === null);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +61,7 @@ export default function WorkoutScreen() {
       setProgrammes(programmeList);
       setActiveProgrammeId(today?.programme.id);
       setActiveDay(today?.dayNumber);
+      setStartedOn(today?.startedOn);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.loadingError);
       console.error("Erreur:", err);
@@ -89,9 +91,15 @@ export default function WorkoutScreen() {
   );
 
   const rail = (
-    <View className="gap-6 pb-4">
-      {activeProgramme && activeDay != null && (
-        <ProgrammeHero programme={activeProgramme} dayNumber={activeDay} />
+    <View>
+      <View className="-mx-5">
+        <WorkoutsNavBar />
+      </View>
+      <View className="gap-6">
+      {activeProgramme && activeDay != null ? (
+        <ProgrammeHero programme={activeProgramme} dayNumber={activeDay} startedOn={startedOn} />
+      ) : (
+        <ProgrammeHeroEmpty onChoose={() => setSheet("programmes")} />
       )}
       <ProgrammeRail
         programmes={programmes.filter((p) => p.id !== activeProgrammeId)}
@@ -101,10 +109,12 @@ export default function WorkoutScreen() {
       />
       <SectionHeader
         title={t.sessions}
+        className="mb-4"
         right={
           <>
             <IconButton
               icon="add"
+              variant="accent"
               size={40}
               label={t.createWorkout}
               onPress={() => router.push("/(tabs)/workouts/create/workout")}
@@ -118,28 +128,13 @@ export default function WorkoutScreen() {
           </>
         }
       />
+      </View>
     </View>
   );
 
-  const handleDelete = useCallback((id: string) => {
-    setWorkouts((prev) => prev.filter((w) => w.id !== id));
-  }, []);
-
-  const handleUpdate = useCallback((updated: fullPlannedWorkout) => {
-    const next: PlannedWorkout = {
-      id: updated.id,
-      title: updated.title,
-      description: updated.description,
-      totalExercises: updated.totalExercises,
-    };
-    setWorkouts((prev) => prev.map((w) => (w.id === updated.id ? next : w)));
-  }, []);
-
   const renderItem = useCallback(
-    ({ item }: { item: PlannedWorkout }) => (
-      <WorkoutCard workout={item} onDelete={handleDelete} onUpdate={handleUpdate} />
-    ),
-    [handleDelete, handleUpdate],
+    ({ item }: { item: PlannedWorkout }) => <WorkoutCard workout={item} />,
+    [],
   );
 
   const refreshControl = (
@@ -154,14 +149,19 @@ export default function WorkoutScreen() {
   return (
     <View className="flex-1">
       {loading ? (
-        <View className="flex-1 items-center justify-center px-8 py-[60px]">
-          <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-surface">
-            <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <View className="flex-1">
+          <WorkoutsNavBar />
+          <View className="flex-1 items-center justify-center px-8 py-[60px]">
+            <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-surface">
+              <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+            </View>
+            <Text className="text-sm text-ink-muted">{t.loadingWorkouts}</Text>
           </View>
-          <Text className="text-sm text-ink-muted">{t.loadingWorkouts}</Text>
         </View>
       ) : error ? (
-        <View className="flex-1 items-center justify-center px-8 py-[60px]">
+        <View className="flex-1">
+          <WorkoutsNavBar />
+          <View className="flex-1 items-center justify-center px-8 py-[60px]">
           <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-danger-tint">
             <Ionicons name="alert-circle" size={48} color={WorkoutTheme.status.danger} />
           </View>
@@ -177,6 +177,7 @@ export default function WorkoutScreen() {
             <Ionicons name="refresh" size={20} color={WorkoutTheme.text.primary} />
             <Text className="text-sm font-semibold text-ink">{t.retryBtn}</Text>
           </PressableScale>
+          </View>
         </View>
       ) : (
         <FlatList {...chromeScrollProps}
@@ -200,7 +201,7 @@ export default function WorkoutScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={refreshControl}
           contentContainerClassName="px-5 pt-2"
-          contentContainerStyle={{ paddingBottom: bottomOffset + 80 }}
+          contentContainerStyle={{ paddingTop: 0, paddingBottom: bottomOffset + 80 }}
         />
       )}
 
@@ -210,8 +211,6 @@ export default function WorkoutScreen() {
         onClose={closeSheet}
         programmes={programmes}
         workouts={workouts}
-        onDeleteWorkout={handleDelete}
-        onUpdateWorkout={handleUpdate}
         onProgrammeAdded={loadWorkouts}
       />
     </View>

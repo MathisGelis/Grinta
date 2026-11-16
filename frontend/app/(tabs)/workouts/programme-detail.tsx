@@ -1,6 +1,5 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TokenService } from "@/services/token.service";
@@ -20,18 +19,26 @@ import {
 import { localDate } from "@/utils/date";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
 import { WorkoutTheme } from "@/constants/Colors";
-import PressableScale from "@/components/ui/PressableScale";
+import IconButton from "@/components/ui/IconButton";
+import StartDateSheet from "@/components/workout/programmes/StartDateSheet";
+import WorkoutActionMenu from "@/components/workout/card/WorkoutActionMenu";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
-import Button from "@/components/ui/Button";
 import { difficultyLabel } from "@/i18n/labels";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 
+/**
+ * Planification à une date future désactivée pour l'instant (le programme en cours serait remplacé
+ * immédiatement). Passer à `true` pour rétablir le calendrier de choix de la date de début.
+ */
+const START_DATE_PICKER_ENABLED = false;
+
 export default function ProgrammeDetailScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
   const { programmeId } = useLocalSearchParams<{ programmeId: string }>();
   const [programme, setProgramme] = useState<Programm | null>(null);
   const [availableWorkouts, setAvailableWorkouts] = useState<PlannedWorkout[]>([]);
@@ -41,6 +48,11 @@ export default function ProgrammeDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pickingDate, setPickingDate] = useState(false);
+  const savedDays = useRef("[]");
+  const daysKey = (list: ProgrammeDay[]) => JSON.stringify(list.map((d) => d.workout?.id ?? null));
 
   const load = useCallback(async () => {
     if (!programmeId) return;
@@ -52,12 +64,12 @@ export default function ProgrammeDetailScreen() {
         getTodayProgramme(localDate()).catch(() => null),
       ]);
       setProgramme(fetched);
-      setDays(
-        (fetched.days ?? []).map((day, index) => ({
-          dayNumber: index + 1,
-          workout: day.workout ?? null,
-        })),
-      );
+      const loadedDays = (fetched.days ?? []).map((day, index) => ({
+        dayNumber: index + 1,
+        workout: day.workout ?? null,
+      }));
+      setDays(loadedDays);
+      savedDays.current = daysKey(loadedDays);
       setAvailableWorkouts(workouts);
       setCurrentDay(
         today?.programme.id === programmeId ? today.dayNumber : undefined,
@@ -78,6 +90,11 @@ export default function ProgrammeDetailScreen() {
 
   const handleSave = useCallback(async () => {
     if (!programmeId || !programme) return;
+    // Rien n'a changé : on quitte simplement le mode modification, sans appel au backend.
+    if (daysKey(days) === savedDays.current) {
+      setEditing(false);
+      return;
+    }
     try {
       setSaving(true);
       await updateProgramme(programmeId, {
@@ -91,6 +108,8 @@ export default function ProgrammeDetailScreen() {
           workoutId: day.workout?.id ?? null,
         })),
       });
+      savedDays.current = daysKey(days);
+      setEditing(false);
       Alert.alert(t.success, t.programmeUpdated);
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.cannotSaveProfile);
@@ -99,12 +118,14 @@ export default function ProgrammeDetailScreen() {
     }
   }, [t, days, programme, programmeId]);
 
-  const handleStart = useCallback(async () => {
+  const handleStart = useCallback(async (startDate: string) => {
     if (!programmeId) return;
     try {
       setStarting(true);
-      const started = await startProgramme(programmeId, localDate());
-      setCurrentDay(started.dayNumber);
+      const started = await startProgramme(programmeId, startDate);
+      setPickingDate(false);
+      // Début dans le futur : aucun jour n'est « aujourd'hui » pour l'instant.
+      setCurrentDay(startDate === localDate() ? started.dayNumber : undefined);
       Alert.alert(t.prgStarted, t.prgStartedMessage);
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
@@ -112,6 +133,12 @@ export default function ProgrammeDetailScreen() {
       setStarting(false);
     }
   }, [t, programmeId]);
+
+  const handleCancelEdit = useCallback(() => {
+    if (saving) return;
+    setEditing(false);
+    load();
+  }, [saving, load]);
 
   const handleDelete = useCallback(() => {
     if (!programmeId) return;
@@ -136,12 +163,35 @@ export default function ProgrammeDetailScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader title={programme?.title ?? ""} />
+      <ScreenHeader
+        floating
+        title={programme?.title ?? ""}
+        backIcon={editing ? "close" : "chevron-back"}
+        onBack={editing ? handleCancelEdit : undefined}
+        right={
+          !programme ? undefined : editing ? (
+            <IconButton
+              icon="checkmark"
+              label={t.save}
+              variant="glass"
+              className={saving ? "opacity-50" : ""}
+              onPress={saving ? undefined : handleSave}
+            />
+          ) : (
+            <IconButton
+              icon="ellipsis-horizontal"
+              label={t.editLabel}
+              variant="glass"
+              onPress={() => setMenuOpen((open) => !open)}
+            />
+          )
+        }
+      />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
       ) : error || !programme ? (
-        <View className="items-center px-5">
+        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
           <Text className="text-danger">{error ?? t.noProgrammeFound}</Text>
         </View>
       ) : (
@@ -149,10 +199,19 @@ export default function ProgrammeDetailScreen() {
             days={days}
             onChangeDays={setDays}
             availableWorkouts={availableWorkouts}
+            editing={editing}
             currentDay={currentDay}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 20, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
           header={
             <View style={{ marginBottom: 16 }}>
+          <View className="mb-4 gap-1">
+            <Text className="text-xl font-semibold text-ink">{programme.title}</Text>
+            <Text
+              className={`text-sm ${programme.description ? "text-ink-soft" : "text-ink-muted"}`}
+            >
+              {programme.description || t.noDescription}
+            </Text>
+          </View>
           <View className="flex-row flex-wrap gap-2">
             <View className="h-8 justify-center rounded-full bg-accent-tint px-3">
               <Text className="text-xs font-medium text-accent-text">
@@ -175,40 +234,26 @@ export default function ProgrammeDetailScreen() {
 
             </View>
           }
-          footer={
-            <View style={{ gap: 16, marginTop: 12 }}>
-          <Button
-            variant="secondary"
-            icon="play-outline"
-            label={t.prgStart}
-            loading={starting}
-            onPress={handleStart}
-          />
-
-          <View className="w-full flex-row items-center gap-3">
-            <Button
-              className="flex-1"
-              label={t.saveDays}
-              loading={saving}
-              onPress={handleSave}
-            />
-            <PressableScale
-              onPress={handleDelete}
-              accessibilityRole="button"
-              accessibilityLabel={t.deleteProgramme}
-              className="h-[52px] w-[52px] items-center justify-center rounded-full bg-danger-tint"
-            >
-              <Ionicons
-                name="trash-outline"
-                size={20}
-                color={WorkoutTheme.status.danger}
-              />
-            </PressableScale>
-          </View>
-            </View>
-          }
         />
       )}
+
+      <StartDateSheet
+        visible={START_DATE_PICKER_ENABLED && pickingDate}
+        loading={starting}
+        onClose={() => setPickingDate(false)}
+        onConfirm={handleStart}
+      />
+
+      {menuOpen && !editing ? (
+        <WorkoutActionMenu
+          onClose={() => setMenuOpen(false)}
+          items={[
+            { icon: "play-outline", label: t.prgStart, onPress: () => (START_DATE_PICKER_ENABLED ? setPickingDate(true) : handleStart(localDate())) },
+            { icon: "create-outline", label: t.editLabel, onPress: () => setEditing(true) },
+            { icon: "trash-outline", label: t.delete, danger: true, onPress: handleDelete },
+          ]}
+        />
+      ) : null}
     </View>
   );
 }

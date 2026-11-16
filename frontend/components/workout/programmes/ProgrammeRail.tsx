@@ -28,11 +28,12 @@ function ProgrammeRail({ programmes, onSearch, empty, hasActive }: Props) {
     <View>
       <SectionHeader
         title={t.programmes}
-        className="mb-2"
+        className="mb-4"
         right={
           <>
             <IconButton
               icon="add"
+              variant="accent"
               size={40}
               label={t.newProgramme}
               onPress={() => router.push("/(tabs)/workouts/create/programm" as any)}
@@ -61,6 +62,7 @@ function ProgrammeRail({ programmes, onSearch, empty, hasActive }: Props) {
           {programmes.map((programme) => (
             <PressableScale
               key={programme.id}
+              bounce={false}
               accessibilityRole="button"
               accessibilityLabel={programme.title}
               onPress={() =>

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Modal,
   ScrollView,
   Text,
   View,
@@ -9,7 +8,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -25,6 +25,7 @@ import { PlannedWorkout } from "@/services/workouts.service";
 import { ProgrammeDay } from "@/services/programms.service";
 
 import { WorkoutTheme } from "@/constants/Colors";
+import Modal from "@/components/ui/AppModal";
 import PressableScale from "@/components/ui/PressableScale";
 import IconButton from "@/components/ui/IconButton";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -40,6 +41,8 @@ interface ProgrammeDayEditorProps {
   days: ProgrammeDay[];
   onChangeDays: (days: ProgrammeDay[]) => void;
   availableWorkouts: PlannedWorkout[];
+  /** Mode modification : sinon la liste est en lecture seule (pas de glisser, ajout ni suppression). */
+  editing?: boolean;
   /** Jour du programme suivi correspondant à aujourd'hui. */
   currentDay?: number;
   /** Contenu affiché au-dessus des jours : l'éditeur est la liste principale de la page. */
@@ -59,6 +62,7 @@ type RowProps = {
   activeId: SharedValue<string>;
   startY: SharedValue<number>;
   dragY: SharedValue<number>;
+  enabled: boolean;
   onDragStart: () => void;
   onDragEnd: (orderedIds: string[]) => void;
   children: React.ReactNode;
@@ -73,11 +77,13 @@ function DraggableRow({
   activeId,
   startY,
   dragY,
+  enabled,
   onDragStart,
   onDragEnd,
   children,
 }: RowProps) {
   const gesture = Gesture.Pan()
+    .enabled(enabled)
     .activateAfterLongPress(180)
     .onStart(() => {
       const current = positions.get()[id] ?? index;
@@ -169,6 +175,7 @@ export default function ProgrammeDayEditor({
   days,
   onChangeDays,
   availableWorkouts,
+  editing = true,
   currentDay,
   header,
   footer,
@@ -275,11 +282,13 @@ export default function ProgrammeDayEditor({
       style={{ height: ROW_HEIGHT }}
     >
       <View className="mr-2 flex-1 flex-row items-center gap-3">
-        <Ionicons
-          name="reorder-three-outline"
-          size={22}
-          color={WorkoutTheme.text.light}
-        />
+        {editing ? (
+          <Ionicons
+            name="reorder-three-outline"
+            size={22}
+            color={WorkoutTheme.text.light}
+          />
+        ) : null}
         <View className="flex-1">
           <Text className="text-base font-semibold text-ink" numberOfLines={1}>
             {format(t.dayN, { n: item.dayNumber })} · {item.workout?.title ?? t.restDay}
@@ -291,24 +300,50 @@ export default function ProgrammeDayEditor({
           </Text>
         </View>
       </View>
-      <PressableScale
-        onPress={() => removeDay(item.dayNumber)}
-        accessibilityRole="button"
-        accessibilityLabel={t.removeDay}
-        className="h-10 w-10 items-center justify-center rounded-full bg-danger-tint"
-      >
-        <Ionicons name="trash-outline" size={18} color={WorkoutTheme.status.danger} />
-      </PressableScale>
+      {editing ? (
+        <PressableScale
+          onPress={() => removeDay(item.dayNumber)}
+          accessibilityRole="button"
+          accessibilityLabel={t.removeDay}
+          halo={false}
+          hitSlop={12}
+        >
+          <Ionicons name="trash-outline" size={22} color={WorkoutTheme.status.danger} />
+        </PressableScale>
+      ) : item.workout ? (
+        <PressableScale
+          onPress={() =>
+            router.push({
+              pathname: "/(tabs)/workouts/workout-detail",
+              params: { workoutId: item.workout!.id, title: item.workout!.title },
+            })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={item.workout.title}
+          halo={false}
+          hitSlop={12}
+        >
+          <Ionicons name="information-circle-outline" size={22} color={WorkoutTheme.text.primary} />
+        </PressableScale>
+      ) : (
+        <MaterialCommunityIcons
+          name="sleep"
+          size={22}
+          color={WorkoutTheme.accent.purple}
+          accessibilityLabel={t.restDay}
+        />
+      )}
     </View>
   );
 
   const listHeader = (
-    <View>
+    <View style={{ zIndex: 10 }}>
       {header}
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-xl font-semibold text-ink">
           {t.programmeDaysTitle}
         </Text>
+        {editing ? (
         <View className="flex-row items-center gap-2">
           <IconButton
             icon="barbell-outline"
@@ -323,6 +358,7 @@ export default function ProgrammeDayEditor({
             onPress={addRestDay}
           />
         </View>
+        ) : null}
       </View>
     </View>
   );
@@ -360,6 +396,7 @@ export default function ProgrammeDayEditor({
                 activeId={activeId}
                 startY={startY}
                 dragY={dragY}
+                enabled={editing}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
               >
@@ -372,13 +409,13 @@ export default function ProgrammeDayEditor({
       </ScrollView>
 
       <Modal
-        visible={showWorkoutPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowWorkoutPicker(false)}
+        isVisible={showWorkoutPicker}
+        onBackdropPress={() => setShowWorkoutPicker(false)}
+        onSwipeComplete={() => setShowWorkoutPicker(false)}
+        swipeDirection="down"
+        style={{ justifyContent: "flex-end" }}
       >
-        <View className="flex-1 justify-end bg-scrim">
-          <View className="rounded-t-hero bg-surface p-5 pb-8">
+        <View className="rounded-t-hero bg-surface p-5 pb-8">
             <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-raised" />
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-xl font-semibold text-ink">
@@ -423,7 +460,6 @@ export default function ProgrammeDayEditor({
                 ))
               )}
             </ScrollView>
-          </View>
         </View>
       </Modal>
     </View>
