@@ -22,11 +22,13 @@ import { getExercisesById, Exercise } from "@/services/exercises.service";
 import type { MuscleValue } from "@/utils/muscles";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import Card from "@/components/ui/Card";
+import PressableScale from "@/components/ui/PressableScale";
+import { Ionicons } from "@expo/vector-icons";
 import Stat from "@/components/ui/Stat";
-import Button from "@/components/ui/Button";
 import IconButton from "@/components/ui/IconButton";
 import { FormField, TextField } from "@/components/ui/FormField";
 import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
@@ -36,6 +38,7 @@ import { PhotoService } from "@/services/photo.service";
 import type { Badge } from "@/services/badges.service";
 import { UserService } from "@/services/user.service";
 import { duplicateWorkoutFromCompleted } from "@/services/workouts.service";
+import RealLifeValue from "@/components/ui/RealLifeValue";
 import { realLifeText } from "@/utils/realLife";
 import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCardSheet";
 
@@ -49,6 +52,8 @@ export default function CompletedWorkoutDetailScreen() {
   const { t, lang } = useTranslation();
   const { formatWeight, formatVolume } = useUnits();
   const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
+  const [tab, setTab] = useState<"stats" | "exercises">("exercises");
   const { workoutId } = useLocalSearchParams<{ workoutId: string }>();
   const [detail, setDetail] = useState<CompletedWorkoutDetail | null>(null);
   const [stats, setStats] = useState<WorkoutStats | null>(null);
@@ -173,7 +178,7 @@ export default function CompletedWorkoutDetailScreen() {
     setDraftExercises((prev) => prev.filter((_, i) => i !== index));
 
   const saveChanges = async () => {
-    if (!workout) return;
+    if (!workout || saving) return;
     if (!draftTitle.trim()) {
       Alert.alert(t.error, t.pleaseEnterTitle);
       return;
@@ -271,22 +276,37 @@ export default function CompletedWorkoutDetailScreen() {
     <View className="flex-1">
       <ScreenBackground flat />
       <ScreenHeader
+        floating
         title={workout?.title ?? ""}
+        backIcon={editing ? "close" : "chevron-back"}
+        onBack={editing ? cancelEditing : undefined}
         right={
-          workout && !editing ? (
+          workout && editing ? (
             <IconButton
-              icon="create-outline"
-              label={t.editLabel}
-              onPress={startEditing}
+              icon="checkmark"
+              label={t.save}
+              variant="glass"
+              onPress={saveChanges}
+            />
+          ) : workout ? (
+            <IconButton
+              icon="share-outline"
+              label={t.shrCard}
+              variant="glass"
+              onPress={() => shareData && setShareVisible(true)}
             />
           ) : undefined
         }
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <ActivityIndicator
+          size="large"
+          style={{ marginTop: headerHeight }}
+          color={WorkoutTheme.accent.purple}
+        />
       ) : error || !workout ? (
-        <View className="items-center px-5">
+        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
           <Text className="text-danger">{error ?? t.loadingError}</Text>
         </View>
       ) : (
@@ -294,6 +314,7 @@ export default function CompletedWorkoutDetailScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-4 px-5"
           contentContainerStyle={{
+            paddingTop: headerHeight,
             paddingBottom: TAB_BAR_SPACE + insets.bottom,
           }}
         >
@@ -302,6 +323,7 @@ export default function CompletedWorkoutDetailScreen() {
               <Card size="hero" className="gap-4">
                 <FormField label={t.titleLabel} required>
                   <TextField
+                    tone="raised"
                     placeholder={t.workoutNameLabel}
                     value={draftTitle}
                     onChangeText={setDraftTitle}
@@ -310,6 +332,7 @@ export default function CompletedWorkoutDetailScreen() {
                 </FormField>
                 <FormField label={t.descriptionOptional}>
                   <TextField
+                    tone="raised"
                     multiline
                     placeholder={t.addDescriptionPlaceholder}
                     value={draftDescription}
@@ -323,9 +346,19 @@ export default function CompletedWorkoutDetailScreen() {
                 />
               </Card>
 
-              <Text className="mt-2 text-xl font-semibold text-ink">
-                {t.exercises}
-              </Text>
+              <View className="mt-2 flex-row items-center justify-between">
+                <Text className="text-xl font-semibold text-ink">
+                  {t.exercises}
+                </Text>
+                <PressableScale
+                  onPress={() => !saving && setAddVisible(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t.addExerciseTitle}
+                  hitSlop={10}
+                >
+                  <Ionicons name="add" size={26} color={WorkoutTheme.text.primary} />
+                </PressableScale>
+              </View>
               {draftExercises.map((exercise, index) => (
                 <ExerciseSetupItem
                   key={`${exercise.id}-${index}`}
@@ -334,31 +367,6 @@ export default function CompletedWorkoutDetailScreen() {
                   onRemove={() => removeExercise(index)}
                 />
               ))}
-
-              <Button
-                variant="secondary"
-                icon="add"
-                label={t.addExerciseTitle}
-                disabled={saving}
-                onPress={() => setAddVisible(true)}
-              />
-
-              <View className="flex-row gap-3">
-                <Button
-                  className="flex-1"
-                  variant="secondary"
-                  label={t.cancel}
-                  disabled={saving}
-                  onPress={cancelEditing}
-                />
-                <Button
-                  className="flex-1"
-                  icon="checkmark"
-                  label={t.save}
-                  loading={saving}
-                  onPress={saveChanges}
-                />
-              </View>
 
               <ExerciseSearch
                 visible={addVisible}
@@ -390,10 +398,32 @@ export default function CompletedWorkoutDetailScreen() {
                     style={{ width: "100%", aspectRatio: 4 / 3, borderRadius: 22 }}
                   />
                 ) : null}
-                <View className="flex-row">
+                <View className="gap-1">
+                  <View className="flex-row items-center justify-between gap-3">
+                    <Text
+                      className="flex-1 text-xl font-semibold text-ink"
+                      numberOfLines={2}
+                    >
+                      {workout.title}
+                    </Text>
+                    <IconButton
+                      icon="create-outline"
+                      label={t.editLabel}
+                      variant="surface"
+                      onPress={startEditing}
+                    />
+                  </View>
+                  {workout.description ? (
+                    <Text className="text-sm text-ink-soft">
+                      {workout.description}
+                    </Text>
+                  ) : null}
+                </View>
+                <View className="flex-row items-center">
                   <Stat
                     size="md"
                     label={t.completedLabel}
+                    labelPosition="top"
                     value={new Date(workout.completionDate).toLocaleDateString(
                       LOCALES[lang],
                       {
@@ -407,18 +437,46 @@ export default function CompletedWorkoutDetailScreen() {
                   <Stat
                     size="md"
                     label={t.duration}
+                    labelPosition="top"
                     value={formatDuration(workout.totalDurationSeconds)}
                     className="flex-1"
                   />
                 </View>
-                {workout.description ? (
-                  <Text className="text-sm text-ink-soft">
-                    {workout.description}
-                  </Text>
-                ) : null}
               </Card>
 
-              {stats ? (
+              <SegmentedControl
+                id="workout-detail-tab"
+                value={tab}
+                onChange={setTab}
+                options={[
+                  { value: "exercises", label: t.exercises },
+                  { value: "stats", label: t.statsTab },
+                ]}
+              />
+
+              <View className="mt-2 flex-row items-center justify-between">
+                <Text className="text-xl font-semibold text-ink">
+                  {tab === "stats" ? t.statsTab : t.exercises}
+                </Text>
+                {duplicating ? (
+                  <ActivityIndicator color={WorkoutTheme.text.primary} />
+                ) : (
+                  <PressableScale
+                    onPress={duplicate}
+                    accessibilityRole="button"
+                    accessibilityLabel={t.dupButton}
+                    hitSlop={10}
+                  >
+                    <Ionicons
+                      name="copy-outline"
+                      size={22}
+                      color={WorkoutTheme.text.primary}
+                    />
+                  </PressableScale>
+                )}
+              </View>
+
+              {tab === "stats" && stats ? (
                 <>
                   <View className="flex-row flex-wrap gap-3">
                     {tiles.map((tile) => (
@@ -435,8 +493,9 @@ export default function CompletedWorkoutDetailScreen() {
                   {realLifeText(t, stats.realLifeComparison) ? (
                     <Card tone="accentTint" size="tile" className="flex-row items-center gap-3">
                       <Text className="flex-1 text-sm font-semibold text-ink">
-                        {t.rlTitle} · {realLifeText(t, stats.realLifeComparison)}
+                        {t.rlTitle}
                       </Text>
+                      <RealLifeValue comparison={stats.realLifeComparison} />
                     </Card>
                   ) : null}
 
@@ -457,7 +516,7 @@ export default function CompletedWorkoutDetailScreen() {
                 </>
               ) : null}
 
-              {muscleData.length > 0 ? (
+              {tab === "stats" && muscleData.length > 0 ? (
                 <Card className="gap-4">
                   <Text className="text-lg font-semibold text-ink">
                     {t.musclesWorkedTitle}
@@ -466,10 +525,7 @@ export default function CompletedWorkoutDetailScreen() {
                 </Card>
               ) : null}
 
-              <Text className="mt-2 text-xl font-semibold text-ink">
-                {t.exercises}
-              </Text>
-              {workout.exercises.map((entry) => {
+              {tab === "exercises" && workout.exercises.map((entry) => {
                 const exerciseId = entry.exercise?.id ?? entry.id;
                 const exerciseStats = statsByExercise.get(exerciseId);
                 const sets = entry.sets ?? [];
@@ -517,24 +573,6 @@ export default function CompletedWorkoutDetailScreen() {
                 );
               })}
 
-              <View className="flex-row gap-3">
-                <Button
-                  className="flex-1"
-                  variant="secondary"
-                  icon="copy-outline"
-                  label={t.dupButton}
-                  loading={duplicating}
-                  onPress={duplicate}
-                />
-                <Button
-                  className="flex-1"
-                  variant="secondary"
-                  icon="share-outline"
-                  label={t.shrCard}
-                  disabled={!shareData}
-                  onPress={() => setShareVisible(true)}
-                />
-              </View>
             </>
           )}
         </ScrollView>

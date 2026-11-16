@@ -20,7 +20,7 @@ export default function WorkoutTabs({
         value={activeTab}
         onChange={onTabChange}
         options={[
-          { value: "infos", label: t.infoTab },
+          { value: "infos", label: t.exercises },
           { value: "stats", label: t.statsTab },
         ]}
       />

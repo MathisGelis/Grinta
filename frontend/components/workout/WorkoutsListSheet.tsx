@@ -6,18 +6,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Modal from "@/components/ui/AppModal";
 import Chip from "@/components/ui/Chip";
 import Card from "@/components/ui/Card";
-import IconButton from "@/components/ui/IconButton";
 import PressableScale from "@/components/ui/PressableScale";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import TemplatePicker from "@/components/workout/programmes/TemplatePicker";
 import GlassSearchBar from "@/components/GlassSearchBar";
+import BottomBlur from "@/components/ui/BottomBlur";
 import WorkoutCard from "@/components/workout/card/WorkoutCard";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { difficultyLabel } from "@/i18n/labels";
 import { format } from "@/i18n/translations";
 import type { SmallProgramm } from "@/services/programms.service";
-import type { PlannedWorkout, fullPlannedWorkout } from "@/services/workouts.service";
+import type { PlannedWorkout } from "@/services/workouts.service";
 import { normalizeText } from "@/utils/text";
 
 type Sort = "default" | "name" | "count";
@@ -28,8 +28,6 @@ type Props = {
   onClose: () => void;
   programmes: SmallProgramm[];
   workouts: PlannedWorkout[];
-  onDeleteWorkout: (id: string) => void;
-  onUpdateWorkout: (workout: fullPlannedWorkout) => void;
   /** Un programme prédéfini vient d'être ajouté : la page doit se recharger. */
   onProgrammeAdded?: () => void;
 };
@@ -41,8 +39,6 @@ function WorkoutsListSheet({
   onClose,
   programmes,
   workouts,
-  onDeleteWorkout,
-  onUpdateWorkout,
   onProgrammeAdded,
 }: Props) {
   const { t } = useTranslation();
@@ -80,6 +76,10 @@ function WorkoutsListSheet({
       setProgrammeTab("mine");
     }
   }, [visible]);
+
+  // La barre de recherche flotte sur la liste : l'espace réservé évite qu'elle cache le dernier élément.
+  const bottomPad = keyboard ? 6 : Math.max(insets.bottom - 10, 6);
+  const barSpace = 48 + bottomPad + 10;
 
   const needle = normalizeText(deferredQuery.trim());
 
@@ -132,12 +132,20 @@ function WorkoutsListSheet({
 
   const header = (
     <>
-      <View className="mb-3 h-1.5 w-12 self-center rounded-full bg-raised" />
-      <View className="flex-row items-center justify-between px-5 pb-3">
+      <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
+      <View className="flex-row items-center justify-between px-5 pb-5">
         <Text className="text-xl font-semibold text-ink">
           {isProgrammes ? t.programmes : t.sessions}
         </Text>
-        <IconButton icon="close" label={t.closeLabel} onPress={onClose} />
+        <PressableScale
+          onPress={onClose}
+          halo={false}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t.closeLabel}
+        >
+          <Ionicons name="close" size={26} color={WorkoutTheme.text.primary} />
+        </PressableScale>
       </View>
       {filtersOpen && showFilter && (
         <View className="flex-row flex-wrap gap-2 px-5 pb-3">
@@ -165,7 +173,7 @@ function WorkoutsListSheet({
     >
       <View
         className="rounded-t-hero bg-background pt-3"
-        style={{ height: windowHeight * 0.85, marginBottom: keyboard }}
+        style={{ height: windowHeight * 0.7, marginBottom: keyboard }}
       >
         {header}
 
@@ -185,10 +193,9 @@ function WorkoutsListSheet({
 
         {isProgrammes && programmeTab === "predefined" ? (
           <ScrollView
-            className="flex-1"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12 }}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace }}
           >
             <TemplatePicker
               query={deferredQuery}
@@ -202,10 +209,9 @@ function WorkoutsListSheet({
           <FlatList
             data={programmeData}
             keyExtractor={(p) => p.id}
-            className="flex-1"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, flexGrow: 1 }}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace }}
             renderItem={({ item }) => (
               <PressableScale
                 accessibilityRole="button"
@@ -235,22 +241,23 @@ function WorkoutsListSheet({
           <FlatList
             data={workoutData}
             keyExtractor={(w) => w.id}
-            className="flex-1"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, flexGrow: 1 }}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace }}
             renderItem={({ item }) => (
-              <WorkoutCard workout={item} onDelete={onDeleteWorkout} onUpdate={onUpdateWorkout} />
+              <WorkoutCard workout={item} onOpen={onClose} />
             )}
             ListEmptyComponent={empty}
           />
         )}
 
+        <BottomBlur height={barSpace + 20} />
         <View
-          className="px-5 pt-2"
-          style={{ paddingBottom: keyboard ? 12 : Math.max(insets.bottom, 12) }}
+          className="absolute inset-x-0 bottom-0 px-5"
+          style={{ paddingBottom: bottomPad }}
         >
           <GlassSearchBar
+            blur
             value={query}
             onChangeText={setQuery}
             placeholder={isProgrammes ? t.searchProgramme : t.searchWorkout}

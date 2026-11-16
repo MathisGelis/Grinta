@@ -1,4 +1,3 @@
-import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,32 +7,23 @@ import { format } from "@/i18n/translations";
 import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutCardHeaderProps {
   title: string;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
+  onPress: () => void;
   totalExercises?: number;
-  stats: {
-    totalSets?: number;
-    totalWeight: number;
-  };
-  hasWorkout?: boolean;
+  totalSets?: number;
 }
 
 function WorkoutCardHeader({
   title,
-  isExpanded,
-  onToggleExpand,
+  onPress,
   totalExercises,
-  stats,
-  hasWorkout,
+  totalSets,
 }: WorkoutCardHeaderProps) {
   const { t } = useTranslation();
-  const { formatVolume } = useUnits();
   const exerciseCount = totalExercises ?? 0;
   return (
     <Pressable
-      onPress={onToggleExpand}
+      onPress={onPress}
       accessibilityRole="button"
-      accessibilityState={{ expanded: isExpanded }}
       accessibilityLabel={title}
       className="w-full flex-row items-center gap-4 p-4 active:opacity-70"
     >
@@ -51,21 +41,16 @@ function WorkoutCardHeader({
               {format(t.exercisesCount, { n: exerciseCount })}
             </Text>
           )}
-          {stats.totalSets !== undefined && (
+          {totalSets !== undefined && (
             <Text className="text-sm text-ink-muted">
-              {format(t.setsCount, { n: stats.totalSets })}
-            </Text>
-          )}
-          {hasWorkout && (
-            <Text className="text-sm text-ink-muted">
-              {formatVolume(stats.totalWeight)}
+              {format(t.setsCount, { n: totalSets })}
             </Text>
           )}
         </View>
       </View>
 
       <Ionicons
-        name={isExpanded ? "chevron-up" : "chevron-down"}
+        name="chevron-forward"
         size={18}
         color={WorkoutTheme.text.tertiary}
       />

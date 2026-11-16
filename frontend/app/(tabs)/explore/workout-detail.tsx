@@ -89,7 +89,7 @@ export default function WorkoutDetailScreen() {
             ) : null}
             {calories ? (
               <View className="bg-raised rounded-tile px-4 py-2">
-                <Text className="text-ink text-[13px] font-semibold">🔥 {calories} {t.calShort}</Text>
+                <Text className="text-ink text-[13px] font-semibold">{calories} {t.calShort}</Text>
               </View>
             ) : null}
           </View>
