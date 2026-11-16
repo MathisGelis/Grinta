@@ -1,18 +1,13 @@
 import React, { useState } from "react";
 import { View, Text } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { DrumRollPicker } from "@/components/DrumRollPicker";
+import WallMeterPicker from "@/components/ui/WallMeterPicker";
 
-import SkipLink from "@/components/ui/SkipLink";
+import OnboardingNav from "@/components/ui/OnboardingNav";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
-const MIN_HEIGHT = 140;
-const MAX_HEIGHT = 220;
-const heights = Array.from(
-  { length: MAX_HEIGHT - MIN_HEIGHT + 1 },
-  (_, i) => MIN_HEIGHT + i
-);
+const MIN_HEIGHT = 0;
+const MAX_HEIGHT = 250;
 const DEFAULT_HEIGHT = 170;
 
 export default function HeightScreen() {
@@ -22,7 +17,7 @@ export default function HeightScreen() {
     age: string;
     weight: string;
   }>();
-  const [heightIndex, setHeightIndex] = useState(DEFAULT_HEIGHT - MIN_HEIGHT);
+  const [height, setHeight] = useState(DEFAULT_HEIGHT);
 
   const handleNext = () => {
     router.push({
@@ -31,7 +26,7 @@ export default function HeightScreen() {
         gender: params.gender,
         age: params.age,
         weight: params.weight,
-        height: String(heights[heightIndex]),
+        height: String(height),
       },
     });
   };
@@ -39,27 +34,38 @@ export default function HeightScreen() {
   return (
     <View className="flex-1 pt-20 px-8">
       <ScreenBackground />
-      <SkipLink className="absolute right-6 top-12" label={t.skipBtn} onPress={() => router.push({ pathname: "/(auth)/onboarding/GoalScreen", params: { gender: params.gender, age: params.age, weight: params.weight } })} />
       <Text className="text-[28px] font-bold text-ink mb-3">{t.whatsYourHeight}</Text>
       <Text className="text-[15px] text-ink-muted mb-10">{t.personalizedPlanHint}</Text>
 
-      <View className="flex-1 justify-center">
-        <DrumRollPicker
-          items={heights}
-          selectedIndex={heightIndex}
-          onSelect={setHeightIndex}
-          unit="cm"
+      <View className="flex-1 flex-row items-center justify-center gap-6">
+        {/* Largeur fixe + chiffres tabulaires: le changement de valeur ne décale rien. */}
+        <View className="flex-1 flex-row items-baseline justify-end gap-2">
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            className="text-[56px] font-bold text-ink"
+            style={{ fontVariant: ["tabular-nums"], width: 112, textAlign: "right" }}
+          >
+            {height}
+          </Text>
+          <Text className="text-xl text-ink-muted">cm</Text>
+        </View>
+        <WallMeterPicker
+          value={height}
+          onChange={setHeight}
+          min={MIN_HEIGHT}
+          max={MAX_HEIGHT}
+          width={170}
         />
       </View>
 
-      <View className="flex-row items-center justify-between pb-12 pt-4">
-        <PressableScale className="w-[52px] h-[52px] rounded-[26px] bg-raised items-center justify-center" onPress={() => router.back()}>
-          <Text className="text-ink text-xl">←</Text>
-        </PressableScale>
-        <PressableScale className="bg-accent py-4 px-10 rounded-full" onPress={handleNext}>
-          <Text className="text-ink text-base font-bold">{t.nextBtn}</Text>
-        </PressableScale>
-      </View>
+      <OnboardingNav
+        onNext={handleNext}
+        nextLabel={t.nextBtn}
+        onSkip={() => router.push({ pathname: "/(auth)/onboarding/GoalScreen", params: { gender: params.gender, age: params.age, weight: params.weight } })}
+        skipLabel={t.skipBtn}
+      />
     </View>
   );
 }
