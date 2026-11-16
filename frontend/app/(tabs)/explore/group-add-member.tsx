@@ -9,7 +9,7 @@ import { GroupsService, type GroupDetail } from "@/services/groups.service";
 import { ConnectionsService, type UserListItem } from "@/services/connections.service";
 import { UserService } from "@/services/user.service";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
@@ -21,6 +21,7 @@ import { TextField } from "@/components/ui/FormField";
  * on croise `following` et `followers` (seuls les suivis mutuels sont invitables) et on filtre en local.
  */
 export default function GroupAddMemberScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -86,15 +87,15 @@ export default function GroupAddMemberScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader title={t.grpAddMember} glass />
+      <ScreenHeader floating title={t.grpAddMember} />
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
       ) : (
         <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="gap-3 px-5"
-          contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         >
           <TextField
             icon="search"

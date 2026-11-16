@@ -4,10 +4,11 @@ import { View, Text } from "react-native";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useUnits, type UnitSystem } from "@/contexts/UnitsContext";
 
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 
 import PressableScale from "@/components/ui/PressableScale";
 export default function SettingsUnitsScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const { system: selected, setSystem: choose } = useUnits();
 
@@ -17,8 +18,8 @@ export default function SettingsUnitsScreen() {
   ];
 
   return (
-    <View className="flex-1">
-      <ScreenHeader title={t.unitsOfMeasure} />
+    <View className="flex-1" style={{ paddingTop: headerHeight }}>
+      <ScreenHeader floating title={t.unitsOfMeasure} />
 
       <View className="mx-5 bg-surface rounded-card overflow-hidden">
         {options.map((opt, i) => (

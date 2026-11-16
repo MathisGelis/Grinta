@@ -14,6 +14,8 @@ type Props = {
   floating?: boolean;
   /** Bouton retour en verre, même hors en-tête flottant. */
   glass?: boolean;
+  /** Icône du bouton de gauche (chevron par défaut). */
+  backIcon?: "chevron-back" | "close";
 };
 
 export function useFloatingHeaderHeight(): number {
@@ -27,6 +29,7 @@ export default function ScreenHeader({
   className = "",
   floating = false,
   glass = false,
+  backIcon = "chevron-back",
 }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -39,8 +42,8 @@ export default function ScreenHeader({
     >
       {floating ? <TopBlur height={insets.top + 12 + 44 + 12} /> : null}
       <IconButton
-        icon="chevron-back"
-        label={t.back}
+        icon={backIcon}
+        label={backIcon === "close" ? t.cancel : t.back}
         variant={floating || glass ? "glass" : "surface"}
         onPress={onBack ?? (() => router.back())}
       />

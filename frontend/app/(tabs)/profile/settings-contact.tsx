@@ -4,15 +4,16 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 export default function SettingsContactScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
 
   return (
-    <View className="flex-1">
-      <ScreenHeader title={t.contactUs} />
+    <View className="flex-1" style={{ paddingTop: headerHeight }}>
+      <ScreenHeader floating title={t.contactUs} />
 
       <View className="mx-5 bg-surface rounded-card overflow-hidden">
         <PressableScale

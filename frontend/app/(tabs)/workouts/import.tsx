@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { router } from "expo-router";
 import Screen from "@/components/ui/Screen";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
@@ -24,6 +24,7 @@ const DEFAULT_REST_SECONDS = 90;
 /** Import d'un programme depuis des notes (9.4) : le serveur ne renvoie qu'un brouillon. */
 export default function ImportWorkoutsScreen() {
   const { t } = useTranslation();
+  const headerHeight = useFloatingHeaderHeight();
   const [text, setText] = useState("");
   const [analysing, setAnalysing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -95,8 +96,8 @@ export default function ImportWorkoutsScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenHeader title={t.imTitle} />
-      <Screen topInset={false} tabBar={false} keyboardShouldPersistTaps="handled">
+      <ScreenHeader floating title={t.imTitle} />
+      <Screen topInset={false} tabBar={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: headerHeight }}>
         <Text className="text-sm text-ink-muted">{t.imIntro}</Text>
         <TextField
           multiline

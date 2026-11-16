@@ -13,13 +13,17 @@ import PressableScale from "@/components/ui/PressableScale";
 import GlobalStatsSection from "@/components/profile/GlobalStatsSection";
 import MyPostsSection from "@/components/profile/MyPostsSection";
 import { usePostInteractions } from "@/components/explorePage/PostInteractions";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
 import { useTranslation } from "@/contexts/LanguageContext";
 export default function UserProfileScreen() {
   const { t } = useTranslation();
+  const headerHeight = useFloatingHeaderHeight();
   const params = useLocalSearchParams<{ userId: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [tab, setTab] = useState<"stats" | "posts">("stats");
   const [followStatus, setFollowStatus] = useState<string>("");
   const [actionLoading, setActionLoading] = useState(false);
   const [myId, setMyId] = useState("");
@@ -110,22 +114,17 @@ export default function UserProfileScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <View className="flex-row items-center px-4 pt-16 pb-4 justify-between">
-        <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
-          <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
-        </PressableScale>
-        <Text className="text-ink text-lg font-bold flex-1 text-center" numberOfLines={1}>
-          {profile?.uniqueName ? `@${profile.uniqueName}` : "Profil"}
-        </Text>
-        <View className="w-10" />
-      </View>
+      <ScreenHeader
+        floating
+        title={profile?.uniqueName ? `@${profile.uniqueName}` : "Profil"}
+      />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: 60 }} />
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight + 60 }} />
       ) : profile ? (
         <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 120 }}
         >
           <View className="items-center py-5">
             <View className="mb-3 rounded-full bg-accent p-[3px]">
@@ -142,7 +141,7 @@ export default function UserProfileScreen() {
           <View className="flex-row bg-surface rounded-card mx-5 p-5 mb-4">
             <PressableScale
               className="flex-1 items-center"
-              onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: params.userId, tab: "followers" } } as any)}
+              onPress={() => router.push({ pathname: "/(tabs)/explore/followers", params: { userId: params.userId, tab: "followers" } } as any)}
             >
               <Text className="text-ink text-lg font-bold mb-1">{profile.followersCount}</Text>
               <Text className="text-ink-muted text-xs">{t.followersLabel}</Text>
@@ -150,7 +149,7 @@ export default function UserProfileScreen() {
             <View className="w-[1px] bg-raised" />
             <PressableScale
               className="flex-1 items-center"
-              onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: params.userId, tab: "following" } } as any)}
+              onPress={() => router.push({ pathname: "/(tabs)/explore/followers", params: { userId: params.userId, tab: "following" } } as any)}
             >
               <Text className="text-ink text-lg font-bold mb-1">{profile.followingCount}</Text>
               <Text className="text-ink-muted text-xs">{t.followingLabel}</Text>
@@ -169,26 +168,40 @@ export default function UserProfileScreen() {
             </View>
           ) : (
             <View className="gap-6 px-5">
-              <GlobalStatsSection userId={profile.id} />
-              <MyPostsSection
-                readOnly
-                posts={profile.posts ?? []}
-                authorName={profile.displayName}
-                authorId={profile.id}
-                onOpenPost={(post) =>
-                  router.push({
-                    pathname: "/(tabs)/explore/userPost",
-                    params: { postId: post.id },
-                  } as any)
-                }
-                onShowLikes={openLikes}
-                onShowComments={openComments}
+              <SegmentedControl
+                id="user-profile-tab"
+                options={[
+                  { value: "stats", label: t.profileTabStats },
+                  { value: "posts", label: t.profileTabPosts },
+                ]}
+                value={tab}
+                onChange={setTab}
               />
+              {tab === "stats" ? (
+                <GlobalStatsSection userId={profile.id} />
+              ) : (
+                <MyPostsSection
+                  readOnly
+                  posts={profile.posts ?? []}
+                  authorName={profile.displayName}
+                  authorId={profile.id}
+                  onOpenPost={(post) =>
+                    router.push({
+                      pathname: "/(tabs)/explore/userPost",
+                      params: { postId: post.id },
+                    } as any)
+                  }
+                  onShowLikes={openLikes}
+                  onShowComments={openComments}
+                />
+              )}
             </View>
           )}
         </ScrollView>
       ) : (
-        <ErrorState className="mx-5" onRetry={fetchProfile} />
+        <View style={{ paddingTop: headerHeight }}>
+          <ErrorState className="mx-5" onRetry={fetchProfile} />
+        </View>
       )}
       {modals}
     </View>

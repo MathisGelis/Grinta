@@ -9,11 +9,12 @@ import { PhotoService, pickImage } from "@/services/photo.service";
 import { LIMITS, isValidUniqueName, sanitizeUniqueName } from "@/utils/validation";
 import Avatar from "@/components/ui/Avatar";
 
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 export default function EditProfileScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -116,13 +117,12 @@ export default function EditProfileScreen() {
 
   return (
     <View className="flex-1">
+      <ScreenHeader floating title={t.editProfile} />
       <ScrollView {...chromeScrollProps}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
-        contentContainerStyle={{ paddingBottom: 60 }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 60 }}
       >
-        <ScreenHeader title={t.editProfile} />
-
         <View className="items-center mb-10 gap-4">
           <PressableScale
             onPress={photoBusy ? undefined : changePhoto}

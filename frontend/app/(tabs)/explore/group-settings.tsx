@@ -8,7 +8,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { GroupsService, type GroupDetail, type GroupUser } from "@/services/groups.service";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -19,6 +19,7 @@ import { TextField } from "@/components/ui/FormField";
 
 /** Gestion d'un groupe : nom, membres, invitations, départ et suppression. */
 export default function GroupSettingsScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const myId = useCurrentUserId();
@@ -67,6 +68,11 @@ export default function GroupSettingsScreen() {
   const rename = () => {
     const name = draftName.trim();
     if (!groupId || !name) return;
+    // Nom inchangé : on referme simplement le formulaire, sans requête.
+    if (name === group?.name) {
+      setRenaming(false);
+      return;
+    }
     run(
       () => GroupsService.rename(groupId, name),
       async () => {
@@ -115,12 +121,12 @@ export default function GroupSettingsScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader title="" glass />
+      <ScreenHeader floating title="" />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
       ) : error || !group ? (
-        <View className="items-center px-5">
+        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
           <Text className="text-danger">{error ?? t.loadingError}</Text>
         </View>
       ) : (
@@ -128,7 +134,7 @@ export default function GroupSettingsScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="gap-4 px-5"
-          contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         >
           <View className="items-center gap-1">
             <View className="mb-2">
@@ -167,7 +173,7 @@ export default function GroupSettingsScreen() {
               <Button
                 label={t.save}
                 loading={busy}
-                disabled={!draftName.trim() || draftName.trim() === group.name}
+                disabled={!draftName.trim()}
                 onPress={rename}
               />
             </Card>

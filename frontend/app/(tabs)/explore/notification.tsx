@@ -8,11 +8,13 @@ import { Directions, Gesture, GestureDetector } from "react-native-gesture-handl
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import PressableScale from "@/components/ui/PressableScale";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Card from "@/components/ui/Card";
 export default function NotificationsScreen() {
   const { t } = useTranslation();
+  const headerHeight = useFloatingHeaderHeight();
   const [tab, setTab] = useState<"notifications" | "news">("notifications");
 
   const swipeLeftToClose = Gesture.Fling()
@@ -24,15 +26,14 @@ export default function NotificationsScreen() {
     <GestureDetector gesture={swipeLeftToClose}>
     <View className="flex-1">
       <ScreenBackground flat />
-      <View className="flex-row items-center justify-between px-4 pt-16 pb-4">
-        <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
-          <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
-        </PressableScale>
-        <Text className="text-ink text-lg font-bold">{t.notifications}</Text>
-        <View className="w-10" />
-      </View>
+      <ScreenHeader floating title={t.notifications} onBack={() => router.back()} />
 
-      <View className="px-5 pb-4">
+      <ScrollView
+        {...chromeScrollProps}
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="gap-4 px-5 pb-10"
+        contentContainerStyle={{ paddingTop: headerHeight }}
+      >
         <SegmentedControl
           id="notification-tab"
           options={[
@@ -42,15 +43,13 @@ export default function NotificationsScreen() {
           value={tab}
           onChange={setTab}
         />
-      </View>
 
-      {tab === "notifications" ? (
-        <View className="items-center mt-20 gap-3">
-          <Ionicons name="notifications-off-outline" size={48} color={WorkoutTheme.text.disabled} />
-          <Text className="text-ink-faint text-base">{t.noNotifications}</Text>
-        </View>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="gap-4 px-5 pb-10">
+        {tab === "notifications" ? (
+          <View className="items-center mt-16 gap-3">
+            <Ionicons name="notifications-off-outline" size={48} color={WorkoutTheme.text.disabled} />
+            <Text className="text-ink-faint text-base">{t.noNotifications}</Text>
+          </View>
+        ) : (
           <Card size="card" className="gap-3 overflow-hidden p-0">
             <Image
               source={require("@/assets/onboarding1.jpg")}
@@ -63,8 +62,8 @@ export default function NotificationsScreen() {
               <Text className="text-sm leading-5 text-ink-soft">{t.newsBetaBody}</Text>
             </View>
           </Card>
-        </ScrollView>
-      )}
+        )}
+      </ScrollView>
     </View>
     </GestureDetector>
   );

@@ -7,11 +7,12 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import Screen from "@/components/ui/Screen";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 
 export default function PremiumScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const benefits = [
     t.premiumBenefit1,
@@ -29,9 +30,9 @@ export default function PremiumScreen() {
     <GestureDetector gesture={swipeLeftToClose}>
     <View className="flex-1">
       <ScreenBackground flat />
-      <ScreenHeader title={t.premiumTitle} />
+      <ScreenHeader floating title={t.premiumTitle} />
 
-      <Screen topInset={false}>
+      <Screen topInset={false} contentContainerStyle={{ paddingTop: headerHeight }}>
         <Card size="hero" className="items-center gap-3 py-8">
           <View
             className="h-24 w-24 items-center justify-center rounded-full bg-warning-tint"

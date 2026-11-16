@@ -14,7 +14,7 @@ import {
 } from "@/services/groups.service";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import IconButton from "@/components/ui/IconButton";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import Card from "@/components/ui/Card";
@@ -25,6 +25,7 @@ import PressableScale from "@/components/ui/PressableScale";
 const PAGE_SIZE = 20;
 
 export default function GroupDetailScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t, lang } = useTranslation();
   const insets = useSafeAreaInsets();
   const myId = useCurrentUserId();
@@ -106,7 +107,7 @@ export default function GroupDetailScreen() {
     <View className="flex-1">
       <ScreenBackground flat />
       <ScreenHeader
-        glass
+        floating
         title={group?.name ?? ""}
         right={
           group ? (
@@ -126,9 +127,9 @@ export default function GroupDetailScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
       ) : error || !group ? (
-        <View className="items-center px-5">
+        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
           <Text className="text-danger">{error ?? t.loadingError}</Text>
         </View>
       ) : (
@@ -136,7 +137,7 @@ export default function GroupDetailScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="gap-4 px-5"
-          contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         >
           
           {events.length === 0 ? (

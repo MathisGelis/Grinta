@@ -6,10 +6,11 @@ import { clearUserSession } from "@/services/session.service";
 import { UserService } from "@/services/user.service";
 import { WorkoutTheme } from "@/constants/Colors";
 import Screen from "@/components/ui/Screen";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import SettingsRow, { SettingsSection } from "@/components/profile/SettingsRow";
 
 export default function SettingsScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
   const [isPublic, setIsPublic] = useState<boolean | null>(null);
@@ -87,9 +88,9 @@ export default function SettingsScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenHeader title={t.settings} />
+      <ScreenHeader floating title={t.settings} />
 
-      <Screen topInset={false}>
+      <Screen topInset={false} contentContainerStyle={{ paddingTop: headerHeight }}>
         <SettingsSection title={t.settingsSectionAccount}>
           <SettingsRow
             icon="person-outline"

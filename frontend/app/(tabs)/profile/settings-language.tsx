@@ -6,10 +6,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LANGUAGE_OPTIONS, Lang } from "@/i18n/translations";
 
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 export default function SettingsLanguageScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t, lang, setLang } = useTranslation();
   const [query, setQuery] = useState("");
 
@@ -21,9 +22,12 @@ export default function SettingsLanguageScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenHeader title={t.language} />
+      <ScreenHeader floating title={t.language} />
 
-      <View className="flex-row items-center bg-surface rounded-tile mx-4 mb-4 px-4 py-3">
+      <FlatList {...chromeScrollProps}
+        data={filtered}
+        ListHeaderComponent={
+      <View className="flex-row items-center bg-surface rounded-tile mb-4 px-4 py-3">
         <Ionicons name="search" size={18} color={WorkoutTheme.text.disabled} style={{ marginRight: 8 }} />
         <TextInput
           className="flex-1 text-ink text-[15px]"
@@ -33,11 +37,9 @@ export default function SettingsLanguageScreen() {
           onChangeText={setQuery}
         />
       </View>
-
-      <FlatList {...chromeScrollProps}
-        data={filtered}
+        }
         keyExtractor={(item) => item.code}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 16, paddingBottom: 100 }}
         ItemSeparatorComponent={() => <View className="h-[1px] bg-line mx-0" />}
         renderItem={({ item }) => (
           <PressableScale

@@ -167,7 +167,7 @@ export default function GlobalStatsSection({ userId }: Props) {
   return (
     <View className="gap-4">
       <View className="flex-row items-center justify-between">
-        <Text className="text-xl font-semibold text-ink">{t.periodSummaryTitle}</Text>
+        <Text className="text-xl font-semibold text-ink">{period === "week" ? t.periodSummaryWeek : t.periodSummaryMonth}</Text>
         <SegmentedControl<StatsPeriod>
           id="profile-stats-period"
           className="w-[96px]"

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { router } from "expo-router";
 import Screen from "@/components/ui/Screen";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import Button from "@/components/ui/Button";
 import { FormField, TextField } from "@/components/ui/FormField";
 import { ApiError } from "@/services/api";
@@ -11,6 +11,7 @@ import { LIMITS, MIN_PASSWORD } from "@/utils/validation";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function ChangePasswordScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -51,8 +52,8 @@ export default function ChangePasswordScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenHeader title={t.pwChange} />
-      <Screen topInset={false} tabBar={false} keyboardShouldPersistTaps="handled">
+      <ScreenHeader floating title={t.pwChange} />
+      <Screen topInset={false} tabBar={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: headerHeight }}>
         <FormField label={t.pwCurrent}>
           <TextField
             icon="lock-closed-outline"

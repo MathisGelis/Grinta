@@ -4,16 +4,17 @@ import { View, Text, Switch, Linking } from "react-native";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
 export default function SettingsNotificationsScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const [workoutReminders, setWorkoutReminders] = useState(true);
   const [programNotifs, setProgramNotifs] = useState(false);
 
   return (
-    <View className="flex-1">
-      <ScreenHeader title={t.notificationsSettings} />
+    <View className="flex-1" style={{ paddingTop: headerHeight }}>
+      <ScreenHeader floating title={t.notificationsSettings} />
 
       <View className="mx-5 bg-surface rounded-card overflow-hidden">
         <View className="flex-row items-center px-5 py-[18px]">

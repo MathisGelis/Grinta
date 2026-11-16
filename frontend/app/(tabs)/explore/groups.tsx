@@ -12,7 +12,7 @@ import {
   type ReceivedInvitation,
 } from "@/services/groups.service";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -23,6 +23,7 @@ import PressableScale from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/FormField";
 
 export default function GroupsScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [groups, setGroups] = useState<GroupSummary[]>([]);
@@ -91,8 +92,8 @@ export default function GroupsScreen() {
     <View className="flex-1">
       <ScreenBackground flat />
       <ScreenHeader
+        floating
         title={t.grpTitle}
-        glass
         right={
           <IconButton
             icon={showCreate ? "close" : "add"}
@@ -103,13 +104,13 @@ export default function GroupsScreen() {
         }
       />
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
       ) : (
         <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="gap-4 px-5"
-          contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         >
           {invitations.length > 0 ? (
             <View className="gap-2">

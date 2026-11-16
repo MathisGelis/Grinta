@@ -9,11 +9,12 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme } from "@/constants/Colors";
 import { formatDate } from "@/utils/formatDate";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import PressableScale from "@/components/ui/PressableScale";
 import ErrorState from "@/components/ui/ErrorState";
 
 export default function CompletedWorkoutsScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t, lang } = useTranslation();
   const [workouts, setWorkouts] = useState<CompletedWorkout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,11 +57,13 @@ export default function CompletedWorkoutsScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenHeader title={t.workoutsLabel} />
+      <ScreenHeader floating title={t.workoutsLabel} />
       {loading ? (
-        <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: 32 }} />
+        <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight + 32 }} />
       ) : error ? (
-        <ErrorState message={error} onRetry={load} />
+        <View style={{ paddingTop: headerHeight }}>
+          <ErrorState message={error} onRetry={load} />
+        </View>
       ) : (
         <FlatList
           {...chromeScrollProps}
@@ -69,7 +72,7 @@ export default function CompletedWorkoutsScreen() {
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120, gap: 8 }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 16, paddingBottom: 120, gap: 8 }}
           ListEmptyComponent={
             <View className="items-center mt-12 gap-2.5">
               <Ionicons name="barbell-outline" size={36} color={WorkoutTheme.text.disabled} />
