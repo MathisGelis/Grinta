@@ -6,10 +6,12 @@ import { getItem } from "@/core/services/storage";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import LogoIntro from "@/components/ui/LogoIntro";
 
+// Vrai une fois l'animation jouée : elle n'a lieu qu'au lancement de l'app, pas à chaque retour sur cette route.
+let introPlayed = false;
+
 export default function Index() {
   const [target, setTarget] = useState<Href | null>(null);
-  const [introDone, setIntroDone] = useState(false);
-
+  const [introDone, setIntroDone] = useState(introPlayed);
   // La destination se calcule pendant l'animation du logo.
   useEffect(() => {
     Promise.all([TokenService.get(), getItem("hasSeenOnboarding")]).then(([token, seen]) => {
@@ -28,12 +30,15 @@ export default function Index() {
     if (introDone && target) router.replace(target);
   }, [introDone, target]);
 
-  const handleFinish = useCallback(() => setIntroDone(true), []);
+  const handleFinish = useCallback(() => {
+    introPlayed = true;
+    setIntroDone(true);
+  }, []);
 
   return (
     <View className="flex-1">
       <ScreenBackground />
-      <LogoIntro onFinish={handleFinish} />
+      {introDone ? null : <LogoIntro onFinish={handleFinish} />}
     </View>
   );
 }

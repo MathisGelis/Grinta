@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grinta — animation du logo</title>
+<style>
+  html,body{margin:0;height:100%;background:#17151C;color:#F8F0FB;font:16px system-ui,sans-serif}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+  .row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:32px}
+  img{width:min(60vw,260px);height:auto}
+  button{background:#7C5CB4;color:#fff;border:0;border-radius:999px;padding:12px 28px;font:600 15px system-ui;cursor:pointer}
+</style>
+</head>
+<body>
+  <div class="row">
+    <img class="logo" alt="Grinta" src="grinta-logo-intro.svg">
+    <img class="logo" alt="Grinta (symbole)" src="grinta-symbol-intro.svg">
+  </div>
+  <button onclick="document.querySelectorAll('.logo').forEach(l=>{const s=l.src;l.src='';requestAnimationFrame(()=>l.src=s)})">Rejouer</button>
+</body>
+</html>
