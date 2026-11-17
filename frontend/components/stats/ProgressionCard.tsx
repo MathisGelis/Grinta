@@ -19,16 +19,18 @@ const MAX_EXERCISES = 12;
 const CHART_HEIGHT = 120;
 
 /** Courbe d'un exercice (3.4) : un point par jour d'entraînement. */
-export default function ProgressionCard() {
+/** `exerciseId` fixé : courbe d'un seul exercice (détail d'exercice), sans sélecteur. */
+export default function ProgressionCard({ exerciseId: fixedId }: { exerciseId?: string }) {
   const { t } = useTranslation();
   const { formatVolume, formatWeight } = useUnits();
-  const [exercises, setExercises] = useState<ExerciseStats[] | null>(null);
-  const [exerciseId, setExerciseId] = useState<string | null>(null);
+  const [exercises, setExercises] = useState<ExerciseStats[] | null>(fixedId ? [] : null);
+  const [exerciseId, setExerciseId] = useState<string | null>(fixedId ?? null);
   const [metric, setMetric] = useState<ProgressionMetric>("volume");
   const [period, setPeriod] = useState<ProgressionPeriod>("3m");
   const [data, setData] = useState<Progression | null>(null);
 
   useEffect(() => {
+    if (fixedId) return;
     getAllExerciseStats()
       .then((list) => {
         const top = list.slice(0, MAX_EXERCISES);
@@ -36,7 +38,7 @@ export default function ProgressionCard() {
         setExerciseId((current) => current ?? top[0]?.exerciseId ?? null);
       })
       .catch(() => setExercises([]));
-  }, []);
+  }, [fixedId]);
 
   useEffect(() => {
     if (!exerciseId) return;
@@ -68,11 +70,11 @@ export default function ProgressionCard() {
     <View className="gap-3">
       <SectionHeader title={t.stProgressionTitle} />
       <View className="gap-4 rounded-card bg-surface p-5">
-        {exercises.length === 0 ? (
+        {!fixedId && exercises.length === 0 ? (
           <Text className="text-sm text-ink-muted">{t.stNoPracticed}</Text>
         ) : (
           <>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+            {fixedId ? null : <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
               {exercises.map((e) => (
                 <Chip
                   key={e.exerciseId}
@@ -81,7 +83,7 @@ export default function ProgressionCard() {
                   onPress={() => setExerciseId(e.exerciseId)}
                 />
               ))}
-            </ScrollView>
+            </ScrollView>}
             <SegmentedControl<ProgressionMetric>
               id="progression-metric"
               value={metric}

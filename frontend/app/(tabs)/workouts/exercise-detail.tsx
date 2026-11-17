@@ -23,6 +23,7 @@ import Card from "@/components/ui/Card";
 import Stat from "@/components/ui/Stat";
 import MuscleMap from "@/components/ui/MuscleMap";
 import ExerciseAnimation from "@/components/workout/exercises/ExerciseAnimation";
+import ProgressionCard from "@/components/stats/ProgressionCard";
 import BadgeList from "@/components/workout/badges/BadgeList";
 import { Badge, BadgesService } from "@/services/badges.service";
 import type { MuscleValue } from "@/utils/muscles";
@@ -255,6 +256,8 @@ export default function ExerciseDetailScreen() {
               <EmptyState plain icon="stats-chart-outline" title={t.noExerciseStats} />
             )}
           </Card>
+
+          {hasStats && exerciseId ? <ProgressionCard exerciseId={exerciseId} /> : null}
 
           {badges.length > 0 ? (
             <Card className="gap-4">

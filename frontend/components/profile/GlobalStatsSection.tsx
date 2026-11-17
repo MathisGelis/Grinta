@@ -206,7 +206,12 @@ export default function GlobalStatsSection({ userId }: Props) {
                     style={{ width: "47.5%", flexGrow: 1 }}
                   >
                     <Stat value={item.value} label={item.label} size="md" />
-                    <Delta pct={summary.delta[item.key]?.changePct} />
+                    {/* Pas de % sans période précédente à comparer (sinon « +100 % » dès la première séance). */}
+                    <Delta
+                      pct={
+                        (summary.delta[item.key]?.previous ?? 0) > 0 ? summary.delta[item.key]?.changePct : null
+                      }
+                    />
                   </View>
                 ))}
               </View>
@@ -215,7 +220,7 @@ export default function GlobalStatsSection({ userId }: Props) {
 
           {distribution && distribution.distribution.length > 0 ? (
             <View className="gap-3">
-              <SectionHeader title={t.muscleDistributionTitle} />
+              <SectionHeader title={t.muscleDistributionTitle} help={t.helpMuscleDistribution} />
               <View className="gap-6 rounded-card bg-surface p-5">
                 <MuscleMap data={muscleData} unit={t.sets.toLowerCase()} />
                 {distribution.distribution.slice(0, TOP_MUSCLES).map((m) => (
@@ -233,7 +238,7 @@ export default function GlobalStatsSection({ userId }: Props) {
 
           {balance && balance.totalEffectiveSets > 0 ? (
             <View className="gap-3">
-              <SectionHeader title={t.trainingBalanceTitle} />
+              <SectionHeader title={t.trainingBalanceTitle} help={t.helpTrainingBalance} />
               <View className="gap-4 rounded-card bg-surface p-5">
                 <View className="flex-row gap-3">
                   <View className="flex-1 items-center rounded-tile bg-raised p-4">
@@ -275,7 +280,7 @@ export default function GlobalStatsSection({ userId }: Props) {
 
       {consistency ? (
         <View className="gap-3">
-          <SectionHeader title={t.consistencyTitle} />
+          <SectionHeader title={t.consistencyTitle} help={t.helpConsistency} />
           <View className="gap-5 rounded-card bg-surface p-5">
             <View className="flex-row flex-wrap gap-y-4">
               {[
@@ -312,7 +317,7 @@ export default function GlobalStatsSection({ userId }: Props) {
 
       {recoveryData.length > 0 ? (
         <View className="gap-3">
-          <SectionHeader title={t.muscleRecoveryTitle} />
+          <SectionHeader title={t.muscleRecoveryTitle} help={t.helpMuscleRecovery} />
           <View className="rounded-card bg-surface p-5">
             <MuscleMap data={recoveryData} legend={recoveryLegend} />
           </View>
