@@ -17,6 +17,7 @@ import {
   type ImportDraft,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
+import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 
 const MAX_LENGTH = 10000;
 const DEFAULT_REST_SECONDS = 90;
@@ -61,6 +62,7 @@ export default function ImportWorkoutsScreen() {
           {
             title: w.title,
             description: "",
+            estimatedDurationMinutes: estimateWorkoutMinutes(w.exercises, DEFAULT_REST_SECONDS) || undefined,
             exercises: w.exercises.map((e) => ({
               exerciseId: e.exerciseId,
               sets: e.sets,

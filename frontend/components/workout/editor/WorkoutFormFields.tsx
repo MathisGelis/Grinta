@@ -1,7 +1,6 @@
 import React from "react";
 import { View } from "react-native";
 import { FormField, TextField } from "@/components/ui/FormField";
-import DurationPicker from "@/components/ui/DurationPicker";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutFormFieldsProps {
@@ -9,8 +8,6 @@ interface WorkoutFormFieldsProps {
   onNameChange: (v: string) => void;
   description: string;
   onDescriptionChange: (v: string) => void;
-  estimatedTime: string;
-  onEstimatedTimeChange: (v: string) => void;
 }
 
 export default function WorkoutFormFields({
@@ -18,8 +15,6 @@ export default function WorkoutFormFields({
   onNameChange,
   description,
   onDescriptionChange,
-  estimatedTime,
-  onEstimatedTimeChange,
 }: WorkoutFormFieldsProps) {
   const { t } = useTranslation();
   return (
@@ -40,12 +35,6 @@ export default function WorkoutFormFields({
           onChangeText={onDescriptionChange}
         />
       </FormField>
-
-      <DurationPicker
-        label={t.estimatedDuration}
-        value={estimatedTime}
-        onChange={onEstimatedTimeChange}
-      />
     </View>
   );
 }

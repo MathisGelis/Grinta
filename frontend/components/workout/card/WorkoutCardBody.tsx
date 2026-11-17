@@ -18,6 +18,7 @@ import WorkoutStatsTab from "@/components/workout/card/WorkoutStatsTab";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { DetailSkeleton } from "@/components/ui/skeletons";
+import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 
 export type WorkoutStatsTotals = {
   totalSets: number;
@@ -197,6 +198,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
           sets: ex.sets,
           plannedRestSeconds: ex.plannedRestSeconds ?? 90,
         })),
+        estimatedDurationMinutes: estimateWorkoutMinutes(editedExercises, 90) || undefined,
       };
 
       Object.keys(updateData).forEach(

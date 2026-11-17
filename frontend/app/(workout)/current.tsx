@@ -31,7 +31,7 @@ import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
 import { getExercisesById, type Exercise } from "@/services/exercises.service";
 import { DetailSkeleton, ExerciseListSkeleton } from "@/components/ui/skeletons";
 import EmptyState from "@/components/ui/EmptyState";
-const SECONDS_PER_SET = 45;
+import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 
 const maxWeight = (sets: { weight: number }[]) =>
   sets.reduce((max, set) => Math.max(max, set.weight), 0);
@@ -205,20 +205,16 @@ export default function CurrentWorkoutScreen() {
     if (!selectedWorkout) return null;
     let sets = 0;
     let volume = 0;
-    let seconds = 0;
 
     for (const exercise of selectedWorkout.exercises) {
       sets += exercise.sets.length;
       for (const set of exercise.sets) volume += set.reps * set.weight;
-      seconds +=
-        exercise.sets.length *
-        (SECONDS_PER_SET + (exercise.plannedRestSeconds || 90));
     }
     return {
       exercises: selectedWorkout.exercises.length,
       sets,
       volume,
-      minutes: Math.max(1, Math.round(seconds / 60)),
+      minutes: Math.max(1, estimateWorkoutMinutes(selectedWorkout.exercises, 90)),
     };
   }, [selectedWorkout]);
 
