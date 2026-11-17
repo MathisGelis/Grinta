@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { View, Text, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchProvider, useSearch } from "@/contexts/SearchContext";
 import { WorkoutTheme } from "@/constants/Colors";

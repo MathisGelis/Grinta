@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import Card from "@/components/ui/Card";
 import PressableScale from "@/components/ui/PressableScale";

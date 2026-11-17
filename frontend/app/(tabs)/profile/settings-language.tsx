@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, FlatList, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LANGUAGE_OPTIONS, Lang } from "@/i18n/translations";

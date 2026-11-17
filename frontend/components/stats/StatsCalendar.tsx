@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import Glass from "@/components/ui/Glass";

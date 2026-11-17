@@ -3,7 +3,7 @@ import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import React, { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { getAllExercises } from "@/services/exercises.service";
 
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";

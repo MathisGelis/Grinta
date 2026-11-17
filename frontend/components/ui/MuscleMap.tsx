@@ -13,7 +13,7 @@ import {
 } from "@/utils/muscles";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import PressableScale from "@/components/ui/PressableScale";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 const LEVEL_OPACITIES = [0.3, 0.5, 0.75, 1];
 const LEVEL_COLORS = LEVEL_OPACITIES.map((opacity) =>

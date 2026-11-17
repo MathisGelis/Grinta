@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { FormField, TextField } from "@/components/ui/FormField";
 import PressableScale from "@/components/ui/PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";

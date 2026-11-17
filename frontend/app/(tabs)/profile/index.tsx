@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { View, Text } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router, useFocusEffect } from "expo-router";
 import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
 import { useTranslation } from "@/contexts/LanguageContext";

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Modal from "@/components/ui/AppModal";
 import Button from "@/components/ui/Button";
 import PressableScale from "@/components/ui/PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
 import { formatDate } from "@/utils/formatDate";
 import { localDate } from "@/utils/date";
 
@@ -51,7 +50,7 @@ export default function StartDateSheet({ visible, loading, onClose, onConfirm }:
     (month.getFullYear() === today.getFullYear() && month.getMonth() > today.getMonth());
   // Lundi → dimanche (2024-01-01 est un lundi).
   const weekdays = Array.from({ length: 7 }, (_, i) =>
-    new Date(2024, 0, 1 + i).toLocaleDateString(LOCALES[lang], { weekday: "narrow" }),
+    formatDate(new Date(2024, 0, 1 + i), lang, "weekdayNarrow"),
   );
   const shift = (dir: -1 | 1) => setMonth(new Date(month.getFullYear(), month.getMonth() + dir, 1));
 

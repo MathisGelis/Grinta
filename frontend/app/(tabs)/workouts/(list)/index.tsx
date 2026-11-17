@@ -6,7 +6,7 @@ import React, {
 } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, FlatList, RefreshControl } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import PressableScale from "@/components/ui/PressableScale";
 import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";

@@ -4,7 +4,6 @@ import { Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
 import { format } from "@/i18n/translations";
 import {
   GroupsService,
@@ -22,6 +21,7 @@ import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { DetailSkeleton } from "@/components/ui/skeletons";
+import { formatDate } from "@/utils/formatDate";
 
 const PAGE_SIZE = 20;
 
@@ -102,7 +102,7 @@ export default function GroupDetailScreen() {
   };
 
   const date = (iso: string) =>
-    new Date(iso).toLocaleDateString(LOCALES[lang], { day: "numeric", month: "short" });
+    formatDate(iso, lang, "dayMonth");
 
   return (
     <View className="flex-1">

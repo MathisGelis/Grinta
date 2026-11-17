@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import Animated, {
   Easing,
@@ -15,7 +15,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
 import { format } from "@/i18n/translations";
 import { Post, PostsService } from "@/services/posts.service";
 import { mediaUrl } from "@/services/api";
@@ -295,10 +294,7 @@ export default function PostCard({
                   label={t.completedLabel}
                   value={
                     detail?.workoutCompletionDate
-                      ? new Date(detail.workoutCompletionDate).toLocaleDateString(LOCALES[lang], {
-                          day: "numeric",
-                          month: "short",
-                        })
+                      ? formatDate(detail.workoutCompletionDate, lang, "dayMonth")
                       : "–"
                   }
                   className="flex-1 items-center"

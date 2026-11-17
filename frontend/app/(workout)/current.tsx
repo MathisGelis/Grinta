@@ -1,7 +1,7 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, Text, ScrollView, Alert, Pressable, Keyboard, Platform, useWindowDimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";

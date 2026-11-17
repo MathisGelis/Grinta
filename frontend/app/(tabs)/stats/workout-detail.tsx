@@ -7,7 +7,6 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
 import { format } from "@/i18n/translations";
 import {
   CompletedWorkoutDetail,
@@ -28,7 +27,7 @@ import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import PressableScale from "@/components/ui/PressableScale";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Stat from "@/components/ui/Stat";
 import IconButton from "@/components/ui/IconButton";
 import { FormField, TextField } from "@/components/ui/FormField";
@@ -43,6 +42,7 @@ import RealLifeValue from "@/components/ui/RealLifeValue";
 import { realLifeText } from "@/utils/realLife";
 import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCardSheet";
 import { DetailSkeleton } from "@/components/ui/skeletons";
+import { formatDate } from "@/utils/formatDate";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -430,14 +430,7 @@ export default function CompletedWorkoutDetailScreen() {
                     size="md"
                     label={t.completedLabel}
                     labelPosition="top"
-                    value={new Date(workout.completionDate).toLocaleDateString(
-                      LOCALES[lang],
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      },
-                    )}
+                    value={formatDate(workout.completionDate, lang)}
                     className="flex-1"
                   />
                   <Stat

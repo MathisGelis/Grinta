@@ -81,6 +81,8 @@ export interface SearchUser {
 }
 
 let myIdCache: { token: string; id: string } | null = null;
+/** Requête `/auth/me` en cours : partagée entre tous les appelants simultanés. */
+let myIdInflight: { token: string; promise: Promise<string> } | null = null;
 
 export const UserService = {
   async updateProfile(userId: string, data: UpdateUserData) {
@@ -93,16 +95,26 @@ export const UserService = {
     const token = await TokenService.get();
     if (!token) return null;
     if (myIdCache?.token === token) return myIdCache.id;
-    const me = await api.get<{ id: string }>("/auth/me", token);
-    myIdCache = { token, id: me.id };
-    return me.id;
+    if (myIdInflight?.token !== token) {
+      const promise = api
+        .get<{ id: string }>("/auth/me", token)
+        .then((me) => {
+          myIdCache = { token, id: me.id };
+          return me.id;
+        })
+        .finally(() => {
+          if (myIdInflight?.promise === promise) myIdInflight = null;
+        });
+      myIdInflight = { token, promise };
+    }
+    return myIdInflight.promise;
   },
 
   async getMe(): Promise<CurrentUser> {
     const token = await TokenService.get();
-    const me = await api.get<{ id: string; email: string }>("/auth/me", token ?? undefined);
-    const full = await api.get<CurrentUser>(`/users/${me.id}`, token ?? undefined);
-    return full;
+    const id = await UserService.getMyId();
+    if (!id) throw new Error("Not authenticated");
+    return api.get<CurrentUser>(`/users/${id}`, token ?? undefined);
   },
 
   /** Renvoie un nouvel access_token : l'ancien est refusé (B-05). */

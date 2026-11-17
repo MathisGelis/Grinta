@@ -7,7 +7,7 @@ import ExerciseSetupItem, {
 } from "@/components/workout/exercises/ExerciseSetupItem";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
 
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import Card from "@/components/ui/Card";

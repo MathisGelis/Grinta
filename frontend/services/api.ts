@@ -14,8 +14,9 @@ export async function checkServerHealth(): Promise<boolean> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
   try {
-    await fetch(`${BASE_URL}/health`, { signal: controller.signal });
-    return true;
+    const response = await fetch(`${BASE_URL}/health`, { signal: controller.signal });
+    // 503 = la base de données ne répond pas.
+    return response.ok;
   } catch {
     return false;
   } finally {
@@ -35,11 +36,14 @@ export const mediaUrl = (url?: string | null): string | undefined => {
 export class ApiError extends Error {
   status: number;
   code?: string;
-  constructor(message: string, status: number, code?: string) {
+  /** Délai avant de pouvoir réessayer (429), en secondes. */
+  retryAfterSeconds?: number;
+  constructor(message: string, status: number, code?: string, retryAfterSeconds?: number) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -121,7 +125,12 @@ async function parseResponse<T>(
         : endpoint.startsWith("/auth/login")
           ? strings.tooManyAttempts
           : strings.tooManyRequests;
-    throw new ApiError(message, 429, isJson ? extractCode(data) : undefined);
+    throw new ApiError(
+      message,
+      429,
+      isJson ? extractCode(data) : undefined,
+      typeof retryAfter === "number" ? retryAfter : undefined,
+    );
   }
   if (response.status >= 500 && !(await checkServerHealth())) {
     throw new ApiError(strings.apiUnreachable, response.status);

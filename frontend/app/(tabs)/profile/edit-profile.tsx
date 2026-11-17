@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { UserService, CurrentUser } from "@/services/user.service";
 import { saveItem } from "@/core/services/storage";

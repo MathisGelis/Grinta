@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { Alert, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Post, PostsService } from "@/services/posts.service";
