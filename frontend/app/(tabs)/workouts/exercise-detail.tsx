@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import IconButton from "@/components/ui/IconButton";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import Stat from "@/components/ui/Stat";
 import MuscleMap from "@/components/ui/MuscleMap";
@@ -132,8 +133,14 @@ export default function ExerciseDetailScreen() {
       {loading ? (
         <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton rows={3} /></View>
       ) : error || !exercise ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.noExerciseFound}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.noExerciseFound}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}

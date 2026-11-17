@@ -9,6 +9,7 @@ import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import IconButton from "@/components/ui/IconButton";
@@ -126,8 +127,14 @@ export default function GroupSettingsScreen() {
       {loading ? (
         <View className="px-5" style={{ paddingTop: headerHeight }}><UserListSkeleton count={6} /></View>
       ) : error || !group ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.loadingError}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.loadingError}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}

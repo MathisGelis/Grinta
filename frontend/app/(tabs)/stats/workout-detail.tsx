@@ -25,6 +25,7 @@ import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import PressableScale from "@/components/ui/PressableScale";
 import { Ionicons } from "@expo/vector-icons";
@@ -305,8 +306,14 @@ export default function CompletedWorkoutDetailScreen() {
           <DetailSkeleton />
         </View>
       ) : error || !workout ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.loadingError}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.loadingError}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}

@@ -16,6 +16,7 @@ import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import IconButton from "@/components/ui/IconButton";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
@@ -129,8 +130,14 @@ export default function GroupDetailScreen() {
       {loading ? (
         <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton rows={3} /></View>
       ) : error || !group ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.loadingError}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.loadingError}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}

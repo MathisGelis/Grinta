@@ -9,6 +9,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme } from "@/constants/Colors";
 import { formatDate } from "@/utils/formatDate";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import EmptyState from "@/components/ui/EmptyState";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import PressableScale from "@/components/ui/PressableScale";
 import ErrorState from "@/components/ui/ErrorState";
@@ -75,10 +76,7 @@ export default function CompletedWorkoutsScreen() {
           onEndReachedThreshold={0.5}
           contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 16, paddingBottom: 120, gap: 8 }}
           ListEmptyComponent={
-            <View className="items-center mt-12 gap-2.5">
-              <Ionicons name="barbell-outline" size={36} color={WorkoutTheme.text.disabled} />
-              <Text className="text-ink-faint text-sm">{t.noWorkouts}</Text>
-            </View>
+            <EmptyState icon="barbell-outline" title={t.noWorkouts} className="mt-4" />
           }
           renderItem={({ item: w }) => (
             <PressableScale

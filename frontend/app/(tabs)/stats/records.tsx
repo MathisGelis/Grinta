@@ -10,6 +10,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Badge, BadgesService } from "@/services/badges.service";
 import { ExerciseStats, getAllExerciseStats } from "@/services/exercises.service";
+import ErrorState from "@/components/ui/ErrorState";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
@@ -74,8 +75,14 @@ export default function RecordsScreen() {
       {loading ? (
         <View className="px-5"><ListSkeleton count={7} /></View>
       ) : error ? (
-        <View className="items-center px-5">
-          <Text className="text-danger">{error}</Text>
+        <View className="px-5">
+          <ErrorState
+            message={error}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}

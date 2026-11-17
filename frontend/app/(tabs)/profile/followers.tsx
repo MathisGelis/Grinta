@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { ConnectionsService, UserListItem } from "@/services/connections.service";
 
+import EmptyState from "@/components/ui/EmptyState";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
 import Avatar from "@/components/ui/Avatar";
@@ -72,12 +73,11 @@ export function FollowersView({ userProfilePath }: FollowersViewProps) {
         {loading ? (
           <UserListSkeleton count={6} />
         ) : list.length === 0 ? (
-          <View className="items-center mt-12 gap-2.5">
-            <Ionicons name="person-outline" size={36} color={WorkoutTheme.text.disabled} />
-            <Text className="text-ink-faint text-sm">
-              {activeTab === "followers" ? t.noFollowers : t.noFollowing}
-            </Text>
-          </View>
+          <EmptyState
+            icon="person-outline"
+            title={activeTab === "followers" ? t.noFollowers : t.noFollowing}
+            className="mt-4"
+          />
         ) : (
           list.map((u) => (
             <PressableScale

@@ -21,6 +21,7 @@ import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEdit
 import IconButton from "@/components/ui/IconButton";
 import StartDateSheet from "@/components/workout/programmes/StartDateSheet";
 import WorkoutActionMenu from "@/components/workout/card/WorkoutActionMenu";
+import ErrorState from "@/components/ui/ErrorState";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
@@ -191,8 +192,14 @@ export default function ProgrammeDetailScreen() {
       {loading ? (
         <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton /></View>
       ) : error || !programme ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.noProgrammeFound}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.noProgrammeFound}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ProgrammeDayEditor

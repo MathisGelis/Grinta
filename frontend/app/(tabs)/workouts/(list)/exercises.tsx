@@ -18,6 +18,8 @@ import {
 import { TokenService } from "@/services/token.service";
 import { useFocusEffect, router } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
+import ErrorState from "@/components/ui/ErrorState";
+import EmptyState from "@/components/ui/EmptyState";
 import IconButton from "@/components/ui/IconButton";
 import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
 import ExerciseRow from "@/components/workout/exercises/ExerciseRow";
@@ -188,12 +190,23 @@ export default function ExercisesScreen() {
           <ExerciseListSkeleton count={9} />
         </View>
       ) : error ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-danger">{error}</Text>
+        <View className="flex-1 justify-center px-4">
+          <ErrorState
+            message={error}
+            onRetry={() => {
+              setLoading(true);
+              loadExercises();
+            }}
+          />
         </View>
       ) : rows.length === 0 ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-ink-muted">{t.noExerciseFound}</Text>
+        <View className="flex-1 justify-center px-4">
+          <EmptyState
+            icon="barbell-outline"
+            title={t.noExerciseFound}
+            actionLabel={t.createExercise}
+            onAction={() => router.push("/(tabs)/workouts/create/exercise" as any)}
+          />
         </View>
       ) : (
         <FlatList {...chromeScrollProps}
