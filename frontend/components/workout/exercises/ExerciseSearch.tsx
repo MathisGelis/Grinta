@@ -81,6 +81,8 @@ export default function ExerciseSearch({
     if (!visible) setSearchQuery("");
   }, [visible]);
 
+  const existingIds = useMemo(() => new Set(existingExerciseIds), [existingExerciseIds]);
+
   const filteredExercises = useMemo(() => {
     const q = normalizeText(deferredQuery.trim());
     return q
@@ -135,9 +137,13 @@ export default function ExerciseSearch({
             className="flex-1"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            initialNumToRender={12}
+            maxToRenderPerBatch={12}
+            windowSize={7}
+            removeClippedSubviews
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace, flexGrow: 1 }}
             renderItem={({ item }) => {
-              const isDuplicate = existingExerciseIds.includes(item.id);
+              const isDuplicate = existingIds.has(item.id);
               return (
                 <PressableScale
                   onPress={() =>

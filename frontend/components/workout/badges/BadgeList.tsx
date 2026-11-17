@@ -18,13 +18,25 @@ const ICON: Record<BadgeType, keyof typeof Ionicons.glyphMap> = {
 
 const round = (n: number) => Math.round(n * 10) / 10;
 
-type Props = {
-  badges: Badge[];
-  showDate?: boolean;
-};
+export type BadgeGroupData = { exerciseId: string; name: string; items: Badge[] };
 
-/** Records regroupés par exercice : une séance peut en battre plusieurs (charge max + 1RM). */
-export default function BadgeList({ badges, showDate = false }: Props) {
+/** Regroupe les badges par exercice, dans l'ordre d'arrivée. */
+export function groupBadges(badges: Badge[]): BadgeGroupData[] {
+  const groups = new Map<string, BadgeGroupData>();
+  for (const badge of badges) {
+    const group = groups.get(badge.exercise.id) ?? {
+      exerciseId: badge.exercise.id,
+      name: badge.exercise.name,
+      items: [],
+    };
+    group.items.push(badge);
+    groups.set(badge.exercise.id, group);
+  }
+  return [...groups.values()];
+}
+
+/** Un exercice et ses records : une séance peut en battre plusieurs (charge max + 1RM). */
+export function BadgeGroup({ group, showDate = false }: { group: BadgeGroupData; showDate?: boolean }) {
   const { t, lang } = useTranslation();
   const { fromKg, weightUnit } = useUnits();
 
@@ -37,65 +49,69 @@ export default function BadgeList({ badges, showDate = false }: Props) {
   const unit = (b: Badge) => (b.unit === "kg" ? weightUnit : t.repsUnit);
   const val = (b: Badge, n: number) => (b.unit === "kg" ? fromKg(n) : round(n));
 
-  const groups = new Map<string, { name: string; items: Badge[] }>();
-  for (const badge of badges) {
-    const group = groups.get(badge.exercise.id) ?? { name: badge.exercise.name, items: [] };
-    group.items.push(badge);
-    groups.set(badge.exercise.id, group);
-  }
+  return (
+    <View className="gap-2">
+      <Text className="px-1 text-sm font-semibold text-ink-soft" numberOfLines={1}>
+        {group.name}
+      </Text>
+      {group.items.map((badge) => (
+        <View
+          key={badge.id}
+          className="flex-row items-center gap-3 rounded-tile bg-raised p-3"
+          accessible
+          accessibilityLabel={`${label[badge.type]}: ${val(badge, badge.value)} ${unit(badge)}`}
+        >
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
+            <Ionicons name={ICON[badge.type]} size={20} color={WorkoutTheme.accent.purple} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm font-medium text-ink">{label[badge.type]}</Text>
+            <Text className="mt-0.5 text-xs text-ink-muted" numberOfLines={1}>
+              {showDate
+                ? formatDate(badge.achievedAt, lang)
+                : `${val(badge, badge.previousValue)} → ${val(badge, badge.value)} ${unit(badge)}`}
+            </Text>
+            {realLifeText(t, badge.realLifeComparison) ? (
+              <View className="mt-0.5 flex-row">
+                <RealLifeValue
+                  comparison={badge.realLifeComparison}
+                  size={14}
+                  className="text-xs text-accent-text"
+                />
+              </View>
+            ) : null}
+          </View>
+          <View className="items-end gap-1">
+            <Text
+              className="text-base font-semibold text-ink"
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
+              {val(badge, badge.value)} {unit(badge)}
+            </Text>
+            {badge.improvementPct > 0 ? (
+              <View className="rounded-full bg-success-tint px-2 py-0.5">
+                <Text className="text-[11px] font-semibold text-success">
+                  +{round(badge.improvementPct)}%
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
 
+type Props = {
+  badges: Badge[];
+  showDate?: boolean;
+};
+
+export default function BadgeList({ badges, showDate = false }: Props) {
   return (
     <View className="gap-4">
-      {[...groups.entries()].map(([exerciseId, group]) => (
-        <View key={exerciseId} className="gap-2">
-          <Text className="px-1 text-sm font-semibold text-ink-soft" numberOfLines={1}>
-            {group.name}
-          </Text>
-          {group.items.map((badge) => (
-            <View
-              key={badge.id}
-              className="flex-row items-center gap-3 rounded-tile bg-raised p-3"
-              accessible
-              accessibilityLabel={`${label[badge.type]}: ${val(badge, badge.value)} ${unit(badge)}`}
-            >
-              <View className="h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
-                <Ionicons name={ICON[badge.type]} size={20} color={WorkoutTheme.accent.purple} />
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-medium text-ink">{label[badge.type]}</Text>
-                <Text className="mt-0.5 text-xs text-ink-muted" numberOfLines={1}>
-                  {showDate
-                    ? formatDate(badge.achievedAt, lang)
-                    : `${val(badge, badge.previousValue)} → ${val(badge, badge.value)} ${unit(badge)}`}
-                </Text>
-                {realLifeText(t, badge.realLifeComparison) ? (
-                  <View className="mt-0.5 flex-row">
-                    <RealLifeValue
-                      comparison={badge.realLifeComparison}
-                      size={14}
-                      className="text-xs text-accent-text"
-                    />
-                  </View>
-                ) : null}
-              </View>
-              <View className="items-end gap-1">
-                <Text
-                  className="text-base font-semibold text-ink"
-                  style={{ fontVariant: ["tabular-nums"] }}
-                >
-                  {val(badge, badge.value)} {unit(badge)}
-                </Text>
-                {badge.improvementPct > 0 ? (
-                  <View className="rounded-full bg-success-tint px-2 py-0.5">
-                    <Text className="text-[11px] font-semibold text-success">
-                      +{round(badge.improvementPct)}%
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            </View>
-          ))}
-        </View>
+      {groupBadges(badges).map((group) => (
+        <BadgeGroup key={group.exerciseId} group={group} showDate={showDate} />
       ))}
     </View>
   );
