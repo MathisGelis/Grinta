@@ -24,12 +24,29 @@ export class WorkoutTemplatesController {
     return this.templates.listTemplates(req.user, query);
   }
 
+  @Get(':key')
+  @ApiOperation({
+    summary: 'The programme a template proposes, nothing saved',
+    description:
+      'Same shape as the import draft: `workouts` (each with exercises ' +
+      'ready for POST /workouts/planned) and `programme` (fields of ' +
+      'POST /programmes, days pointing to `workouts` by `workoutIndex`, ' +
+      'null for rest). The app shows it as a proposal; the user saves it ' +
+      'adjusted through those routes, or as is with POST :key/use.',
+  })
+  @ApiResponse({ status: 200, description: 'Proposal returned' })
+  @ApiResponse({ status: 404, description: 'Unknown template' })
+  propose(@Req() req: AuthenticatedRequest, @Param('key') key: string) {
+    return this.templates.proposeTemplate(req.user, key);
+  }
+
   @Post(':key/use')
   @ApiOperation({
-    summary: 'Copy a template into my workouts',
+    summary: 'Accept a template as proposed and save it',
     description:
-      'Creates one planned workout per session of the template and a ' +
-      'programme over one week (rest days included), not started.',
+      'Only when the user accepts the proposal: creates one planned ' +
+      'workout per session of the template and a programme over one week ' +
+      '(rest days included), not started.',
   })
   @ApiResponse({ status: 201, description: 'Programme created' })
   @ApiResponse({ status: 404, description: 'Unknown template' })

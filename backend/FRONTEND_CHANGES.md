@@ -963,3 +963,44 @@ Le serveur renvoie les exercices dans la langue de l'en-tête **`Accept-Language
 - **204** si un programme était suivi, **404** sinon.
 - Le programme et ses séances sont conservés : on peut le relancer avec `POST /programmes/:id/start`.
 - Ensuite, `GET /programmes/active/today` répond 404 comme avant tout démarrage.
+
+### 9.10 Modèles : proposer au lieu d'enregistrer
+
+Les programmes personnalisés (carrousel d'onboarding, « Créer une séance ») ne doivent plus être enregistrés dès qu'on touche un modèle : l'app les **propose**, et l'utilisateur choisit de les enregistrer.
+
+**`GET /workouts/templates/:key`** renvoie la proposition, **rien n'est enregistré** (`saved: false`). Même forme que le brouillon d'import (9.4) :
+
+```json
+{
+  "key": "upper-lower-4",
+  "saved": false,
+  "workouts": [
+    {
+      "key": "upper",
+      "title": "Haut du corps",
+      "description": null,
+      "estimatedDurationMinutes": 65,
+      "exercises": [
+        { "exerciseId": "…", "name": "Développé couché (barre)", "sets": [{ "reps": 6, "weight": 0 }], "plannedRestSeconds": 150, "durationSeconds": null }
+      ]
+    }
+  ],
+  "programme": {
+    "title": "Haut / Bas du corps",
+    "description": "…",
+    "weekNumber": 1,
+    "difficulty": "INTERMEDIATE",
+    "locationType": "GYM",
+    "days": [{ "dayNumber": 1, "workoutIndex": 0 }, { "dayNumber": 3, "workoutIndex": null }]
+  }
+}
+```
+
+- `difficulty` suit le niveau de l'utilisateur quand le modèle lui convient. `workoutIndex` pointe dans `workouts` ; `null` est un repos.
+- `GET /workouts/templates` (la liste du carrousel) ne change pas et n'enregistre rien.
+
+Pour enregistrer quand l'utilisateur accepte :
+- **tel quel** : `POST /workouts/templates/:key/use` (inchangé) ;
+- **après ajustement** : `POST /workouts/planned` pour chaque séance (en n'envoyant que `title`, `description`, `estimatedDurationMinutes` et, par exercice, `exerciseId`, `sets`, `plannedRestSeconds`), puis `POST /programmes` avec `title`, `description`, `weekNumber`, `difficulty`, `locationType` et les `days` où `workoutIndex` est remplacé par le `workoutId` obtenu (aucun `workoutId` pour un repos).
+
+À changer côté app : `TemplatePicker` appelle aujourd'hui `applyWorkoutTemplate` (donc `use`) dès qu'on touche un modèle. Il faut d'abord afficher la proposition, puis n'appeler `use` (ou les routes ci-dessus) qu'à la validation.

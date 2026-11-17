@@ -80,23 +80,57 @@ export class WorkoutTemplatesService {
   }
 
   /**
-   * Copies a template into the caller's account: one planned workout per
-   * session, and a programme laying them out over the week. The programme
-   * is not started; the app starts it with POST /programmes/:id/start.
+   * The programme a template proposes to the caller, nothing saved: the
+   * same shape as an import draft (POST /workouts/import), plus the fields
+   * POST /programmes needs. The app shows it, lets the user adjust it, and
+   * saves it only if they accept: each workout with POST /workouts/planned,
+   * then the programme with POST /programmes; or as is with
+   * POST /workouts/templates/:key/use.
+   */
+  async proposeTemplate(user: AuthUser, key: string) {
+    const template = this.templateOf(key);
+    const [ids, level] = await Promise.all([
+      this.resolveExerciseIds(),
+      this.levelFor(user, template),
+    ]);
+    const index = new Map(template.workouts.map((w, i) => [w.key, i]));
+
+    return {
+      key: template.key,
+      saved: false,
+      workouts: template.workouts.map((workout) => ({
+        key: workout.key,
+        title: workout.title,
+        description: durationHints(workout),
+        estimatedDurationMinutes: workout.estimatedDurationMinutes,
+        exercises: this.exercisesOf(workout, ids),
+      })),
+      programme: {
+        title: template.title,
+        description: template.description,
+        weekNumber: 1,
+        difficulty: DIFFICULTY[level],
+        locationType: LOCATION[template.location],
+        days: template.week.map((workoutKey, i) => ({
+          dayNumber: i + 1,
+          workoutIndex: workoutKey ? index.get(workoutKey)! : null,
+        })),
+      },
+    };
+  }
+
+  /**
+   * Saves a template as proposed, when the user accepts it without changes:
+   * one planned workout per session, and a programme laying them out over
+   * the week. The programme is not started; the app starts it with
+   * POST /programmes/:id/start.
    */
   async useTemplate(user: AuthUser, key: string) {
-    const template = WORKOUT_TEMPLATES.find((t) => t.key === key);
-
-    if (!template) throw new NotFoundException('Modèle introuvable');
-    const ids = await this.resolveExerciseIds();
-    const profile = await this.userRepo.findOne({
-      where: { id: user.id },
-      select: ['id', 'level'],
-    });
-    const level =
-      profile?.level && template.levels.includes(profile.level)
-        ? profile.level
-        : template.levels[0];
+    const template = this.templateOf(key);
+    const [ids, level] = await Promise.all([
+      this.resolveExerciseIds(),
+      this.levelFor(user, template),
+    ]);
 
     const programmeId = await this.dataSource.transaction(async (manager) => {
       const workoutIds = new Map<string, string>();
@@ -167,6 +201,37 @@ export class WorkoutTemplatesService {
     return programme;
   }
 
+  private templateOf(key: string): WorkoutTemplate {
+    const template = WORKOUT_TEMPLATES.find((t) => t.key === key);
+
+    if (!template) throw new NotFoundException('Modèle introuvable');
+    return template;
+  }
+
+  /** The user's level when the template suits it, else its first level. */
+  private async levelFor(user: AuthUser, template: WorkoutTemplate) {
+    const profile = await this.userRepo.findOne({
+      where: { id: user.id },
+      select: ['id', 'level'],
+    });
+
+    return profile?.level && template.levels.includes(profile.level)
+      ? profile.level
+      : template.levels[0];
+  }
+
+  private exercisesOf(workout: TemplateWorkout, ids: Map<string, string>) {
+    return workout.moves
+      .filter((move) => ids.has(move.exercise))
+      .map((move) => ({
+        exerciseId: ids.get(move.exercise)!,
+        name: move.exercise,
+        sets: setsOf(move),
+        plannedRestSeconds: move.restSeconds,
+        durationSeconds: move.durationSeconds ?? null,
+      }));
+  }
+
   private async criteriaFor(
     user: AuthUser,
     query: TemplatesQueryDto,
@@ -203,15 +268,7 @@ export class WorkoutTemplatesService {
         key: workout.key,
         title: workout.title,
         estimatedDurationMinutes: workout.estimatedDurationMinutes,
-        exercises: workout.moves
-          .filter((move) => ids.has(move.exercise))
-          .map((move) => ({
-            exerciseId: ids.get(move.exercise)!,
-            name: move.exercise,
-            sets: setsOf(move),
-            plannedRestSeconds: move.restSeconds,
-            durationSeconds: move.durationSeconds ?? null,
-          })),
+        exercises: this.exercisesOf(workout, ids),
       })),
       week: template.week.map((workoutKey, i) => ({
         dayNumber: i + 1,
