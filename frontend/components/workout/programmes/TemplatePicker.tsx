@@ -15,6 +15,7 @@ import { localDate } from "@/utils/date";
 import { normalizeText } from "@/utils/text";
 import { ListSkeleton } from "@/components/ui/skeletons";
 import EmptyState from "@/components/ui/EmptyState";
+import { toast } from "@/components/ui/Toast";
 
 type Props = {
   /** Filtre local sur le titre et la description. */
@@ -50,7 +51,8 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
       const programme = await applyWorkoutTemplate(template.key);
       // Le modèle crée un programme non démarré : on le lance avec la date locale.
       await startProgramme(programme.id, localDate());
-      Alert.alert(t.tplUsed, t.tplUsedMessage, [{ text: t.ok, onPress: onUsed }]);
+      toast.success(t.tplUsedMessage);
+      onUsed?.();
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
     } finally {

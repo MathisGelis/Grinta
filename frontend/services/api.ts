@@ -38,12 +38,21 @@ export class ApiError extends Error {
   code?: string;
   /** Délai avant de pouvoir réessayer (429), en secondes. */
   retryAfterSeconds?: number;
-  constructor(message: string, status: number, code?: string, retryAfterSeconds?: number) {
+  /** Erreurs de validation par champ (`errors[].field` → message), 400 uniquement. */
+  fieldErrors?: Record<string, string>;
+  constructor(
+    message: string,
+    status: number,
+    code?: string,
+    retryAfterSeconds?: number,
+    fieldErrors?: Record<string, string>,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -62,6 +71,22 @@ function extractCode(data: unknown): string | undefined {
   if (typeof body.code === "string") return body.code;
   if (body.message && typeof body.message === "object") return extractCode(body.message);
   return undefined;
+}
+
+/** Messages de validation par champ : le code stable est traduit, sinon le message du serveur. */
+function extractFieldErrors(data: unknown, apiErrors: Record<string, string>): Record<string, string> | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const list = (data as { errors?: unknown }).errors;
+  if (!Array.isArray(list)) return undefined;
+  const result: Record<string, string> = {};
+  for (const item of list) {
+    if (!item || typeof item !== "object") continue;
+    const { field, code, message } = item as { field?: unknown; code?: unknown; message?: unknown };
+    if (typeof field !== "string" || field in result) continue;
+    const text = (typeof code === "string" && apiErrors[code]) || (typeof message === "string" ? message : "");
+    if (text) result[field] = text;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
 }
 
 export const isNotFound = (error: unknown): boolean =>
@@ -140,7 +165,13 @@ async function parseResponse<T>(
   // Une réponse non JSON (ex. page HTML de nginx) devient une erreur générique.
   const code = isJson ? extractCode(data) : undefined;
   const message = (code && strings.apiErrors[code]) || (isJson ? extractMessage(data) : undefined);
-  throw new ApiError(message || `${strings.serverError} ${response.status}`, response.status, code);
+  throw new ApiError(
+    message || `${strings.serverError} ${response.status}`,
+    response.status,
+    code,
+    undefined,
+    isJson && response.status === 400 ? extractFieldErrors(data, strings.apiErrors) : undefined,
+  );
 }
 
 async function send(

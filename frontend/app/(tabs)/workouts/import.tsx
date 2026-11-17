@@ -18,6 +18,7 @@ import {
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
 import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
+import { toast } from "@/components/ui/Toast";
 
 const MAX_LENGTH = 10000;
 const DEFAULT_REST_SECONDS = 90;
@@ -85,7 +86,8 @@ export default function ImportWorkoutsScreen() {
           })),
         });
       }
-      Alert.alert(t.imSaved, t.imSavedMessage, [{ text: t.ok, onPress: () => router.back() }]);
+      toast.success(t.imSavedMessage);
+      router.back();
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
     } finally {

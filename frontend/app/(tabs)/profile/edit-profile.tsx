@@ -6,7 +6,8 @@ import { router } from "expo-router";
 import { UserService, CurrentUser } from "@/services/user.service";
 import { saveItem } from "@/core/services/storage";
 import { PhotoService, pickImage } from "@/services/photo.service";
-import { LIMITS, isValidUniqueName, sanitizeUniqueName } from "@/utils/validation";
+import { LIMITS, isValidEmail, isValidUniqueName, sanitizeUniqueName } from "@/utils/validation";
+import { ApiError } from "@/services/api";
 import Avatar from "@/components/ui/Avatar";
 
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
@@ -14,6 +15,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { FormSkeleton } from "@/components/ui/skeletons";
+import { toast } from "@/components/ui/Toast";
 export default function EditProfileScreen() {
   const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
@@ -25,6 +27,7 @@ export default function EditProfileScreen() {
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"displayName" | "uniqueName" | "email", string>>>({});
 
   useEffect(() => {
     UserService.getMe()
@@ -40,17 +43,17 @@ export default function EditProfileScreen() {
   }, [t]);
 
   const handleSave = async () => {
-    if (!displayName.trim()) {
-      Alert.alert(t.error, t.nameEmptyError);
-      return;
-    }
     if (!user) return;
+    const errors: typeof fieldErrors = {};
+    if (!displayName.trim()) errors.displayName = t.nameEmptyError;
     // Un ancien pseudo non conforme reste valable tant qu'il n'est pas modifié.
     const uniqueNameChanged = uniqueName.trim() !== user.uniqueName;
     if (uniqueNameChanged && !isValidUniqueName(uniqueName)) {
-      Alert.alert(t.error, uniqueName.trim().length < LIMITS.uniqueNameMin ? t.usernameTooShort : t.usernameInvalid);
-      return;
+      errors.uniqueName = uniqueName.trim().length < LIMITS.uniqueNameMin ? t.usernameTooShort : t.usernameInvalid;
     }
+    if (email.trim() !== user.email && !isValidEmail(email)) errors.email = t.invalidEmail;
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     setSaving(true);
     try {
@@ -66,11 +69,15 @@ export default function EditProfileScreen() {
 
       await UserService.updateProfile(user.id, updates);
       await saveItem("user_name", displayName.trim());
-      Alert.alert(t.success, t.profileUpdatedMsg, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.profileUpdatedMsg);
+      router.back();
     } catch (err: any) {
-      Alert.alert(t.error, err.message || t.cannotSaveProfile);
+      const server = err instanceof ApiError ? err.fieldErrors : undefined;
+      if (server && (server.displayName || server.uniqueName || server.email)) {
+        setFieldErrors({ displayName: server.displayName, uniqueName: server.uniqueName, email: server.email });
+      } else {
+        Alert.alert(t.error, err.message || t.cannotSaveProfile);
+      }
     } finally {
       setSaving(false);
     }
@@ -174,6 +181,7 @@ export default function EditProfileScreen() {
               placeholderTextColor={WorkoutTheme.text.disabled}
             />
             <View className="h-[1px] bg-raised mt-1.5" />
+            {fieldErrors.displayName ? <Text className="text-[11px] mt-1.5 text-danger">{fieldErrors.displayName}</Text> : null}
           </View>
 
           <View className="mb-7">
@@ -191,8 +199,8 @@ export default function EditProfileScreen() {
               />
             </View>
             <View className="h-[1px] bg-raised mt-1.5" />
-            <Text className={`text-[11px] mt-1.5 ${uniqueNameError ? "text-danger" : "text-ink-faint"}`}>
-              {uniqueNameError ? t.usernameInvalid : t.usernameHint}
+            <Text className={`text-[11px] mt-1.5 ${uniqueNameError || fieldErrors.uniqueName ? "text-danger" : "text-ink-faint"}`}>
+              {fieldErrors.uniqueName ?? (uniqueNameError ? t.usernameInvalid : t.usernameHint)}
             </Text>
           </View>
 
@@ -209,6 +217,7 @@ export default function EditProfileScreen() {
               keyboardType="email-address"
             />
             <View className="h-[1px] bg-raised mt-1.5" />
+            {fieldErrors.email ? <Text className="text-[11px] mt-1.5 text-danger">{fieldErrors.email}</Text> : null}
           </View>
         </View>
 

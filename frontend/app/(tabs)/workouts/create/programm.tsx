@@ -26,6 +26,7 @@ import {
   difficultyLabel,
   locationLabel,
 } from "@/i18n/labels";
+import { toast } from "@/components/ui/Toast";
 export default function CreateProgrammScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -103,9 +104,8 @@ export default function CreateProgrammScreen() {
         })),
       });
 
-      Alert.alert(t.success, t.programmeCreated, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.programmeCreated);
+      router.back();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t.creationError;

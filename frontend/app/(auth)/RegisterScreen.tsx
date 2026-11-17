@@ -6,6 +6,7 @@ import { UserService } from "@/services/user.service";
 import { takeOnboardingDraft } from "@/utils/onboardingDraft";
 import React, { useState } from "react";
 import { View, Text, ScrollView } from "react-native";
+import { ApiError } from "@/services/api";
 import { router } from "expo-router";
 
 import ScreenBackground from "@/components/ui/ScreenBackground";
@@ -24,37 +25,22 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"name" | "email" | "password" | "confirm", string>>>({});
 
   const handleRegister = async () => {
     setError("");
-    if (!name || !email || !password) {
-      setError(t.fillAllFields);
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setError(t.invalidEmail);
-      return;
-    }
-    if (password.length < MIN_PASSWORD) {
-      setError(t.passwordTooShort);
-      return;
-    }
-    if (name.trim().length > LIMITS.displayName) {
-      setError(t.nameTooLong);
-      return;
-    }
-    if (email.trim().length > LIMITS.email) {
-      setError(t.emailTooLong);
-      return;
-    }
-    if (password.length > LIMITS.password) {
-      setError(t.passwordTooLong);
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError(t.passwordsDontMatch);
-      return;
-    }
+    const errors: typeof fieldErrors = {};
+    if (!name.trim()) errors.name = t.fillAllFields;
+    else if (name.trim().length > LIMITS.displayName) errors.name = t.nameTooLong;
+    if (!email.trim()) errors.email = t.fillAllFields;
+    else if (!isValidEmail(email)) errors.email = t.invalidEmail;
+    else if (email.trim().length > LIMITS.email) errors.email = t.emailTooLong;
+    if (!password) errors.password = t.fillAllFields;
+    else if (password.length < MIN_PASSWORD) errors.password = t.passwordTooShort;
+    else if (password.length > LIMITS.password) errors.password = t.passwordTooLong;
+    if (!errors.password && password !== confirmPassword) errors.confirm = t.passwordsDontMatch;
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     try {
       setLoading(true);
       const response = await AuthService.register(email, password, name);
@@ -69,7 +55,12 @@ export default function RegisterScreen() {
       }
       router.replace("/(auth)/onboarding/TemplatesScreen");
     } catch (err: any) {
-      setError(err.message || t.genericError);
+      const server = err instanceof ApiError ? err.fieldErrors : undefined;
+      if (server && (server.displayName || server.email || server.password)) {
+        setFieldErrors({ name: server.displayName, email: server.email, password: server.password });
+      } else {
+        setError(err.message || t.genericError);
+      }
     } finally {
       setLoading(false);
     }
@@ -96,7 +87,7 @@ export default function RegisterScreen() {
         />
 
         <View className="gap-5 px-5 pt-6">
-          <FormField label={t.name}>
+          <FormField label={t.name} error={fieldErrors.name}>
             <TextField
               icon="person-outline"
               placeholder={t.yourName}
@@ -106,7 +97,7 @@ export default function RegisterScreen() {
             />
           </FormField>
 
-          <FormField label={t.email}>
+          <FormField label={t.email} error={fieldErrors.email}>
             <TextField
               icon="mail-outline"
               placeholder={t.emailPlaceholder}
@@ -121,6 +112,7 @@ export default function RegisterScreen() {
           <View className="gap-2">
             <PasswordField
               label={t.passwordLabel}
+              error={fieldErrors.password}
               value={password}
               maxLength={LIMITS.password}
               onChangeText={setPassword}
@@ -136,6 +128,7 @@ export default function RegisterScreen() {
 
           <PasswordField
             label={t.passwordAgain}
+            error={fieldErrors.confirm}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
           />

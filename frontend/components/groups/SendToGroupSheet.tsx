@@ -8,6 +8,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { GroupsService, type GroupSummary } from "@/services/groups.service";
 import { ListSkeleton } from "@/components/ui/skeletons";
+import { toast } from "@/components/ui/Toast";
 
 type Props = {
   postId: string | null;
@@ -43,7 +44,7 @@ export default function SendToGroupSheet({ postId, onClose }: Props) {
       setSendingTo(group.id);
       await GroupsService.share(group.id, postId);
       onClose();
-      Alert.alert(group.name, t.grpSent);
+      toast.success(`${group.name} · ${t.grpSent}`);
     } catch (err) {
       // Le serveur renvoie `409` avec un message lisible si le post est déjà dans le groupe.
       Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);

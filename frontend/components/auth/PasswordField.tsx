@@ -9,13 +9,14 @@ type Props = {
   value: string;
   onChangeText: (value: string) => void;
   maxLength?: number;
+  error?: string | null;
 };
 
 /** Champ mot de passe : même style que les autres champs, avec bouton afficher / masquer. */
-export default function PasswordField({ label, value, onChangeText, maxLength }: Props) {
+export default function PasswordField({ label, value, onChangeText, maxLength, error }: Props) {
   const [visible, setVisible] = useState(false);
   return (
-    <FormField label={label}>
+    <FormField label={label} error={error}>
       <TextField
         icon="lock-closed-outline"
         placeholder="••••••••"

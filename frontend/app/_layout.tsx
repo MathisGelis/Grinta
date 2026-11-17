@@ -11,6 +11,7 @@ import {
 import { WorkoutTheme } from "@/constants/Colors";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { UnitsProvider } from "@/contexts/UnitsContext";
+import { ToastHost } from "@/components/ui/Toast";
 
 const AppTheme = {
   ...DarkTheme,
@@ -46,6 +47,7 @@ export default function RootLayout() {
               <Stack.Screen name="+not-found" />
             </Stack>
             <StatusBar style="light" />
+            <ToastHost />
           </ThemeProvider>
           </UnitsProvider>
         </LanguageProvider>

@@ -26,6 +26,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { UserListSkeleton } from "@/components/ui/skeletons";
 import EmptyState from "@/components/ui/EmptyState";
+import { toast } from "@/components/ui/Toast";
 
 const COMMENT_MAX_LENGTH = 500;
 
@@ -185,7 +186,7 @@ export function usePostInteractions(
     try {
       await PostsService.reportComment(reportCommentId, reportReason);
       closeReport();
-      Alert.alert(t.reportTitle, t.reportSentMsg);
+      toast.success(t.reportSentMsg);
     } catch (error: any) {
       Alert.alert(t.error, error?.message || t.cannotReportComment);
     }

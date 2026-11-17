@@ -19,6 +19,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { DetailSkeleton } from "@/components/ui/skeletons";
 import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
+import { toast } from "@/components/ui/Toast";
 
 export type WorkoutStatsTotals = {
   totalSets: number;
@@ -215,7 +216,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
 
       if (onUpdate && updatedWorkout) onUpdate(updatedWorkout);
 
-      Alert.alert(t.success, t.workoutUpdated);
+      toast.success(t.workoutUpdated);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t.cannotSaveProfile;
@@ -239,7 +240,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
               const token = await TokenService.get();
               await deletePlannedWorkout(workout.id, token || undefined);
               onDelete?.(workout.id);
-              Alert.alert(t.success, t.workoutDeleted);
+              toast.success(t.workoutDeleted);
             } catch {
               Alert.alert(t.error, t.cannotDeleteWorkout);
             }

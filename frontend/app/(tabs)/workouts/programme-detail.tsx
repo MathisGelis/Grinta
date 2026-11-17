@@ -29,6 +29,7 @@ import { difficultyLabel } from "@/i18n/labels";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { DetailSkeleton } from "@/components/ui/skeletons";
+import { toast } from "@/components/ui/Toast";
 
 /**
  * Planification à une date future désactivée pour l'instant (le programme en cours serait remplacé
@@ -111,7 +112,7 @@ export default function ProgrammeDetailScreen() {
       });
       savedDays.current = daysKey(days);
       setEditing(false);
-      Alert.alert(t.success, t.programmeUpdated);
+      toast.success(t.programmeUpdated);
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.cannotSaveProfile);
     } finally {

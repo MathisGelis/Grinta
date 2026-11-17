@@ -25,6 +25,7 @@ import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import { toast } from "@/components/ui/Toast";
 const DEFAULT_REST_SECONDS = 90;
 
 export default function CreateWorkoutScreen() {
@@ -148,9 +149,8 @@ export default function CreateWorkoutScreen() {
     try {
       const token = await TokenService.get();
       await createPlannedWorkout(transformExercisesToAPI(), token || undefined);
-      Alert.alert(t.success, t.workoutCreated, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.workoutCreated);
+      router.back();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t.creationError;
