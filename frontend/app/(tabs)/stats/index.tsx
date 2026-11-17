@@ -26,10 +26,20 @@ import StatsCalendar, {
 } from "@/components/stats/StatsCalendar";
 import { format } from "@/i18n/translations";
 import { StatsSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
 function formatDuration(seconds: number): string {
   const mins = Math.round(seconds / 60);
   return `${mins} min`;
 }
+
+const STATS_KEY = "stats:index";
+const STATS_STALE_MS = 20_000;
+type StatsBundle = {
+  consistency: Consistency;
+  workouts: CompletedWorkout[];
+  published: Record<string, string>;
+  hasMore: boolean;
+};
 
 export default function StatsScreen() {
   const { t, lang } = useTranslation();
@@ -37,14 +47,15 @@ export default function StatsScreen() {
   const [tab, setTab] = useState<"sessions" | "data">("sessions");
   const [anchor, setAnchor] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [loading, setLoading] = useState(true);
+  const cached = queryCache.peek<StatsBundle>(STATS_KEY);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
-  const [consistency, setConsistency] = useState<Consistency | null>(null);
+  const [consistency, setConsistency] = useState<Consistency | null>(cached?.consistency ?? null);
   const [completedWorkouts, setCompletedWorkouts] = useState<
     CompletedWorkout[]
-  >([]);
-  const [publishedPosts, setPublishedPosts] = useState<Record<string, string>>({});
-  const [hasMore, setHasMore] = useState(false);
+  >(cached?.workouts ?? []);
+  const [publishedPosts, setPublishedPosts] = useState<Record<string, string>>(cached?.published ?? {});
+  const [hasMore, setHasMore] = useState(cached?.hasMore ?? false);
   const loadingMore = useRef(false);
 
   const shiftPeriod = (direction: -1 | 1) => {
@@ -70,8 +81,15 @@ export default function StatsScreen() {
       setCompletedWorkouts(workoutsData);
       setHasMore(workoutsData.length === COMPLETED_PAGE_SIZE);
       setPublishedPosts(published);
+      queryCache.set<StatsBundle>(STATS_KEY, {
+        consistency: consistencyData,
+        workouts: workoutsData,
+        published,
+        hasMore: workoutsData.length === COMPLETED_PAGE_SIZE,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.loadingError);
+      // Les données déjà affichées restent visibles si le rafraîchissement échoue.
+      if (!queryCache.peek(STATS_KEY)) setError(err instanceof Error ? err.message : t.loadingError);
     } finally {
       setLoading(false);
     }
@@ -79,6 +97,7 @@ export default function StatsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (queryCache.isFresh(STATS_KEY, STATS_STALE_MS)) return;
       fetchData();
     }, [fetchData]),
   );
@@ -136,6 +155,7 @@ export default function StatsScreen() {
         onPress: async () => {
           try {
             await WorkoutService.deleteCompleted(workout.id);
+            queryCache.invalidate("records", "profile");
             setCompletedWorkouts((prev) =>
               prev.filter((w) => w.id !== workout.id),
             );
@@ -163,6 +183,7 @@ export default function StatsScreen() {
             try {
               if (isPublished) {
                 await PostsService.deletePost(publishedPostId);
+                queryCache.invalidate("profile");
                 setPublishedPosts((prev) => {
                   const next = { ...prev };
                   delete next[workout.id];
@@ -170,6 +191,7 @@ export default function StatsScreen() {
                 });
               } else {
                 const { id } = await PostsService.createPost(workout.id);
+                queryCache.invalidate("profile");
                 setPublishedPosts((prev) => ({ ...prev, [workout.id]: id }));
               }
             } catch (err) {

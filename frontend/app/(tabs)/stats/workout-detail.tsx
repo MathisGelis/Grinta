@@ -43,6 +43,7 @@ import { realLifeText } from "@/utils/realLife";
 import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCardSheet";
 import { DetailSkeleton } from "@/components/ui/skeletons";
 import { formatDate } from "@/utils/formatDate";
+import { queryCache } from "@/services/queryCache";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -193,6 +194,7 @@ export default function CompletedWorkoutDetailScreen() {
           entry.timerSeconds,
         ]),
       );
+      queryCache.invalidate("stats", "records", "profile");
       const saved = await WorkoutService.updateCompleted(workout.id, {
         title: draftTitle.trim(),
         description: draftDescription,
@@ -209,6 +211,7 @@ export default function CompletedWorkoutDetailScreen() {
       try {
         if (typeof draftPhoto === "string") {
           await PhotoService.uploadWorkoutPhoto(workout.id, draftPhoto);
+          queryCache.invalidate("stats", "profile");
         } else if (draftPhoto === null && workout.photoUrl) {
           await PhotoService.removeWorkoutPhoto(workout.id);
         }

@@ -8,6 +8,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { queryCache } from "@/services/queryCache";
 interface SearchUserCardProps {
   user: SearchUser;
 }
@@ -49,9 +50,11 @@ export default function SearchUserCard({ user }: SearchUserCardProps) {
     try {
       if (status === "FOLLOWING") {
         await ConnectionsService.unfollow(user.id);
+        queryCache.invalidate("profile");
         setStatus("FOLLOW");
       } else {
         const result = await ConnectionsService.follow(user.id);
+        queryCache.invalidate("profile");
         setStatus(result.status === "FOLLOWING" ? "FOLLOWING" : "REQUEST_SENT");
       }
     } catch (err: any) {

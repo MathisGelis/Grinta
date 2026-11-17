@@ -16,6 +16,7 @@ import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { FormSkeleton } from "@/components/ui/skeletons";
 import { toast } from "@/components/ui/Toast";
+import { queryCache } from "@/services/queryCache";
 export default function EditProfileScreen() {
   const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
@@ -68,6 +69,7 @@ export default function EditProfileScreen() {
       }
 
       await UserService.updateProfile(user.id, updates);
+      queryCache.invalidate("profile");
       await saveItem("user_name", displayName.trim());
       toast.success(t.profileUpdatedMsg);
       router.back();
@@ -89,6 +91,7 @@ export default function EditProfileScreen() {
       if (!uri) return;
       setPhotoBusy(true);
       const result = await PhotoService.uploadAvatar(uri);
+      queryCache.invalidate("profile");
       setAvatarUrl(result.avatarUrl);
     } catch (err: any) {
       Alert.alert(t.error, err.message || t.cannotUploadPhoto);
@@ -101,6 +104,7 @@ export default function EditProfileScreen() {
     try {
       setPhotoBusy(true);
       await PhotoService.removeAvatar();
+      queryCache.invalidate("profile");
       setAvatarUrl(null);
     } catch (err: any) {
       Alert.alert(t.error, err.message || t.cannotUploadPhoto);

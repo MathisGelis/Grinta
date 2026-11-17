@@ -48,6 +48,7 @@ import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
 import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
 import { PhotoService } from "@/services/photo.service";
 import { DetailSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
 const dedupeCompletedSets = (state: ExerciseState): ExerciseState => {
   const seen = new Set<number>();
   const completedSetIndices: number[] = [];
@@ -455,6 +456,7 @@ export default function ActiveWorkoutScreen() {
         }
       }
       await clearActiveSession();
+      queryCache.invalidate("stats", "records", "profile");
 
       const goToStats = leaveWorkout;
       const records = saved.badges ?? [];

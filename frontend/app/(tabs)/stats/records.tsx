@@ -1,10 +1,11 @@
 import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { FlatList, Text, View } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -29,32 +30,12 @@ export default function RecordsScreen() {
   const kg = (v: number | null) => (v != null ? String(fromKg(v)) : "–");
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>("exercises");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<ExerciseStats[]>([]);
-  const [badges, setBadges] = useState<Badge[]>([]);
-
-  const load = useCallback(async () => {
-    try {
-      setError(null);
-      const [exerciseStats, userBadges] = await Promise.all([
-        getAllExerciseStats(),
-        BadgesService.list({ limit: 100 }),
-      ]);
-      setStats(exerciseStats);
-      setBadges(userBadges);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.loadingError);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
+  const { data, loading, error, reload } = useCachedQuery("records", async () => {
+    const [stats, badges] = await Promise.all([getAllExerciseStats(), BadgesService.list({ limit: 100 })]);
+    return { stats, badges };
+  });
+  const stats: ExerciseStats[] = useMemo(() => data?.stats ?? [], [data]);
+  const badges: Badge[] = useMemo(() => data?.badges ?? [], [data]);
 
   const muscle = (key: string) => t.muscleNames[key] ?? key.replace(/_/g, " ");
 
@@ -117,10 +98,7 @@ export default function RecordsScreen() {
         <View className="px-5">
           <ErrorState
             message={error}
-            onRetry={() => {
-              setLoading(true);
-              load();
-            }}
+            onRetry={reload}
           />
         </View>
       ) : (

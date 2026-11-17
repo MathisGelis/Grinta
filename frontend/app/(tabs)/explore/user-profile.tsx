@@ -18,6 +18,7 @@ import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { ProfileSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
 export default function UserProfileScreen() {
   const { t } = useTranslation();
   const headerHeight = useFloatingHeaderHeight();
@@ -60,6 +61,7 @@ export default function UserProfileScreen() {
     setActionLoading(true);
     try {
       const result = await ConnectionsService.follow(params.userId);
+      queryCache.invalidate("profile");
       setFollowStatus(result.status === "FOLLOWING" ? "FOLLOWING" : "REQUEST_SENT");
       if (result.status === "FOLLOWING" && profile) {
         setProfile({ ...profile, followersCount: profile.followersCount + 1 });
@@ -76,6 +78,7 @@ export default function UserProfileScreen() {
     setActionLoading(true);
     try {
       await ConnectionsService.unfollow(params.userId);
+      queryCache.invalidate("profile");
       setFollowStatus("FOLLOW");
       if (profile) {
         setProfile({ ...profile, followersCount: Math.max(0, profile.followersCount - 1) });
