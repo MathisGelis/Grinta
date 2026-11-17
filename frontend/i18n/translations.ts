@@ -474,7 +474,7 @@ export interface Strings extends V3Strings, V4Strings {
   premiumNote: string;
 }
 
-const en: BaseStrings = {
+const en = (): BaseStrings => ({
   hello: "Hello",
   goodMorning: "Good morning",
   goodAfternoon: "Good afternoon",
@@ -1006,9 +1006,9 @@ const en: BaseStrings = {
   reportReasonOther: "Other",
   premiumCta: "Go Premium",
   premiumNote: "Subscriptions will be available soon. Nothing is charged for now.",
-};
+});
 
-const fr: BaseStrings = {
+const fr = (): BaseStrings => ({
   hello: "Bonjour",
   goodMorning: "Bonne matinée",
   goodAfternoon: "Bon après-midi",
@@ -1540,9 +1540,9 @@ const fr: BaseStrings = {
   reportReasonOther: "Autre",
   premiumCta: "Passer à Premium",
   premiumNote: "Les abonnements arriveront bientôt. Rien n'est facturé pour le moment.",
-};
+});
 
-const es: BaseStrings = {
+const es = (): BaseStrings => ({
   hello: "Hola",
   goodMorning: "Buenos días",
   goodAfternoon: "Buenas tardes",
@@ -2074,9 +2074,9 @@ const es: BaseStrings = {
   reportReasonOther: "Otro",
   premiumCta: "Hazte Premium",
   premiumNote: "Las suscripciones llegarán pronto. De momento no se cobra nada.",
-};
+});
 
-const de: BaseStrings = {
+const de = (): BaseStrings => ({
   hello: "Hallo",
   goodMorning: "Guten Morgen",
   goodAfternoon: "Guten Tag",
@@ -2608,9 +2608,9 @@ const de: BaseStrings = {
   reportReasonOther: "Sonstiges",
   premiumCta: "Premium werden",
   premiumNote: "Abos folgen bald. Aktuell wird nichts berechnet.",
-};
+});
 
-const it: BaseStrings = {
+const it = (): BaseStrings => ({
   hello: "Ciao",
   goodMorning: "Buongiorno",
   goodAfternoon: "Buon pomeriggio",
@@ -3142,9 +3142,9 @@ const it: BaseStrings = {
   reportReasonOther: "Altro",
   premiumCta: "Passa a Premium",
   premiumNote: "Gli abbonamenti arriveranno presto. Per ora non viene addebitato nulla.",
-};
+});
 
-const pt: BaseStrings = {
+const pt = (): BaseStrings => ({
   hello: "Olá",
   goodMorning: "Bom dia",
   goodAfternoon: "Boa tarde",
@@ -3676,9 +3676,9 @@ const pt: BaseStrings = {
   reportReasonOther: "Outro",
   premiumCta: "Subscrever Premium",
   premiumNote: "As subscrições chegarão em breve. Por agora, nada é cobrado.",
-};
+});
 
-const ru: BaseStrings = {
+const ru = (): BaseStrings => ({
   hello: "Привет",
   goodMorning: "Доброе утро",
   goodAfternoon: "Добрый день",
@@ -4210,9 +4210,9 @@ const ru: BaseStrings = {
   reportReasonOther: "Другое",
   premiumCta: "Перейти на Premium",
   premiumNote: "Подписки скоро появятся. Пока ничего не списывается.",
-};
+});
 
-const zh: BaseStrings = {
+const zh = (): BaseStrings => ({
   hello: "你好",
   goodMorning: "早上好",
   goodAfternoon: "下午好",
@@ -4744,9 +4744,9 @@ const zh: BaseStrings = {
   reportReasonOther: "其他",
   premiumCta: "升级到 Premium",
   premiumNote: "订阅即将上线。目前不会收取任何费用。",
-};
+});
 
-const ja: BaseStrings = {
+const ja = (): BaseStrings => ({
   hello: "こんにちは",
   goodMorning: "おはようございます",
   goodAfternoon: "こんにちは",
@@ -5278,9 +5278,9 @@ const ja: BaseStrings = {
   reportReasonOther: "その他",
   premiumCta: "Premiumにアップグレード",
   premiumNote: "サブスクリプションは近日公開予定です。現時点で課金はありません。",
-};
+});
 
-const ko: BaseStrings = {
+const ko = (): BaseStrings => ({
   hello: "안녕하세요",
   goodMorning: "좋은 아침이에요",
   goodAfternoon: "좋은 오후예요",
@@ -5812,7 +5812,7 @@ const ko: BaseStrings = {
   reportReasonOther: "기타",
   premiumCta: "Premium 시작하기",
   premiumNote: "구독은 곧 제공됩니다. 현재는 어떤 요금도 청구되지 않습니다.",
-};
+});
 
 type BaseStrings = Omit<Strings, keyof V3Strings | keyof V4Strings>;
 
@@ -5826,11 +5826,24 @@ export function format(
   return chosen.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
 }
 
-const base: Record<Lang, BaseStrings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };
+/** Chaque langue est construite à la demande : seules celles utilisées occupent de la mémoire. */
+const base: Record<Lang, () => BaseStrings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };
 
-export const translations = Object.fromEntries(
-  (Object.keys(base) as Lang[]).map((lang) => [lang, { ...base[lang], ...v3Strings(lang), ...v4Strings(lang) }]),
-) as Record<Lang, Strings>;
+const built: Partial<Record<Lang, Strings>> = {};
+
+function build(lang: Lang): Strings {
+  return (built[lang] ??= { ...base[lang](), ...v3Strings(lang), ...v4Strings(lang) });
+}
+
+export const translations = new Proxy({} as Record<Lang, Strings>, {
+  get: (_, lang) => (typeof lang === "string" && lang in base ? build(lang as Lang) : undefined),
+  has: (_, lang) => typeof lang === "string" && lang in base,
+  ownKeys: () => Object.keys(base),
+  getOwnPropertyDescriptor: (_, lang) =>
+    typeof lang === "string" && lang in base
+      ? { enumerable: true, configurable: true, value: build(lang as Lang) }
+      : undefined,
+});
 
 export const LANGUAGE_OPTIONS: { code: Lang; label: string; nativeLabel: string }[] = [
   { code: "en", label: "English", nativeLabel: "English" },
