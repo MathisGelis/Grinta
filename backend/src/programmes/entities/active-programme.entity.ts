@@ -33,9 +33,13 @@ export class ActiveProgramme {
   @JoinColumn({ foreignKeyConstraintName: 'FK_active_programmes_programme' })
   programme: Programme;
 
-  /** Day 1 of the programme, a calendar date (YYYY-MM-DD). */
+  /** The date the user started, a calendar date (YYYY-MM-DD). */
   @Column({ type: 'date' })
   startedOn: string;
+
+  /** The day of the programme `startedOn` is: 1 unless started midway. */
+  @Column({ type: 'int', default: 1 })
+  startDay: number;
 
   @CreateDateColumn()
   createdAt: Date;

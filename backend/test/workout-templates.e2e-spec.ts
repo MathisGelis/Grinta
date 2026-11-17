@@ -170,6 +170,95 @@ describe('Onboarding answers and workout templates (e2e)', () => {
     await as(other).get(`/programmes/${programme.id}`).expect(404);
   });
 
+  it('proposes a template without saving it, ready to save once accepted', async () => {
+    const counts = async () => {
+      const planned = (await as(me).get('/workouts/planned').expect(200))
+        .body as unknown[];
+      const programmes = (await as(me).get('/programmes').expect(200))
+        .body as unknown[];
+
+      return [planned.length, programmes.length];
+    };
+    const before = await counts();
+    const proposal = (
+      await as(me).get('/workouts/templates/upper-lower-4').expect(200)
+    ).body as {
+      saved: boolean;
+      workouts: Array<{
+        title: string;
+        estimatedDurationMinutes: number;
+        exercises: Array<{
+          exerciseId: string;
+          sets: Array<{ reps: number; weight: number }>;
+          plannedRestSeconds: number;
+        }>;
+      }>;
+      programme: {
+        title: string;
+        description: string;
+        weekNumber: number;
+        difficulty: string;
+        locationType: string;
+        days: Array<{ dayNumber: number; workoutIndex: number | null }>;
+      };
+    };
+
+    expect(proposal.saved).toBe(false);
+    expect(proposal.workouts.map((w) => w.title)).toEqual([
+      'Haut du corps',
+      'Bas du corps',
+    ]);
+    expect(proposal.programme).toMatchObject({
+      title: 'Haut / Bas du corps',
+      difficulty: 'INTERMEDIATE',
+      locationType: 'GYM',
+    });
+    expect(proposal.programme.days.map((d) => d.workoutIndex)).toEqual([
+      0,
+      1,
+      null,
+      0,
+      1,
+      null,
+      null,
+    ]);
+    expect(await counts()).toEqual(before);
+
+    // Accepted after an adjustment: saved through the usual routes.
+    const ids: string[] = [];
+
+    for (const workout of proposal.workouts) {
+      const res = await as(me)
+        .post('/workouts/planned')
+        .send({
+          title: workout.title,
+          estimatedDurationMinutes: workout.estimatedDurationMinutes,
+          exercises: workout.exercises.slice(1).map((e) => ({
+            exerciseId: e.exerciseId,
+            sets: e.sets,
+            plannedRestSeconds: e.plannedRestSeconds,
+          })),
+        })
+        .expect(201);
+
+      ids.push((res.body as { id: string }).id);
+    }
+    const { days, ...programme } = proposal.programme;
+
+    await as(me)
+      .post('/programmes')
+      .send({
+        ...programme,
+        days: days.map((d) => ({
+          dayNumber: d.dayNumber,
+          ...(d.workoutIndex !== null && { workoutId: ids[d.workoutIndex] }),
+        })),
+      })
+      .expect(201);
+    expect(await counts()).toEqual([before[0] + 2, before[1] + 1]);
+    await as(me).get('/workouts/templates/nope').expect(404);
+  });
+
   it('answers 404 for an unknown template', () =>
     as(me).post('/workouts/templates/nope/use').expect(404));
 });

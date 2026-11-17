@@ -2,6 +2,8 @@
 
 ## Non publié : deuxième lot de l'audit front
 
+- **Modèles proposés, pas enregistrés** : `GET /workouts/templates/:key` renvoie le programme personnalisé sous forme de proposition, sans rien enregistrer (même forme que le brouillon d'import). `POST /workouts/templates/:key/use` ne sert plus qu'à l'enregistrer quand l'utilisateur accepte.
+- **Programmes** : démarrage à n'importe quel jour (`startDay` sur `POST /programmes/:id/start`, 400 `START_DAY_OUT_OF_RANGE` au-delà du dernier jour) et fin du programme en cours (`DELETE /programmes/active`, 204 ou 404 ; le programme est conservé). Migration réversible `1792605872876-AddActiveProgrammeStartDay` (`startDay`, 1 par défaut pour les programmes déjà en cours).
 - **Catalogue d'exercices traduit** dans les 10 langues de l'app, d'après l'en-tête `Accept-Language`, sur toutes les routes qui renvoient des exercices. Le nom anglais reste la référence en base et est renvoyé dans `englishName`.
   - Les traductions sont des fichiers JSON versionnés (`src/exercise/data/i18n/`), chargés en mémoire : pas de table ni de migration. Les noms sont composés à partir de la base et des variantes (« Développé couché » + « incliné, haltères »).
   - Un intercepteur global traduit les réponses sans modifier les valeurs en cache et en gardant les classes des entités, si bien que les champs exclus (mot de passe) restent masqués.

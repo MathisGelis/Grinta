@@ -7,6 +7,7 @@ import {
   Req,
   Body,
   Delete,
+  HttpCode,
   Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -32,20 +33,43 @@ export class ProgrammesController {
   @ApiOperation({
     summary: 'Start following one of my programmes',
     description:
-      'One programme at a time: starting one replaces the one followed until now. `startDate` (YYYY-MM-DD) is day 1, today (UTC) by default. Returns what that day holds, as GET /programmes/active/today.',
+      'One programme at a time: starting one replaces the one followed until now. `startDate` (YYYY-MM-DD) is the start date, today (UTC) by default. `startDay` is the day of the programme that date is (1 by default), to start midway. Returns what that day holds, as GET /programmes/active/today.',
   })
   @ApiResponse({
     status: 201,
     description: 'Same body as GET /programmes/active/today',
   })
-  @ApiResponse({ status: 400, description: 'Date not in YYYY-MM-DD' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Date not in YYYY-MM-DD, or { code: "START_DAY_OUT_OF_RANGE", cycleLength } for a start day after the last day',
+  })
   @ApiResponse({ status: 404, description: 'Not a programme of mine' })
   start(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: StartProgrammeDto,
   ) {
-    return this.programmesService.startProgramme(req.user, id, dto.startDate);
+    return this.programmesService.startProgramme(
+      req.user,
+      id,
+      dto.startDate,
+      dto.startDay,
+    );
+  }
+
+  // Declared before the ':id' routes.
+  @Delete('active')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Stop following my current programme',
+    description:
+      'The programme and its workouts are kept and can be started again with POST /programmes/:id/start.',
+  })
+  @ApiResponse({ status: 204, description: 'Programme stopped' })
+  @ApiResponse({ status: 404, description: 'No programme started' })
+  async end(@Req() req: AuthenticatedRequest) {
+    await this.programmesService.endProgramme(req.user);
   }
 
   @Get('active/today')

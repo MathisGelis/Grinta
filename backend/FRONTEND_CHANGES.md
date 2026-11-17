@@ -945,3 +945,62 @@ Le serveur renvoie les exercices dans la langue de l'en-tête **`Accept-Language
 - Le cache de la liste fonctionne par langue : l'ETag change avec la langue, et la réponse porte `Vary: Accept-Language`.
 - La recherche locale (`ex.name.includes(…)`) cherche donc dans la langue de l'utilisateur. Pour accepter aussi l'anglais, chercher dans `name` et `englishName`.
 - L'import de notes (`POST /workouts/import`) reconnaît aussi les noms traduits.
+
+### 9.9 Démarrer un programme à n'importe quel jour, y mettre fin
+
+**Démarrer en cours de programme** : `POST /programmes/:id/start` accepte en plus `startDay` (entier, 1 par défaut).
+
+```json
+{ "startDate": "2026-11-17", "startDay": 3 }
+```
+
+- `startDate` devient le jour `startDay` du programme. Le lendemain est le jour 4, et ainsi de suite ; après le dernier jour, le programme reprend au jour 1 (`cycle` passe à 2).
+- `startDay` au-delà du dernier jour : **400** `{ code: "START_DAY_OUT_OF_RANGE", message, cycleLength }`.
+- La réponse, comme celle de `GET /programmes/active/today`, contient en plus `startDay`. `startedOn` reste la vraie date de démarrage.
+
+**Mettre fin au programme en cours** : `DELETE /programmes/active`.
+
+- **204** si un programme était suivi, **404** sinon.
+- Le programme et ses séances sont conservés : on peut le relancer avec `POST /programmes/:id/start`.
+- Ensuite, `GET /programmes/active/today` répond 404 comme avant tout démarrage.
+
+### 9.10 Modèles : proposer au lieu d'enregistrer
+
+Les programmes personnalisés (carrousel d'onboarding, « Créer une séance ») ne doivent plus être enregistrés dès qu'on touche un modèle : l'app les **propose**, et l'utilisateur choisit de les enregistrer.
+
+**`GET /workouts/templates/:key`** renvoie la proposition, **rien n'est enregistré** (`saved: false`). Même forme que le brouillon d'import (9.4) :
+
+```json
+{
+  "key": "upper-lower-4",
+  "saved": false,
+  "workouts": [
+    {
+      "key": "upper",
+      "title": "Haut du corps",
+      "description": null,
+      "estimatedDurationMinutes": 65,
+      "exercises": [
+        { "exerciseId": "…", "name": "Développé couché (barre)", "sets": [{ "reps": 6, "weight": 0 }], "plannedRestSeconds": 150, "durationSeconds": null }
+      ]
+    }
+  ],
+  "programme": {
+    "title": "Haut / Bas du corps",
+    "description": "…",
+    "weekNumber": 1,
+    "difficulty": "INTERMEDIATE",
+    "locationType": "GYM",
+    "days": [{ "dayNumber": 1, "workoutIndex": 0 }, { "dayNumber": 3, "workoutIndex": null }]
+  }
+}
+```
+
+- `difficulty` suit le niveau de l'utilisateur quand le modèle lui convient. `workoutIndex` pointe dans `workouts` ; `null` est un repos.
+- `GET /workouts/templates` (la liste du carrousel) ne change pas et n'enregistre rien.
+
+Pour enregistrer quand l'utilisateur accepte :
+- **tel quel** : `POST /workouts/templates/:key/use` (inchangé) ;
+- **après ajustement** : `POST /workouts/planned` pour chaque séance (en n'envoyant que `title`, `description`, `estimatedDurationMinutes` et, par exercice, `exerciseId`, `sets`, `plannedRestSeconds`), puis `POST /programmes` avec `title`, `description`, `weekNumber`, `difficulty`, `locationType` et les `days` où `workoutIndex` est remplacé par le `workoutId` obtenu (aucun `workoutId` pour un repos).
+
+À changer côté app : `TemplatePicker` appelle aujourd'hui `applyWorkoutTemplate` (donc `use`) dès qu'on touche un modèle. Il faut d'abord afficher la proposition, puis n'appeler `use` (ou les routes ci-dessus) qu'à la validation.

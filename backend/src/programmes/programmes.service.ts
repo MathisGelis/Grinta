@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Programme } from './entities/programme.entity';
@@ -128,32 +132,64 @@ export class ProgrammesService {
   }
 
   /**
-   * Starts following one of the user's programmes, from `startDate` (day 1),
-   * today by default. It replaces the programme followed until now, if any.
-   * Returns what the start date holds, as GET /programmes/active/today.
+   * Starts following one of the user's programmes on `startDate`, today by
+   * default. `startDay` is the day of the programme that date is (1 by
+   * default), to start midway: at most the programme's last day. It
+   * replaces the programme followed until now, if any. Returns what the
+   * start date holds, as GET /programmes/active/today.
    */
   async startProgramme(
     user: AuthUser,
     programmeId: string,
     startDate?: string,
+    startDay = 1,
   ) {
-    const owned = await this.programmeRepo.exists({
-      where: { id: programmeId, user: { id: user.id } },
-    });
+    const [programme] = await this.programmeRepo.manager.query<
+      Array<{ lastDay: number | null }>
+    >(
+      `SELECT (SELECT MAX(d."dayNumber") FROM programme_days d
+                WHERE d."programmeId" = p.id) AS "lastDay"
+         FROM programmes p WHERE p.id = $1 AND p."userId" = $2`,
+      [programmeId, user.id],
+    );
 
-    if (!owned) throw new NotFoundException('Programme not found');
+    if (!programme) throw new NotFoundException('Programme not found');
+    const cycleLength = Math.max(1, programme.lastDay ?? 1);
+
+    if (startDay > cycleLength)
+      throw new BadRequestException({
+        statusCode: 400,
+        code: 'START_DAY_OUT_OF_RANGE',
+        message: `Ce programme compte ${cycleLength} jour${cycleLength > 1 ? 's' : ''} : choisissez un jour entre 1 et ${cycleLength}.`,
+        cycleLength,
+      });
     const startedOn = startDate ?? todayUtc();
 
     await this.programmeRepo.manager.query(
-      `INSERT INTO active_programmes ("userId", "programmeId", "startedOn")
-       VALUES ($1, $2, $3)
+      `INSERT INTO active_programmes ("userId", "programmeId", "startedOn", "startDay")
+       VALUES ($1, $2, $3, $4)
        ON CONFLICT ("userId") DO UPDATE
          SET "programmeId" = EXCLUDED."programmeId",
              "startedOn" = EXCLUDED."startedOn",
+             "startDay" = EXCLUDED."startDay",
              "createdAt" = now()`,
-      [user.id, programmeId, startedOn],
+      [user.id, programmeId, startedOn, startDay],
     );
     return this.todaysWorkout(user, startedOn);
+  }
+
+  /**
+   * Stops following the current programme. The programme itself and its
+   * workouts are kept, and can be started again. 404 when none is followed.
+   */
+  async endProgramme(user: AuthUser): Promise<void> {
+    const [deleted] = await this.programmeRepo.manager.query<unknown[][]>(
+      `DELETE FROM active_programmes WHERE "userId" = $1 RETURNING id`,
+      [user.id],
+    );
+
+    if (!deleted.length)
+      throw new NotFoundException('Aucun programme en cours.');
   }
 
   /**
@@ -166,9 +202,10 @@ export class ProgrammesService {
   async todaysWorkout(user: AuthUser, date = todayUtc()) {
     // to_char: the pg driver would turn a DATE into a Date at local midnight.
     const [active] = await this.programmeRepo.manager.query<
-      Array<{ programmeId: string; startedOn: string }>
+      Array<{ programmeId: string; startedOn: string; startDay: number }>
     >(
-      `SELECT "programmeId", to_char("startedOn", 'YYYY-MM-DD') AS "startedOn"
+      `SELECT "programmeId", "startDay",
+              to_char("startedOn", 'YYYY-MM-DD') AS "startedOn"
          FROM active_programmes WHERE "userId" = $1`,
       [user.id],
     );
@@ -180,10 +217,17 @@ export class ProgrammesService {
     });
     // A programme edited down to no day at all is all rest.
     const cycleLength = Math.max(1, ...programme.days.map((d) => d.dayNumber));
-    const position = programmePositionOn(active.startedOn, date, cycleLength);
+    const position = programmePositionOn(
+      active.startedOn,
+      date,
+      cycleLength,
+      // A programme edited down to fewer days than the start day.
+      Math.min(active.startDay, cycleLength),
+    );
     const base = {
       programme: { id: programme.id, title: programme.title },
       startedOn: active.startedOn,
+      startDay: active.startDay,
       date,
       cycleLength,
     };
