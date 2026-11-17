@@ -30,6 +30,7 @@ import MuscleMap from "@/components/ui/MuscleMap";
 import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
 import { getExercisesById, type Exercise } from "@/services/exercises.service";
 import { DetailSkeleton, ExerciseListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 const SECONDS_PER_SET = 45;
 
 const maxWeight = (sets: { weight: number }[]) =>
@@ -278,24 +279,8 @@ export default function CurrentWorkoutScreen() {
       </View>
 
       {workouts.length === 0 ? (
-        <View
-          className="flex-1 justify-center items-center px-8"
-        >
-          <Ionicons
-            name="barbell-outline"
-            size={64}
-            color={WorkoutTheme.text.tertiary}
-          />
-          <Text
-            className="text-base text-ink-soft mt-4 text-center"
-          >
-            {t.noWorkoutCreated}
-          </Text>
-          <Text
-            className="text-sm text-ink-muted mt-2 text-center"
-          >
-            {t.createWorkoutHint}
-          </Text>
+        <View className="flex-1 justify-center px-4">
+          <EmptyState icon="barbell-outline" title={t.noWorkoutCreated} message={t.createWorkoutHint} />
         </View>
       ) : (
         <>
@@ -562,16 +547,7 @@ export default function CurrentWorkoutScreen() {
                 })}
 
                 {filteredWorkouts.length === 0 && !suggestion?.suggestion && (
-                  <View className="items-center gap-2 rounded-card bg-raised p-8">
-                    <Ionicons
-                      name="barbell-outline"
-                      size={28}
-                      color={WorkoutTheme.text.tertiary}
-                    />
-                    <Text className="text-center text-sm text-ink-muted">
-                      {t.noWorkoutFound}
-                    </Text>
-                  </View>
+                  <EmptyState plain icon="barbell-outline" title={t.noWorkoutFound} />
                 )}
               </ScrollView>
 

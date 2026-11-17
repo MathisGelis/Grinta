@@ -2,7 +2,6 @@ import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useMemo, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -28,6 +27,7 @@ import { Badge, BadgesService } from "@/services/badges.service";
 import type { MuscleValue } from "@/utils/muscles";
 import CompareSheet from "@/components/workout/exercises/CompareSheet";
 import { DetailSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function ExerciseDetailScreen() {
   const { formatWeight } = useUnits();
@@ -268,12 +268,7 @@ export default function ExerciseDetailScreen() {
                 </View>
               </View>
             ) : (
-              <View className="items-center gap-2 rounded-tile bg-raised p-6">
-                <Ionicons name="stats-chart-outline" size={26} color={WorkoutTheme.text.tertiary} />
-                <Text className="text-center text-sm text-ink-muted">
-                  {t.noExerciseStats}
-                </Text>
-              </View>
+              <EmptyState plain icon="stats-chart-outline" title={t.noExerciseStats} />
             )}
           </Card>
 

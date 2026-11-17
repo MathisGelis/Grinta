@@ -8,6 +8,7 @@ import ExerciseSetupItem, {
 
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import EmptyState from "@/components/ui/EmptyState";
 interface ExerciseSectionProps {
   exercises: ExerciseSetupData[];
   onAdd: () => void;
@@ -70,19 +71,7 @@ export default function ExerciseSection({
           ))}
         </View>
       ) : (
-        <View className="items-center gap-3 p-8">
-          <Ionicons
-            name="barbell"
-            size={32}
-            color={WorkoutTheme.text.tertiary}
-          />
-          <Text className="text-base font-semibold text-ink-soft">
-            {t.noExercisesAdded}
-          </Text>
-          <Text className="text-center text-sm text-ink-muted">
-            {t.tapToAddExercise}
-          </Text>
-        </View>
+        <EmptyState plain icon="barbell-outline" title={t.noExercisesAdded} message={t.tapToAddExercise} />
       )}
     </View>
   );

@@ -513,9 +513,7 @@ export function usePostInteractions(
               </Animated.View>
             </View>
           ) : (
-            <Text className="text-sm text-ink-muted">
-              {t.noContentAvailable}
-            </Text>
+            <EmptyState plain icon="albums-outline" title={t.noContentAvailable} />
           )}
           {reportCommentId && postModalType === "comments" ? (
             <View className="absolute inset-0 gap-4 rounded-t-hero bg-surface px-5 pb-6 pt-6">

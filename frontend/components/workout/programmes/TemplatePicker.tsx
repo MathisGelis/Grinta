@@ -14,6 +14,7 @@ import {
 import { localDate } from "@/utils/date";
 import { normalizeText } from "@/utils/text";
 import { ListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Props = {
   /** Filtre local sur le titre et la description. */
@@ -65,9 +66,11 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
     : templates;
   if (visible.length === 0) {
     return (
-      <Text className="py-6 text-center text-sm text-ink-muted">
-        {templates.length === 0 ? t.tplEmpty : t.noResultsLabel}
-      </Text>
+      <EmptyState
+        plain
+        icon="albums-outline"
+        title={templates.length === 0 ? t.tplEmpty : t.noResultsLabel}
+      />
     );
   }
 

@@ -10,6 +10,7 @@ import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { ExerciseListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface Exercise {
@@ -102,9 +103,7 @@ export default function WorkoutDetailScreen() {
         {loading ? (
           <ExerciseListSkeleton count={3} />
         ) : exercises.length === 0 ? (
-          <View className="bg-raised rounded-tile p-5 items-center">
-            <Text className="text-ink-faint text-sm">{t.noExerciseAvailable}</Text>
-          </View>
+          <EmptyState plain icon="barbell-outline" title={t.noExerciseAvailable} />
         ) : (
           exercises.map((ex) => (
             <View key={ex.id} className="flex-row items-center bg-raised rounded-tile p-3.5 mb-2.5">

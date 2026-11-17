@@ -9,6 +9,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 
 import PressableScale from "@/components/ui/PressableScale";
 import { format } from "@/i18n/translations";
+import EmptyState from "@/components/ui/EmptyState";
 interface OtherExercisesSectionProps {
   exercises: WorkoutExercise[];
   currentExerciseIndex: number;
@@ -116,9 +117,7 @@ export default function OtherExercisesSection({
             })}
           </ScrollView>
         ) : (
-          <View className="mx-5 items-center rounded-card bg-surface p-6">
-            <Text className="text-sm text-ink-muted">{t.noOtherExercise}</Text>
-          </View>
+          <EmptyState icon="barbell-outline" title={t.noOtherExercise} className="mx-5" />
         )}
       </View>
 

@@ -30,6 +30,7 @@ import PressableScale from "@/components/ui/PressableScale";
 import IconButton from "@/components/ui/IconButton";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import EmptyState from "@/components/ui/EmptyState";
 
 /** Hauteur fixe d'une ligne : le calcul des positions pendant le glisser n'a besoin d'aucune mesure. */
 const ROW_HEIGHT = 64;
@@ -376,14 +377,7 @@ export default function ProgrammeDayEditor({
       >
         {listHeader}
         {days.length === 0 ? (
-          <View className="items-center py-6">
-            <Ionicons
-              name="calendar-outline"
-              size={36}
-              color={WorkoutTheme.text.secondary}
-            />
-            <Text className="mt-2 text-sm text-ink-soft">{t.noDaysYet}</Text>
-          </View>
+          <EmptyState plain icon="calendar-outline" title={t.noDaysYet} />
         ) : (
           <View style={{ height: days.length * PITCH - ROW_GAP }}>
             {days.map((item, index) => (
@@ -432,14 +426,7 @@ export default function ProgrammeDayEditor({
               showsVerticalScrollIndicator={false}
             >
               {availableWorkouts.length === 0 ? (
-                <View className="items-center py-6">
-                  <Text className="text-sm text-ink-soft">
-                    {t.noWorkoutAvailable}
-                  </Text>
-                  <Text className="mt-1 text-xs text-ink-soft">
-                    {t.createWorkoutFirst}
-                  </Text>
-                </View>
+                <EmptyState plain icon="barbell-outline" title={t.noWorkoutAvailable} message={t.createWorkoutFirst} />
               ) : (
                 availableWorkouts.map((workout) => (
                   <PressableScale

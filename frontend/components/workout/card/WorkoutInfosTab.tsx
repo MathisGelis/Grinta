@@ -12,6 +12,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import Card from "@/components/ui/Card";
 import { useTranslation } from "@/contexts/LanguageContext";
+import EmptyState from "@/components/ui/EmptyState";
 interface WorkoutInfosTabProps {
   isEditing: boolean;
   editedExercises: ExerciseSetupData[];
@@ -52,11 +53,7 @@ export default function WorkoutInfosTab({
         </View>
 
         {editedExercises.length === 0 ? (
-          <View className="items-center rounded-tile bg-raised p-6">
-            <Text className="text-center text-sm text-ink-muted">
-              {t.noExerciseShort}
-            </Text>
-          </View>
+          <EmptyState plain icon="barbell-outline" title={t.noExerciseShort} />
         ) : isEditing ? (
           editedExercises.map((exercise, index) => (
             <ExerciseSetupItem

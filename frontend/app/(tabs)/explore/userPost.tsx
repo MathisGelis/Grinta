@@ -31,6 +31,7 @@ import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LOCALES } from "@/i18n/labels";
 import { PostCardSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 export default function UserPostScreen() {
   const { t, lang } = useTranslation();
   const { formatWeight, formatVolume } = useUnits();
@@ -333,11 +334,7 @@ export default function UserPostScreen() {
               ) : null}
             </View>
           ) : (
-            <View className="bg-raised rounded-tile p-[18px] items-center justify-center">
-              <Text className="text-ink-muted text-sm">
-                {t.noLinkedWorkout}
-              </Text>
-            </View>
+            <EmptyState plain icon="barbell-outline" title={t.noLinkedWorkout} />
           )}
 
         </View>

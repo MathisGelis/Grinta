@@ -1,6 +1,5 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { FlatList, Keyboard, Platform, Text, View, useWindowDimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Modal from "@/components/ui/AppModal";
 import Chip from "@/components/ui/Chip";
@@ -8,11 +7,11 @@ import IconButton from "@/components/ui/IconButton";
 import PressableScale from "@/components/ui/PressableScale";
 import GlassSearchBar from "@/components/GlassSearchBar";
 import { WorkoutSort } from "@/components/workout/WorkoutSortSheet";
-import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { PlannedWorkout } from "@/services/workouts.service";
 import { normalizeText } from "@/utils/text";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Props = {
   visible: boolean;
@@ -128,15 +127,12 @@ function WorkoutPickerSheet({ visible, workouts, onClose, onSelect, onCreate }: 
               </PressableScale>
             )}
             ListEmptyComponent={
-              <View className="flex-1 items-center justify-center py-10">
-                <Ionicons name="barbell-outline" size={40} color={WorkoutTheme.text.tertiary} />
-                <Text className="mt-4 text-sm text-ink-soft">
-                  {workouts.length === 0 ? t.noWorkoutAvailable : t.noResultsLabel}
-                </Text>
-                {workouts.length === 0 && (
-                  <Text className="mt-1 text-xs text-ink-soft">{t.createWorkoutFirst}</Text>
-                )}
-              </View>
+              <EmptyState
+                plain
+                icon="barbell-outline"
+                title={workouts.length === 0 ? t.noWorkoutAvailable : t.noResultsLabel}
+                message={workouts.length === 0 ? t.createWorkoutFirst : undefined}
+              />
             }
           />
 
