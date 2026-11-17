@@ -945,3 +945,21 @@ Le serveur renvoie les exercices dans la langue de l'en-tête **`Accept-Language
 - Le cache de la liste fonctionne par langue : l'ETag change avec la langue, et la réponse porte `Vary: Accept-Language`.
 - La recherche locale (`ex.name.includes(…)`) cherche donc dans la langue de l'utilisateur. Pour accepter aussi l'anglais, chercher dans `name` et `englishName`.
 - L'import de notes (`POST /workouts/import`) reconnaît aussi les noms traduits.
+
+### 9.9 Démarrer un programme à n'importe quel jour, y mettre fin
+
+**Démarrer en cours de programme** : `POST /programmes/:id/start` accepte en plus `startDay` (entier, 1 par défaut).
+
+```json
+{ "startDate": "2026-11-17", "startDay": 3 }
+```
+
+- `startDate` devient le jour `startDay` du programme. Le lendemain est le jour 4, et ainsi de suite ; après le dernier jour, le programme reprend au jour 1 (`cycle` passe à 2).
+- `startDay` au-delà du dernier jour : **400** `{ code: "START_DAY_OUT_OF_RANGE", message, cycleLength }`.
+- La réponse, comme celle de `GET /programmes/active/today`, contient en plus `startDay`. `startedOn` reste la vraie date de démarrage.
+
+**Mettre fin au programme en cours** : `DELETE /programmes/active`.
+
+- **204** si un programme était suivi, **404** sinon.
+- Le programme et ses séances sont conservés : on peut le relancer avec `POST /programmes/:id/start`.
+- Ensuite, `GET /programmes/active/today` répond 404 comme avant tout démarrage.

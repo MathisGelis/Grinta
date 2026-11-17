@@ -18,22 +18,26 @@ export function daysBetween(from: string, to: string): number {
 
 /**
  * The day of the programme for a date, counting calendar days from the start:
- * the start date is day 1, the next date day 2, whether or not the user
- * trained. After the last day the programme starts over, and `cycle` counts
- * the rounds (1 for the first one).
+ * the start date is day `startDay` (1 by default), the next date the day
+ * after, whether or not the user trained. After the last day the programme
+ * starts over, and `cycle` counts the rounds (1 for the first one, even when
+ * it began on a later day).
  */
 export function programmePositionOn(
   startedOn: string,
   date: string,
   cycleLength: number,
+  startDay = 1,
 ): ProgrammePosition {
   const elapsed = daysBetween(startedOn, date);
 
   if (elapsed < 0) return { status: 'not_started', daysUntilStart: -elapsed };
+  const fromDayOne = elapsed + startDay - 1;
+
   return {
     status: 'running',
-    dayNumber: (elapsed % cycleLength) + 1,
-    cycle: Math.floor(elapsed / cycleLength) + 1,
+    dayNumber: (fromDayOne % cycleLength) + 1,
+    cycle: Math.floor(fromDayOne / cycleLength) + 1,
   };
 }
 

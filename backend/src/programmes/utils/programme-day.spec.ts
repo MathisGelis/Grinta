@@ -1,6 +1,28 @@
 import { daysBetween, programmePositionOn, todayUtc } from './programme-day';
 
 describe('programmePositionOn', () => {
+  it('starts midway on the chosen day, then follows the cycle', () => {
+    expect(programmePositionOn('2026-10-26', '2026-10-26', 7, 4)).toEqual({
+      status: 'running',
+      dayNumber: 4,
+      cycle: 1,
+    });
+    expect(programmePositionOn('2026-10-26', '2026-10-29', 7, 4)).toEqual({
+      status: 'running',
+      dayNumber: 7,
+      cycle: 1,
+    });
+    expect(programmePositionOn('2026-10-26', '2026-10-30', 7, 4)).toEqual({
+      status: 'running',
+      dayNumber: 1,
+      cycle: 2,
+    });
+    expect(programmePositionOn('2026-10-26', '2026-10-24', 7, 4)).toEqual({
+      status: 'not_started',
+      daysUntilStart: 2,
+    });
+  });
+
   it('counts the start date as day 1, then one day per calendar day', () => {
     expect(programmePositionOn('2026-10-26', '2026-10-26', 7)).toEqual({
       status: 'running',
