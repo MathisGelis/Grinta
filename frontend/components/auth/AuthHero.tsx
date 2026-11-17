@@ -38,7 +38,7 @@ export default function AuthHero({ image, active, title, subtitle }: Props) {
             id="auth-tabs"
             value={active}
             onChange={(tab) =>
-              router.replace(tab === "login" ? "/(auth)/LoginScreen" : "/(auth)/RegisterScreen")
+              router.replace(tab === "login" ? "/(auth)/LoginScreen" : "/(auth)/onboarding/GenderScreen")
             }
             options={[
               { value: "login", label: t.login },

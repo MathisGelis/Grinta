@@ -59,7 +59,7 @@ export type Level = "beginner" | "intermediate" | "advanced";
 export type TrainingLocation = "gym" | "home";
 export type Goal = "gain_weight" | "lose_weight" | "get_fitter" | "flexibility" | "learn_basics";
 
-interface UpdateUserData {
+export interface UpdateUserData {
   displayName?: string;
   uniqueName?: string;
   email?: string;

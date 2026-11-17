@@ -2,6 +2,8 @@ import { clearUserSession } from "@/services/session.service";
 import { AuthService } from "@/services/auth.service";
 import { TokenService } from "@/services/token.service";
 import { saveItem } from "@/core/services/storage";
+import { UserService } from "@/services/user.service";
+import { takeOnboardingDraft } from "@/utils/onboardingDraft";
 import React, { useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { router } from "expo-router";
@@ -60,7 +62,12 @@ export default function RegisterScreen() {
       await TokenService.save(response.access_token);
       await saveItem("user_id", response.id);
       await saveItem("user_name", name);
-      router.replace("/(auth)/onboarding/GenderScreen");
+      // Réponses du questionnaire : le compte existe déjà, un échec ici ne doit pas bloquer l'inscription.
+      const profile = takeOnboardingDraft();
+      if (Object.keys(profile).length > 0) {
+        await UserService.updateProfile(response.id, profile).catch(() => {});
+      }
+      router.replace("/(auth)/onboarding/TemplatesScreen");
     } catch (err: any) {
       setError(err.message || t.genericError);
     } finally {

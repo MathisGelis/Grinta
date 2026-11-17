@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -11,12 +11,15 @@ import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useBlockHardwareBack } from "@/hooks/useBlockHardwareBack";
+import { clearOnboardingDraft } from "@/utils/onboardingDraft";
 const CIRCLE = 140;
 
 export default function GenderScreen() {
   const { t } = useTranslation();
-  // Première page de l'inscription: un retour sortirait de l'onboarding vers l'app.
+  // Première page du questionnaire: un retour sortirait de l'onboarding.
   useBlockHardwareBack();
+  // Nouveau passage dans le questionnaire : on repart de zéro.
+  useEffect(() => clearOnboardingDraft(), []);
   const once = useNavLock();
   const [selected, setSelected] = useState<"male" | "female" | null>(null);
 

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { DrumRollPicker } from "@/components/DrumRollPicker";
-import { UserService, type Gender, type Goal } from "@/services/user.service";
-import { getItem } from "@/core/services/storage";
+import type { Gender, Goal } from "@/services/user.service";
+import { mergeOnboardingDraft } from "@/utils/onboardingDraft";
 
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import OnboardingNav from "@/components/ui/OnboardingNav";
@@ -25,31 +25,19 @@ export default function GoalScreen() {
     height: string;
   }>();
   const [goalIndex, setGoalIndex] = useState(2);
-  const [loading, setLoading] = useState(false);
 
-  const handleFinish = async (withGoal = true) => {
-    setLoading(true);
-    try {
-      const userId = await getItem("user_id");
-      const age = parseInt(params.age);
-      const height = parseInt(params.height);
-      const weight = parseInt(params.weight);
-      const data = {
-        ...(Number.isNaN(age) ? {} : { birthDate: `${new Date().getFullYear() - age}-01-01` }),
-        ...(Number.isNaN(height) ? {} : { height }),
-        ...(Number.isNaN(weight) ? {} : { weight }),
-        ...(params.gender ? { gender: params.gender as Gender } : {}),
-        ...(withGoal ? { goal: GOALS[goalIndex].id } : {}),
-      };
-      if (userId && Object.keys(data).length > 0) {
-        await UserService.updateProfile(userId, data);
-      }
-      router.replace("/(auth)/onboarding/TrainingScreen" as any);
-    } catch (err) {
-      Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
-    } finally {
-      setLoading(false);
-    }
+  const handleFinish = (withGoal = true) => {
+    const age = parseInt(params.age);
+    const height = parseInt(params.height);
+    const weight = parseInt(params.weight);
+    mergeOnboardingDraft({
+      ...(Number.isNaN(age) ? {} : { birthDate: `${new Date().getFullYear() - age}-01-01` }),
+      ...(Number.isNaN(height) ? {} : { height }),
+      ...(Number.isNaN(weight) ? {} : { weight }),
+      ...(params.gender ? { gender: params.gender as Gender } : {}),
+      ...(withGoal ? { goal: GOALS[goalIndex].id } : {}),
+    });
+    router.push("/(auth)/onboarding/TrainingScreen" as any);
   };
 
   return (
@@ -72,7 +60,6 @@ export default function GoalScreen() {
         nextLabel={t.nextBtn}
         onSkip={() => handleFinish(false)}
         skipLabel={t.skipBtn}
-        loading={loading}
       />
     </View>
   );

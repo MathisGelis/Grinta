@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Alert, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { router } from "expo-router";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import OnboardingNav from "@/components/ui/OnboardingNav";
 import Chip from "@/components/ui/Chip";
-import { getItem } from "@/core/services/storage";
-import { UserService, type Level, type TrainingLocation } from "@/services/user.service";
+import type { Level, TrainingLocation } from "@/services/user.service";
+import { mergeOnboardingDraft } from "@/utils/onboardingDraft";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 
@@ -24,27 +24,13 @@ export default function TrainingScreen() {
   const [level, setLevel] = useState<Level>("beginner");
   const [days, setDays] = useState(3);
   const [location, setLocation] = useState<TrainingLocation>("gym");
-  const [loading, setLoading] = useState(false);
 
-  const next = () => router.replace("/(auth)/onboarding/TemplatesScreen" as any);
+  // Dernière question : on crée le compte, le profil sera enregistré juste après.
+  const next = () => router.push("/(auth)/RegisterScreen" as any);
 
-  const save = async () => {
-    setLoading(true);
-    try {
-      const userId = await getItem("user_id");
-      if (userId) {
-        await UserService.updateProfile(userId, {
-          level,
-          trainingDaysPerWeek: days,
-          trainingLocation: location,
-        });
-      }
-      next();
-    } catch (err) {
-      Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
-    } finally {
-      setLoading(false);
-    }
+  const save = () => {
+    mergeOnboardingDraft({ level, trainingDaysPerWeek: days, trainingLocation: location });
+    next();
   };
 
   return (
@@ -94,7 +80,6 @@ export default function TrainingScreen() {
         nextLabel={t.obContinue}
         onSkip={next}
         skipLabel={t.skipBtn}
-        loading={loading}
       />
     </View>
   );
