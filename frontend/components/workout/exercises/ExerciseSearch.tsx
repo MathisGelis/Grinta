@@ -19,6 +19,7 @@ import BottomBlur from "@/components/ui/BottomBlur";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { normalizeText } from "@/utils/text";
 import { ExerciseListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface ExerciseSearchProps {
   visible: boolean;
@@ -164,10 +165,7 @@ export default function ExerciseSearch({
               );
             }}
             ListEmptyComponent={
-              <View className="flex-1 items-center justify-center py-10">
-                <Ionicons name="barbell-outline" size={40} color={WorkoutTheme.text.tertiary} />
-                <Text className="mt-4 text-sm text-ink-soft">{t.noExerciseFound}</Text>
-              </View>
+              <EmptyState plain icon="barbell-outline" title={t.noExerciseFound} />
             }
           />
         )}

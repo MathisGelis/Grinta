@@ -11,6 +11,7 @@ import SearchUserCard from "@/components/explorePage/SearchUserCard";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { UserListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 export default function SearchScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -38,11 +39,7 @@ export default function SearchScreen() {
         {loading ? (
           <UserListSkeleton count={6} action />
         ) : searchAttempted && results.length === 0 && query.trim() ? (
-          <View className="items-center justify-center py-8">
-            <Text className="text-ink-muted text-base">
-              {format(t.noUsersFound, { query })}
-            </Text>
-          </View>
+          <EmptyState icon="search-outline" title={format(t.noUsersFound, { query })} />
         ) : results.length > 0 ? (
           <View className="gap-3">
             {results.map((user) => (

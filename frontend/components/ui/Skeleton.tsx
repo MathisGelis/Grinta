@@ -1,17 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
 } from "react-native-reanimated";
 
 /**
- * Briques de base des squelettes de chargement : un bloc qui pulse doucement.
+ * Briques de base des squelettes de chargement : un bloc avec un reflet qui le traverse (shimmer).
  * `tone` = couleur du bloc : "raised" sur une carte (bg-surface), "surface" directement sur le fond.
  */
 type Tone = "surface" | "raised";
@@ -26,6 +26,7 @@ type BlockProps = {
 };
 
 const TONE_CLASS: Record<Tone, string> = { surface: "bg-surface", raised: "bg-raised" };
+const SHEEN = ["rgba(255,255,255,0)", "rgba(255,255,255,0.10)", "rgba(255,255,255,0)"] as const;
 
 export function Skeleton({
   width = "100%",
@@ -36,30 +37,45 @@ export function Skeleton({
   style,
 }: BlockProps) {
   const reduced = useReducedMotion();
-  const opacity = useSharedValue(1);
+  const [w, setW] = useState(0);
+  const progress = useSharedValue(0);
 
   useEffect(() => {
     if (reduced) return;
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.45, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-      ),
+    progress.value = 0;
+    progress.value = withRepeat(
+      withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
       -1,
     );
-  }, [opacity, reduced]);
+  }, [progress, reduced]);
 
-  const animated = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const sheen = useAnimatedStyle(() => ({
+    transform: [{ translateX: -w + progress.value * w * 2 }],
+  }));
 
   return (
-    <Animated.View
+    <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      className={`${TONE_CLASS[tone]} ${className}`}
-      style={[{ width, height, borderRadius: radius, borderCurve: "continuous" }, animated, style]}
-    />
+      onLayout={(e) => setW(e.nativeEvent.layout.width)}
+      className={`overflow-hidden ${TONE_CLASS[tone]} ${className}`}
+      style={[{ width, height, borderRadius: radius, borderCurve: "continuous" }, style]}
+    >
+      {reduced || w === 0 ? null : (
+        <Animated.View style={[{ ...StyleSheetFill, width: w }, sheen]}>
+          <LinearGradient
+            colors={SHEEN}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+      )}
+    </View>
   );
 }
+
+const StyleSheetFill = { position: "absolute", top: 0, bottom: 0, left: 0 } as const;
 
 export function SkeletonCircle({ size = 40, ...rest }: Omit<BlockProps, "width" | "height" | "radius"> & { size?: number }) {
   return <Skeleton {...rest} width={size} height={size} radius={size / 2} />;

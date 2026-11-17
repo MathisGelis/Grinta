@@ -10,13 +10,15 @@ type Props = {
   message?: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** Sans fond ni arrondi : à utiliser dans une feuille ou une carte qui a déjà le sien. */
+  plain?: boolean;
   className?: string;
 };
 
 /** État vide d'une liste ou d'un écran : pastille d'icône, titre, indication et action facultative. */
-export default function EmptyState({ icon, title, message, actionLabel, onAction, className = "" }: Props) {
+export default function EmptyState({ icon, title, message, actionLabel, onAction, plain, className = "" }: Props) {
   return (
-    <View className={`items-center gap-3 rounded-card bg-surface p-8 ${className}`}>
+    <View className={`items-center gap-3 ${plain ? "py-6" : "rounded-card bg-surface p-8"} ${className}`}>
       <View className="h-16 w-16 items-center justify-center rounded-full bg-accent-tint">
         <Ionicons name={icon} size={28} color={WorkoutTheme.accent.purple} />
       </View>

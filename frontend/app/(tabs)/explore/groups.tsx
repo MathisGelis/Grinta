@@ -21,6 +21,7 @@ import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/FormField";
 import { ListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function GroupsScreen() {
   const headerHeight = useFloatingHeaderHeight();
@@ -174,7 +175,7 @@ export default function GroupsScreen() {
           ) : null}
 
           {groups.length === 0 ? (
-            <Text className="py-6 text-center text-sm text-ink-muted">{t.grpEmpty}</Text>
+            <EmptyState icon="people-outline" title={t.grpEmpty} />
           ) : (
             groups.map((group) => (
               <PressableScale

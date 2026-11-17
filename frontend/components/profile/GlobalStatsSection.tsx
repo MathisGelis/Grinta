@@ -24,6 +24,7 @@ import SectionHeader from "@/components/ui/SectionHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Stat from "@/components/ui/Stat";
 import { StatsSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 const TOP_MUSCLES = 6;
 
@@ -186,9 +187,7 @@ export default function GlobalStatsSection({ userId }: Props) {
       ) : null}
 
       {empty ? (
-        <View className="items-center rounded-card bg-surface p-8">
-          <Text className="text-base text-ink-muted">{t.noStatsYet}</Text>
-        </View>
+        <EmptyState icon="stats-chart-outline" title={t.noStatsYet} />
       ) : null}
 
       {!userId ? <ComparisonCard period={period} /> : null}

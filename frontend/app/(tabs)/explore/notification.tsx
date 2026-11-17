@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { router } from "expo-router";
 import { Directions, Gesture, GestureDetector } from "react-native-gesture-handler";
 
-import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Card from "@/components/ui/Card";
+import EmptyState from "@/components/ui/EmptyState";
 export default function NotificationsScreen() {
   const { t } = useTranslation();
   const headerHeight = useFloatingHeaderHeight();
@@ -45,10 +44,7 @@ export default function NotificationsScreen() {
         />
 
         {tab === "notifications" ? (
-          <View className="items-center mt-16 gap-3">
-            <Ionicons name="notifications-off-outline" size={48} color={WorkoutTheme.text.disabled} />
-            <Text className="text-ink-faint text-base">{t.noNotifications}</Text>
-          </View>
+          <EmptyState icon="notifications-off-outline" title={t.noNotifications} className="mt-4" />
         ) : (
           <Card size="card" className="gap-3 overflow-hidden p-0">
             <Image

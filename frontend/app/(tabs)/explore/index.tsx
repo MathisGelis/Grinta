@@ -14,6 +14,7 @@ import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
 import Button from "@/components/ui/Button";
 import { PostListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
   if (hour < 12) return "goodMorning";
@@ -158,16 +159,13 @@ export default function ExploreScreen() {
             ) : (
               <View className="min-h-[330px] items-center justify-center gap-4 rounded-card bg-surface p-8">
                 {postFeed === "followed" ? (
-                  <>
-                    <Text className="text-center text-base font-semibold text-ink-muted">
-                      {t.noFollowedPosts}
-                    </Text>
-                    <Button
-                      icon="search"
-                      label={t.findAthletes}
-                      onPress={() => router.push("/(tabs)/explore/search" as any)}
-                    />
-                  </>
+                  <EmptyState
+                    plain
+                    icon="people-outline"
+                    title={t.noFollowedPosts}
+                    actionLabel={t.findAthletes}
+                    onAction={() => router.push("/(tabs)/explore/search" as any)}
+                  />
                 ) : (
                   <>
                     <Text className="text-center text-lg font-semibold text-ink">

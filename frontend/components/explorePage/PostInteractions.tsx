@@ -25,6 +25,7 @@ import Chip from "@/components/ui/Chip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { UserListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 const COMMENT_MAX_LENGTH = 500;
 
@@ -337,12 +338,7 @@ export function usePostInteractions(
                   ))}
                 </View>
               ) : (
-                <View className="items-center gap-2 rounded-card bg-raised p-8">
-                  <Ionicons name="heart-outline" size={28} color={WorkoutTheme.text.tertiary} />
-                  <Text className="text-center text-sm text-ink-muted">
-                    {t.noLikesOnPost}
-                  </Text>
-                </View>
+                <EmptyState plain icon="heart-outline" title={t.noLikesOnPost} />
               )}
             </ScrollView>
           ) : postModalType === "comments" ? (
@@ -475,12 +471,7 @@ export function usePostInteractions(
                     })}
                   </View>
                 ) : (
-                  <View className="items-center gap-3">
-                    <Ionicons name="chatbubble-outline" size={36} color={WorkoutTheme.text.tertiary} />
-                    <Text className="text-center text-sm text-ink-muted">
-                      {t.noCommentsOnPost}
-                    </Text>
-                  </View>
+                  <EmptyState plain icon="chatbubble-outline" title={t.noCommentsOnPost} />
                 )}
               </ScrollView>
 

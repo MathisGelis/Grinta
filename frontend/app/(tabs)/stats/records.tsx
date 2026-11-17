@@ -3,7 +3,7 @@ import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ScrollView, Text, View } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
@@ -19,6 +19,7 @@ import PressableScale from "@/components/ui/PressableScale";
 import Stat from "@/components/ui/Stat";
 import BadgeList from "@/components/workout/badges/BadgeList";
 import { ListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Tab = "exercises" | "badges";
 
@@ -58,13 +59,7 @@ export default function RecordsScreen() {
   const muscle = (key: string) => t.muscleNames[key] ?? key.replace(/_/g, " ");
 
   const empty = (
-    <View className="items-center gap-2 rounded-card bg-surface p-8">
-      <View className="h-14 w-14 items-center justify-center rounded-full bg-raised">
-        <Ionicons name="trophy-outline" size={26} color={WorkoutTheme.text.tertiary} />
-      </View>
-      <Text className="text-base font-semibold text-ink-soft">{t.noRecordsYet}</Text>
-      <Text className="text-center text-sm text-ink-muted">{t.noRecordsHint}</Text>
-    </View>
+    <EmptyState icon="trophy-outline" title={t.noRecordsYet} message={t.noRecordsHint} />
   );
 
   return (
