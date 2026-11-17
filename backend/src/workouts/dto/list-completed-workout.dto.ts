@@ -18,4 +18,20 @@ export class CompletedWorkoutListDto {
 
   @ApiProperty()
   totalExercises: number;
+
+  @ApiProperty({
+    description:
+      'Estimated kcal, the same figure as estimatedCalories of GET /stats/workout/:id',
+  })
+  calories: number;
+
+  @ApiProperty({ type: String, nullable: true })
+  photoUrl: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Use this one in the list, photoUrl on the workout screen',
+  })
+  photoThumbnailUrl: string | null;
 }

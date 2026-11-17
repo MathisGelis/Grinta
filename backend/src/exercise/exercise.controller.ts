@@ -1,4 +1,5 @@
 import {
+  Header,
   Controller,
   Get,
   Patch,
@@ -11,20 +12,39 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ExerciseService } from './exercise.service';
-import { UpdateUserExerciseStatsDto } from './dto/update-user-exercise-stats.dto';
+import { ExerciseStatsService } from './exercise-stats.service';
+import { ExerciseStatsDto } from './dto/exercise-stats.dto';
+import { ExerciseComparisonDto } from './dto/exercise-comparison.dto';
 import { Auth } from '../auth/auth.decorators';
+import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
-import { ExerciseListDto } from './dto/exercise-list.dto';
+import { ExerciseDetailDto, ExerciseListDto } from './dto/exercise-list.dto';
 import { GetExercisesQueryDto } from './dto/get-exercises.query.dto';
 
 @ApiTags('exercises')
 @Controller('exercises')
 export class ExerciseController {
-  constructor(private readonly exerciseService: ExerciseService) {}
+  constructor(
+    private readonly exerciseService: ExerciseService,
+    private readonly exerciseStats: ExerciseStatsService,
+  ) {}
 
+  // The response carries an ETag (Express computes it from the body). With
+  // no-cache the app keeps the list and revalidates it on each call: an
+  // If-None-Match matching the current catalogue gets an empty 304 instead
+  // of the ~140 KB list.
   @Get()
-  @ApiOperation({ summary: 'Get all exercises' })
+  @Header('Cache-Control', 'private, no-cache')
+  @ApiOperation({
+    summary: 'Get all exercises',
+    description:
+      'Light list for browsing: use GET /exercises/:id for the description, instructions and photos. Send back the ETag of the last response in If-None-Match: an unchanged catalogue answers 304 with no body.',
+  })
+  @ApiResponse({
+    status: 304,
+    description: 'Catalogue unchanged since the ETag sent',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of exercises returned',
@@ -35,9 +55,36 @@ export class ExerciseController {
     return this.exerciseService.findAll(query);
   }
 
+  // Declared before ':id', otherwise 'stats' would be read as an exercise id.
+  @Auth()
+  @Get('stats')
+  @ApiOperation({
+    summary: 'Stats of every exercise the current user has trained',
+    description:
+      'Most recently trained first. Updated automatically each time a ' +
+      'completed workout is saved, edited or deleted.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Stats returned',
+    type: ExerciseStatsDto,
+    isArray: true,
+  })
+  listMyStats(@Req() req: AuthenticatedRequest) {
+    return this.exerciseStats.listForUser(req.user.id);
+  }
+
   @Get(':id')
-  @ApiOperation({ summary: 'Get an exercise by ID' })
-  @ApiResponse({ status: 200, description: 'Exercise found' })
+  @ApiOperation({
+    summary: 'Get an exercise by ID',
+    description:
+      'Includes the description, the step-by-step instructions and the start and end position photos.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Exercise found',
+    type: ExerciseDetailDto,
+  })
   @ApiResponse({ status: 404, description: 'Exercise not found' })
   async findOne(@Param('id') id: string) {
     return this.exerciseService.findOne(id);
@@ -70,31 +117,41 @@ export class ExerciseController {
   @Auth()
   @Get(':id/stats')
   @ApiOperation({
-    summary: 'Get user stats for an exercise',
+    summary: 'Stats of the current user for one exercise',
     description:
-      'Returns PR, last reps and last weight for the authenticated user',
+      'Last performance (top set and every set of the most recent session), ' +
+      'personal records and totals. Updated automatically each time a ' +
+      'completed workout is saved, edited or deleted.',
   })
-  @ApiResponse({ status: 200, description: 'Stats returned' })
-  @ApiResponse({ status: 404, description: 'Exercise or stats not found' })
-  async getStats(@Req() req, @Param('id') id: string) {
-    return this.exerciseService.getUserStats(req.user, id);
+  @ApiResponse({
+    status: 200,
+    description: 'Stats returned',
+    type: ExerciseStatsDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No completed workout contains this exercise yet',
+  })
+  async getStats(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.exerciseStats.getForUser(req.user.id, id);
   }
 
   @Auth()
-  @Patch(':id/stats')
+  @Get(':id/stats/compare/:userId')
   @ApiOperation({
-    summary: 'Update user stats for an exercise',
+    summary: 'My stats on one exercise next to those of someone I follow',
     description:
-      'Update PR, last reps or last weight for the authenticated user',
+      'Mine come from all my workouts, theirs only from the workouts they published (posted): unpublished sessions never count. Only for a user the current user follows.',
   })
-  @ApiResponse({ status: 200, description: 'Stats updated successfully' })
+  @ApiResponse({ status: 200, type: ExerciseComparisonDto })
+  @ApiResponse({ status: 400, description: 'Compared with oneself, or bad id' })
+  @ApiResponse({ status: 403, description: 'User not followed' })
   @ApiResponse({ status: 404, description: 'Exercise not found' })
-  @ApiResponse({ status: 400, description: 'Invalid payload' })
-  async updateStats(
-    @Req() req,
+  compareStats(
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() dto: UpdateUserExerciseStatsDto,
-  ) {
-    return this.exerciseService.updateUserStats(req.user, id, dto);
+    @Param('userId') userId: string,
+  ): Promise<ExerciseComparisonDto> {
+    return this.exerciseStats.compareWithFollowed(req.user.id, userId, id);
   }
 }

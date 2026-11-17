@@ -50,12 +50,95 @@ $ npm run start:prod
 # unit tests
 $ npm run test
 
-# e2e tests
-$ npm run test:e2e
+# e2e tests: the whole API on a disposable Postgres database, whose name
+# must contain "e2e" or "test" (the tests refuse to run otherwise).
+# Migrations run at startup.
+$ createdb grinta_e2e
+$ DB_HOST=localhost DB_NAME=grinta_e2e DB_SSL=false npm run test:e2e
 
 # test coverage
 $ npm run test:cov
 ```
+
+## Numbers and dates
+
+Every figure leaves the API rounded by one rule per kind (`src/common/utils/numbers.ts`): loads as entered (2 decimals at most), estimates and averages (1RM, averages) to 1 decimal, volumes and calories as whole numbers. Computations keep full precision, records are detected on exact values. Timestamps are ISO 8601 in UTC, calendar days `YYYY-MM-DD`.
+
+## Emails (password reset)
+
+| Variable | Role |
+| --- | --- |
+| `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_SECURE` (`true` for 465), `SMTP_USER`, `SMTP_PASSWORD` | SMTP server |
+| `MAIL_FROM` | Sender, e.g. `Grinta <no-reply@example.com>` (required with SMTP) |
+| `MAIL_TRANSPORT` | `smtp` or `log`; defaults to `smtp` when `SMTP_HOST` is set, else `log` |
+| `RESET_PASSWORD_URL` | Base of the reset link, `?token=...` is appended. Default `grinta://reset-password` |
+
+With `log`, emails are written to the log in development, reset links included. In production (`NODE_ENV=production`) the log transport writes only a warning, so links never end up in the process log.
+
+## Exercise translations
+
+Exercises are served in the language of the `Accept-Language` header (en, fr, es, de, it, pt, ru, zh, ja, ko; anything else gives English), on every route, by `ExerciseLocaleInterceptor`. The English name stays the reference in the database. The translations live in `src/exercise/data/i18n/`:
+
+- `<locale>.names.json`: `bases` (the name before the brackets), `qualifiers` (the variants inside them) and `overrides` (whole names that read badly when composed);
+- `<locale>.details.json`: `{ "<English name>": { description, instructions } }`.
+
+`translation-files.spec.ts` fails when a catalogue exercise is missing from a language, or when two exercises end up with the same name. Fixing a translation is a JSON edit and a backend deploy.
+
+## Sign in with Apple and Google
+
+`POST /auth/apple` `{ identityToken, fullName? }` and `POST /auth/google` `{ idToken }` check the token signature against the provider's published keys (JWKS), its issuer, expiry and audience.
+
+| Variable | Role |
+| --- | --- |
+| `APPLE_CLIENT_IDS` | Accepted audiences, comma-separated: the app bundle id (and the Services ID if the web uses it) |
+| `GOOGLE_CLIENT_IDS` | Accepted audiences, comma-separated: the iOS, Android and web OAuth client ids |
+
+A provider without client ids answers `503 SOCIAL_LOGIN_NOT_CONFIGURED`. The linked accounts live in `user_identities` (provider + `sub`).
+
+## Validation errors
+
+A body or query that fails validation gets a `400` with a stable code per error, for the app to translate:
+
+```json
+{
+  "statusCode": 400,
+  "code": "VALIDATION_ERROR",
+  "message": "Adresse e-mail invalide.",
+  "errors": [
+    { "field": "email", "code": "EMAIL_INVALID", "message": "Adresse e-mail invalide." },
+    { "field": "exercises.0.sets.1.weight", "code": "VALUE_TOO_LARGE", "message": "« exercises.0.sets.1.weight » doit être inférieur ou égal à 1000." }
+  ]
+}
+```
+
+`message` is the first error's message, in French. `field` is the path in the body or the query string.
+
+| Code | Meaning |
+| --- | --- |
+| `FIELD_REQUIRED` | Missing or empty value |
+| `FIELD_NOT_ALLOWED` | Unknown field, not accepted by the route |
+| `FIELD_TOO_SHORT` | Text shorter than allowed |
+| `FIELD_TOO_LONG` | Text longer than allowed (e.g. a comment over 500 characters) |
+| `EMAIL_INVALID` | Not an email address |
+| `PASSWORD_TOO_SHORT` | Password under 8 characters (`password`, `newPassword`, `currentPassword`) |
+| `PASSWORD_TOO_LONG` | Password over 72 characters |
+| `USERNAME_INVALID` | Username not 3 to 30 characters among `a-z 0-9 _ .`, or a dot at either end |
+| `STRING_EXPECTED` | Text expected |
+| `NUMBER_INVALID` | Number expected, 2 decimals at most |
+| `INTEGER_EXPECTED` | Whole number expected |
+| `BOOLEAN_EXPECTED` | `true` or `false` expected |
+| `VALUE_TOO_SMALL` | Number under the minimum |
+| `VALUE_TOO_LARGE` | Number over the maximum |
+| `VALUE_NOT_ALLOWED` | Not one of the accepted values (enum) |
+| `DATE_INVALID` | Not a valid date |
+| `ID_INVALID` | Not a valid identifier (uuid) |
+| `FORMAT_INVALID` | Does not match the expected format |
+| `ARRAY_EXPECTED` | List expected |
+| `ARRAY_TOO_SHORT` | List with too few items |
+| `ARRAY_TOO_LONG` | List with too many items |
+| `INVALID` | Any other rule |
+
+Other errors (`401`, `403`, `404`, `409`, `429`, ...) keep the format `{ statusCode, message: { message, ... } }`.
 
 ## Deployment
 

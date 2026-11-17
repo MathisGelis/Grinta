@@ -7,20 +7,10 @@ import {
   IsUUID,
   IsInt,
   Min,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export class SetPairDto {
-  @ApiProperty()
-  @IsInt()
-  @Min(1)
-  reps: number;
-
-  @ApiProperty()
-  @IsInt()
-  @Min(0)
-  weight: number;
-}
+import { SetPairDto } from './set-pair.dto';
 
 export class PlannedWorkoutExerciseDto {
   @ApiProperty()
@@ -57,4 +47,16 @@ export class UpdatePlannedWorkoutDto {
   @ValidateNested({ each: true })
   @Type(() => PlannedWorkoutExerciseDto)
   exercises?: PlannedWorkoutExerciseDto[];
+
+  @ApiPropertyOptional({
+    minimum: 1,
+    maximum: 600,
+    nullable: true,
+    description: 'Expected duration in minutes',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(600)
+  estimatedDurationMinutes?: number | null;
 }

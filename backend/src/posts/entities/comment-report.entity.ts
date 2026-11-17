@@ -6,11 +6,13 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { ReportReason } from '../enums/report-reason.enum';
 import { PostComment } from './comment.entity';
 
 @Entity('comment_reports')
+@Index('IDX_comment_reports_comment', ['comment'])
 @Unique(['reporter', 'comment'])
 export class CommentReport {
   @PrimaryGeneratedColumn('uuid')

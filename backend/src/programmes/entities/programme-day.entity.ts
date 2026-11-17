@@ -11,6 +11,7 @@ import {
 import { Programme } from './programme.entity';
 
 @Entity('programme_days')
+@Index('IDX_programme_days_workout', ['workout'])
 @Index(['programme', 'dayNumber'], { unique: true })
 export class ProgrammeDay {
   @PrimaryGeneratedColumn('uuid')
