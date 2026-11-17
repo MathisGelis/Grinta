@@ -29,6 +29,8 @@ import EmptyState from "@/components/ui/EmptyState";
 import { toast } from "@/components/ui/Toast";
 
 const COMMENT_MAX_LENGTH = 500;
+/** Le compteur n'apparaît qu'à l'approche de la limite. */
+const COMMENT_COUNTER_FROM = 400;
 
 const REPORT_REASONS: ReportReason[] = [
   "spam",
@@ -483,6 +485,16 @@ export function usePostInteractions(
                   transform: [{ translateY: keyboardY }],
                 }}
               >
+                {commentDraft.length >= COMMENT_COUNTER_FROM ? (
+                  <Text
+                    className={`absolute -top-5 right-5 text-xs ${
+                      commentDraft.length >= COMMENT_MAX_LENGTH ? "text-danger" : "text-ink-muted"
+                    }`}
+                    style={{ fontVariant: ["tabular-nums"] }}
+                  >
+                    {commentDraft.length}/{COMMENT_MAX_LENGTH}
+                  </Text>
+                ) : null}
                 <Glass className="flex-row items-end gap-2 rounded-[28px] p-2 pl-5">
                   <TextInput
                     value={commentDraft}

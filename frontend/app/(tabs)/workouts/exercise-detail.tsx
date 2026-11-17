@@ -1,8 +1,9 @@
 import { useUnits } from "@/contexts/UnitsContext";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { ScrollView, Text, View } from "react-native";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import {
@@ -35,40 +36,26 @@ export default function ExerciseDetailScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useFloatingHeaderHeight();
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
-  const [exercise, setExercise] = useState<ExerciseDetail | null>(null);
-  const [stats, setStats] = useState<ExerciseStats | null>(null);
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [canEdit, setCanEdit] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [compareVisible, setCompareVisible] = useState(false);
-
-  const load = useCallback(async () => {
-    if (!exerciseId) return;
-    try {
-      setError(null);
-      const [data, userStats, createdIds, userBadges] = await Promise.all([
+  const { data, loading, error, reload } = useCachedQuery(
+    `exercise:${exerciseId}`,
+    async () => {
+      const [exercise, stats, createdIds, badges] = await Promise.all([
         getExerciseById(exerciseId),
         getExerciseStats(exerciseId).catch(() => null),
         getUserCreatedExerciseIds(),
-        BadgesService.list({ exerciseId, limit: 10 }).catch(() => []),
+        BadgesService.list({ exerciseId, limit: 10 }).catch(() => [] as Badge[]),
       ]);
-      setExercise(data);
-      setStats(userStats);
-      setBadges(userBadges);
-      setCanEdit(createdIds.includes(exerciseId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.loadingError);
-    } finally {
-      setLoading(false);
-    }
-  }, [exerciseId, t]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
+      return { exercise, stats, badges, canEdit: createdIds.includes(exerciseId) };
+    },
+    { staleMs: 0 },
   );
+  const exercise: ExerciseDetail | null = data?.exercise ?? null;
+  const stats: ExerciseStats | null = data?.stats ?? null;
+  const badges: Badge[] = data?.badges ?? [];
+  const canEdit = data?.canEdit ?? false;
+  const [compareVisible, setCompareVisible] = useState(false);
+
+
 
   const muscle = (key: string) => t.muscleNames[key] ?? key.replace(/_/g, " ");
   const mapData = useMemo<MuscleValue[]>(() => {
@@ -136,10 +123,7 @@ export default function ExerciseDetailScreen() {
         <View className="px-5" style={{ paddingTop: headerHeight }}>
           <ErrorState
             message={error ?? t.noExerciseFound}
-            onRetry={() => {
-              setLoading(true);
-              load();
-            }}
+            onRetry={reload}
           />
         </View>
       ) : (

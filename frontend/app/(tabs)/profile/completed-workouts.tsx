@@ -13,15 +13,19 @@ import EmptyState from "@/components/ui/EmptyState";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import PressableScale from "@/components/ui/PressableScale";
 import ErrorState from "@/components/ui/ErrorState";
+import { queryCache } from "@/services/queryCache";
 import { ListSkeleton } from "@/components/ui/skeletons";
+
+const COMPLETED_KEY = "completed:first-page";
 
 export default function CompletedWorkoutsScreen() {
   const headerHeight = useFloatingHeaderHeight();
   const { t, lang } = useTranslation();
-  const [workouts, setWorkouts] = useState<CompletedWorkout[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = queryCache.peek<CompletedWorkout[]>(COMPLETED_KEY);
+  const [workouts, setWorkouts] = useState<CompletedWorkout[]>(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState((cached?.length ?? 0) >= COMPLETED_PAGE_SIZE);
   const loadingMore = useRef(false);
 
   const load = useCallback(async () => {
@@ -30,8 +34,9 @@ export default function CompletedWorkoutsScreen() {
       const page = await WorkoutService.getCompleted({ limit: COMPLETED_PAGE_SIZE });
       setWorkouts(page);
       setHasMore(page.length === COMPLETED_PAGE_SIZE);
+      queryCache.set(COMPLETED_KEY, page);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.loadingError);
+      if (!queryCache.peek(COMPLETED_KEY)) setError(err instanceof Error ? err.message : t.loadingError);
     } finally {
       setLoading(false);
     }
