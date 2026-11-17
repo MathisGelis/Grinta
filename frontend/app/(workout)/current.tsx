@@ -1,6 +1,6 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, ScrollView, ActivityIndicator, Alert, Pressable, Keyboard, Platform, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, Alert, Pressable, Keyboard, Platform, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -29,6 +29,7 @@ import Button from "@/components/ui/Button";
 import MuscleMap from "@/components/ui/MuscleMap";
 import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
 import { getExercisesById, type Exercise } from "@/services/exercises.service";
+import { DetailSkeleton, ExerciseListSkeleton } from "@/components/ui/skeletons";
 const SECONDS_PER_SET = 45;
 
 const maxWeight = (sets: { weight: number }[]) =>
@@ -229,7 +230,7 @@ export default function CurrentWorkoutScreen() {
         <View
           className="flex-1 justify-center items-center"
         >
-          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <View className="w-full px-4"><DetailSkeleton rows={3} /></View>
         </View>
       </SafeAreaView>
     );
@@ -307,11 +308,7 @@ export default function CurrentWorkoutScreen() {
             ) : null}
 
             {loadingDetail ? (
-              <ActivityIndicator
-                size="small"
-                color={WorkoutTheme.accent.purple}
-                style={{ marginTop: 24 }}
-              />
+              <ExerciseListSkeleton count={4} />
             ) : selectedWorkout ? (
               <>
                 <View className="flex-row gap-3" style={{ height: cardHeight }}>

@@ -1,7 +1,7 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import ErrorState from "@/components/ui/ErrorState";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
@@ -23,6 +23,7 @@ import type { MuscleValue } from "@/utils/muscles";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Stat from "@/components/ui/Stat";
+import { StatsSkeleton } from "@/components/ui/skeletons";
 
 const TOP_MUSCLES = 6;
 
@@ -193,7 +194,7 @@ export default function GlobalStatsSection({ userId }: Props) {
       {!userId ? <ComparisonCard period={period} /> : null}
 
       {failed && !loading ? null : loading ? (
-        <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} />
+        <StatsSkeleton />
       ) : (
         <>
           {summary ? (

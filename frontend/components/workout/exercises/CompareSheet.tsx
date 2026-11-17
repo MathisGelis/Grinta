@@ -1,7 +1,7 @@
 import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Modal from "@/components/ui/AppModal";
 import Avatar from "@/components/ui/Avatar";
@@ -17,6 +17,7 @@ import {
 } from "@/services/exercises.service";
 import { UserService, type CurrentUser } from "@/services/user.service";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
+import { ListSkeleton, UserListSkeleton } from "@/components/ui/skeletons";
 
 type Props = {
   exerciseId: string;
@@ -120,7 +121,7 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
         {error ? <Text className="mb-3 text-sm text-danger">{error}</Text> : null}
 
         {loading ? (
-          <ActivityIndicator color={WorkoutTheme.accent.purple} />
+          <ListSkeleton count={4} />
         ) : comparison ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="gap-3">
             <View className="flex-row items-center rounded-tile bg-raised px-3 py-4">
@@ -184,7 +185,7 @@ export default function CompareSheet({ exerciseId, visible, onClose }: Props) {
             })}
           </ScrollView>
         ) : following === null ? (
-          <ActivityIndicator color={WorkoutTheme.accent.purple} />
+          <UserListSkeleton count={4} />
         ) : following.length === 0 ? (
           <Text className="py-6 text-center text-sm text-ink-muted">{t.cmpNoFollowing}</Text>
         ) : (

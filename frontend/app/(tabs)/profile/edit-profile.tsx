@@ -13,6 +13,7 @@ import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHea
 import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { FormSkeleton } from "@/components/ui/skeletons";
 export default function EditProfileScreen() {
   const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
@@ -109,8 +110,8 @@ export default function EditProfileScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      <View className="flex-1 px-5" style={{ paddingTop: headerHeight }}>
+        <FormSkeleton fields={6} />
       </View>
     );
   }

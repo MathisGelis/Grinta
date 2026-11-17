@@ -41,6 +41,7 @@ import { duplicateWorkoutFromCompleted } from "@/services/workouts.service";
 import RealLifeValue from "@/components/ui/RealLifeValue";
 import { realLifeText } from "@/utils/realLife";
 import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCardSheet";
+import { DetailSkeleton } from "@/components/ui/skeletons";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -300,11 +301,9 @@ export default function CompletedWorkoutDetailScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          style={{ marginTop: headerHeight }}
-          color={WorkoutTheme.accent.purple}
-        />
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <DetailSkeleton />
+        </View>
       ) : error || !workout ? (
         <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
           <Text className="text-danger">{error ?? t.loadingError}</Text>

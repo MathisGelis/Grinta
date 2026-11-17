@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { View, Text, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { UserService, UserProfile } from "@/services/user.service";
@@ -17,6 +17,7 @@ import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHea
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { ProfileSkeleton } from "@/components/ui/skeletons";
 export default function UserProfileScreen() {
   const { t } = useTranslation();
   const headerHeight = useFloatingHeaderHeight();
@@ -120,7 +121,7 @@ export default function UserProfileScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight + 60 }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><ProfileSkeleton /></View>
       ) : profile ? (
         <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}

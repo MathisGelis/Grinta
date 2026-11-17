@@ -5,7 +5,6 @@ import {
   ScrollView,
   StatusBar,
   Alert,
-  ActivityIndicator,
   Keyboard,
   Platform,
   Text,
@@ -48,6 +47,7 @@ import { FormField, TextField } from "@/components/ui/FormField";
 import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
 import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
 import { PhotoService } from "@/services/photo.service";
+import { DetailSkeleton } from "@/components/ui/skeletons";
 const dedupeCompletedSets = (state: ExerciseState): ExerciseState => {
   const seen = new Set<number>();
   const completedSetIndices: number[] = [];
@@ -485,7 +485,7 @@ export default function ActiveWorkoutScreen() {
       <SafeAreaView className="flex-1">
         <ScreenBackground flat />
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <View className="w-full px-4"><DetailSkeleton rows={3} /></View>
         </View>
       </SafeAreaView>
     );

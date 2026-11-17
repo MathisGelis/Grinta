@@ -4,7 +4,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { WorkoutTheme } from "@/constants/Colors";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +23,7 @@ import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
 import ExerciseRow from "@/components/workout/exercises/ExerciseRow";
 import ExercisesListSheet from "@/components/workout/exercises/ExercisesListSheet";
 import { buildExerciseRows, indexExercises, type ExerciseListRow } from "@/components/workout/exercises/exerciseRows";
+import { ExerciseListSkeleton } from "@/components/ui/skeletons";
 
 
 type Row = ExerciseListRow;
@@ -184,8 +184,8 @@ export default function ExercisesScreen() {
         </View>
       </View>
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-ink-muted">{t.loadingExercises}</Text>
+        <View className="flex-1 px-4 pt-2">
+          <ExerciseListSkeleton count={9} />
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center">

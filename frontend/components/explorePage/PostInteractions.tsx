@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   ScrollView,
@@ -25,6 +24,7 @@ import { TextField } from "@/components/ui/FormField";
 import Chip from "@/components/ui/Chip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { UserListSkeleton } from "@/components/ui/skeletons";
 
 const COMMENT_MAX_LENGTH = 500;
 
@@ -296,11 +296,7 @@ export function usePostInteractions(
           </View>
 
           {postModalLoading ? (
-            <ActivityIndicator
-              size="small"
-              color={WorkoutTheme.accent.purple}
-              style={{ marginTop: 24 }}
-            />
+            <UserListSkeleton count={5} />
           ) : postModalType === "likes" ? (
             <ScrollView
               showsVerticalScrollIndicator={false}

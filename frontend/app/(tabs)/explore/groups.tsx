@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import {
@@ -21,6 +20,7 @@ import GroupIcon from "@/components/groups/GroupIcon";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/FormField";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 export default function GroupsScreen() {
   const headerHeight = useFloatingHeaderHeight();
@@ -104,7 +104,7 @@ export default function GroupsScreen() {
         }
       />
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><ListSkeleton count={5} gap={12} /></View>
       ) : (
         <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}

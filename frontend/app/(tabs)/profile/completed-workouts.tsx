@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -12,6 +12,7 @@ import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import PressableScale from "@/components/ui/PressableScale";
 import ErrorState from "@/components/ui/ErrorState";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 export default function CompletedWorkoutsScreen() {
   const headerHeight = useFloatingHeaderHeight();
@@ -59,7 +60,7 @@ export default function CompletedWorkoutsScreen() {
     <View className="flex-1">
       <ScreenHeader floating title={t.workoutsLabel} />
       {loading ? (
-        <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight + 32 }} />
+        <View className="px-4" style={{ paddingTop: headerHeight }}><ListSkeleton count={8} /></View>
       ) : error ? (
         <View style={{ paddingTop: headerHeight }}>
           <ErrorState message={error} onRetry={load} />

@@ -2,7 +2,7 @@ import { formatDate } from "@/utils/formatDate";
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +17,7 @@ import SegmentedControl from "@/components/ui/SegmentedControl";
 import PressableScale from "@/components/ui/PressableScale";
 import Stat from "@/components/ui/Stat";
 import BadgeList from "@/components/workout/badges/BadgeList";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 type Tab = "exercises" | "badges";
 
@@ -71,7 +72,7 @@ export default function RecordsScreen() {
       <ScreenHeader title={t.myRecordsTitle} />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <View className="px-5"><ListSkeleton count={7} /></View>
       ) : error ? (
         <View className="items-center px-5">
           <Text className="text-danger">{error}</Text>

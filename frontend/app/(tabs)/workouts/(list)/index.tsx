@@ -5,7 +5,7 @@ import React, {
   useState,
 } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import PressableScale from "@/components/ui/PressableScale";
 import { useFocusEffect, router } from "expo-router";
@@ -30,6 +30,7 @@ import {
 import { localDate } from "@/utils/date";
 import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
+import { WorkoutListSkeleton } from "@/components/ui/skeletons";
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
@@ -151,11 +152,8 @@ export default function WorkoutScreen() {
       {loading ? (
         <View className="flex-1">
           <WorkoutsNavBar />
-          <View className="flex-1 items-center justify-center px-8 py-[60px]">
-            <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-surface">
-              <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
-            </View>
-            <Text className="text-sm text-ink-muted">{t.loadingWorkouts}</Text>
+          <View className="flex-1 px-4 pt-4">
+            <WorkoutListSkeleton count={4} />
           </View>
         </View>
       ) : error ? (

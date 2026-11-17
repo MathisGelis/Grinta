@@ -1,7 +1,7 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useEffect, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,6 +30,7 @@ import PostPartners from "@/components/explorePage/PostPartners";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LOCALES } from "@/i18n/labels";
+import { PostCardSkeleton } from "@/components/ui/skeletons";
 export default function UserPostScreen() {
   const { t, lang } = useTranslation();
   const { formatWeight, formatVolume } = useUnits();
@@ -161,8 +162,8 @@ export default function UserPostScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center px-5">
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      <View className="flex-1 px-5" style={{ paddingTop: 100 }}>
+        <PostCardSkeleton />
       </View>
     );
   }

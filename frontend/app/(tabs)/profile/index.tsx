@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
@@ -17,6 +17,7 @@ import { usePostInteractions } from "@/components/explorePage/PostInteractions";
 import GlobalStatsSection from "@/components/profile/GlobalStatsSection";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
+import { ProfileSkeleton } from "@/components/ui/skeletons";
 
 function formatJoinDate(dateStr: string, months: string[]): string {
   const d = new Date(dateStr);
@@ -117,7 +118,7 @@ export default function ProfileScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <ProfileSkeleton />
         ) : error || !user ? (
           <ErrorState
             message={error ?? undefined}

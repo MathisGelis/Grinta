@@ -1,7 +1,7 @@
 import { formatDate } from "@/utils/formatDate";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useFocusEffect, router } from "expo-router";
-import { View, Text, ActivityIndicator, Alert } from "react-native";
+import { View, Text, Alert } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { mediaUrl } from "@/services/api";
@@ -24,6 +24,7 @@ import StatsCalendar, {
   dayKey,
 } from "@/components/stats/StatsCalendar";
 import { format } from "@/i18n/translations";
+import { StatsSkeleton } from "@/components/ui/skeletons";
 function formatDuration(seconds: number): string {
   const mins = Math.round(seconds / 60);
   return `${mins} min`;
@@ -218,7 +219,7 @@ export default function StatsScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <StatsSkeleton />
       ) : error ? (
         <ErrorState
           message={error}

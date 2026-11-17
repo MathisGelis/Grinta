@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
-import { View, Text, Alert, ActivityIndicator } from "react-native";
-import { WorkoutTheme } from "@/constants/Colors";
+import { View, Text, Alert } from "react-native";
 import { TokenService } from "@/services/token.service";
 import {
   getWorkoutById,
@@ -18,6 +17,7 @@ import WorkoutStatsTab from "@/components/workout/card/WorkoutStatsTab";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { DetailSkeleton } from "@/components/ui/skeletons";
 
 export type WorkoutStatsTotals = {
   totalSets: number;
@@ -263,8 +263,8 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
 
   if (isLoading && !fullWorkout) {
     return (
-      <View className="h-[300px] items-center justify-center">
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      <View className="h-[300px] justify-center">
+        <DetailSkeleton rows={1} />
       </View>
     );
   }

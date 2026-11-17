@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { ConnectionsService, UserListItem } from "@/services/connections.service";
@@ -10,6 +10,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { UserListSkeleton } from "@/components/ui/skeletons";
 type FollowersViewProps = {
   /** Où ouvrir un profil depuis la liste : reste dans la pile de l'onglet d'origine. */
   userProfilePath: string;
@@ -69,7 +70,7 @@ export function FollowersView({ userProfilePath }: FollowersViewProps) {
           </PressableScale>
         </View>
         {loading ? (
-          <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: 32 }} />
+          <UserListSkeleton count={6} />
         ) : list.length === 0 ? (
           <View className="items-center mt-12 gap-2.5">
             <Ionicons name="person-outline" size={36} color={WorkoutTheme.text.disabled} />

@@ -2,11 +2,10 @@ import { getItem, saveItem } from "@/core/services/storage";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState, useCallback } from "react";
-import { ActivityIndicator, StatusBar, Text, View } from "react-native";
+import { StatusBar, Text, View } from "react-native";
 import { UserService } from "@/services/user.service";
 import { Post, PostsService } from "@/services/posts.service";
 
-import { WorkoutTheme } from "@/constants/Colors";
 import Screen, { FLOATING_HEADER_OFFSET } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PostCard from "@/components/explorePage/PostCard";
@@ -14,6 +13,7 @@ import { usePostInteractions } from "@/components/explorePage/PostInteractions";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
 import Button from "@/components/ui/Button";
+import { PostListSkeleton } from "@/components/ui/skeletons";
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const hour = new Date().getHours();
   if (hour < 12) return "goodMorning";
@@ -132,11 +132,7 @@ export default function ExploreScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator
-            size="large"
-            color={WorkoutTheme.accent.purple}
-            style={{ marginTop: 40 }}
-          />
+          <PostListSkeleton count={3} />
         ) : error ? (
           <ErrorState message={error} onRetry={fetchData} />
         ) : (

@@ -1,7 +1,7 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useMemo, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
@@ -26,6 +26,7 @@ import BadgeList from "@/components/workout/badges/BadgeList";
 import { Badge, BadgesService } from "@/services/badges.service";
 import type { MuscleValue } from "@/utils/muscles";
 import CompareSheet from "@/components/workout/exercises/CompareSheet";
+import { DetailSkeleton } from "@/components/ui/skeletons";
 
 export default function ExerciseDetailScreen() {
   const { formatWeight } = useUnits();
@@ -129,7 +130,7 @@ export default function ExerciseDetailScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton rows={3} /></View>
       ) : error || !exercise ? (
         <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
           <Text className="text-danger">{error ?? t.noExerciseFound}</Text>

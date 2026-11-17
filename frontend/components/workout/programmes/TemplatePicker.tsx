@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import ErrorState from "@/components/ui/ErrorState";
-import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { startProgramme } from "@/services/programms.service";
@@ -14,6 +13,7 @@ import {
 } from "@/services/workouts.service";
 import { localDate } from "@/utils/date";
 import { normalizeText } from "@/utils/text";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 type Props = {
   /** Filtre local sur le titre et la description. */
@@ -58,7 +58,7 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
   };
 
   if (failed) return <ErrorState onRetry={load} />;
-  if (!templates) return <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />;
+  if (!templates) return <ListSkeleton count={4} gap={12} />;
   const needle = normalizeText(query.trim());
   const visible = needle
     ? templates.filter((tpl) => normalizeText(`${tpl.title} ${tpl.description}`).includes(needle))

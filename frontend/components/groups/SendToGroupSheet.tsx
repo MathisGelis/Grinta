@@ -7,6 +7,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { GroupsService, type GroupSummary } from "@/services/groups.service";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 type Props = {
   postId: string | null;
@@ -66,7 +67,7 @@ export default function SendToGroupSheet({ postId, onClose }: Props) {
         <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-raised" />
         <Text className="mb-4 text-xl font-semibold text-ink">{t.grpSendTitle}</Text>
         {groups === null ? (
-          <ActivityIndicator color={WorkoutTheme.accent.purple} />
+          <ListSkeleton count={3} />
         ) : groups.length === 0 ? (
           <Text className="py-6 text-center text-sm text-ink-muted">{t.grpEmpty}</Text>
         ) : (

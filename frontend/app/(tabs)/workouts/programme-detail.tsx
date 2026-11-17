@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TokenService } from "@/services/token.service";
@@ -18,7 +18,6 @@ import {
 } from "@/services/programms.service";
 import { localDate } from "@/utils/date";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
-import { WorkoutTheme } from "@/constants/Colors";
 import IconButton from "@/components/ui/IconButton";
 import StartDateSheet from "@/components/workout/programmes/StartDateSheet";
 import WorkoutActionMenu from "@/components/workout/card/WorkoutActionMenu";
@@ -28,6 +27,7 @@ import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { difficultyLabel } from "@/i18n/labels";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { DetailSkeleton } from "@/components/ui/skeletons";
 
 /**
  * Planification à une date future désactivée pour l'instant (le programme en cours serait remplacé
@@ -189,7 +189,7 @@ export default function ProgrammeDetailScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton /></View>
       ) : error || !programme ? (
         <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
           <Text className="text-danger">{error ?? t.noProgrammeFound}</Text>

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } fr
 import {
   View,
   Text,
-  ActivityIndicator,
   Alert,
   FlatList,
   Keyboard,
@@ -19,6 +18,7 @@ import GlassSearchBar from "@/components/GlassSearchBar";
 import BottomBlur from "@/components/ui/BottomBlur";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { normalizeText } from "@/utils/text";
+import { ExerciseListSkeleton } from "@/components/ui/skeletons";
 
 interface ExerciseSearchProps {
   visible: boolean;
@@ -124,8 +124,8 @@ export default function ExerciseSearch({
         </View>
 
         {loadingExercises ? (
-          <View className="flex-1 items-center justify-center py-10">
-            <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <View className="flex-1 px-4 pt-2">
+            <ExerciseListSkeleton count={8} />
           </View>
         ) : (
           <FlatList
