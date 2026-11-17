@@ -9,6 +9,7 @@ import {
 } from "@/services/workouts.service";
 import {
   getTodayProgramme,
+  endActiveProgramme,
   getProgrammeById,
   updateProgramme,
   deleteProgramme,
@@ -35,7 +36,6 @@ import { toast } from "@/components/ui/Toast";
  * Planification à une date future désactivée pour l'instant (le programme en cours serait remplacé
  * immédiatement). Passer à `true` pour rétablir le calendrier de choix de la date de début.
  */
-const START_DATE_PICKER_ENABLED = false;
 
 export default function ProgrammeDetailScreen() {
   const { t } = useTranslation();
@@ -46,6 +46,7 @@ export default function ProgrammeDetailScreen() {
   const [availableWorkouts, setAvailableWorkouts] = useState<PlannedWorkout[]>([]);
   const [days, setDays] = useState<ProgrammeDay[]>([]);
   const [currentDay, setCurrentDay] = useState<number | undefined>();
+  const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -73,6 +74,7 @@ export default function ProgrammeDetailScreen() {
       setDays(loadedDays);
       savedDays.current = daysKey(loadedDays);
       setAvailableWorkouts(workouts);
+      setIsActive(today?.programme.id === programmeId);
       setCurrentDay(
         today?.programme.id === programmeId ? today.dayNumber : undefined,
       );
@@ -120,12 +122,13 @@ export default function ProgrammeDetailScreen() {
     }
   }, [t, days, programme, programmeId]);
 
-  const handleStart = useCallback(async (startDate: string) => {
+  const handleStart = useCallback(async (startDate: string, startDay = 1) => {
     if (!programmeId) return;
     try {
       setStarting(true);
-      const started = await startProgramme(programmeId, startDate);
+      const started = await startProgramme(programmeId, startDate, startDay);
       setPickingDate(false);
+      setIsActive(true);
       // Début dans le futur : aucun jour n'est « aujourd'hui » pour l'instant.
       setCurrentDay(startDate === localDate() ? started.dayNumber : undefined);
       Alert.alert(t.prgStarted, t.prgStartedMessage);
@@ -135,6 +138,26 @@ export default function ProgrammeDetailScreen() {
       setStarting(false);
     }
   }, [t, programmeId]);
+
+  const handleEnd = useCallback(() => {
+    Alert.alert(t.prgEnd, t.prgEndMessage, [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.prgEnd,
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await endActiveProgramme();
+            setIsActive(false);
+            setCurrentDay(undefined);
+            toast.success(t.prgEnded);
+          } catch (err) {
+            Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
+          }
+        },
+      },
+    ]);
+  }, [t]);
 
   const handleCancelEdit = useCallback(() => {
     if (saving) return;
@@ -246,8 +269,9 @@ export default function ProgrammeDetailScreen() {
       )}
 
       <StartDateSheet
-        visible={START_DATE_PICKER_ENABLED && pickingDate}
+        visible={pickingDate}
         loading={starting}
+        dayCount={days.length}
         onClose={() => setPickingDate(false)}
         onConfirm={handleStart}
       />
@@ -256,7 +280,8 @@ export default function ProgrammeDetailScreen() {
         <WorkoutActionMenu
           onClose={() => setMenuOpen(false)}
           items={[
-            { icon: "play-outline", label: t.prgStart, onPress: () => (START_DATE_PICKER_ENABLED ? setPickingDate(true) : handleStart(localDate())) },
+            { icon: "play-outline", label: t.prgStart, onPress: () => setPickingDate(true) },
+            ...(isActive ? [{ icon: "stop-circle-outline" as const, label: t.prgEnd, onPress: handleEnd }] : []),
             { icon: "create-outline", label: t.editLabel, onPress: () => setEditing(true) },
             { icon: "trash-outline", label: t.delete, danger: true, onPress: handleDelete },
           ]}

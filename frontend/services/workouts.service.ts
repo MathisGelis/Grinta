@@ -300,6 +300,32 @@ export async function getWorkoutTemplates(criteria: TemplateCriteria = {}) {
   );
 }
 
+export interface TemplatePreview {
+  key: string;
+  saved: false;
+  workouts: {
+    key: string;
+    title: string;
+    description: string | null;
+    estimatedDurationMinutes: number | null;
+    exercises: TemplateExercise[];
+  }[];
+  programme: {
+    title: string;
+    description: string;
+    weekNumber: number;
+    difficulty: string;
+    locationType: string;
+    days: { dayNumber: number; workoutIndex: number | null }[];
+  };
+}
+
+/** Proposition de programme à partir d'un modèle : rien n'est enregistré côté serveur. */
+export async function previewWorkoutTemplate(key: string) {
+  const token = await TokenService.get();
+  return api.get<TemplatePreview>(`/workouts/templates/${encodeURIComponent(key)}`, token ?? undefined);
+}
+
 /** Copie le modèle : séances planifiées + programme de 7 jours non démarré. */
 export async function applyWorkoutTemplate(key: string) {
   const token = await TokenService.get();

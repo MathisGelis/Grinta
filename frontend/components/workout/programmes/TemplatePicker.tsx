@@ -9,6 +9,8 @@ import { startProgramme } from "@/services/programms.service";
 import {
   getWorkoutTemplates,
   applyWorkoutTemplate,
+  previewWorkoutTemplate,
+  type TemplatePreview,
   type WorkoutTemplate,
 } from "@/services/workouts.service";
 import { localDate } from "@/utils/date";
@@ -16,6 +18,7 @@ import { normalizeText } from "@/utils/text";
 import { ListSkeleton } from "@/components/ui/skeletons";
 import EmptyState from "@/components/ui/EmptyState";
 import { toast } from "@/components/ui/Toast";
+import TemplatePreviewSheet from "./TemplatePreviewSheet";
 
 type Props = {
   /** Filtre local sur le titre et la description. */
@@ -30,6 +33,18 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
   const [templates, setTemplates] = useState<WorkoutTemplate[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [selected, setSelected] = useState<WorkoutTemplate | null>(null);
+  const [preview, setPreview] = useState<TemplatePreview | null>(null);
+  const [previewFailed, setPreviewFailed] = useState(false);
+
+  const openPreview = useCallback((template: WorkoutTemplate) => {
+    setSelected(template);
+    setPreview(null);
+    setPreviewFailed(false);
+    previewWorkoutTemplate(template.key)
+      .then(setPreview)
+      .catch(() => setPreviewFailed(true));
+  }, []);
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -48,9 +63,11 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
     if (busyKey) return;
     setBusyKey(template.key);
     try {
+      // Accepté tel quel : le serveur enregistre séances et programme.
       const programme = await applyWorkoutTemplate(template.key);
       // Le modèle crée un programme non démarré : on le lance avec la date locale.
       await startProgramme(programme.id, localDate());
+      setSelected(null);
       toast.success(t.tplUsedMessage);
       onUsed?.();
     } catch (err) {
@@ -96,12 +113,20 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
           <Button
             label={t.tplUse}
             variant={tpl.recommended ? "primary" : "secondary"}
-            loading={busyKey === tpl.key}
-            disabled={!!busyKey}
-            onPress={() => use(tpl)}
+            onPress={() => openPreview(tpl)}
           />
         </Card>
       ))}
+      <TemplatePreviewSheet
+        visible={!!selected}
+        title={selected?.title ?? ""}
+        preview={preview}
+        failed={previewFailed}
+        saving={!!busyKey}
+        onRetry={() => selected && openPreview(selected)}
+        onClose={() => !busyKey && setSelected(null)}
+        onSave={() => selected && use(selected)}
+      />
     </View>
   );
 }

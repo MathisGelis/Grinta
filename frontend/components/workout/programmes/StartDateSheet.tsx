@@ -13,8 +13,10 @@ type Props = {
   visible: boolean;
   loading?: boolean;
   onClose: () => void;
-  /** Date choisie au format AAAA-MM-JJ (jour local). */
-  onConfirm: (date: string) => void;
+  /** Nombre de jours du programme : permet de choisir le jour de départ. */
+  dayCount?: number;
+  /** Date choisie (AAAA-MM-JJ, jour local) et jour du programme qui lui correspond (1 = début). */
+  onConfirm: (date: string, startDay: number) => void;
 };
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -29,16 +31,18 @@ function monthCells(month: Date): (Date | null)[] {
 }
 
 /** Alerte « Commencer ce programme » : calendrier pour choisir le jour de début (aujourd'hui ou plus tard). */
-export default function StartDateSheet({ visible, loading, onClose, onConfirm }: Props) {
+export default function StartDateSheet({ visible, loading, onClose, dayCount = 0, onConfirm }: Props) {
   const { t, lang } = useTranslation();
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
   const [month, setMonth] = useState(() => startOfDay(new Date()));
+  const [startDay, setStartDay] = useState(1);
 
   useEffect(() => {
     if (!visible) return;
     const today = startOfDay(new Date());
     setSelected(today);
     setMonth(today);
+    setStartDay(1);
   }, [visible]);
 
   const today = startOfDay(new Date());
@@ -125,13 +129,46 @@ export default function StartDateSheet({ visible, loading, onClose, onConfirm }:
           </View>
         </View>
 
+        {dayCount > 1 ? (
+          <View className="flex-row items-center justify-between rounded-tile bg-raised px-4 py-2">
+            <Text className="text-sm text-ink-soft">{t.prgStartDayLabel}</Text>
+            <View className="flex-row items-center gap-3">
+              <PressableScale
+                halo={false}
+                hitSlop={10}
+                disabled={startDay <= 1}
+                onPress={() => setStartDay((d) => Math.max(1, d - 1))}
+                accessibilityRole="button"
+                accessibilityLabel="-"
+                className={startDay <= 1 ? "opacity-30" : ""}
+              >
+                <Ionicons name="remove-circle-outline" size={26} color={WorkoutTheme.text.primary} />
+              </PressableScale>
+              <Text className="min-w-[28px] text-center text-base font-semibold text-ink" style={{ fontVariant: ["tabular-nums"] }}>
+                {startDay}
+              </Text>
+              <PressableScale
+                halo={false}
+                hitSlop={10}
+                disabled={startDay >= dayCount}
+                onPress={() => setStartDay((d) => Math.min(dayCount, d + 1))}
+                accessibilityRole="button"
+                accessibilityLabel="+"
+                className={startDay >= dayCount ? "opacity-30" : ""}
+              >
+                <Ionicons name="add-circle-outline" size={26} color={WorkoutTheme.text.primary} />
+              </PressableScale>
+            </View>
+          </View>
+        ) : null}
+
         <View className="flex-row gap-3">
           <Button className="flex-1" variant="secondary" label={t.cancel} onPress={onClose} />
           <Button
             className="flex-1"
             label={t.prgStartDay}
             loading={loading}
-            onPress={() => onConfirm(selectedKey)}
+            onPress={() => onConfirm(selectedKey, startDay)}
           />
         </View>
       </View>

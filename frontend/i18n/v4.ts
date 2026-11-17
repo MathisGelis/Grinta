@@ -2,6 +2,12 @@ import type { Lang } from "./translations";
 
 /** Textes du troisième lot : mot de passe, onboarding, modèles, nouveaux graphiques, import. */
 export interface V4Strings {
+  prgStartDayLabel: string;
+  prgEnd: string;
+  prgEndMessage: string;
+  prgEnded: string;
+  tplSaveProgramme: string;
+  tplPreviewWorkouts: string;
   // Groupes
   grpSettings: string;
   grpNewGroup: string;
@@ -102,6 +108,12 @@ export interface V4Strings {
 }
 
 const en: V4Strings = {
+  prgStartDayLabel: "Starting on day",
+  prgEnd: "End this programme",
+  prgEndMessage: "The programme and its workouts are kept. You can start it again anytime.",
+  prgEnded: "Programme ended",
+  tplSaveProgramme: "Save this programme",
+  tplPreviewWorkouts: "Workouts",
   prgPickStartDate: "Choose the date you want to start this programme",
   prgNoneActive: "No programme in progress",
   prgChooseToStart: "Choose a programme to start",
@@ -210,6 +222,12 @@ const en: V4Strings = {
 };
 
 const fr: V4Strings = {
+  prgStartDayLabel: "Démarrer au jour",
+  prgEnd: "Mettre fin au programme",
+  prgEndMessage: "Le programme et ses séances sont conservés. Tu pourras le relancer quand tu veux.",
+  prgEnded: "Programme terminé",
+  tplSaveProgramme: "Enregistrer ce programme",
+  tplPreviewWorkouts: "Séances",
   prgPickStartDate: "Choisissez la date à laquelle vous voulez débuter ce programme",
   prgNoneActive: "Aucun programme en cours",
   prgChooseToStart: "Choisissez un programme à commencer",
