@@ -1,9 +1,9 @@
 /** Durée par défaut d'une série (mise en place + tempo), hors repos. */
-const SET_SETUP_SECONDS = 10;
-const SECONDS_PER_REP = 3;
+const SET_SETUP_SECONDS = 30;
+const SECONDS_PER_REP = 5;
 /** Changement de machine / préparation entre deux exercices. */
-const EXERCISE_TRANSITION_SECONDS = 30;
-const DEFAULT_REST_SECONDS = 60;
+const EXERCISE_TRANSITION_SECONDS = 60;
+const DEFAULT_REST_SECONDS = 90;
 
 type EstimableExercise = {
   sets: { reps: number }[];
@@ -12,7 +12,7 @@ type EstimableExercise = {
 
 /**
  * Estime la durée d'une séance (en secondes) à partir de ses exercices :
- * temps d'effort de chaque série (≈ 3 s par répétition + mise en place), repos planifié
+ * temps d'effort de chaque série (≈ 5 s par répétition + mise en place), repos planifié
  * entre les séries (pas de repos après la toute dernière) et transition entre exercices.
  */
 export function estimateWorkoutSeconds(

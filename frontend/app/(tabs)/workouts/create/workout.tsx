@@ -25,7 +25,7 @@ import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
-const DEFAULT_REST_SECONDS = 60;
+const DEFAULT_REST_SECONDS = 90;
 
 export default function CreateWorkoutScreen() {
   const { t } = useTranslation();
