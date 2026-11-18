@@ -11,6 +11,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
+import { IsBirthDate, PROFILE_LIMITS } from './profile-limits';
 import { Gender } from '../enums/gender.enum';
 import { Goal } from '../enums/goal.enum';
 import { TrainingLevel } from '../enums/level.enum';
@@ -39,16 +40,21 @@ export class UpdateUserDto {
   @ApiProperty({ example: '1995-06-15', required: false })
   @IsOptional()
   @IsDateString()
+  @IsBirthDate()
   birthDate?: string;
 
   @ApiProperty({ example: 175.5, required: false })
   @IsOptional()
   @IsNumber()
+  @Min(PROFILE_LIMITS.heightMinCm)
+  @Max(PROFILE_LIMITS.heightMaxCm)
   height?: number;
 
   @ApiProperty({ example: 70.0, required: false })
   @IsOptional()
   @IsNumber()
+  @Min(PROFILE_LIMITS.weightMinKg)
+  @Max(PROFILE_LIMITS.weightMaxKg)
   weight?: number;
 
   @ApiProperty({

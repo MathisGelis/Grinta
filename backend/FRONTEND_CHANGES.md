@@ -1112,3 +1112,8 @@ L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` co
 ### 11.2 Suppression de compte (B-17)
 
 `DELETE /users/:id` fonctionne maintenant pour tout compte : réponse 200 `{ message }`. Toutes les données du compte sont supprimées (séances, posts, likes, commentaires, programmes, groupes créés, photos). Le jeton est refusé aussitôt (401) : renvoyez l'utilisateur à l'écran de connexion. L'e-mail peut être réutilisé pour une nouvelle inscription.
+
+### 11.3 Profil et programmes (B-18, B-22)
+
+- `height` 50–250 cm, `weight` 20–400 kg, `birthDate` entre 1900 et il y a 13 ans : sinon 400 `VALIDATION_ERROR` (`VALUE_TOO_SMALL`, `VALUE_TOO_LARGE`, `DATE_OUT_OF_RANGE`). Validez aussi côté formulaire.
+- Un programme doit contenir au moins un jour avec `workoutId` : sinon 400 `PROGRAMME_NEEDS_WORKOUT`.
