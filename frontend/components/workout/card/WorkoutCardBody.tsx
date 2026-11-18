@@ -21,6 +21,7 @@ import { DetailSkeleton } from "@/components/ui/skeletons";
 import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 import { toast } from "@/components/ui/Toast";
 import { LIMITS } from "@/utils/validation";
+import { MAX_EXERCISES } from "@/utils/sanitizeWorkout";
 
 export type WorkoutStatsTotals = {
   totalSets: number;
@@ -170,6 +171,10 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
   };
 
   const handleAddExercise = (exercise: ExerciseSetupData) => {
+    if (editedExercises.length >= MAX_EXERCISES) {
+      toast.info(t.maxExercisesReached);
+      return;
+    }
     setEditedExercises((prev) => [...prev, exercise]);
     setHasChanges(true);
   };

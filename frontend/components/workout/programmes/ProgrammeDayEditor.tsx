@@ -32,8 +32,12 @@ import IconButton from "@/components/ui/IconButton";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import EmptyState from "@/components/ui/EmptyState";
+import { toast } from "@/components/ui/Toast";
 
 /** Hauteur fixe d'une ligne : le calcul des positions pendant le glisser n'a besoin d'aucune mesure. */
+/** Nombre maximal de jours d'un programme (B-03). */
+const MAX_PROGRAMME_DAYS = 84;
+
 const ROW_HEIGHT = 64;
 const ROW_GAP = 8;
 const PITCH = ROW_HEIGHT + ROW_GAP;
@@ -242,6 +246,11 @@ export default function ProgrammeDayEditor({
 
   const addWorkoutDay = useCallback(
     (workout: PlannedWorkout) => {
+      if (days.length >= MAX_PROGRAMME_DAYS) {
+        toast.info(t.maxProgrammeDays);
+        setShowWorkoutPicker(false);
+        return;
+      }
       onChangeDays([
         ...days,
         {
@@ -255,10 +264,14 @@ export default function ProgrammeDayEditor({
       ]);
       setShowWorkoutPicker(false);
     },
-    [days, onChangeDays],
+    [days, onChangeDays, t],
   );
 
   const addRestDay = useCallback(() => {
+    if (days.length >= MAX_PROGRAMME_DAYS) {
+      toast.info(t.maxProgrammeDays);
+      return;
+    }
     onChangeDays([
       ...days,
       {
@@ -266,7 +279,7 @@ export default function ProgrammeDayEditor({
         workout: null,
       },
     ]);
-  }, [days, onChangeDays]);
+  }, [days, onChangeDays, t]);
 
   const removeDay = (dayNumber: number) => {
     onChangeDays(renumber(days.filter((item) => item.dayNumber !== dayNumber)));

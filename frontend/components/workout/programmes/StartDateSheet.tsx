@@ -19,6 +19,9 @@ type Props = {
   onConfirm: (date: string, startDay: number) => void;
 };
 
+/** Le serveur n'accepte qu'une date à 7 jours au plus d'aujourd'hui, avant ou après (B-03). */
+const WINDOW_DAYS = 7;
+
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
 function monthCells(month: Date): (Date | null)[] {
@@ -49,9 +52,13 @@ export default function StartDateSheet({ visible, loading, onClose, dayCount = 0
   const selectedKey = localDate(selected);
   const todayKey = localDate(today);
   const cells = monthCells(month);
-  const canGoBack =
-    month.getFullYear() > today.getFullYear() ||
-    (month.getFullYear() === today.getFullYear() && month.getMonth() > today.getMonth());
+  const minDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - WINDOW_DAYS);
+  const maxDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + WINDOW_DAYS);
+  const minKey = localDate(minDate);
+  const maxKey = localDate(maxDate);
+  const monthIndex = (d: Date) => d.getFullYear() * 12 + d.getMonth();
+  const canGoBack = monthIndex(month) > monthIndex(minDate);
+  const canGoForward = monthIndex(month) < monthIndex(maxDate);
   // Lundi → dimanche (2024-01-01 est un lundi).
   const weekdays = Array.from({ length: 7 }, (_, i) =>
     formatDate(new Date(2024, 0, 1 + i), lang, "weekdayNarrow"),
@@ -86,9 +93,11 @@ export default function StartDateSheet({ visible, loading, onClose, dayCount = 0
           <PressableScale
             halo={false}
             hitSlop={12}
+            disabled={!canGoForward}
             onPress={() => shift(1)}
             accessibilityRole="button"
             accessibilityLabel={t.nextMonth}
+            className={canGoForward ? "" : "opacity-30"}
           >
             <Ionicons name="chevron-forward" size={22} color={WorkoutTheme.text.primary} />
           </PressableScale>
@@ -106,18 +115,18 @@ export default function StartDateSheet({ visible, loading, onClose, dayCount = 0
             {cells.map((date, i) => {
               const key = date ? localDate(date) : "";
               const isSelected = key === selectedKey;
-              const past = !!date && key < todayKey;
+              const outOfRange = !!date && (key < minKey || key > maxKey);
               return (
                 <View key={i} style={{ width: `${100 / 7}%` }} className="items-center py-0.5">
                   {date ? (
                     <PressableScale
                       halo={false}
-                      disabled={past}
+                      disabled={outOfRange}
                       onPress={() => setSelected(date)}
                       className={`h-10 w-10 items-center justify-center rounded-full ${isSelected ? "bg-accent" : ""}`}
                     >
                       <Text
-                        className={`text-sm ${isSelected ? "font-bold text-ink" : past ? "text-ink-faint" : key === todayKey ? "font-bold text-accent-light" : "text-ink"}`}
+                        className={`text-sm ${isSelected ? "font-bold text-ink" : outOfRange ? "text-ink-faint" : key === todayKey ? "font-bold text-accent-light" : "text-ink"}`}
                       >
                         {date.getDate()}
                       </Text>

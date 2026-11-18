@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { toast } from "@/components/ui/Toast";
+import { MAX_EXERCISES } from "@/utils/sanitizeWorkout";
 const DEFAULT_REST_SECONDS = 90;
 
 export default function CreateWorkoutScreen() {
@@ -71,6 +72,10 @@ export default function CreateWorkoutScreen() {
   };
 
   const handleSelectExercise = (exercise: Exercise) => {
+    if (selectedExercises.length >= MAX_EXERCISES) {
+      toast.info(t.maxExercisesReached);
+      return;
+    }
     const exerciseExists = selectedExercises.some(
       (ex) => ex.id === exercise.id,
     );

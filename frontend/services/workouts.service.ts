@@ -2,6 +2,7 @@ import { api } from "./api";
 import { saveItem, getItem, removeItem } from "@/core/services/storage";
 import { TokenService } from "./token.service";
 import { createListCache } from "./listCache";
+import { limitExercises, sanitizeDescription, sanitizeSeconds, sanitizeSets, sanitizeTitle } from "@/utils/sanitizeWorkout";
 
 export interface PlannedWorkout {
   id: string;
@@ -124,6 +125,18 @@ export async function deletePlannedWorkout(
   }
 }
 
+/** Bornes de l'API (B-02) : 40 exercices, 30 séries, `sets` omis (jamais `[]`) pour un exercice sans série. */
+function sanitizePlannedExercises(exercises: WorkoutExercise[]) {
+  return limitExercises(exercises).map((exercise) => {
+    const sets = sanitizeSets(exercise.sets);
+    return {
+      exerciseId: exercise.exerciseId,
+      ...(sets ? { sets } : {}),
+      plannedRestSeconds: sanitizeSeconds(exercise.plannedRestSeconds),
+    };
+  });
+}
+
 export async function createPlannedWorkout(
   workoutData: CreateWorkoutRequest,
   token?: string
@@ -131,7 +144,12 @@ export async function createPlannedWorkout(
   try {
     const response = await api.post<PlannedWorkout>(
       "/workouts/planned",
-      workoutData,
+      {
+        ...workoutData,
+        title: sanitizeTitle(workoutData.title),
+        description: sanitizeDescription(workoutData.description),
+        exercises: sanitizePlannedExercises(workoutData.exercises),
+      },
       token
     );
 
@@ -165,7 +183,14 @@ export async function updatePlannedWorkout(
   try {
     const response = await api.patch<PlannedWorkout>(
       `/workouts/planned/${id}`,
-      workoutData,
+      {
+        ...workoutData,
+        ...(workoutData.title !== undefined ? { title: sanitizeTitle(workoutData.title) } : {}),
+        ...(workoutData.description !== undefined
+          ? { description: sanitizeDescription(workoutData.description) }
+          : {}),
+        ...(workoutData.exercises ? { exercises: sanitizePlannedExercises(workoutData.exercises) } : {}),
+      },
       token
     );
 

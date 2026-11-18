@@ -2,6 +2,14 @@ import { api } from "./api";
 import type { Badge } from "./badges.service";
 import { TokenService } from "./token.service";
 import type { Exercise } from "./exercises.service";
+import {
+  limitExercises,
+  sanitizeDescription,
+  sanitizeSeconds,
+  sanitizeSets,
+  sanitizeTitle,
+  sanitizeTotalDuration,
+} from "@/utils/sanitizeWorkout";
 
 export interface CompletedSet {
   reps: number;
@@ -36,7 +44,17 @@ export async function createCompletedWorkout(
   try {
     const response = await api.post<SavedCompletedWorkout>(
       "/workouts/completed",
-      workoutData,
+      {
+        ...workoutData,
+        title: sanitizeTitle(workoutData.title),
+        description: sanitizeDescription(workoutData.description),
+        totalDurationSeconds: sanitizeTotalDuration(workoutData.totalDurationSeconds),
+        exercises: limitExercises(workoutData.exercises).map((exercise) => ({
+          exerciseId: exercise.exerciseId,
+          sets: sanitizeSets(exercise.sets),
+          timerSeconds: sanitizeSeconds(exercise.timerSeconds),
+        })),
+      },
       token
     );
     return response;
@@ -122,6 +140,24 @@ export const WorkoutService = {
 
   async updateCompleted(id: string, data: UpdateCompletedWorkoutRequest) {
     const token = await TokenService.get();
-    return api.patch<SavedCompletedWorkout>(`/workouts/completed/${id}`, data, token ?? undefined);
+    const body: UpdateCompletedWorkoutRequest = {
+      ...data,
+      ...(data.title !== undefined ? { title: sanitizeTitle(data.title) } : {}),
+      ...(data.description !== undefined ? { description: sanitizeDescription(data.description) } : {}),
+      ...(data.totalDurationSeconds !== undefined
+        ? { totalDurationSeconds: sanitizeTotalDuration(data.totalDurationSeconds) }
+        : {}),
+      ...(data.exercises
+        ? {
+            exercises: limitExercises(data.exercises).map((exercise) => ({
+              exerciseId: exercise.exerciseId,
+              // Un exercice sans série : on omet `sets`, jamais `[]` (400 ARRAY_TOO_SHORT).
+              ...(sanitizeSets(exercise.sets) ? { sets: sanitizeSets(exercise.sets) } : {}),
+              ...(exercise.timerSeconds !== undefined ? { timerSeconds: sanitizeSeconds(exercise.timerSeconds) } : {}),
+            })),
+          }
+        : {}),
+    };
+    return api.patch<SavedCompletedWorkout>(`/workouts/completed/${id}`, body, token ?? undefined);
   },
 };

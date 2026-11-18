@@ -2,6 +2,8 @@ import type { Lang } from "./translations";
 
 /** Textes du troisième lot : mot de passe, onboarding, modèles, nouveaux graphiques, import. */
 export interface V4Strings {
+  maxProgrammeDays: string;
+  maxExercisesReached: string;
   payloadTooLarge: string;
   imAnalysing: string;
   noValidatedSet: string;
@@ -111,6 +113,8 @@ export interface V4Strings {
 }
 
 const en: V4Strings = {
+  maxProgrammeDays: "A programme can have 84 days at most.",
+  maxExercisesReached: "A workout can have 40 exercises at most.",
   payloadTooLarge: "Content too large. Shorten it and try again.",
   imAnalysing: "Reading your notes…",
   noValidatedSet: "Validate at least one set before finishing the workout.",
@@ -228,6 +232,8 @@ const en: V4Strings = {
 };
 
 const fr: V4Strings = {
+  maxProgrammeDays: "Un programme peut avoir 84 jours au maximum.",
+  maxExercisesReached: "Une séance peut contenir 40 exercices au maximum.",
   payloadTooLarge: "Contenu trop volumineux. Raccourcis-le et réessaie.",
   imAnalysing: "Lecture de tes notes…",
   noValidatedSet: "Valide au moins une série avant de terminer la séance.",

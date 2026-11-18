@@ -45,6 +45,8 @@ import { DetailSkeleton } from "@/components/ui/skeletons";
 import { formatDate } from "@/utils/formatDate";
 import { queryCache } from "@/services/queryCache";
 import { formatDuration } from "@/utils/formatDuration";
+import { MAX_EXERCISES } from "@/utils/sanitizeWorkout";
+import { toast } from "@/components/ui/Toast";
 
 
 export default function CompletedWorkoutDetailScreen() {
@@ -377,6 +379,11 @@ export default function CompletedWorkoutDetailScreen() {
                 visible={addVisible}
                 onClose={() => setAddVisible(false)}
                 onSelectExercise={(exercise) => {
+                  if (draftExercises.length >= MAX_EXERCISES) {
+                    toast.info(t.maxExercisesReached);
+                    setAddVisible(false);
+                    return;
+                  }
                   setDraftExercises((prev) => [
                     ...prev,
                     {
