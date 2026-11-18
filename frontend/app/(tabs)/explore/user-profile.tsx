@@ -145,6 +145,8 @@ export default function UserProfileScreen() {
           <View className="flex-row bg-surface rounded-card mx-5 p-5 mb-4">
             <PressableScale
               className="flex-1 items-center"
+              // Compte privé non suivi : le serveur répond 404 sur les listes d'abonnés.
+              disabled={profile.isPrivate}
               onPress={() => router.push({ pathname: "/(tabs)/explore/followers", params: { userId: params.userId, tab: "followers" } } as any)}
             >
               <Text className="text-ink text-lg font-bold mb-1">{profile.followersCount}</Text>
@@ -153,6 +155,8 @@ export default function UserProfileScreen() {
             <View className="w-[1px] bg-raised" />
             <PressableScale
               className="flex-1 items-center"
+              // Compte privé non suivi : le serveur répond 404 sur les listes d'abonnés.
+              disabled={profile.isPrivate}
               onPress={() => router.push({ pathname: "/(tabs)/explore/followers", params: { userId: params.userId, tab: "following" } } as any)}
             >
               <Text className="text-ink text-lg font-bold mb-1">{profile.followingCount}</Text>

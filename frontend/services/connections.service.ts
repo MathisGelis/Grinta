@@ -17,6 +17,9 @@ export interface FollowRequest {
   user_avatarThumbnailUrl?: string | null;
 }
 
+/** Taille d'une page d'abonnés / abonnements (le serveur plafonne à 100). */
+export const FOLLOW_PAGE_SIZE = 50;
+
 export const ConnectionsService = {
   async follow(userId: string) {
     const token = await TokenService.get();
@@ -28,14 +31,20 @@ export const ConnectionsService = {
     return api.delete<{ message: string }>(`/connections/${userId}/unfollow`, token ?? undefined);
   },
 
-  async getFollowers(userId: string): Promise<UserListItem[]> {
+  async getFollowers(userId: string, offset = 0, limit = FOLLOW_PAGE_SIZE): Promise<UserListItem[]> {
     const token = await TokenService.get();
-    return api.get<UserListItem[]>(`/connections/${userId}/followers`, token ?? undefined);
+    return api.get<UserListItem[]>(
+      `/connections/${userId}/followers?limit=${limit}&offset=${offset}`,
+      token ?? undefined,
+    );
   },
 
-  async getFollowing(userId: string): Promise<UserListItem[]> {
+  async getFollowing(userId: string, offset = 0, limit = FOLLOW_PAGE_SIZE): Promise<UserListItem[]> {
     const token = await TokenService.get();
-    return api.get<UserListItem[]>(`/connections/${userId}/following`, token ?? undefined);
+    return api.get<UserListItem[]>(
+      `/connections/${userId}/following?limit=${limit}&offset=${offset}`,
+      token ?? undefined,
+    );
   },
 
   async getFollowStatus(userId: string): Promise<string> {
