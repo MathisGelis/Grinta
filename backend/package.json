@@ -65,7 +65,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.18.0",
+    "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
@@ -77,7 +77,7 @@
     "@types/node": "^22.19.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
-    "eslint": "^9.18.0",
+    "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
@@ -110,6 +110,12 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
+    }
+  },
+  "overrides": {
+    "glob": "^14.0.6",
+    "test-exclude": {
+      "minimatch": "^11.0.5"
     }
   }
 }

@@ -153,7 +153,7 @@ export class ExerciseMatcher {
     ];
     const wanted = new Set(lower(found.value.implies));
 
-    for (let i = 0; i < rest.length; ) {
+    for (let i = 0; i < rest.length;) {
       const modifier = longestPhrase(
         rest.slice(i),
         this.modifiers,

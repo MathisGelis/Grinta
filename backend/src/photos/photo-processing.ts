@@ -6,10 +6,7 @@ import {
 import sharp from 'sharp';
 
 export type PhotoKind =
-  | 'avatar'
-  | 'avatar_thumbnail'
-  | 'workout'
-  | 'workout_thumbnail';
+  'avatar' | 'avatar_thumbnail' | 'workout' | 'workout_thumbnail';
 
 /**
  * Largest picture accepted, in pixels. A 48 MP phone photo fits; the limit is
@@ -58,7 +55,7 @@ export async function processPhoto(
   kind: PhotoKind,
 ): Promise<Buffer> {
   let format: string | undefined;
-  let pixels = 0;
+  let pixels: number;
 
   try {
     // Reads the header only, without the pixel limit, so an oversized picture

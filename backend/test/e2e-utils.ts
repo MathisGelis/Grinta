@@ -70,9 +70,9 @@ export async function ensureCatalogue(app: NestExpressApplication) {
 export async function exerciseId(app: NestExpressApplication, name: string) {
   const [row] = await app
     .get(DataSource)
-    .query<
-      Array<{ id: string }>
-    >('SELECT id FROM exercises WHERE name = $1', [name]);
+    .query<Array<{ id: string }>>('SELECT id FROM exercises WHERE name = $1', [
+      name,
+    ]);
 
   if (!row) throw new Error(`Exercise ${name} missing from the catalogue`);
   return row.id;

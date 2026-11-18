@@ -47,9 +47,10 @@ describe('Create a group with a list of people (e2e)', () => {
     (
       await app
         .get(DataSource)
-        .query<
-          Array<{ n: number }>
-        >('SELECT COUNT(*)::int AS n FROM groups WHERE "creatorId" = $1', [creator.id])
+        .query<Array<{ n: number }>>(
+          'SELECT COUNT(*)::int AS n FROM groups WHERE "creatorId" = $1',
+          [creator.id],
+        )
     )[0].n;
 
   it('invites everyone on the list as the group is created', async () => {
