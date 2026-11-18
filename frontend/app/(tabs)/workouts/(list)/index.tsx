@@ -31,6 +31,11 @@ import { localDate } from "@/utils/date";
 import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
 import { WorkoutListSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
+
+const ACTIVE_KEY = "workouts:active";
+const TAB_STALE_MS = 45_000;
+type ActiveInfo = { id?: string; day?: number; startedOn?: string };
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
@@ -41,9 +46,10 @@ export default function WorkoutScreen() {
   const [programmes, setProgrammes] = useState<SmallProgramm[]>(
     () => programmsList.peek() ?? [],
   );
-  const [activeProgrammeId, setActiveProgrammeId] = useState<string | undefined>();
-  const [activeDay, setActiveDay] = useState<number | undefined>();
-  const [startedOn, setStartedOn] = useState<string | undefined>();
+  const cachedActive = queryCache.peek<ActiveInfo>(ACTIVE_KEY);
+  const [activeProgrammeId, setActiveProgrammeId] = useState<string | undefined>(cachedActive?.id);
+  const [activeDay, setActiveDay] = useState<number | undefined>(cachedActive?.day);
+  const [startedOn, setStartedOn] = useState<string | undefined>(cachedActive?.startedOn);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(() => plannedWorkoutsList.peek() === null);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +69,11 @@ export default function WorkoutScreen() {
       setActiveProgrammeId(today?.programme.id);
       setActiveDay(today?.dayNumber);
       setStartedOn(today?.startedOn);
+      queryCache.set<ActiveInfo>(ACTIVE_KEY, {
+        id: today?.programme.id,
+        day: today?.dayNumber,
+        startedOn: today?.startedOn,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : t.loadingError);
       console.error("Erreur:", err);
@@ -73,6 +84,8 @@ export default function WorkoutScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Données récentes et aucune modification depuis : pas de nouvelle requête.
+      if (queryCache.isFresh(ACTIVE_KEY, TAB_STALE_MS) && plannedWorkoutsList.peek() !== null) return;
       loadWorkouts();
     }, [loadWorkouts]),
   );

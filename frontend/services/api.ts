@@ -2,6 +2,7 @@ import { File } from "expo-file-system";
 import { router } from "expo-router";
 import { getCurrentLang, getStrings } from "@/i18n/current";
 import { clearUserSession } from "./session.service";
+import { queryCache } from "./queryCache";
 const DEV_API = "https://grinta-backend.duckdns.org";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API;
 
@@ -205,7 +206,12 @@ async function request<T>(
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  return parseResponse<T>(response, { authenticated: !!token, endpoint });
+  const result = await parseResponse<T>(response, { authenticated: !!token, endpoint });
+  // Toute modification de séances, de programmes ou de modèles périme l'onglet Séances.
+  if (method !== "GET" && /^\/(programmes|workouts\/(planned|templates|import))/.test(endpoint)) {
+    queryCache.invalidate("workouts:");
+  }
+  return result;
 }
 
 /**

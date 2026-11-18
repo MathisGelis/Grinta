@@ -90,6 +90,11 @@ export const UserService = {
     return api.patch<CurrentUser>(`/users/${userId}`, data, token ?? undefined);
   },
 
+  /** Id déjà connu, sans requête (null tant qu'il n'a pas été chargé). */
+  peekMyId(): string | null {
+    return myIdCache?.id ?? null;
+  },
+
   /** Id de l'utilisateur connecté (une seule requête par token). */
   async getMyId(): Promise<string | null> {
     const token = await TokenService.get();
