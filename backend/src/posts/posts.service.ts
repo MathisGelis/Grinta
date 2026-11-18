@@ -26,6 +26,36 @@ const AUTO_HIDE_THRESHOLD = 5;
 // silently drops the "postId" foreign key.
 type CommentRow = { isHidden: boolean; postId: string };
 
+/**
+ * The columns of a post card: the author, the workout behind the post, the
+ * counters, the partners and whether the viewer liked it. The post detail and
+ * both feeds select exactly these, so a card holds what the detail holds and
+ * the app has no need to fetch the detail of each card. Expects the aliases
+ * `post`, `author` and `w`, and a `:userId` parameter (the viewer).
+ */
+const POST_CARD_COLUMNS = [
+  'post.id AS id',
+  'post."createdAt" AS "createdAt"',
+  'author.id AS "userId"',
+  'author."displayName" AS "displayName"',
+  'author."uniqueName" AS "uniqueName"',
+  'COALESCE(author."avatarThumbnailUrl", author."avatarUrl") AS "avatarThumbnailUrl"',
+  'w.id AS "workoutId"',
+  'w.title AS "workoutTitle"',
+  'w."photoUrl" AS "workoutPhotoUrl"',
+  'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
+  'w.description AS "workoutDescription"',
+  'w."completionDate" AS "workoutCompletionDate"',
+  'w."totalDurationSeconds" AS "workoutDurationSeconds"',
+  'post."likesCount" AS "likesCount"',
+  'post."commentsCount" AS "commentsCount"',
+  `${partnersSql('post')} AS partners`,
+  `EXISTS (
+    SELECT 1 FROM post_likes ml
+    WHERE ml."postId" = post.id AND ml."userId" = :userId
+  ) AS "isLiked"`,
+];
+
 @Injectable()
 export class PostsService {
   constructor(
@@ -111,32 +141,11 @@ export class PostsService {
   async getPostById(userId: string, postId: string) {
     const rows = await this.postRepository
       .createQueryBuilder('post')
-      .innerJoin('post.user', 'u')
+      .innerJoin('post.user', 'author')
       .leftJoin('post.workout', 'w')
       .where('post.id = :postId', { postId })
-      .andWhere(this.visibleToViewerSql('u'))
-      .select([
-        'post.id AS id',
-        'post."createdAt" AS "createdAt"',
-        'u.id AS "userId"',
-        'u."displayName" AS "displayName"',
-        'u."uniqueName" AS "uniqueName"',
-        'COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"',
-        'w.id AS "workoutId"',
-        'w.title AS "workoutTitle"',
-        'w."photoUrl" AS "workoutPhotoUrl"',
-        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        'w.description AS "workoutDescription"',
-        'w."completionDate" AS "workoutCompletionDate"',
-        'w."totalDurationSeconds" AS "workoutDurationSeconds"',
-        'post."likesCount" AS "likesCount"',
-        'post."commentsCount" AS "commentsCount"',
-        `${partnersSql('post')} AS partners`,
-        `EXISTS (
-          SELECT 1 FROM post_likes ml
-          WHERE ml."postId" = post.id AND ml."userId" = :userId
-        ) AS "isLiked"`,
-      ])
+      .andWhere(this.visibleToViewerSql('author'))
+      .select(POST_CARD_COLUMNS)
       .setParameter('userId', userId)
       .setParameter('viewerId', userId)
       .getRawOne();
@@ -386,33 +395,16 @@ export class PostsService {
   async getFollowingFeed(userId: string, limit?: number) {
     const rows = await this.postRepository
       .createQueryBuilder('post')
-      .innerJoin('post.user', 'postUser')
+      .innerJoin('post.user', 'author')
       .leftJoin('post.workout', 'w')
       .innerJoin(
         'connections',
         'c',
-        'c."followingId" = postUser.id AND c."followerId" = :userId',
-        {
-          userId,
-        },
+        'c."followingId" = author.id AND c."followerId" = :userId',
+        { userId },
       )
-      .select([
-        'post.id AS id',
-        'post.createdAt AS "createdAt"',
-        'postUser.displayName AS "displayName"',
-        'COALESCE(postUser.avatarThumbnailUrl, postUser.avatarUrl) AS "avatarThumbnailUrl"',
-        'w.id AS "workoutId"',
-        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        'post."likesCount" AS "likesCount"',
-        'post."commentsCount" AS "commentsCount"',
-        `${partnersSql('post')} AS partners`,
-        `EXISTS (
-          SELECT 1 FROM post_likes ml
-          WHERE ml."postId" = post.id
-          AND ml."userId" = :userId
-        ) AS "isLiked"`,
-      ])
-      .orderBy('post.createdAt', 'DESC')
+      .select(POST_CARD_COLUMNS)
+      .orderBy('post."createdAt"', 'DESC')
       .limit(clampLimit(limit))
       .setParameter('userId', userId)
       .getRawMany<{ workoutId: string }>();
@@ -431,17 +423,17 @@ export class PostsService {
     startOfMonth.setHours(0, 0, 0, 0);
     const rows = await this.postRepository
       .createQueryBuilder('post')
-      .innerJoin('post.user', 'u')
+      .innerJoin('post.user', 'author')
       .leftJoin('post.workout', 'w')
       .where(
         `
           post."createdAt" >= :startOfMonth
           AND post."userId" <> :userId
           AND (
-            u."isPublic" = true
+            author."isPublic" = true
             OR EXISTS (
               SELECT 1 FROM connections c
-              WHERE c."followingId" = u."id"
+              WHERE c."followingId" = author."id"
               AND c."followerId" = :userId
             )
           )
@@ -449,21 +441,8 @@ export class PostsService {
         { startOfMonth, userId },
       )
       .select([
-        'post.id AS id',
-        'post."createdAt" AS "createdAt"',
-        'u."displayName" AS "displayName"',
-        'COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"',
-        'w.id AS "workoutId"',
-        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        'post."likesCount" AS "likesCount"',
-        'post."commentsCount" AS "commentsCount"',
-        `${partnersSql('post')} AS partners`,
+        ...POST_CARD_COLUMNS,
         '(post."likesCount" + post."commentsCount") AS score',
-        `EXISTS (
-          SELECT 1 FROM post_likes ml
-          WHERE ml."postId" = post.id
-          AND ml."userId" = :userId
-        ) AS "isLiked"`,
       ])
       .orderBy('score', 'DESC')
       .addOrderBy('post."createdAt"', 'DESC')

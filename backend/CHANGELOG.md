@@ -25,6 +25,8 @@
 
 - **B-04 : import de notes, séances multiples.** Un texte avec deux titres de séance (« Push A » … « Pull B ») donnait **une seule** séance « Séance importée » qui fusionnait tous les exercices, et les titres sortaient dans `unrecognized` (`unknown_exercise`). Une ligne courte (40 caractères au plus), sans séries ni charge, qui n'est pas un exercice et qui est suivie d'une ligne d'exercice est maintenant le **titre d'une séance** : plusieurs titres donnent plusieurs séances et un `programme` proposé, un seul titre nomme l'unique séance. Les vrais inconnus gardent `unknown_exercise`, ainsi qu'une ligne finale ou trop longue. Les en-têtes « Jour 1 », « Day 1 », « Lundi » et « Séance A » continuaient déjà d'être reconnus.
 
+- **B-06 : flux sans appel de détail par carte.** `GET /posts/feed/following` et `/posts/feed/top` obligeaient l'app à appeler `GET /posts/:id` pour chaque carte. Une carte contient maintenant **tout ce que contient le détail** : `userId`, `uniqueName`, `workoutTitle`, `workoutPhotoUrl`, `workoutDescription`, `workoutCompletionDate`, `workoutDurationSeconds`, en plus de `partners`, de la vignette, des compteurs, de `isLiked`, de `exercises` et de `stats`, avec un nouveau `totalExercises`. Le détail et les deux flux partagent la même liste de colonnes (`POST_CARD_COLUMNS`), donc ils ne peuvent plus diverger, et un test compare chaque carte au détail champ par champ. Taille mesurée : 7,5 Ko pour 5 posts de 6 exercices (limite demandée : 10 Ko).
+
 ## Non publié : deuxième lot de l'audit front
 
 - **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.

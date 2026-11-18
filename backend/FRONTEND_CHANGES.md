@@ -1071,3 +1071,11 @@ Rowing barre 4x8 50kg
 - Plusieurs titres donnent plusieurs `workouts` et un `programme` proposé (un jour par séance, dans l'ordre) ; un seul titre nomme l'unique séance, sans programme.
 - Les en-têtes `Jour 1`, `Day 2`, `Lundi`, `Séance A`, `Push :` fonctionnaient déjà et gardent leur sens (jours numérotés, semaine).
 - Une vraie ligne inconnue (`unknownthing 3x10`), ou un texte court sans exercice derrière, reste dans `unrecognized` avec `unknown_exercise`.
+
+### 10.5 Flux : plus d'appel de détail par carte (B-06)
+
+Chaque carte de `GET /posts/feed/following` et `GET /posts/feed/top` contient désormais tous les champs de `GET /posts/:id` : **l'appel de détail par carte peut être supprimé**.
+
+Champs ajoutés aux cartes : `userId`, `uniqueName`, `workoutTitle`, `workoutPhotoUrl`, `workoutDescription`, `workoutCompletionDate`, `workoutDurationSeconds` et `totalExercises` (nombre d'exercices). Déjà présents et inchangés : `id`, `createdAt`, `displayName`, `avatarThumbnailUrl`, `workoutId`, `workoutPhotoThumbnailUrl`, `likesCount`, `commentsCount`, `partners`, `isLiked`, `exercises[]` (nombre de séries et meilleure série) et `stats`.
+
+`totalExercises` est aussi dans `GET /posts/mine`. Mesure : 5 posts de 6 exercices pèsent environ 7,5 Ko. Les séries détaillées restent dans `GET /posts/:id/workout`, à ouvrir seulement au toucher d'une carte.
