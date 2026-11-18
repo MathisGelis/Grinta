@@ -15,8 +15,11 @@ import PressableScale from "@/components/ui/PressableScale";
 import ErrorState from "@/components/ui/ErrorState";
 import { queryCache } from "@/services/queryCache";
 import { ListSkeleton } from "@/components/ui/skeletons";
+import { formatDuration } from "@/utils/formatDuration";
 
 const COMPLETED_KEY = "completed:first-page";
+const ROW_HEIGHT = 80;
+const ROW_GAP = 8;
 
 export default function CompletedWorkoutsScreen() {
   const headerHeight = useFloatingHeaderHeight();
@@ -78,7 +81,17 @@ export default function CompletedWorkoutsScreen() {
           keyExtractor={(w) => w.id}
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
+          onEndReachedThreshold={0.4}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={7}
+          removeClippedSubviews
+          // Lignes de hauteur fixe (avatar 48 + padding 2×16) séparées par un gap de 8.
+          getItemLayout={(_, index) => ({
+            length: ROW_HEIGHT,
+            offset: headerHeight + index * (ROW_HEIGHT + ROW_GAP),
+            index,
+          })}
           contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 16, paddingBottom: 120, gap: 8 }}
           ListEmptyComponent={
             <EmptyState icon="barbell-outline" title={t.noWorkouts} className="mt-4" />
@@ -113,7 +126,7 @@ export default function CompletedWorkoutsScreen() {
                 </Text>
                 <Text className="mt-0.5 text-xs text-ink-muted">
                   {formatDate(new Date(w.completionDate), lang, "weekday")} ·{" "}
-                  {Math.round(w.totalDurationSeconds / 60)} min
+                  {formatDuration(w.totalDurationSeconds)}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={WorkoutTheme.text.disabled} />
