@@ -1095,3 +1095,7 @@ Un corps JSON de plus de 100 Ko renvoie `413` avec `code: "PAYLOAD_TOO_LARGE"`. 
 ### 10.8 Modèles de séances traduits (B-10)
 
 Envoyez `Accept-Language` (déjà fait pour les exercices) sur `/workouts/templates`, `/workouts/templates/:key` et `/:key/use`. `fr*` donne le français, toute autre langue l'anglais ; sans en-tête, français comme avant. Sont traduits : `title`, `description` du modèle et `title` de chaque séance. Les noms d'exercices suivent le même en-tête. Les `insights` des stats sont des codes : le texte reste à traduire côté app.
+
+### 10.9 Texte saisi par les utilisateurs (B-11)
+
+L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` compris). React Native l'affiche comme du texte, rien à faire. Si vous les injectez un jour dans du HTML (WebView, page de partage), échappez-les à l'affichage.

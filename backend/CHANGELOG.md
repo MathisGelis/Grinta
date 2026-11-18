@@ -34,6 +34,8 @@
 
 - **B-10 : textes serveur par langue.** `GET /workouts/templates`, `GET /workouts/templates/:key` et `POST /workouts/templates/:key/use` lisent `Accept-Language` : titres, descriptions et titres de séances en français (`fr`) ou en anglais (toute autre langue). Sans en-tête, le français reste la valeur par défaut, donc aucun client existant ne change. `use` enregistre les textes dans la langue demandée. Les messages d'insights des stats sont déjà des codes (`INSUFFICIENT_PULL_VOLUME`…), le texte « Not enough pulling volume… » vient de l'app, pas du serveur. Les autres langues de l'app (es, de, it…) lisent l'anglais pour les modèles tant que personne ne les a rédigées.
 
+- **B-11 : échappement.** Constat : les e-mails sont du texte brut (`MailMessage` n'a pas de champ HTML) et aucune route ne sert de HTML, donc rien n'est exécutable aujourd'hui. Choix : l'API stocke et renvoie le texte tel que saisi (le JSON n'est pas un contexte HTML, échapper à l'entrée afficherait `&lt;` dans l'app). Ajout de `escapeHtml` (`src/common/utils/escape-html.ts`), à utiliser dès qu'un gabarit d'e-mail HTML, une page de partage ou une vue web insère un titre, un pseudo ou un commentaire.
+
 ## Non publié : deuxième lot de l'audit front
 
 - **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.
