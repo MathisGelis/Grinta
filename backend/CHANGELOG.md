@@ -30,6 +30,8 @@
 - **B-07 : format d'erreur unique.** Toute erreur renvoie `{ statusCode, code, message }` (`message` est toujours une chaîne, plus d'objet imbriqué). Codes par défaut : `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `PAYLOAD_TOO_LARGE`, `TOO_MANY_REQUESTS`, `INTERNAL_ERROR` ; les erreurs métier gardent leur code propre (`VALIDATION_ERROR`, `EMAIL_IN_USE`, `DAY_NUMBER_DUPLICATE`…). L'inscription avec un e-mail déjà pris répond `400 EMAIL_IN_USE` et la route est limitée (5 essais par e-mail et par heure, 100 par adresse), ce qui freine le test d'une liste d'adresses. Choix assumé : on garde ce message précis pour l'UX plutôt qu'une réponse neutre.
 - **B-08 : corps trop gros.** Les corps JSON sont limités à 100 Ko et répondent `413 PAYLOAD_TOO_LARGE` au lieu d'un 500. Les photos gardent leur limite d'upload dédiée.
 
+- **B-09 : pagination.** `GET /connections/:id/followers` et `/following` prennent `limit` (plafonné à 100, 100 par défaut) et `offset`, triés du plus récent au plus ancien. `GET /posts/mine` est déjà plafonné à 100 (un test le fige). Nouveau `GET /posts/mine/ids` : `[{ postId, workoutId }]` seulement, pour l'écran Stats au lieu de `posts/mine?limit=100`. Les catalogues (`/exercises`, `/exercises/stats`, `/badges`) envoient un `ETag` : l'app peut rejouer la requête avec `If-None-Match` et reçoit `304` sans corps (vérifié par un test), ce qui évite de retélécharger 145 Ko.
+
 ## Non publié : deuxième lot de l'audit front
 
 - **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.

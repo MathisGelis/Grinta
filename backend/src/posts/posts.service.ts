@@ -202,6 +202,23 @@ export class PostsService {
     return { workoutId: post.workoutId, authorId: post.authorId };
   }
 
+  /**
+   * Identifiers of my published workouts, nothing else: the Stats screen only
+   * needs to know which workouts are public, not their cards.
+   */
+  async getMyPublishedIds(userId: string) {
+    const rows = await this.postRepository
+      .createQueryBuilder('post')
+      .where('post."userId" = :userId', { userId })
+      .andWhere('post."workoutId" IS NOT NULL')
+      .select(['post.id AS "postId"', 'post."workoutId" AS "workoutId"'])
+      .orderBy('post."createdAt"', 'DESC')
+      .limit(1000)
+      .getRawMany<{ postId: string; workoutId: string }>();
+
+    return rows;
+  }
+
   async getMyPosts(userId: string, limit?: number) {
     const rows = await this.postRepository
       .createQueryBuilder('post')

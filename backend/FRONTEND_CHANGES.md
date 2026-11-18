@@ -1085,3 +1085,9 @@ Champs ajoutés aux cartes : `userId`, `uniqueName`, `workoutTitle`, `workoutPho
 Toutes les erreurs ont la forme `{ statusCode, code, message }`, `message` étant une chaîne. **Changement** : les erreurs 404/401/400 « simples » avaient `message: { message, error, statusCode }` ; lisez désormais `body.message` directement et branchez sur `body.code` (`NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`, `EMAIL_IN_USE`, `VALIDATION_ERROR`, `RATE_LIMITED`…).
 
 Un corps JSON de plus de 100 Ko renvoie `413` avec `code: "PAYLOAD_TOO_LARGE"`. `POST /users/register` est limité : après 5 essais pour un même e-mail en une heure, `429 TOO_MANY_ATTEMPTS` avec `retryAfterSeconds`.
+
+### 10.7 Pagination et requêtes légères (B-09)
+
+- `GET /connections/:id/followers|following?limit=&offset=` : `limit` plafonné à 100 (défaut 100), tri du plus récent au plus ancien.
+- `GET /posts/mine/ids` : `[{ postId, workoutId }]`, 1000 au plus. À utiliser à la place de `GET /posts/mine?limit=100` pour savoir quelles séances sont publiées.
+- Catalogues (`/exercises`, `/exercises/stats`, `/badges`) : le serveur envoie un `ETag`. Gardez-le et renvoyez `If-None-Match` ; un `304` signifie « rien n'a changé », sans corps.

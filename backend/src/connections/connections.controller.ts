@@ -1,4 +1,12 @@
-import { Controller, Delete, Get, Param, Post, Req } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ConnectionsService } from './connections.service';
 import { Auth } from 'src/auth/auth.decorators';
@@ -96,8 +104,16 @@ export class ConnectionsController {
     type: UserListDto,
     isArray: true,
   })
-  getFollowers(@Req() req: AuthenticatedRequest, @Param('id') userId: string) {
-    return this.connectionsService.getFollowersOf(req.user.id, userId);
+  getFollowers(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') userId: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.connectionsService.getFollowersOf(req.user.id, userId, {
+      limit,
+      offset,
+    });
   }
 
   @Auth()
@@ -114,8 +130,16 @@ export class ConnectionsController {
     type: UserListDto,
     isArray: true,
   })
-  getFollowing(@Req() req: AuthenticatedRequest, @Param('id') userId: string) {
-    return this.connectionsService.getFollowingOf(req.user.id, userId);
+  getFollowing(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') userId: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.connectionsService.getFollowingOf(req.user.id, userId, {
+      limit,
+      offset,
+    });
   }
 
   @Auth()
