@@ -2,6 +2,8 @@ import type { Lang } from "./translations";
 
 /** Textes du troisième lot : mot de passe, onboarding, modèles, nouveaux graphiques, import. */
 export interface V4Strings {
+  payloadTooLarge: string;
+  imAnalysing: string;
   noValidatedSet: string;
   prgStartDayLabel: string;
   prgEnd: string;
@@ -109,6 +111,8 @@ export interface V4Strings {
 }
 
 const en: V4Strings = {
+  payloadTooLarge: "Content too large. Shorten it and try again.",
+  imAnalysing: "Reading your notes…",
   noValidatedSet: "Validate at least one set before finishing the workout.",
   prgStartDayLabel: "Starting on day",
   prgEnd: "End this programme",
@@ -224,6 +228,8 @@ const en: V4Strings = {
 };
 
 const fr: V4Strings = {
+  payloadTooLarge: "Contenu trop volumineux. Raccourcis-le et réessaie.",
+  imAnalysing: "Lecture de tes notes…",
   noValidatedSet: "Valide au moins une série avant de terminer la séance.",
   prgStartDayLabel: "Démarrer au jour",
   prgEnd: "Mettre fin au programme",

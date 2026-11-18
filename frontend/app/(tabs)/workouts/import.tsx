@@ -19,6 +19,7 @@ import {
 import { TokenService } from "@/services/token.service";
 import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 import { toast } from "@/components/ui/Toast";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 const MAX_LENGTH = 10000;
 const DEFAULT_REST_SECONDS = 90;
@@ -114,7 +115,12 @@ export default function ImportWorkoutsScreen() {
         />
         <Button label={t.imAnalyse} icon="sparkles-outline" loading={analysing} onPress={analyse} disabled={!text.trim()} />
 
-        {draft ? (
+        {analysing ? (
+          <View className="gap-3" accessibilityLiveRegion="polite">
+            <Text className="text-sm text-ink-muted">{t.imAnalysing}</Text>
+            <ListSkeleton count={3} gap={8} />
+          </View>
+        ) : draft ? (
           <View className="gap-4">
             <SectionHeader title={t.imDraft} />
             {draft.workouts.length === 0 ? (

@@ -5,6 +5,7 @@ import { TokenService } from "@/services/token.service";
 import { getItem } from "@/core/services/storage";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import LogoIntro from "@/components/ui/LogoIntro";
+import { UserService } from "@/services/user.service";
 
 // Vrai une fois l'animation jouée : elle n'a lieu qu'au lancement de l'app, pas à chaque retour sur cette route.
 let introPlayed = false;
@@ -16,6 +17,8 @@ export default function Index() {
   useEffect(() => {
     Promise.all([TokenService.get(), getItem("hasSeenOnboarding")]).then(([token, seen]) => {
       if (token) {
+        // Pendant l'intro : l'identité est demandée une fois, les écrans la trouvent en cache.
+        void UserService.getMyId().catch(() => {});
         setTarget("/(tabs)/explore");
       } else if (seen) {
         setTarget("/(auth)/LoginScreen");

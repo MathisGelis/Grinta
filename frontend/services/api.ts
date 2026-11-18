@@ -161,7 +161,10 @@ async function parseResponse<T>(
   if (response.status >= 500 && !(await checkServerHealth())) {
     throw new ApiError(strings.apiUnreachable, response.status);
   }
-  if (response.status === 413) throw new ApiError(strings.photoTooHeavy, 413);
+  if (response.status === 413) {
+    const isPhoto = /\/(avatar|photo)(\?|$)/.test(endpoint);
+    throw new ApiError(isPhoto ? strings.photoTooHeavy : strings.payloadTooLarge, 413);
+  }
 
   // Une réponse non JSON (ex. page HTML de nginx) devient une erreur générique.
   const code = isJson ? extractCode(data) : undefined;

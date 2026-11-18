@@ -28,6 +28,8 @@ import EmptyState from "@/components/ui/EmptyState";
 import { formatDuration } from "@/utils/formatDuration";
 
 const TOP_MUSCLES = 6;
+/** Délai avant de charger les blocs secondaires, pour laisser le résumé s'afficher d'abord. */
+const SECONDARY_DELAY_MS = 400;
 
 
 function Bar({ percent, color }: { percent: number; color: string }) {
@@ -81,9 +83,13 @@ export default function GlobalStatsSection({ userId }: Props) {
   const [consistency, setConsistency] = useState<Consistency | null>(null);
   const [frequency, setFrequency] = useState<MuscleFrequency | null>(null);
 
+  // Régularité et récupération sont plus bas dans la page : on les charge une fois l'écran affiché.
   useEffect(() => {
-    StatsService.getConsistency(userId).then(setConsistency).catch(() => {});
-    StatsService.getMuscleFrequency(userId).then(setFrequency).catch(() => {});
+    const timer = setTimeout(() => {
+      StatsService.getConsistency(userId).then(setConsistency).catch(() => {});
+      StatsService.getMuscleFrequency(userId).then(setFrequency).catch(() => {});
+    }, SECONDARY_DELAY_MS);
+    return () => clearTimeout(timer);
   }, [reloadKey, userId]);
 
   useEffect(() => {
