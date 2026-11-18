@@ -99,6 +99,11 @@ export default function ProgrammeDetailScreen() {
       setEditing(false);
       return;
     }
+    // Un programme ne peut pas n'être fait que de jours de repos (B-22).
+    if (!days.some((day) => day.workout)) {
+      Alert.alert(t.error, t.apiErrors.PROGRAMME_NEEDS_WORKOUT);
+      return;
+    }
     try {
       setSaving(true);
       await updateProgramme(programmeId, {

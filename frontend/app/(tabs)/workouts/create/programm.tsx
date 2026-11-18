@@ -89,6 +89,11 @@ export default function CreateProgrammScreen() {
       Alert.alert(t.error, t.addAtLeastOneDay);
       return;
     }
+    // Un programme ne peut pas n'être fait que de jours de repos (B-22).
+    if (!days.some((day) => day.workout)) {
+      Alert.alert(t.error, t.apiErrors.PROGRAMME_NEEDS_WORKOUT);
+      return;
+    }
 
     setLoading(true);
 
