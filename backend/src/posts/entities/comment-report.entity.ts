@@ -18,7 +18,7 @@ export class CommentReport {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   reporter: User;
 
   @ManyToOne(() => PostComment, (comment) => comment.reports, {

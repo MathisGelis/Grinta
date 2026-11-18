@@ -31,6 +31,7 @@ describe('UsersService access control', () => {
       {} as never,
       {} as never,
       {} as never,
+      { forget: jest.fn() } as never,
     );
   });
 
@@ -116,6 +117,7 @@ describe('UsersService profile photo', () => {
       {} as never,
       {} as never,
       photos as never,
+      { forget: jest.fn() } as never,
     );
   });
 

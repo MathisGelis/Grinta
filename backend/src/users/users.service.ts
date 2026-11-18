@@ -1,3 +1,4 @@
+import { PasswordStateService } from 'src/auth/password-state.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -41,6 +42,8 @@ export class UsersService {
     private readonly connectionsService: ConnectionsService,
 
     private readonly photos: PhotosService,
+
+    private readonly passwordState: PasswordStateService,
   ) {}
 
   async registerUser(userData: CreateUserDto): Promise<User> {
@@ -142,10 +145,31 @@ export class UsersService {
   ): Promise<{ message: string }> {
     this.assertSelf(currentUserId, id);
     const photoUrls = await this.findPhotoUrls(id);
-    const result = await this.userRepository.delete(id);
+    // Everything the account owns goes with it (ON DELETE CASCADE). The like
+    // and comment counters of other people's posts are fixed first, in the
+    // same transaction, or they would keep counting a deleted user.
+    const affected = await this.userRepository.manager.transaction(
+      async (manager) => {
+        await manager.query(
+          `UPDATE posts p SET "likesCount" = GREATEST(p."likesCount" - l.n, 0)
+             FROM (SELECT "postId", COUNT(*)::int AS n FROM post_likes
+                    WHERE "userId" = $1 GROUP BY "postId") l
+            WHERE p.id = l."postId"`,
+          [id],
+        );
+        await manager.query(
+          `UPDATE posts p SET "commentsCount" = GREATEST(p."commentsCount" - c.n, 0)
+             FROM (SELECT "postId", COUNT(*)::int AS n FROM post_comments
+                    WHERE "userId" = $1 GROUP BY "postId") c
+            WHERE p.id = c."postId"`,
+          [id],
+        );
+        return (await manager.delete(User, id)).affected;
+      },
+    );
 
-    if (result.affected === 0)
-      throw new NotFoundException(`User with ID ${id} not found`);
+    if (!affected) throw new NotFoundException(`User with ID ${id} not found`);
+    this.passwordState.forget(id);
     await this.photos.removeAll(photoUrls);
     return { message: 'User deleted successfully' };
   }

@@ -12,7 +12,7 @@ import { EmailChangeService } from './email-change.service';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { PasswordController } from './password.controller';
 import { PasswordResetService } from './password-reset.service';
-import { PasswordStateService } from './password-state.service';
+import { PasswordStateModule } from './password-state.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JWT_ALGORITHM, JWT_EXPIRES_IN, readJwtSecret } from './auth.constants';
 import { SocialAuthController } from './social/social-auth.controller';
@@ -27,6 +27,7 @@ import { UserIdentity } from './social/user-identity.entity';
 @Module({
   imports: [
     UsersModule,
+    PasswordStateModule,
     TypeOrmModule.forFeature([
       User,
       PasswordResetToken,
@@ -49,7 +50,6 @@ import { UserIdentity } from './social/user-identity.entity';
     JwtStrategy,
     PasswordResetService,
     EmailChangeService,
-    PasswordStateService,
     SocialAuthService,
     SocialTokenVerifier,
     { provide: SOCIAL_KEY_SETS, useFactory: remoteKeySets },

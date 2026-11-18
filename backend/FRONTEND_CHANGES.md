@@ -1108,3 +1108,7 @@ L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` co
 - Changer le mot de passe : `PATCH /users/me/password` (inchangé).
 - Changer l'e-mail : `POST /users/me/email` `{ email, currentPassword }` → 204. Un lien part vers la nouvelle adresse (`CONFIRM_EMAIL_URL?token=…`, par défaut `grinta://confirm-email?token=…`) ; l'app l'ouvre et appelle `POST /auth/confirm-email` `{ token }` (public) → 204, puis redemande une connexion (les anciennes sessions sont coupées). Erreurs : `CURRENT_PASSWORD_INVALID`, `EMAIL_IN_USE`, `EMAIL_UNCHANGED`, `EMAIL_TOKEN_INVALID`.
 - Pseudo pris : `400` avec `code: "USERNAME_TAKEN"` et `suggestion`.
+
+### 11.2 Suppression de compte (B-17)
+
+`DELETE /users/:id` fonctionne maintenant pour tout compte : réponse 200 `{ message }`. Toutes les données du compte sont supprimées (séances, posts, likes, commentaires, programmes, groupes créés, photos). Le jeton est refusé aussitôt (401) : renvoyez l'utilisateur à l'écran de connexion. L'e-mail peut être réutilisé pour une nouvelle inscription.
