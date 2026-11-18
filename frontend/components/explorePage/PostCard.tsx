@@ -126,10 +126,11 @@ export default function PostCard({
   const [detail, setDetail] = useState<Post | undefined>(details.get(post.id));
   const [declinedBy, setDeclinedBy] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const hasFeedTitle = post.workoutTitle !== undefined;
 
   useEffect(() => {
     // Carte de fil : déjà complète, aucune requête.
-    if (post.workoutTitle !== undefined || details.has(post.id)) return;
+    if (hasFeedTitle || details.has(post.id)) return;
     let cancelled = false;
     loadDetail(post.id)
       .then((data) => {
@@ -141,7 +142,7 @@ export default function PostCard({
     return () => {
       cancelled = true;
     };
-  }, [post.id]);
+  }, [post.id, hasFeedTitle]);
 
   const userId = post.userId ?? detail?.userId;
   const title = post.workoutTitle ?? detail?.workoutTitle ?? detail?.workout?.title ?? t.completedWorkoutTitle;
