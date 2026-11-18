@@ -53,6 +53,8 @@ export interface Post {
   workoutCompletionDate?: string,
   workoutPhotoUrl?: string | null,
   workoutPhotoThumbnailUrl?: string | null,
+  /** Nombre d'exercices (flux et `/posts/mine`). */
+  totalExercises?: number,
   partners?: PostPartner[],
   exercises?: FeedExercise[],
   stats?: FeedStats,

@@ -81,7 +81,7 @@ function LikeHeart({ liked }: { liked: boolean }) {
 
 const MAX_CACHED_DETAILS = 200;
 const MAX_PARALLEL_DETAILS = 2;
-/** Détails de posts déjà chargés (borné : les plus anciens sont retirés). */
+/** Détails déjà chargés pour les posts qui ne viennent pas d'un fil (borné : les plus anciens sont retirés). */
 const details = new Map<string, Post>();
 
 function rememberDetail(id: string, post: Post) {
@@ -93,8 +93,8 @@ function rememberDetail(id: string, post: Post) {
   }
 }
 
-// Le flux ne renvoie pas encore titre ni description (B-06) : on charge le détail de chaque carte,
-// mais deux requêtes à la fois au plus, pour ne pas saturer la connexion à l'ouverture de l'accueil.
+// Les fils renvoient des cartes complètes (B-06) : le détail n'est demandé que pour les posts
+// issus d'une autre liste (profil), deux requêtes à la fois au plus.
 let running = 0;
 const waiting: (() => void)[] = [];
 
@@ -128,7 +128,8 @@ export default function PostCard({
   const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
-    if (details.has(post.id)) return;
+    // Carte de fil : déjà complète, aucune requête.
+    if (post.workoutTitle !== undefined || details.has(post.id)) return;
     let cancelled = false;
     loadDetail(post.id)
       .then((data) => {
@@ -142,15 +143,15 @@ export default function PostCard({
     };
   }, [post.id]);
 
-  const userId = detail?.userId ?? post.userId;
-  const title = detail?.workoutTitle ?? detail?.workout?.title ?? t.completedWorkoutTitle;
-  const description = detail?.workoutDescription ?? detail?.workout?.description;
-  const duration = post.stats?.durationSeconds ?? detail?.workoutDurationSeconds;
+  const userId = post.userId ?? detail?.userId;
+  const title = post.workoutTitle ?? detail?.workoutTitle ?? detail?.workout?.title ?? t.completedWorkoutTitle;
+  const description = post.workoutDescription ?? detail?.workoutDescription ?? detail?.workout?.description;
+  const duration = post.stats?.durationSeconds ?? post.workoutDurationSeconds ?? detail?.workoutDurationSeconds;
   const exercises = post.exercises ?? detail?.exercises;
   const stats = post.stats ?? detail?.stats;
-  const totalExercises = detail?.workout?.totalExercises;
-  const photo = mediaUrl(detail?.workoutPhotoThumbnailUrl ?? post.workoutPhotoThumbnailUrl);
-  const partners = (detail?.partners ?? post.partners)?.filter((p) => p.id !== declinedBy);
+  const totalExercises = post.totalExercises ?? detail?.workout?.totalExercises;
+  const photo = mediaUrl(post.workoutPhotoThumbnailUrl ?? detail?.workoutPhotoThumbnailUrl);
+  const partners = (post.partners ?? detail?.partners)?.filter((p) => p.id !== declinedBy);
 
   // Avec le maximum d'exercices (et la ligne « +N » s'il y en a plus), la liste remplit toute la hauteur.
   const hasMoreExercises = (exercises?.length ?? 0) > MAX_EXERCISES;
@@ -321,8 +322,8 @@ export default function PostCard({
                   size="md"
                   label={t.completedLabel}
                   value={
-                    detail?.workoutCompletionDate
-                      ? formatDate(detail.workoutCompletionDate, lang, "dayMonth")
+                    (post.workoutCompletionDate ?? detail?.workoutCompletionDate)
+                      ? formatDate((post.workoutCompletionDate ?? detail?.workoutCompletionDate)!, lang, "dayMonth")
                       : "–"
                   }
                   className="flex-1 items-center"
