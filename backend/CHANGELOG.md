@@ -17,6 +17,12 @@
   - `completionDate` au plus 24 h dans le futur (nouveau code `DATE_TOO_FAR_IN_FUTURE`).
   - Chaque cas répond 400 `VALIDATION_ERROR` avec le bon `code` (`VALUE_TOO_LARGE`, `ARRAY_TOO_SHORT`, `FIELD_TOO_LONG`…) ; les valeurs limites sont acceptées. Les DTO d'exercice dupliqués entre création et modification sont fusionnés.
 
+- **B-03 : programmes (doublons, taille, dates).** Deux jours `dayNumber: 1` provoquaient un **500** (index unique), 500 jours étaient acceptés, et un `startDate` en 2099 était accepté.
+  - Les jours sont numérotés de 1 à N, dans n'importe quel ordre, sans doublon ni trou : 400 `DAY_NUMBER_DUPLICATE` ou `DAY_NUMBERS_NOT_CONSECUTIVE`. Un jour de repos est un jour sans séance, pas un numéro manquant. Même règle pour `PATCH /programmes/:id`.
+  - 84 jours au plus (`days` : `ARRAY_TOO_LONG` ; `dayNumber` : `VALUE_TOO_LARGE`).
+  - `startDate` à 7 jours au plus d'aujourd'hui, dans un sens ou l'autre : 400 `START_DATE_OUT_OF_RANGE`. Un départ dans quelques jours donne `status: "not_started"` avec `daysUntilStart` dans `GET /programmes/active/today`.
+  - Plus aucun 500. Les tests e2e du démarrage utilisent des dates relatives à aujourd'hui, puisque la fenêtre est glissante.
+
 ## Non publié : deuxième lot de l'audit front
 
 - **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.

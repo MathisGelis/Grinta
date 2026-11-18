@@ -1046,3 +1046,11 @@ Un compte **privé** n'est plus lisible par n'importe qui. Les routes ci-dessous
 - **Un exercice sans série** : omettre `sets`, ne jamais envoyer `sets: []` (400 `ARRAY_TOO_SHORT`). C'est le cas d'un exercice passé pendant une séance.
 - Une séance sans aucun exercice n'est plus acceptée (`exercises` : au moins 1).
 - Limiter les champs de saisie aux mêmes bornes pour éviter l'erreur.
+
+### 10.3 Programmes : jours, taille et date de départ (B-03)
+
+- **Jours** (`POST /programmes`, `PATCH /programmes/:id`) : numérotés de **1 à N** sans trou ni doublon, 84 au plus. Un jour de repos est un jour **sans** `workoutId`, il ne faut pas sauter son numéro. L'app qui renumérote avec `index + 1` est déjà conforme.
+  - 400 `DAY_NUMBER_DUPLICATE` (avec `dayNumbers`) : un numéro apparaît deux fois.
+  - 400 `DAY_NUMBERS_NOT_CONSECUTIVE` (avec `missingDayNumber`) : il manque un numéro.
+  - 400 `VALIDATION_ERROR` : plus de 84 jours (`days`, `ARRAY_TOO_LONG`) ou `dayNumber` au-dessus de 84.
+- **Date de départ** (`POST /programmes/:id/start`) : à **7 jours au plus** d'aujourd'hui, avant ou après, sinon 400 `START_DATE_OUT_OF_RANGE` (avec `windowDays`). Pour un départ dans quelques jours, `GET /programmes/active/today` renvoie `status: "not_started"` et `daysUntilStart` jusqu'à la date.
