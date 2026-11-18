@@ -261,6 +261,47 @@ export class ExerciseStatsService {
   }
 
   /**
+   * One page of the same list, most recently trained first. `before` is the
+   * opaque `nextBefore` of the previous page: the position is a (date, id)
+   * pair, so the pages stay stable while workouts are saved in between.
+   */
+  async listPageForUser(
+    userId: string,
+    limit: number,
+    before?: string,
+  ): Promise<{ items: ExerciseStatsDto[]; nextBefore: string | null }> {
+    const qb = this.statsRepository
+      .createQueryBuilder('s')
+      .innerJoinAndSelect('s.exercise', 'exercise')
+      .where('s.user_id = :userId', { userId })
+      .orderBy('s.last_performed_at', 'DESC', 'NULLS LAST')
+      .addOrderBy('s.id', 'DESC')
+      .limit(limit + 1);
+
+    if (before) {
+      const [date, id] = decodeCursor(before);
+
+      if (date)
+        qb.andWhere(
+          '(s.last_performed_at < :date OR (s.last_performed_at = :date AND s.id < :id) OR s.last_performed_at IS NULL)',
+          { date, id },
+        );
+      else qb.andWhere('s.last_performed_at IS NULL AND s.id < :id', { id });
+    }
+    const rows = await qb.getMany();
+    const page = rows.slice(0, limit);
+    const last = page[page.length - 1];
+
+    return {
+      items: page.map(toDto),
+      nextBefore:
+        rows.length > limit && last
+          ? encodeCursor(last.last_performed_at, last.id)
+          : null,
+    };
+  }
+
+  /**
    * The user's stats on one exercise next to those of someone they follow.
    * Theirs come from their published workouts only, recomputed on the fly:
    * the stored stats cover every workout, unpublished ones included.
@@ -439,4 +480,30 @@ function toDto(
     totalVolume: roundVolume(row.total_volume),
     updatedAt: row.updatedAt,
   };
+}
+
+const encodeCursor = (date: Date | null | undefined, id: string) =>
+  Buffer.from(JSON.stringify([date ? date.toISOString() : null, id])).toString(
+    'base64url',
+  );
+
+function decodeCursor(cursor: string): [string | null, string] {
+  try {
+    const [date, id] = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString(),
+    ) as [string | null, string];
+
+    if (
+      (date !== null && Number.isNaN(Date.parse(date))) ||
+      !/^[0-9a-f-]{36}$/i.test(id)
+    )
+      throw new Error('bad cursor');
+    return [date, id];
+  } catch {
+    throw new BadRequestException({
+      statusCode: 400,
+      code: 'CURSOR_INVALID',
+      message: 'Curseur de pagination invalide.',
+    });
+  }
 }

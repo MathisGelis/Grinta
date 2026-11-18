@@ -1,3 +1,4 @@
+import { clampLimit } from '../common/utils/limit';
 import {
   Header,
   Controller,
@@ -62,7 +63,10 @@ export class ExerciseController {
     summary: 'Stats of every exercise the current user has trained',
     description:
       'Most recently trained first. Updated automatically each time a ' +
-      'completed workout is saved, edited or deleted.',
+      'completed workout is saved, edited or deleted. Without `limit`, the ' +
+      'whole list as an array (ETag, so a repeat is a 304). With `limit` (1 ' +
+      'to 100): { items, nextBefore }, the page after the opaque `before` ' +
+      'cursor of the previous one; nextBefore is null on the last page.',
   })
   @ApiResponse({
     status: 200,
@@ -70,8 +74,18 @@ export class ExerciseController {
     type: ExerciseStatsDto,
     isArray: true,
   })
-  listMyStats(@Req() req: AuthenticatedRequest) {
-    return this.exerciseStats.listForUser(req.user.id);
+  listMyStats(
+    @Req() req: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+    @Query('before') before?: string,
+  ) {
+    if (limit === undefined && before === undefined)
+      return this.exerciseStats.listForUser(req.user.id);
+    return this.exerciseStats.listPageForUser(
+      req.user.id,
+      clampLimit(limit, 50),
+      before,
+    );
   }
 
   @Get(':id')

@@ -1125,3 +1125,7 @@ L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` co
 ### 11.5 En-têtes, Swagger, jeton (B-19)
 
 Rien à changer côté app. Le jeton ne contient plus l'e-mail (ne le décodez pas) ; `GET /auth/me` renvoie toujours `{ id, email }`. Swagger est fermé en production.
+
+### 11.6 Records paginés (B-13)
+
+`GET /exercises/stats?limit=50` → `{ items, nextBefore }`. Chargez la page suivante avec `?limit=50&before=<nextBefore>` au défilement ; `nextBefore: null` signifie la fin. Sans `limit`, le tableau complet comme avant. À préférer : la première page suffit pour ouvrir l'écran Records.
