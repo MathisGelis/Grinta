@@ -14,6 +14,7 @@ import {
   PlannedWorkout,
   PlannedWorkoutExercise,
 } from '../workouts/entities/planned-workout.entity';
+import { localizeTemplate, TemplateLanguage } from './template-texts';
 import { TemplatesQueryDto } from './dto/templates-query.dto';
 import {
   rankTemplates,
@@ -66,14 +67,18 @@ export class WorkoutTemplatesService {
   ) {}
 
   /** Every template, the best fit for the onboarding answers first. */
-  async listTemplates(user: AuthUser, query: TemplatesQueryDto) {
+  async listTemplates(
+    user: AuthUser,
+    query: TemplatesQueryDto,
+    language: TemplateLanguage = 'fr',
+  ) {
     const criteria = await this.criteriaFor(user, query);
     const ids = await this.resolveExerciseIds();
 
     return {
       criteria,
       templates: rankTemplates(criteria).map(({ template, recommended }) => ({
-        ...this.toDto(template, ids),
+        ...this.toDto(localizeTemplate(template, language), ids),
         recommended,
       })),
     };
@@ -87,8 +92,12 @@ export class WorkoutTemplatesService {
    * then the programme with POST /programmes; or as is with
    * POST /workouts/templates/:key/use.
    */
-  async proposeTemplate(user: AuthUser, key: string) {
-    const template = this.templateOf(key);
+  async proposeTemplate(
+    user: AuthUser,
+    key: string,
+    language: TemplateLanguage = 'fr',
+  ) {
+    const template = this.templateOf(key, language);
     const [ids, level] = await Promise.all([
       this.resolveExerciseIds(),
       this.levelFor(user, template),
@@ -125,8 +134,12 @@ export class WorkoutTemplatesService {
    * the week. The programme is not started; the app starts it with
    * POST /programmes/:id/start.
    */
-  async useTemplate(user: AuthUser, key: string) {
-    const template = this.templateOf(key);
+  async useTemplate(
+    user: AuthUser,
+    key: string,
+    language: TemplateLanguage = 'fr',
+  ) {
+    const template = this.templateOf(key, language);
     const [ids, level] = await Promise.all([
       this.resolveExerciseIds(),
       this.levelFor(user, template),
@@ -201,11 +214,11 @@ export class WorkoutTemplatesService {
     return programme;
   }
 
-  private templateOf(key: string): WorkoutTemplate {
+  private templateOf(key: string, language: TemplateLanguage): WorkoutTemplate {
     const template = WORKOUT_TEMPLATES.find((t) => t.key === key);
 
     if (!template) throw new NotFoundException('Modèle introuvable');
-    return template;
+    return localizeTemplate(template, language);
   }
 
   /** The user's level when the template suits it, else its first level. */

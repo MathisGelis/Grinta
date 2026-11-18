@@ -1091,3 +1091,7 @@ Un corps JSON de plus de 100 Ko renvoie `413` avec `code: "PAYLOAD_TOO_LARGE"`. 
 - `GET /connections/:id/followers|following?limit=&offset=` : `limit` plafonné à 100 (défaut 100), tri du plus récent au plus ancien.
 - `GET /posts/mine/ids` : `[{ postId, workoutId }]`, 1000 au plus. À utiliser à la place de `GET /posts/mine?limit=100` pour savoir quelles séances sont publiées.
 - Catalogues (`/exercises`, `/exercises/stats`, `/badges`) : le serveur envoie un `ETag`. Gardez-le et renvoyez `If-None-Match` ; un `304` signifie « rien n'a changé », sans corps.
+
+### 10.8 Modèles de séances traduits (B-10)
+
+Envoyez `Accept-Language` (déjà fait pour les exercices) sur `/workouts/templates`, `/workouts/templates/:key` et `/:key/use`. `fr*` donne le français, toute autre langue l'anglais ; sans en-tête, français comme avant. Sont traduits : `title`, `description` du modèle et `title` de chaque séance. Les noms d'exercices suivent le même en-tête. Les `insights` des stats sont des codes : le texte reste à traduire côté app.
