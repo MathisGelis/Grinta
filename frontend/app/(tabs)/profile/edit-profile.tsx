@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { UserService, CurrentUser } from "@/services/user.service";
 import { saveItem } from "@/core/services/storage";
 import { PhotoService, pickImage } from "@/services/photo.service";
-import { LIMITS, isValidEmail, isValidUniqueName, sanitizeUniqueName } from "@/utils/validation";
+import { LIMITS, isValidUniqueName, sanitizeUniqueName } from "@/utils/validation";
 import { ApiError } from "@/services/api";
 import Avatar from "@/components/ui/Avatar";
 
@@ -17,6 +17,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { FormSkeleton } from "@/components/ui/skeletons";
 import { toast } from "@/components/ui/Toast";
 import { queryCache } from "@/services/queryCache";
+import { format } from "@/i18n/translations";
 export default function EditProfileScreen() {
   const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
@@ -28,7 +29,7 @@ export default function EditProfileScreen() {
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"displayName" | "uniqueName" | "email", string>>>({});
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"displayName" | "uniqueName", string>>>({});
 
   useEffect(() => {
     UserService.getMe()
@@ -52,7 +53,6 @@ export default function EditProfileScreen() {
     if (uniqueNameChanged && !isValidUniqueName(uniqueName)) {
       errors.uniqueName = uniqueName.trim().length < LIMITS.uniqueNameMin ? t.usernameTooShort : t.usernameInvalid;
     }
-    if (email.trim() !== user.email && !isValidEmail(email)) errors.email = t.invalidEmail;
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
@@ -61,7 +61,6 @@ export default function EditProfileScreen() {
       const updates: Record<string, string> = {};
       if (displayName.trim() !== user.displayName) updates.displayName = displayName.trim();
       if (uniqueName.trim() !== user.uniqueName) updates.uniqueName = uniqueName.trim().toLowerCase();
-      if (email.trim() !== user.email) updates.email = email.trim().toLowerCase();
 
       if (Object.keys(updates).length === 0) {
         router.back();
@@ -75,8 +74,13 @@ export default function EditProfileScreen() {
       router.back();
     } catch (err: any) {
       const server = err instanceof ApiError ? err.fieldErrors : undefined;
-      if (server && (server.displayName || server.uniqueName || server.email)) {
-        setFieldErrors({ displayName: server.displayName, uniqueName: server.uniqueName, email: server.email });
+      if (err instanceof ApiError && err.code === "USERNAME_TAKEN") {
+        const suggestion = typeof err.body?.suggestion === "string" ? err.body.suggestion : null;
+        setFieldErrors({
+          uniqueName: suggestion ? `${t.usernameTaken} ${format(t.usernameSuggestion, { name: suggestion })}` : t.usernameTaken,
+        });
+      } else if (server && (server.displayName || server.uniqueName)) {
+        setFieldErrors({ displayName: server.displayName, uniqueName: server.uniqueName });
       } else {
         Alert.alert(t.error, err.message || t.cannotSaveProfile);
       }
@@ -210,18 +214,20 @@ export default function EditProfileScreen() {
 
           <View className="mb-7">
             <Text className="text-accent-light text-xs mb-2.5">{t.email}</Text>
-            <TextInput
-              className="text-ink text-base py-1.5"
-              value={email}
-              maxLength={LIMITS.email}
-              onChangeText={setEmail}
-              placeholder={t.emailPlaceholder}
-              placeholderTextColor={WorkoutTheme.text.disabled}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
+            <View className="flex-row items-center justify-between gap-3 py-1.5">
+              <Text className="flex-1 text-base text-ink" numberOfLines={1}>
+                {email}
+              </Text>
+              <PressableScale
+                onPress={() => router.push("/(tabs)/profile/change-email" as any)}
+                accessibilityRole="button"
+                halo={false}
+                hitSlop={10}
+              >
+                <Text className="text-sm font-semibold text-accent-light">{t.emailChangeLink}</Text>
+              </PressableScale>
+            </View>
             <View className="h-[1px] bg-raised mt-1.5" />
-            {fieldErrors.email ? <Text className="text-[11px] mt-1.5 text-danger">{fieldErrors.email}</Text> : null}
           </View>
         </View>
 

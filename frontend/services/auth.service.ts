@@ -19,6 +19,11 @@ export const AuthService = {
     return api.post<void>("/auth/forgot-password", { email: email.trim() });
   },
 
+  /** Confirme le changement d'e-mail depuis le lien reçu (`204`). Les anciennes sessions sont coupées. */
+  confirmEmail(token: string) {
+    return api.post<void>("/auth/confirm-email", { token });
+  },
+
   resetPassword(token: string, password: string) {
     return api.post<void>("/auth/reset-password", { token, password });
   },

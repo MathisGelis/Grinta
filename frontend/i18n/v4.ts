@@ -2,6 +2,17 @@ import type { Lang } from "./translations";
 
 /** Textes du troisième lot : mot de passe, onboarding, modèles, nouveaux graphiques, import. */
 export interface V4Strings {
+  usernameTaken: string;
+  usernameSuggestion: string;
+  emailChangeLink: string;
+  emailChangeTitle: string;
+  emailChangeIntro: string;
+  emailNewLabel: string;
+  emailChangeSend: string;
+  emailChangeSent: string;
+  confirmEmailTitle: string;
+  confirmEmailDone: string;
+  deleteAccountFailed: string;
   maxProgrammeDays: string;
   maxExercisesReached: string;
   payloadTooLarge: string;
@@ -113,6 +124,17 @@ export interface V4Strings {
 }
 
 const en: V4Strings = {
+  usernameTaken: "This username is already taken.",
+  usernameSuggestion: "Try @{name}.",
+  emailChangeLink: "Change",
+  emailChangeTitle: "Change email",
+  emailChangeIntro: "We will send a confirmation link to the new address. Your email only changes once you open it.",
+  emailNewLabel: "New email address",
+  emailChangeSend: "Send the link",
+  emailChangeSent: "A confirmation link was sent to {email}. Open it to finish.",
+  confirmEmailTitle: "Confirm your email",
+  confirmEmailDone: "Email confirmed. Sign in again with your new address.",
+  deleteAccountFailed: "Account not deleted",
   maxProgrammeDays: "A programme can have 84 days at most.",
   maxExercisesReached: "A workout can have 40 exercises at most.",
   payloadTooLarge: "Content too large. Shorten it and try again.",
@@ -232,6 +254,17 @@ const en: V4Strings = {
 };
 
 const fr: V4Strings = {
+  usernameTaken: "Ce pseudo est déjà pris.",
+  usernameSuggestion: "Essaie @{name}.",
+  emailChangeLink: "Modifier",
+  emailChangeTitle: "Changer l'e-mail",
+  emailChangeIntro: "Nous envoyons un lien de confirmation à la nouvelle adresse. Ton e-mail ne change qu'une fois le lien ouvert.",
+  emailNewLabel: "Nouvelle adresse e-mail",
+  emailChangeSend: "Envoyer le lien",
+  emailChangeSent: "Un lien de confirmation a été envoyé à {email}. Ouvre-le pour terminer.",
+  confirmEmailTitle: "Confirme ton e-mail",
+  confirmEmailDone: "E-mail confirmé. Reconnecte-toi avec ta nouvelle adresse.",
+  deleteAccountFailed: "Compte non supprimé",
   maxProgrammeDays: "Un programme peut avoir 84 jours au maximum.",
   maxExercisesReached: "Une séance peut contenir 40 exercices au maximum.",
   payloadTooLarge: "Contenu trop volumineux. Raccourcis-le et réessaie.",

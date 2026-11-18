@@ -62,7 +62,6 @@ export type Goal = "gain_weight" | "lose_weight" | "get_fitter" | "flexibility" 
 export interface UpdateUserData {
   displayName?: string;
   uniqueName?: string;
-  email?: string;
   birthDate?: string;
   height?: number;
   weight?: number;
@@ -138,10 +137,18 @@ export const UserService = {
     return api.patch<{ isPublic: boolean }>("/users/me/toggle-visibility", {}, token ?? undefined);
   },
 
+  /** Supprime le compte et toutes ses données : le jeton est refusé aussitôt après. */
   async deleteAccount(): Promise<void> {
     const token = await TokenService.get();
-    const me = await api.get<{ id: string }>("/auth/me", token ?? undefined);
-    await api.delete(`/users/${me.id}`, token ?? undefined);
+    const id = await UserService.getMyId();
+    if (!id) throw new Error("Not authenticated");
+    await api.delete(`/users/${id}`, token ?? undefined);
+  },
+
+  /** Envoie un lien de confirmation à la nouvelle adresse (`204`). L'e-mail ne change qu'à la confirmation. */
+  async requestEmailChange(email: string, currentPassword: string): Promise<void> {
+    const token = await TokenService.get();
+    await api.post<void>("/users/me/email", { email: email.trim(), currentPassword }, token ?? undefined);
   },
 
   async getProfile(userId: string): Promise<UserProfile> {

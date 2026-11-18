@@ -41,6 +41,8 @@ export class ApiError extends Error {
   retryAfterSeconds?: number;
   /** Erreurs de validation par champ (`errors[].field` → message), 400 uniquement. */
   fieldErrors?: Record<string, string>;
+  /** Corps JSON de la réponse d'erreur (champs additionnels : `suggestion`, `cycleLength`…). */
+  body?: Record<string, unknown>;
   constructor(
     message: string,
     status: number,
@@ -169,13 +171,15 @@ async function parseResponse<T>(
   // Une réponse non JSON (ex. page HTML de nginx) devient une erreur générique.
   const code = isJson ? extractCode(data) : undefined;
   const message = (code && strings.apiErrors[code]) || (isJson ? extractMessage(data) : undefined);
-  throw new ApiError(
+  const error = new ApiError(
     message || `${strings.serverError} ${response.status}`,
     response.status,
     code,
     undefined,
     isJson && response.status === 400 ? extractFieldErrors(data, strings.apiErrors) : undefined,
   );
+  if (isJson && data && typeof data === "object") error.body = data as Record<string, unknown>;
+  throw error;
 }
 
 async function send(

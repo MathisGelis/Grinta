@@ -61,7 +61,11 @@ export default function SettingsScreen() {
       await clearUserSession();
       router.replace("/(auth)/LoginScreen");
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.error);
+      // Le compte n'est vidé localement qu'après la réussite : on peut réessayer sans rien perdre.
+      Alert.alert(t.deleteAccountFailed, error instanceof Error ? error.message : t.genericError, [
+        { text: t.cancel, style: "cancel" },
+        { text: t.retryBtn, onPress: deleteAccount },
+      ]);
     } finally {
       setDeleting(false);
     }
