@@ -22,11 +22,12 @@ export default function DifficultyPicker({
 }: DifficultyPickerProps) {
   const accent = WorkoutTheme.accent.purple;
 
-  const StepButton = ({ icon, delta }: { icon: "remove" | "add"; delta: number }) => {
+  const renderStep = (icon: "remove" | "add", delta: number) => {
     const next = level + delta;
     const disabled = next < 1 || next > 3;
     return (
       <Pressable
+        key={icon}
         onPress={() => !disabled && onChange(next)}
         hitSlop={10}
         accessibilityRole="button"
@@ -42,8 +43,8 @@ export default function DifficultyPicker({
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingLeft: 16 }}>
         <Text className="text-sm text-ink-muted">{label}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <StepButton icon="remove" delta={-1} />
-          <StepButton icon="add" delta={1} />
+          {renderStep("remove", -1)}
+          {renderStep("add", 1)}
         </View>
       </View>
       <View style={{ alignItems: "center", marginTop: 16 }}>

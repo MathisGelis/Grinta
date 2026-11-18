@@ -25,7 +25,6 @@ type Props = {
   startedOn?: string;
 };
 
-const DAY_MS = 86400000;
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
 const STRIP_DAYS = 60;

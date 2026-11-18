@@ -1,7 +1,6 @@
-import { api } from "./api";
+import { api, isNotFound } from "./api";
 import { TokenService } from "./token.service";
 import { createListCache } from "./listCache";
-import { isNotFound } from "./api";
 
 export interface SmallProgramm {
   id: string;
