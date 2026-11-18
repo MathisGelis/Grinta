@@ -2,6 +2,15 @@
 
 ## Non publié : deuxième lot de l'audit front
 
+- **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.
+  - Critique : `proxy-addr` (usurpation d'adresse IP par un sous-réseau IPv4-mappé), dont dépend la limitation de débit par adresse. `handlebars` aussi.
+  - `multer` et `body-parser` (envoi de fichiers et corps de requête), `qs`, `js-yaml`, `form-data`, `fast-uri` : mises à jour sans rupture (`npm audit fix`).
+  - `nodemailer` 6 → 10 (injection SMTP/CRLF, envoi vers un domaine non voulu, déni de service). Aucune rupture pour notre usage (SMTP, texte brut) ; envoi vérifié contre un serveur SMTP local. Les types sont désormais dans le paquet : `@types/nodemailer` retiré.
+  - `sharp` 0.34 → 0.35 (libvips, libheif, librsvg) : traitement des photos.
+  - `typeorm` → `glob`/`minimatch` : surcharge `overrides` dans `package.json` (`glob` 14.0.6, `minimatch` 11 pour `test-exclude`), TypeORM 1.x étant incompatible avec `@nestjs/typeorm` 11.
+  - **Reste 49 alertes « high », toutes `picomatch`, uniquement dans les outils de développement** (Jest, ts-loader, Nest CLI) : aucune version corrigée n'est publiée (la dernière, 4.0.7, est elle aussi signalée). Rien n'atteint la production, et la faille (ReDoS) suppose un motif de recherche contrôlé par un attaquant. À revoir quand un correctif sortira. Ne pas lancer `npm audit fix --force` : il propose de rétrograder Jest et ts-jest.
+  - ESLint 9 (qui n'est plus supporté) passe en 10 ; NestJS est aligné en 11.2 ; Prettier est mis à jour (reformatages mécaniques).
+  - Node 20.19 ou plus est requis (`engines`). Les `Dockerfile` passent de Node 18 à Node 22 et de `npm install` à `npm ci`, et un `.dockerignore` évite d'embarquer `.env`, `node_modules` et `dist` dans l'image.
 - **Modèles proposés, pas enregistrés** : `GET /workouts/templates/:key` renvoie le programme personnalisé sous forme de proposition, sans rien enregistrer (même forme que le brouillon d'import). `POST /workouts/templates/:key/use` ne sert plus qu'à l'enregistrer quand l'utilisateur accepte.
 - **Programmes** : démarrage à n'importe quel jour (`startDay` sur `POST /programmes/:id/start`, 400 `START_DAY_OUT_OF_RANGE` au-delà du dernier jour) et fin du programme en cours (`DELETE /programmes/active`, 204 ou 404 ; le programme est conservé). Migration réversible `1792605872876-AddActiveProgrammeStartDay` (`startDay`, 1 par défaut pour les programmes déjà en cours).
 - **Catalogue d'exercices traduit** dans les 10 langues de l'app, d'après l'en-tête `Accept-Language`, sur toutes les routes qui renvoient des exercices. Le nom anglais reste la référence en base et est renvoyé dans `englishName`.
