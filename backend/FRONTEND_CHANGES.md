@@ -1054,3 +1054,20 @@ Un compte **privé** n'est plus lisible par n'importe qui. Les routes ci-dessous
   - 400 `DAY_NUMBERS_NOT_CONSECUTIVE` (avec `missingDayNumber`) : il manque un numéro.
   - 400 `VALIDATION_ERROR` : plus de 84 jours (`days`, `ARRAY_TOO_LONG`) ou `dayNumber` au-dessus de 84.
 - **Date de départ** (`POST /programmes/:id/start`) : à **7 jours au plus** d'aujourd'hui, avant ou après, sinon 400 `START_DATE_OUT_OF_RANGE` (avec `windowDays`). Pour un départ dans quelques jours, `GET /programmes/active/today` renvoie `status: "not_started"` et `daysUntilStart` jusqu'à la date.
+
+### 10.4 Import de notes : titres de séance (B-04)
+
+`POST /workouts/import` reconnaît maintenant un **titre sans mot-clé** : une ligne courte (40 caractères au plus), sans séries ni charge, suivie d'une ligne d'exercice. Elle ouvre une nouvelle séance.
+
+```
+Push A                     → séance « Push A »
+Bench press 4x8 60kg
+Overhead press 3x10 40kg
+
+Pull B                     → séance « Pull B »
+Rowing barre 4x8 50kg
+```
+
+- Plusieurs titres donnent plusieurs `workouts` et un `programme` proposé (un jour par séance, dans l'ordre) ; un seul titre nomme l'unique séance, sans programme.
+- Les en-têtes `Jour 1`, `Day 2`, `Lundi`, `Séance A`, `Push :` fonctionnaient déjà et gardent leur sens (jours numérotés, semaine).
+- Une vraie ligne inconnue (`unknownthing 3x10`), ou un texte court sans exercice derrière, reste dans `unrecognized` avec `unknown_exercise`.

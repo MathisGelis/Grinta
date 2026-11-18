@@ -93,6 +93,22 @@ describe('Workout import from notes (e2e)', () => {
     });
   });
 
+  it('splits notes whose workouts have a plain title', async () => {
+    const draft = (
+      await send({
+        text: 'Push A\nBench press 4x8 60kg\nOverhead press 3x10 40kg\n\nPull B\nRowing barre 4x8 50kg',
+      }).expect(200)
+    ).body as Draft;
+
+    expect(draft.unrecognized).toEqual([]);
+    expect(draft.workouts.map((w) => w.title)).toEqual(['Push A', 'Pull B']);
+    expect(draft.workouts.map((w) => w.exercises.length)).toEqual([2, 1]);
+    expect(draft.programme!.days).toEqual([
+      expect.objectContaining({ dayNumber: 1, workoutIndex: 0 }),
+      expect.objectContaining({ dayNumber: 2, workoutIndex: 1 }),
+    ]);
+  });
+
   it('refuses an empty or oversized text', async () => {
     await send({ text: '' }).expect(400);
     await send({}).expect(400);

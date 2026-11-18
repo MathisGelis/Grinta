@@ -23,6 +23,8 @@
   - `startDate` à 7 jours au plus d'aujourd'hui, dans un sens ou l'autre : 400 `START_DATE_OUT_OF_RANGE`. Un départ dans quelques jours donne `status: "not_started"` avec `daysUntilStart` dans `GET /programmes/active/today`.
   - Plus aucun 500. Les tests e2e du démarrage utilisent des dates relatives à aujourd'hui, puisque la fenêtre est glissante.
 
+- **B-04 : import de notes, séances multiples.** Un texte avec deux titres de séance (« Push A » … « Pull B ») donnait **une seule** séance « Séance importée » qui fusionnait tous les exercices, et les titres sortaient dans `unrecognized` (`unknown_exercise`). Une ligne courte (40 caractères au plus), sans séries ni charge, qui n'est pas un exercice et qui est suivie d'une ligne d'exercice est maintenant le **titre d'une séance** : plusieurs titres donnent plusieurs séances et un `programme` proposé, un seul titre nomme l'unique séance. Les vrais inconnus gardent `unknown_exercise`, ainsi qu'une ligne finale ou trop longue. Les en-têtes « Jour 1 », « Day 1 », « Lundi » et « Séance A » continuaient déjà d'être reconnus.
+
 ## Non publié : deuxième lot de l'audit front
 
 - **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.
