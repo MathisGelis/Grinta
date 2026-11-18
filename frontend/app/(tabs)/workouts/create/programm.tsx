@@ -27,6 +27,7 @@ import {
   locationLabel,
 } from "@/i18n/labels";
 import { toast } from "@/components/ui/Toast";
+import { LIMITS } from "@/utils/validation";
 export default function CreateProgrammScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -152,6 +153,7 @@ export default function CreateProgrammScreen() {
           label={t.titleLabel}
           required
           value={title}
+          maxLength={LIMITS.title}
           onChangeText={setTitle}
           placeholder={t.programmeTitlePlaceholder}
         />
@@ -160,6 +162,7 @@ export default function CreateProgrammScreen() {
           label={t.descriptionLabel}
           multiline
           value={description}
+          maxLength={LIMITS.description}
           onChangeText={setDescription}
           placeholder={t.programmeDescPlaceholder}
         />

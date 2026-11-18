@@ -20,6 +20,7 @@ import { format } from "@/i18n/translations";
 import { DetailSkeleton } from "@/components/ui/skeletons";
 import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 import { toast } from "@/components/ui/Toast";
+import { LIMITS } from "@/utils/validation";
 
 export type WorkoutStatsTotals = {
   totalSets: number;
@@ -280,6 +281,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
             <FormField label={t.titleLabel}>
               <TextField
                 value={editedTitle}
+                maxLength={LIMITS.title}
                 onChangeText={(text) => {
                   onEditedTitleChange(text);
                   setHasChanges(true);
@@ -290,6 +292,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
               <TextField
                 multiline
                 value={editedDescription}
+                maxLength={LIMITS.description}
                 onChangeText={(text) => {
                   setEditedDescription(text);
                   setHasChanges(true);

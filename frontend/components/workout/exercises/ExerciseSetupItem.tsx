@@ -8,6 +8,7 @@ import PressableScale from "@/components/ui/PressableScale";
 import NumericInput from "@/components/ui/NumericInput";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { LIMITS } from "@/utils/validation";
 export interface ExerciseSetupData {
   id: string;
   name: string;
@@ -59,6 +60,7 @@ export default function ExerciseSetupItem({
   const { t } = useTranslation();
   const { fromKg, toKg, weightUnit } = useUnits();
   const handleAddSet = () => {
+    if (exercise.sets.length >= LIMITS.maxSets) return;
     const newSet = {
       reps: exercise.sets[exercise.sets.length - 1]?.reps || 10,
       weight: exercise.sets[exercise.sets.length - 1]?.weight || 0,
@@ -80,14 +82,14 @@ export default function ExerciseSetupItem({
 
   const handleSetRepsChange = (index: number, value: number) => {
     const newSets = exercise.sets.map((set, i) =>
-      i === index ? { ...set, reps: Math.max(1, value) } : set,
+      i === index ? { ...set, reps: Math.min(LIMITS.maxReps, Math.max(1, value)) } : set,
     );
     onUpdate({ ...exercise, sets: newSets });
   };
 
   const handleSetWeightChange = (index: number, value: number) => {
     const newSets = exercise.sets.map((set, i) =>
-      i === index ? { ...set, weight: Math.max(0, value) } : set,
+      i === index ? { ...set, weight: Math.min(LIMITS.maxWeightKg, Math.max(0, value)) } : set,
     );
     onUpdate({ ...exercise, sets: newSets });
   };
@@ -154,7 +156,8 @@ export default function ExerciseSetupItem({
                   value={set.reps}
                   onValueChange={(value) => handleSetRepsChange(index, value)}
                   min={1}
-                  maxLength={3}
+                  max={LIMITS.maxReps}
+                  maxLength={4}
                 />
                 <StepButton
                   icon="add"
@@ -183,7 +186,8 @@ export default function ExerciseSetupItem({
                   value={fromKg(set.weight)}
                   onValueChange={(value) => handleSetWeightChange(index, toKg(value))}
                   decimal
-                  maxLength={5}
+                  max={LIMITS.maxWeightKg}
+                  maxLength={7}
                 />
                 <StepButton
                   icon="add"

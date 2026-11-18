@@ -25,14 +25,10 @@ import SegmentedControl from "@/components/ui/SegmentedControl";
 import Stat from "@/components/ui/Stat";
 import { StatsSkeleton } from "@/components/ui/skeletons";
 import EmptyState from "@/components/ui/EmptyState";
+import { formatDuration } from "@/utils/formatDuration";
 
 const TOP_MUSCLES = 6;
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
-}
 
 function Bar({ percent, color }: { percent: number; color: string }) {
   return (

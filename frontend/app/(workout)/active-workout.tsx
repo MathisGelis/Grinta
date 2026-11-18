@@ -49,6 +49,7 @@ import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
 import { PhotoService } from "@/services/photo.service";
 import { DetailSkeleton } from "@/components/ui/skeletons";
 import { queryCache } from "@/services/queryCache";
+import { LIMITS } from "@/utils/validation";
 const dedupeCompletedSets = (state: ExerciseState): ExerciseState => {
   const seen = new Set<number>();
   const completedSetIndices: number[] = [];
@@ -292,6 +293,7 @@ export default function ActiveWorkoutScreen() {
   const handleAddSet = () => {
     const newState = [...exercisesState];
     const exState = newState[currentExerciseIndex];
+    if (exState.exerciseData.sets.length >= LIMITS.maxSets) return;
     const lastSet =
       exState.exerciseData.sets[exState.exerciseData.sets.length - 1];
     exState.exerciseData.sets.push({ ...lastSet });
@@ -418,6 +420,12 @@ export default function ActiveWorkoutScreen() {
   const handleSubmitCompletion = async () => {
     if (!completionTitle.trim()) {
       Alert.alert(t.error, t.pleaseEnterTitle);
+      return;
+    }
+
+    // Une séance sans aucune série validée n'a rien à enregistrer.
+    if (!exercisesState.some((state) => state.completedSets.length > 0)) {
+      Alert.alert(t.error, t.noValidatedSet);
       return;
     }
 
@@ -639,6 +647,7 @@ export default function ActiveWorkoutScreen() {
                   <TextField
                     placeholder={t.workoutNameLabel}
                     value={completionTitle}
+                    maxLength={LIMITS.title}
                     onChangeText={setCompletionTitle}
                     editable={!isSubmitting}
                   />
@@ -649,6 +658,7 @@ export default function ActiveWorkoutScreen() {
                     multiline
                     placeholder={t.addDescriptionPlaceholder}
                     value={completionDescription}
+                    maxLength={LIMITS.description}
                     onChangeText={setCompletionDescription}
                     editable={!isSubmitting}
                   />

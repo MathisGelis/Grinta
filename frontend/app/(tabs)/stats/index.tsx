@@ -27,10 +27,7 @@ import StatsCalendar, {
 import { format } from "@/i18n/translations";
 import { StatsSkeleton } from "@/components/ui/skeletons";
 import { queryCache } from "@/services/queryCache";
-function formatDuration(seconds: number): string {
-  const mins = Math.round(seconds / 60);
-  return `${mins} min`;
-}
+import { formatDuration } from "@/utils/formatDuration";
 
 const STATS_KEY = "stats:index";
 const STATS_STALE_MS = 20_000;

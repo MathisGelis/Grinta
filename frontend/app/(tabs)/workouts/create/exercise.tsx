@@ -20,6 +20,7 @@ import { FormField, TextField } from "@/components/ui/FormField";
 import { selectStyles } from "@/components/ui/selectStyles";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { FormSkeleton } from "@/components/ui/skeletons";
+import { LIMITS } from "@/utils/validation";
 export default function CreateExerciseScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -140,6 +141,7 @@ export default function CreateExerciseScreen() {
             <TextField
               placeholder={t.exerciseNamePlaceholder}
               value={name}
+              maxLength={LIMITS.title}
               onChangeText={setName}
             />
           </FormField>

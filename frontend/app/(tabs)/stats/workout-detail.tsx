@@ -44,12 +44,8 @@ import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCard
 import { DetailSkeleton } from "@/components/ui/skeletons";
 import { formatDate } from "@/utils/formatDate";
 import { queryCache } from "@/services/queryCache";
+import { formatDuration } from "@/utils/formatDuration";
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.round((seconds % 3600) / 60);
-  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m} min`;
-}
 
 export default function CompletedWorkoutDetailScreen() {
   const { t, lang } = useTranslation();

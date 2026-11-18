@@ -6,6 +6,12 @@ export const LIMITS = {
   uniqueName: 30,
   email: 254,
   password: 72,
+  title: 100,
+  description: 1000,
+  comment: 500,
+  maxSets: 30,
+  maxReps: 1000,
+  maxWeightKg: 1000,
 } as const;
 
 export const MIN_PASSWORD = 8;

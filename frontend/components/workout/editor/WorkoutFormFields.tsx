@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { FormField, TextField } from "@/components/ui/FormField";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { LIMITS } from "@/utils/validation";
 interface WorkoutFormFieldsProps {
   name: string;
   onNameChange: (v: string) => void;
@@ -23,6 +24,7 @@ export default function WorkoutFormFields({
         <TextField
           placeholder={t.workoutNamePlaceholder}
           value={name}
+          maxLength={LIMITS.title}
           onChangeText={onNameChange}
         />
       </FormField>
@@ -32,6 +34,7 @@ export default function WorkoutFormFields({
           multiline
           placeholder={t.descriptionPlaceholder}
           value={description}
+          maxLength={LIMITS.description}
           onChangeText={onDescriptionChange}
         />
       </FormField>

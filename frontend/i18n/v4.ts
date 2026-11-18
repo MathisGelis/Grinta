@@ -2,6 +2,7 @@ import type { Lang } from "./translations";
 
 /** Textes du troisième lot : mot de passe, onboarding, modèles, nouveaux graphiques, import. */
 export interface V4Strings {
+  noValidatedSet: string;
   prgStartDayLabel: string;
   prgEnd: string;
   prgEndMessage: string;
@@ -108,6 +109,7 @@ export interface V4Strings {
 }
 
 const en: V4Strings = {
+  noValidatedSet: "Validate at least one set before finishing the workout.",
   prgStartDayLabel: "Starting on day",
   prgEnd: "End this programme",
   prgEndMessage: "The programme and its workouts are kept. You can start it again anytime.",
@@ -222,6 +224,7 @@ const en: V4Strings = {
 };
 
 const fr: V4Strings = {
+  noValidatedSet: "Valide au moins une série avant de terminer la séance.",
   prgStartDayLabel: "Démarrer au jour",
   prgEnd: "Mettre fin au programme",
   prgEndMessage: "Le programme et ses séances sont conservés. Tu pourras le relancer quand tu veux.",
