@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsNumber, Max, Min } from 'class-validator';
+import { WORKOUT_LIMITS } from './workout-limits';
 
 /** Heaviest weight a set can log, in kg. Above it, the input is a typo. */
 export const MAX_SET_WEIGHT_KG = 1000;
@@ -9,9 +10,10 @@ export const MAX_SET_WEIGHT_KG = 1000;
  * two decimals (62.5 kg, 1.25 kg plates); reps stay whole.
  */
 export class SetPairDto {
-  @ApiProperty({ example: 8 })
+  @ApiProperty({ example: 8, minimum: 1, maximum: WORKOUT_LIMITS.repsMax })
   @IsInt()
   @Min(1)
+  @Max(WORKOUT_LIMITS.repsMax)
   reps: number;
 
   @ApiProperty({

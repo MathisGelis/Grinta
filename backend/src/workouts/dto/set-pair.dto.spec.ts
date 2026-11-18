@@ -24,4 +24,10 @@ describe('SetPairDto', () => {
     expect(errorsFor({ reps: 7.5, weight: 60 })).toEqual(['reps']);
     expect(errorsFor({ reps: 0, weight: 60 })).toEqual(['reps']);
   });
+
+  it('caps the reps at 1000', () => {
+    expect(errorsFor({ reps: 1000, weight: 60 })).toEqual([]);
+    expect(errorsFor({ reps: 1001, weight: 60 })).toEqual(['reps']);
+    expect(errorsFor({ reps: 100_000, weight: 60 })).toEqual(['reps']);
+  });
 });

@@ -1025,3 +1025,24 @@ Un compte **privé** n'est plus lisible par n'importe qui. Les routes ci-dessous
 - Une séance d'un autre n'est lisible que depuis un post visible (`GET /posts/:id/workout`, ou `workoutId` d'un post). Ne plus appeler `GET /workouts/completed/:id` pour une séance jamais postée d'un autre.
 - Le plan d'un autre utilisateur n'est plus lisible : pour s'en inspirer, utiliser `POST /workouts/planned/from-post/:postId`, qui copie ses exercices dans ses propres séances.
 - Sur le profil d'un compte privé que l'on ne suit pas, ne pas afficher la liste d'abonnés (le serveur répond 404).
+
+### 10.2 Séances : valeurs limites (B-02)
+
+`POST` et `PATCH` sur `/workouts/completed` et `/workouts/planned` refusent désormais les valeurs aberrantes avec un **400 `VALIDATION_ERROR`**, `errors[].field` désignant le champ (`exercises.0.sets.0.reps`) et `code` la cause :
+
+| Champ | Limites | Codes |
+|---|---|---|
+| `reps` | 1 à 1000 | `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` |
+| `weight` | 0 à 1000, 2 décimales | inchangé |
+| `sets` d'un exercice | 1 à 30 | `ARRAY_TOO_SHORT`, `ARRAY_TOO_LONG` |
+| `exercises` | 1 à 40 | `ARRAY_TOO_SHORT`, `ARRAY_TOO_LONG` |
+| `title` | 1 à 100 caractères (espaces retirés) | `FIELD_TOO_SHORT`, `FIELD_TOO_LONG` |
+| `description` | 0 à 1000 | `FIELD_TOO_LONG` |
+| `totalDurationSeconds` | 1 à 86 400 | `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` |
+| `timerSeconds`, `plannedRestSeconds` | 0 à 3 600 | idem |
+| `completionDate` | au plus 24 h dans le futur | `DATE_TOO_FAR_IN_FUTURE` (nouveau) |
+
+À vérifier côté app :
+- **Un exercice sans série** : omettre `sets`, ne jamais envoyer `sets: []` (400 `ARRAY_TOO_SHORT`). C'est le cas d'un exercice passé pendant une séance.
+- Une séance sans aucun exercice n'est plus acceptée (`exercises` : au moins 1).
+- Limiter les champs de saisie aux mêmes bornes pour éviter l'erreur.

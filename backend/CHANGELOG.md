@@ -10,6 +10,13 @@
   - La photo d'une séance d'un compte privé n'est plus accessible par l'id de la séance (ses URL restent publiques et imprévisibles, voir plus bas).
   - Test e2e `access-control` : un étranger ne reçoit que des 404 sur un compte privé, un abonné voit les séances réalisées et les listes, le propriétaire voit tout.
 
+- **B-02 : validation des séances.** `POST` et `PATCH` des séances réalisées et planifiées refusaient très peu de choses : 100 000 répétitions, des séries vides, un titre de 5 000 caractères, une durée négative ou de 10 ans, 1 000 séries par exercice. Ces valeurs faussaient le volume, les calories et les records, et s'affichaient telles quelles dans l'historique. Bornes, partagées par les quatre DTO (`workout-limits.ts`) :
+  - `reps` 1 à 1000 ; `sets` 1 à 30 (omis, jamais `[]`) ; `exercises` 1 à 40 ;
+  - `title` 1 à 100 caractères, espaces retirés ; `description` 0 à 1000 ;
+  - `totalDurationSeconds` 1 à 86 400 ; `timerSeconds` et `plannedRestSeconds` 0 à 3 600 ;
+  - `completionDate` au plus 24 h dans le futur (nouveau code `DATE_TOO_FAR_IN_FUTURE`).
+  - Chaque cas répond 400 `VALIDATION_ERROR` avec le bon `code` (`VALUE_TOO_LARGE`, `ARRAY_TOO_SHORT`, `FIELD_TOO_LONG`…) ; les valeurs limites sont acceptées. Les DTO d'exercice dupliqués entre création et modification sont fusionnés.
+
 ## Non publié : deuxième lot de l'audit front
 
 - **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.

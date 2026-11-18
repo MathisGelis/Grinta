@@ -23,6 +23,7 @@ export const VALIDATION_CODES = {
   VALUE_TOO_LARGE: 'VALUE_TOO_LARGE',
   VALUE_NOT_ALLOWED: 'VALUE_NOT_ALLOWED',
   DATE_INVALID: 'DATE_INVALID',
+  DATE_TOO_FAR_IN_FUTURE: 'DATE_TOO_FAR_IN_FUTURE',
   ID_INVALID: 'ID_INVALID',
   FORMAT_INVALID: 'FORMAT_INVALID',
   ARRAY_EXPECTED: 'ARRAY_EXPECTED',
@@ -71,6 +72,7 @@ const CODE_BY_CONSTRAINT: Record<string, ValidationCode> = {
   isDate: 'DATE_INVALID',
   isDateString: 'DATE_INVALID',
   isIso8601: 'DATE_INVALID',
+  isNotFarInFuture: 'DATE_TOO_FAR_IN_FUTURE',
   isUuid: 'ID_INVALID',
   matches: 'FORMAT_INVALID',
   isArray: 'ARRAY_EXPECTED',
@@ -137,6 +139,8 @@ function frenchMessage(field: string, code: ValidationCode, args: unknown[]) {
       return `Valeur non autorisée pour ${name}.`;
     case 'DATE_INVALID':
       return `${name} doit être une date valide.`;
+    case 'DATE_TOO_FAR_IN_FUTURE':
+      return `${name} ne peut pas être dans le futur.`;
     case 'ID_INVALID':
       return 'Identifiant invalide';
     case 'FORMAT_INVALID':
