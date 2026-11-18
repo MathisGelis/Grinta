@@ -1,3 +1,4 @@
+import { visibleToViewerSql as visibleToViewer } from '../common/access/user-content-access';
 import {
   BadRequestException,
   ForbiddenException,
@@ -512,15 +513,7 @@ export class PostsService {
    * profile, or the viewer follows them. Expects a `:viewerId` parameter.
    */
   private visibleToViewerSql(authorAlias: string): string {
-    return `(
-      ${authorAlias}.id = :viewerId
-      OR ${authorAlias}."isPublic" = true
-      OR EXISTS (
-        SELECT 1 FROM connections vc
-        WHERE vc."followingId" = ${authorAlias}.id
-        AND vc."followerId" = :viewerId
-      )
-    )`;
+    return visibleToViewer(authorAlias, ':viewerId');
   }
 
   /**

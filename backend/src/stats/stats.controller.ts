@@ -182,9 +182,9 @@ export class StatsController {
   @ApiOperation({
     summary: 'How closely a completed workout followed its plan',
     description:
-      'The completed workout must belong to the caller. The planned workout ' +
-      'can be any readable plan. Exercises are listed in the stored order of ' +
-      'the plan.',
+      'Both the completed workout and the planned workout must belong to ' +
+      'the caller: plans are private. Exercises are listed in the stored ' +
+      'order of the plan.',
   })
   @ApiResponse({
     status: 200,

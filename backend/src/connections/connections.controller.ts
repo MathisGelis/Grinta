@@ -84,28 +84,38 @@ export class ConnectionsController {
 
   @Auth()
   @Get(':id/followers')
-  @ApiOperation({ summary: 'Get followers of a user' })
+  @ApiOperation({
+    summary: 'Get followers of a user',
+    description:
+      'Same visibility as the posts of the account: itself, a public account, or one I follow. Otherwise 404.',
+  })
+  @ApiResponse({ status: 404, description: 'Not found, or not visible to me' })
   @ApiResponse({
     status: 200,
     description: 'List of followers',
     type: UserListDto,
     isArray: true,
   })
-  getFollowers(@Param('id') userId: string) {
-    return this.connectionsService.getFollowers(userId);
+  getFollowers(@Req() req: AuthenticatedRequest, @Param('id') userId: string) {
+    return this.connectionsService.getFollowersOf(req.user.id, userId);
   }
 
   @Auth()
   @Get(':id/following')
-  @ApiOperation({ summary: 'Get users followed by a user' })
+  @ApiOperation({
+    summary: 'Get users followed by a user',
+    description:
+      'Same visibility as the posts of the account: itself, a public account, or one I follow. Otherwise 404.',
+  })
+  @ApiResponse({ status: 404, description: 'Not found, or not visible to me' })
   @ApiResponse({
     status: 200,
     description: 'List of following users',
     type: UserListDto,
     isArray: true,
   })
-  getFollowing(@Param('id') userId: string) {
-    return this.connectionsService.getFollowing(userId);
+  getFollowing(@Req() req: AuthenticatedRequest, @Param('id') userId: string) {
+    return this.connectionsService.getFollowingOf(req.user.id, userId);
   }
 
   @Auth()

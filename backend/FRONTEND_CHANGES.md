@@ -1004,3 +1004,24 @@ Pour enregistrer quand l'utilisateur accepte :
 - **après ajustement** : `POST /workouts/planned` pour chaque séance (en n'envoyant que `title`, `description`, `estimatedDurationMinutes` et, par exercice, `exerciseId`, `sets`, `plannedRestSeconds`), puis `POST /programmes` avec `title`, `description`, `weekNumber`, `difficulty`, `locationType` et les `days` où `workoutIndex` est remplacé par le `workoutId` obtenu (aucun `workoutId` pour un repos).
 
 À changer côté app : `TemplatePicker` appelle aujourd'hui `applyWorkoutTemplate` (donc `use`) dès qu'on touche un modèle. Il faut d'abord afficher la proposition, puis n'appeler `use` (ou les routes ci-dessus) qu'à la validation.
+
+
+---
+
+## 10. Audit backend v2 (branche `feat/backend-v3`)
+
+### 10.1 Séances et listes d'abonnés : accès restreint (B-01)
+
+Un compte **privé** n'est plus lisible par n'importe qui. Les routes ci-dessous répondent **404** (jamais 403, pour ne pas révéler qu'un id existe) à qui n'y a pas droit :
+
+| Route | Qui y a accès |
+|---|---|
+| `GET /workouts/completed/:id` | le propriétaire, ses abonnés, et tout le monde pour un compte public **si la séance est publiée** (postée) |
+| `GET /workouts/planned/:id` | le propriétaire seulement |
+| `GET /connections/:id/followers` et `/following` | soi, un compte public, ou un compte que l'on suit |
+| `GET /stats/adherence` | le plan doit être celui de l'appelant |
+
+À adapter côté app :
+- Une séance d'un autre n'est lisible que depuis un post visible (`GET /posts/:id/workout`, ou `workoutId` d'un post). Ne plus appeler `GET /workouts/completed/:id` pour une séance jamais postée d'un autre.
+- Le plan d'un autre utilisateur n'est plus lisible : pour s'en inspirer, utiliser `POST /workouts/planned/from-post/:postId`, qui copie ses exercices dans ses propres séances.
+- Sur le profil d'un compte privé que l'on ne suit pas, ne pas afficher la liste d'abonnés (le serveur répond 404).

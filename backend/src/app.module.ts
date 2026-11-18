@@ -10,6 +10,7 @@ import { ExerciseModule } from './exercise/exercise.module';
 import { WorkoutsModule } from './workouts/workouts.module';
 import { ProgrammesModule } from './programmes/programmes.module';
 import { WorkoutTemplatesModule } from './workout-templates/workout-templates.module';
+import { UserContentAccessModule } from './common/access/user-content-access';
 import { WorkoutImportModule } from './workout-import/workout-import.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { PostsModule } from './posts/posts.module';
@@ -25,6 +26,7 @@ import { MailModule } from './mail/mail.module';
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     DatabaseModule,
+    UserContentAccessModule,
     MailModule,
     AuthModule,
     UsersModule,

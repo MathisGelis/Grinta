@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { UserContentAccess } from '../common/access/user-content-access';
 import { Connection } from './entities/connections.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,6 +22,8 @@ export class ConnectionsService {
 
     @InjectRepository(FollowRequest)
     private readonly followRequestRepository: Repository<FollowRequest>,
+
+    private readonly access: UserContentAccess,
   ) {}
 
   async followUser(followerId: string, followingId: string) {
@@ -142,6 +145,18 @@ export class ConnectionsService {
       )
       .orderBy('request.createdAt', 'DESC')
       .getRawMany();
+  }
+
+  /** The followers of an account the viewer may see, else 404. */
+  async getFollowersOf(viewerId: string, userId: string) {
+    await this.access.assertCanViewUserContent(viewerId, userId);
+    return this.getFollowers(userId);
+  }
+
+  /** Who an account follows, if the viewer may see it, else 404. */
+  async getFollowingOf(viewerId: string, userId: string) {
+    await this.access.assertCanViewUserContent(viewerId, userId);
+    return this.getFollowing(userId);
   }
 
   async getFollowers(userId: string) {

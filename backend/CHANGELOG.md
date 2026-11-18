@@ -1,5 +1,15 @@
 # Changelog backend
 
+## Non publié : audit backend v2
+
+- **B-01 (sécurité, P1) : contrôle d'accès des séances et des listes d'abonnés.** Un utilisateur connecté qui ne suivait pas un compte **privé** pouvait lire ses séances (`GET /workouts/completed/:id`, `GET /workouts/planned/:id`) et la liste de ses abonnés et abonnements. Ces routes répondent désormais 404, comme `/posts/:id`, pour ne pas révéler l'existence d'un id. **Cela remplace la décision antérieure de laisser ces deux lectures ouvertes à tout utilisateur connecté.**
+  - Une seule règle (`src/common/access/user-content-access.ts`, `UserContentAccess` et `visibleToViewerSql`), réutilisée par `workouts`, `connections`, `stats` et `posts`.
+  - **Séance réalisée** : son propriétaire, ses abonnés acceptés, et n'importe qui pour un compte public **une fois la séance publiée** (postée). Une séance jamais postée d'un compte public n'est lisible que du propriétaire et de ses abonnés.
+  - **Séance planifiée** : son propriétaire seulement. `GET /stats/adherence` exige donc que le plan soit celui de l'appelant (il pouvait être celui d'un autre).
+  - `GET /connections/:id/followers` et `/following` : soi, un compte public ou un compte suivi, sinon 404.
+  - La photo d'une séance d'un compte privé n'est plus accessible par l'id de la séance (ses URL restent publiques et imprévisibles, voir plus bas).
+  - Test e2e `access-control` : un étranger ne reçoit que des 404 sur un compte privé, un abonné voit les séances réalisées et les listes, le propriétaire voit tout.
+
 ## Non publié : deuxième lot de l'audit front
 
 - **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.
@@ -340,7 +350,7 @@ Optionnel côté nginx :
   - Argument pour garder le disque : sur le plan gratuit de Supabase, c'est l'egress (5 Go/mois) qui serait limitant, avant le stockage et la base. Les photos servies par la VM n'en consomment pas.
   - Seule la classe `PhotoStorage` changerait. Les URL déjà stockées se réécrivent en une requête (`replace` du préfixe) après copie des fichiers.
 - **Les URL des photos sont publiques**, sans jeton : elles sont imprévisibles (UUID v4) mais quiconque obtient l'URL voit la photo. C'est le fonctionnement habituel des applications sociales, et `<Image>` en React Native n'envoie pas d'en-tête d'authentification. L'avatar est visible de tous, compte privé compris.
-- **La photo de séance a la visibilité de la séance**, et `GET /workouts/completed/:id` reste ouvert à tout utilisateur authentifié (règle du projet) : la photo d'une séance d'un compte privé est lisible par qui connaît l'id de la séance. Restreindre cette route aux abonnés réglerait les deux.
+- **La photo de séance a la visibilité de la séance**, et `GET /workouts/completed/:id` reste ouvert à tout utilisateur authentifié (règle du projet) : la photo d'une séance d'un compte privé est lisible par qui connaît l'id de la séance. Restreindre cette route aux abonnés réglerait les deux. **Fait dans l'audit v2 (B-01).**
 
 ### Mesures
 
@@ -461,7 +471,7 @@ Vérification : chaque endpoint a été comparé à un calcul indépendant sur l
 - **Seuil `on_track` de 5 %** (`constants/comparison.ts`). Le seuil de tendance de `progression` est aussi de 5 %, calculé sur la moyenne des trois premiers et des trois derniers points pour qu'une mauvaise séance ne retourne pas la tendance.
 - **Niveaux de la heatmap relatifs à la journée la plus longue de l'année** (4 pour la plus longue, 1 au minimum pour tout jour actif). Simple et déterministe, mais une journée exceptionnelle écrase les autres vers le niveau 1. Des quartiles sont une alternative si le rendu le demande.
 - **`progression` ne compte que les séries avec un poids et des répétitions positifs.** Un exercice au poids du corps ne renvoie donc aucun point. Une métrique `reps` serait nécessaire pour les suivre, non demandée ici.
-- **`adherence` : le workout réalisé doit appartenir à l'appelant, le plan peut être n'importe quel plan lisible**, comme `GET /workouts/planned/:id` qui reste ouvert à tout utilisateur authentifié. Un utilisateur peut donc suivre le programme d'un autre. Les exercices sortent dans l'ordre stocké du plan, non garanti (voir PERFORMANCE.md).
+- **`adherence` : le workout réalisé doit appartenir à l'appelant, le plan peut être n'importe quel plan lisible**, comme `GET /workouts/planned/:id`. **Depuis l'audit v2 (B-01), le plan doit aussi appartenir à l'appelant.** Les exercices sortent dans l'ordre stocké du plan, non garanti (voir PERFORMANCE.md).
 - **Les jours sont en UTC** (calendrier de `progression` et `heatmap`, groupement des records). Identique aux autres endpoints tant que le serveur tourne en UTC.
 
 ## Non publié : Phase 2, optimisation des temps de réponse
@@ -529,7 +539,7 @@ WHERE email <> lower(email) OR "uniqueName" <> lower("uniqueName");
 - **Timing attack sur `validateUser`** : déjà mitigé. Le hash factice existant coûtait autant qu'un vrai (environ 65 ms des deux côtés, mesuré). Il est maintenant généré au démarrage avec le même facteur de coût que les mots de passe réels, au lieu d'être une chaîne codée en dur qui cesserait d'être équivalente si le facteur changeait.
 - **`.env`** est dans `.gitignore` et n'est pas suivi par git.
 - **Ordre des routes** : vérifié dans tous les controllers, `mine`, `search` et les segments statiques précèdent les routes paramétrées.
-- **Routes publiques `getPlannedWorkoutById` et `getCompletedWorkoutById`** : laissées ouvertes, décision explicite du projet. Les routes de modification et de suppression restent réservées au propriétaire.
+- **Routes publiques `getPlannedWorkoutById` et `getCompletedWorkoutById`** : laissées ouvertes, décision explicite du projet. **Remplacée par l'audit v2 (B-01) : ces lectures sont désormais restreintes.** Les routes de modification et de suppression restent réservées au propriétaire.
 - Les lectures de Stats et de Workouts filtraient déjà sur `user.id` : le bug `user.userId` décrit dans le CLAUDE.md n'existe plus dans cette branche.
 
 ### Écarts entre le CLAUDE.md et la branche `backend`

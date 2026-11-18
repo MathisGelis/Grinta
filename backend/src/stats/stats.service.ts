@@ -44,6 +44,7 @@ import {
   WorkoutRecordDto,
   WorkoutTypeBreakdownDto,
 } from './dto/stats-response.dto';
+import { UserContentAccess } from '../common/access/user-content-access';
 import { StatsCalculatorService } from './stats-calculator.service';
 import { compareToRealLife } from '../common/utils/real-life-comparison';
 import { rankByNeglectedMuscles } from './utils/workout-suggestion';
@@ -115,6 +116,7 @@ export class StatsService {
     @InjectRepository(Exercise)
     private readonly exerciseRepo: Repository<Exercise>,
     private readonly calculator: StatsCalculatorService,
+    private readonly access: UserContentAccess,
   ) {}
 
   async getWorkoutStats(
@@ -735,7 +737,7 @@ export class StatsService {
         relations: ['exercises', 'exercises.exercise'],
       }),
       this.plannedRepo.findOne({
-        where: { id: query.plannedWorkoutId },
+        where: { id: query.plannedWorkoutId, user: { id: user.id } },
         relations: ['exercises', 'exercises.exercise'],
       }),
     ]);
@@ -965,16 +967,7 @@ export class StatsService {
   ): Promise<StatsSubject> {
     if (!targetId || targetId === viewer.id) return ownStats(viewer.id);
 
-    const [row] = await this.rows<{ visible: boolean }>(
-      `SELECT (u."isPublic" OR EXISTS (
-         SELECT 1 FROM connections c
-         WHERE c."followerId" = $2 AND c."followingId" = u.id
-       )) AS visible
-       FROM users u WHERE u.id = $1`,
-      [targetId, viewer.id],
-    );
-
-    if (!row?.visible) throw new NotFoundException('Utilisateur introuvable');
+    await this.access.assertCanViewUserContent(viewer.id, targetId);
     return { userId: targetId, publishedOnly: true };
   }
 
