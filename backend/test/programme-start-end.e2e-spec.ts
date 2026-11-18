@@ -81,7 +81,8 @@ describe('Start a programme on any day, and end it (e2e)', () => {
   }
 
   it('starts on the chosen day and continues from there', async () => {
-    const start = '2026-11-16';
+    // Within a week of today, the window a programme may start in.
+    const start = addDays(new Date().toISOString().slice(0, 10), -2);
     const started = (
       await as(user)
         .post(`/programmes/${programmeId}/start`)
@@ -115,7 +116,7 @@ describe('Start a programme on any day, and end it (e2e)', () => {
   it('starts on day 1 by default', async () => {
     const res = await as(user)
       .post(`/programmes/${programmeId}/start`)
-      .send({ startDate: '2026-11-16' })
+      .send({ startDate: addDays(new Date().toISOString().slice(0, 10), -2) })
       .expect(201);
 
     expect(res.body).toMatchObject({ startDay: 1, dayNumber: 1 });

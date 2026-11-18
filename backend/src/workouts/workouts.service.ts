@@ -24,6 +24,7 @@ import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { PhotosService } from 'src/photos/photos.service';
 import { PostPartnersService } from 'src/posts/post-partners.service';
 import { PostsService } from 'src/posts/posts.service';
+import { UserContentAccess } from '../common/access/user-content-access';
 import { StatsService } from 'src/stats/stats.service';
 
 type WorkoutPhotoUrls<T = string> = { photoUrl: T; photoThumbnailUrl: T };
@@ -49,6 +50,7 @@ export class WorkoutService {
     private readonly postPartners: PostPartnersService,
     private readonly posts: PostsService,
     private readonly stats: StatsService,
+    private readonly access: UserContentAccess,
   ) {}
 
   async createPlannedWorkout(user: AuthUser, dto: CreatePlannedWorkoutDto) {
@@ -297,7 +299,13 @@ export class WorkoutService {
     return rows.map((row) => ({ ...row, calories: calories.get(row.id) ?? 0 }));
   }
 
-  async getPlannedWorkoutById(workoutId: string) {
+  /** A planned workout is a private draft: only its owner reads it. */
+  async getPlannedWorkoutById(viewerId: string, workoutId: string) {
+    await this.access.assertCanViewPlannedWorkout(viewerId, workoutId);
+    return this.loadPlannedWorkout(workoutId);
+  }
+
+  private async loadPlannedWorkout(workoutId: string) {
     const workout = await this.plannedRepo.findOne({
       where: { id: workoutId },
       relations: ['exercises'],
@@ -360,10 +368,15 @@ export class WorkoutService {
       return workout;
     });
 
-    return this.getPlannedWorkoutById(copy.id);
+    return this.loadPlannedWorkout(copy.id);
   }
 
-  async getCompletedWorkoutById(workoutId: string) {
+  /**
+   * Its owner, their followers, and anyone for a public account once the
+   * workout is published; 404 otherwise (see UserContentAccess).
+   */
+  async getCompletedWorkoutById(viewerId: string, workoutId: string) {
+    await this.access.assertCanViewCompletedWorkout(viewerId, workoutId);
     const workout = await this.completedRepo.findOne({
       where: { id: workoutId },
       relations: ['exercises'],

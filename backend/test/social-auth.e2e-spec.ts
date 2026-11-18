@@ -95,9 +95,10 @@ describe('Sign in with Apple and Google (e2e)', () => {
     expect(user.email).toBe(`new.google${id}@example.com`);
     const [row] = await app
       .get(DataSource)
-      .query<
-        Array<{ displayName: string; uniqueName: string }>
-      >('SELECT "displayName", "uniqueName" FROM users WHERE id = $1', [user.id]);
+      .query<Array<{ displayName: string; uniqueName: string }>>(
+        'SELECT "displayName", "uniqueName" FROM users WHERE id = $1',
+        [user.id],
+      );
 
     expect(row.displayName).toBe('Élodie Martin');
     expect(row.uniqueName).toMatch(/^elodiemartin\d*$/);
@@ -144,9 +145,10 @@ describe('Sign in with Apple and Google (e2e)', () => {
     const user = await me((res.body as { access_token: string }).access_token);
     const [row] = await app
       .get(DataSource)
-      .query<
-        Array<{ displayName: string }>
-      >('SELECT "displayName" FROM users WHERE id = $1', [user.id]);
+      .query<Array<{ displayName: string }>>(
+        'SELECT "displayName" FROM users WHERE id = $1',
+        [user.id],
+      );
 
     expect(res.body).toMatchObject({ isNewUser: true });
     expect(row.displayName).toBe('Lucas Moreau');

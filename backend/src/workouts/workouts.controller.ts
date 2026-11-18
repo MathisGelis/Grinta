@@ -160,25 +160,35 @@ export class WorkoutsController {
   }
 
   @Get('planned/:id')
-  @ApiOperation({ summary: 'Get a planned workout by ID' })
+  @ApiOperation({
+    summary: 'Get one of my planned workouts by ID',
+    description:
+      'Planned workouts are private: only their owner reads them, anyone else gets 404.',
+  })
+  @ApiResponse({ status: 404, description: 'Not found, or not mine' })
   @ApiResponse({
     status: 200,
     description: 'Workout returned',
     type: PlannedWorkoutListDto,
   })
-  getPlannedById(@Param('id') id: string) {
-    return this.workoutService.getPlannedWorkoutById(id);
+  getPlannedById(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.workoutService.getPlannedWorkoutById(req.user.id, id);
   }
 
   @Get('completed/:id')
-  @ApiOperation({ summary: 'Get a completed workout by ID' })
+  @ApiOperation({
+    summary: 'Get a completed workout by ID',
+    description:
+      'Its owner, the people who follow them and, for a public account, anyone once the workout is published (posted). Anyone else gets 404, as for a post of a private account.',
+  })
+  @ApiResponse({ status: 404, description: 'Not found, or not visible to me' })
   @ApiResponse({
     status: 200,
     description: 'Workout returned',
     type: CompletedWorkoutListDto,
   })
-  getCompletedById(@Param('id') id: string) {
-    return this.workoutService.getCompletedWorkoutById(id);
+  getCompletedById(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.workoutService.getCompletedWorkoutById(req.user.id, id);
   }
 
   @Put('completed/:id/photo')

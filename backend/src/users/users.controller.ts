@@ -18,6 +18,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Auth } from 'src/auth/auth.decorators';
 import type { AuthenticatedRequest } from 'src/auth/auth-user.interface';
 import { UserListDto } from './dto/users-list.dto';
+import { AttemptLimit } from 'src/common/throttling/attempt-limit';
+import { REGISTER_ATTEMPTS } from 'src/auth/auth.constants';
 import { PhotoUpload } from 'src/photos/photo-upload.decorator';
 
 @ApiTags('users')
@@ -26,6 +28,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('register')
+  @AttemptLimit(REGISTER_ATTEMPTS)
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request' })

@@ -67,6 +67,7 @@ describe('summarizeWorkout', () => {
         totalReps: 14,
         recordsCount: 2,
       },
+      totalExercises: 2,
     });
   });
 });

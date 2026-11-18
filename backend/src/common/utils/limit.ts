@@ -17,3 +17,10 @@ export function clampLimit(
   if (!Number.isFinite(value) || value < 1) return fallback;
   return Math.min(value, max);
 }
+
+/** Turns a raw `offset` query value into a safe non-negative integer. */
+export function clampOffset(raw: unknown): number {
+  const value = Math.floor(Number(raw));
+
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}

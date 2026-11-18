@@ -230,6 +230,71 @@ describe('parseWorkoutText: lines and days', () => {
     expect(split.programme!.days.map((d) => d.dayNumber)).toEqual([1, 2, 3]);
   });
 
+  describe('workout titles without a keyword', () => {
+    const text =
+      'Push A\nBench press 4x8 60kg\nOverhead press 3x10 40kg\n\nPull B\nRowing barre 4x8 50kg';
+
+    it('splits the notes at each title and proposes a programme', () => {
+      const draft = parse(text);
+
+      expect(draft.unrecognized).toEqual([]);
+      expect(draft.workouts.map((w) => w.title)).toEqual(['Push A', 'Pull B']);
+      expect(draft.workouts.map((w) => w.exercises.map((e) => e.name))).toEqual(
+        [
+          ['Bench Press (Barbell)', 'Overhead Press (Barbell)'],
+          ['Bent Over Row (Barbell)'],
+        ],
+      );
+      expect(draft.programme!.days).toEqual([
+        { dayNumber: 1, label: 'Push A', workoutIndex: 0 },
+        { dayNumber: 2, label: 'Pull B', workoutIndex: 1 },
+      ]);
+    });
+
+    it('reads a single title as the name of the one workout', () => {
+      const draft = parse('Jambes du lundi\nSquat 4x8 80kg\nPresse 3x12');
+
+      expect(draft.unrecognized).toEqual([]);
+      expect(draft.programme).toBeNull();
+      expect(draft.workouts).toHaveLength(1);
+      expect(draft.workouts[0].title).toBe('Jambes du lundi');
+      expect(draft.workouts[0].exercises).toHaveLength(2);
+    });
+
+    it('also reads titles between bullets and blank lines', () => {
+      const draft = parse(
+        '- Haut du corps 💪\n- dc 3x10\n\n\n- Bas du corps\n- squat 3x10\n- mollets 4x15',
+      );
+
+      expect(draft.workouts.map((w) => w.title)).toEqual([
+        'Haut du corps 💪',
+        'Bas du corps',
+      ]);
+      expect(draft.unrecognized).toEqual([]);
+    });
+
+    it('keeps a real unknown exercise unknown', () => {
+      const draft = parse('dc 3x10\nunknownthing 3x10\nsquat 3x10');
+
+      expect(draft.unrecognized).toEqual([
+        { line: 2, text: 'unknownthing 3x10', reason: 'unknown_exercise' },
+      ]);
+      expect(draft.programme).toBeNull();
+    });
+
+    it('does not take a trailing line, or a long one, for a title', () => {
+      expect(parse('dc 3x10\nBon courage').unrecognized).toEqual([
+        { line: 2, text: 'Bon courage', reason: 'unknown_exercise' },
+      ]);
+      const long = `${'Très long titre de séance '.repeat(2)}ici`;
+
+      expect(long.length).toBeGreaterThan(40);
+      expect(parse(`${long}\ndc 3x10`).unrecognized).toEqual([
+        { line: 1, text: long, reason: 'unknown_exercise' },
+      ]);
+    });
+  });
+
   it('keeps loose exercises before the first day as a first session', () => {
     const draft = parse('dc 3x10\nJour 2\nsquat 3x10\nJour 3\nsdt 3x5');
 

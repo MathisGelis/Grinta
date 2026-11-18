@@ -259,6 +259,26 @@ describe('Onboarding answers and workout templates (e2e)', () => {
     await as(me).get('/workouts/templates/nope').expect(404);
   });
 
+  it('writes the template texts in the Accept-Language language', async () => {
+    const get = (language?: string) => {
+      const req = as(me).get('/workouts/templates/home-bodyweight-3');
+
+      return (language ? req.set('Accept-Language', language) : req).expect(
+        200,
+      );
+    };
+    const none = await get();
+    const french = await get('fr-FR,fr;q=0.9');
+    const english = await get('en-US');
+
+    expect(none.body.programme.title).toBe('Maison sans matériel');
+    expect(french.body.programme.title).toBe('Maison sans matériel');
+    expect(english.body.programme.title).toBe('Home, no equipment');
+    expect(english.body.programme.description).toMatch(/^Three bodyweight/);
+    expect(english.body.workouts[0].title).toBe('Bodyweight A');
+    expect(english.headers.vary).toMatch(/Accept-Language/i);
+  });
+
   it('answers 404 for an unknown template', () =>
     as(me).post('/workouts/templates/nope/use').expect(404));
 });

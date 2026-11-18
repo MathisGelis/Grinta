@@ -33,15 +33,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: unknown = { message: 'Internal server error' };
+    let message = 'Internal server error';
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      const res = exception.getResponse();
-      message = typeof res === 'object' ? res : { message: res };
+      message = readMessage(exception.getResponse());
+    } else if (isPayloadTooLarge(exception)) {
+      status = HttpStatus.PAYLOAD_TOO_LARGE;
+      message = 'Requête trop volumineuse';
     } else if (this.isInvalidIdentifier(exception)) {
       status = HttpStatus.BAD_REQUEST;
-      message = { message: 'Identifiant invalide' };
+      message = 'Identifiant invalide';
     } else {
       // Anything else is an unexpected failure. The detail (SQL fragments,
       // constraint names, stack) stays in the server log and never reaches
@@ -52,8 +54,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    // One shape for every error: { statusCode, code, message }.
     response.status(status).json({
       statusCode: status,
+      code: codeForStatus(status),
       message,
     });
   }
@@ -73,4 +77,40 @@ function hasCode(body: unknown): boolean {
     body !== null &&
     typeof (body as { code?: unknown }).code === 'string'
   );
+}
+
+const STATUS_CODES: Record<number, string> = {
+  400: 'BAD_REQUEST',
+  401: 'UNAUTHORIZED',
+  403: 'FORBIDDEN',
+  404: 'NOT_FOUND',
+  405: 'METHOD_NOT_ALLOWED',
+  409: 'CONFLICT',
+  413: 'PAYLOAD_TOO_LARGE',
+  415: 'UNSUPPORTED_MEDIA_TYPE',
+  422: 'UNPROCESSABLE_ENTITY',
+  429: 'TOO_MANY_REQUESTS',
+};
+
+/** Stable machine-readable code for errors that carry no code of their own. */
+function codeForStatus(status: number): string {
+  return (
+    STATUS_CODES[status] ??
+    (status >= 500 ? 'INTERNAL_ERROR' : 'REQUEST_FAILED')
+  );
+}
+
+/** Flattens Nest's response body (string, { message }, or a list) to text. */
+function readMessage(body: unknown): string {
+  if (typeof body === 'string') return body;
+  const message = (body as { message?: unknown } | null)?.message;
+  if (Array.isArray(message)) return message.map(String).join(', ');
+  if (typeof message === 'string') return message;
+  return 'Erreur';
+}
+
+// body-parser rejects an oversized body before any controller runs.
+function isPayloadTooLarge(exception: unknown): boolean {
+  const error = exception as { type?: unknown; status?: unknown } | null;
+  return error?.type === 'entity.too.large' || error?.status === 413;
 }

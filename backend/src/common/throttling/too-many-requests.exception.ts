@@ -1,9 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 export type TooManyRequestsCode =
-  | 'RATE_LIMITED'
-  | 'TOO_MANY_LOGIN_ATTEMPTS'
-  | 'TOO_MANY_ATTEMPTS';
+  'RATE_LIMITED' | 'TOO_MANY_LOGIN_ATTEMPTS' | 'TOO_MANY_ATTEMPTS';
 
 /**
  * A 429 that says when to retry: the Retry-After header carries the same

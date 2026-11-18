@@ -26,6 +26,8 @@ export interface FeedWorkoutStats {
 }
 
 export interface FeedWorkoutSummary {
+  /** Number of exercises, as in the workout detail. */
+  totalExercises: number;
   exercises: FeedExerciseSummary[];
   stats: FeedWorkoutStats;
 }
@@ -64,6 +66,7 @@ export function summarizeWorkout(
   const volume = sets.reduce((acc, s) => acc + s.reps * s.weight, 0);
 
   return {
+    totalExercises: rows.length,
     exercises: rows.map((r) => ({
       exerciseId: r.exerciseId,
       name: r.name,

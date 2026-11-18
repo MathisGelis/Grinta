@@ -57,6 +57,18 @@ export class PostsController {
   }
 
   @Auth()
+  @Get('mine/ids')
+  @ApiOperation({
+    summary: 'Ids of my published workouts',
+    description:
+      'Light list [{ postId, workoutId }], newest first, 1000 at most.',
+  })
+  @ApiResponse({ status: 200, description: 'List returned' })
+  getMyPublishedIds(@Req() req: AuthenticatedRequest) {
+    return this.postsService.getMyPublishedIds(req.user.id);
+  }
+
+  @Auth()
   @Get('mine')
   @ApiOperation({ summary: 'Get all posts by the current user' })
   @ApiResponse({ status: 200, description: 'List returned' })

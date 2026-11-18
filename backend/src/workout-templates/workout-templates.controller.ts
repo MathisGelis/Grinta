@@ -1,8 +1,17 @@
-import { Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Auth } from '../auth/auth.decorators';
 import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { TemplatesQueryDto } from './dto/templates-query.dto';
+import { pickTemplateLanguage } from './template-texts';
 import { WorkoutTemplatesService } from './workout-templates.service';
 
 @ApiTags('workout templates')
@@ -20,8 +29,16 @@ export class WorkoutTemplatesController {
       'fits are flagged `recommended`. Weights are 0: the user sets them.',
   })
   @ApiResponse({ status: 200, description: 'Templates returned' })
-  list(@Req() req: AuthenticatedRequest, @Query() query: TemplatesQueryDto) {
-    return this.templates.listTemplates(req.user, query);
+  list(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: TemplatesQueryDto,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    return this.templates.listTemplates(
+      req.user,
+      query,
+      pickTemplateLanguage(acceptLanguage),
+    );
   }
 
   @Get(':key')
@@ -36,8 +53,16 @@ export class WorkoutTemplatesController {
   })
   @ApiResponse({ status: 200, description: 'Proposal returned' })
   @ApiResponse({ status: 404, description: 'Unknown template' })
-  propose(@Req() req: AuthenticatedRequest, @Param('key') key: string) {
-    return this.templates.proposeTemplate(req.user, key);
+  propose(
+    @Req() req: AuthenticatedRequest,
+    @Param('key') key: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    return this.templates.proposeTemplate(
+      req.user,
+      key,
+      pickTemplateLanguage(acceptLanguage),
+    );
   }
 
   @Post(':key/use')
@@ -50,7 +75,15 @@ export class WorkoutTemplatesController {
   })
   @ApiResponse({ status: 201, description: 'Programme created' })
   @ApiResponse({ status: 404, description: 'Unknown template' })
-  use(@Req() req: AuthenticatedRequest, @Param('key') key: string) {
-    return this.templates.useTemplate(req.user, key);
+  use(
+    @Req() req: AuthenticatedRequest,
+    @Param('key') key: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    return this.templates.useTemplate(
+      req.user,
+      key,
+      pickTemplateLanguage(acceptLanguage),
+    );
   }
 }

@@ -47,8 +47,11 @@ export async function createUser(
   const uniqueName = `${prefix}${Date.now() % 1_000_000}${counter++}`;
   const email = `${uniqueName}@e2e.example.com`;
   const password = 'Password123!';
+  // Sign-ups are throttled per address: each test user comes from its own.
+  const ip = `10.${(counter >> 16) & 255}.${(counter >> 8) & 255}.${counter & 255}`;
   const res = await http(app)
     .post('/users/register')
+    .set('X-Forwarded-For', ip)
     .send({ email, password, displayName: `E2E ${prefix}`, uniqueName })
     .expect(201);
   const id = (res.body as { id: string }).id;
@@ -70,9 +73,9 @@ export async function ensureCatalogue(app: NestExpressApplication) {
 export async function exerciseId(app: NestExpressApplication, name: string) {
   const [row] = await app
     .get(DataSource)
-    .query<
-      Array<{ id: string }>
-    >('SELECT id FROM exercises WHERE name = $1', [name]);
+    .query<Array<{ id: string }>>('SELECT id FROM exercises WHERE name = $1', [
+      name,
+    ]);
 
   if (!row) throw new Error(`Exercise ${name} missing from the catalogue`);
   return row.id;

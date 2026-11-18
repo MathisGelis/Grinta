@@ -1004,3 +1004,98 @@ Pour enregistrer quand l'utilisateur accepte :
 - **après ajustement** : `POST /workouts/planned` pour chaque séance (en n'envoyant que `title`, `description`, `estimatedDurationMinutes` et, par exercice, `exerciseId`, `sets`, `plannedRestSeconds`), puis `POST /programmes` avec `title`, `description`, `weekNumber`, `difficulty`, `locationType` et les `days` où `workoutIndex` est remplacé par le `workoutId` obtenu (aucun `workoutId` pour un repos).
 
 À changer côté app : `TemplatePicker` appelle aujourd'hui `applyWorkoutTemplate` (donc `use`) dès qu'on touche un modèle. Il faut d'abord afficher la proposition, puis n'appeler `use` (ou les routes ci-dessus) qu'à la validation.
+
+
+---
+
+## 10. Audit backend v2 (branche `feat/backend-v3`)
+
+### 10.1 Séances et listes d'abonnés : accès restreint (B-01)
+
+Un compte **privé** n'est plus lisible par n'importe qui. Les routes ci-dessous répondent **404** (jamais 403, pour ne pas révéler qu'un id existe) à qui n'y a pas droit :
+
+| Route | Qui y a accès |
+|---|---|
+| `GET /workouts/completed/:id` | le propriétaire, ses abonnés, et tout le monde pour un compte public **si la séance est publiée** (postée) |
+| `GET /workouts/planned/:id` | le propriétaire seulement |
+| `GET /connections/:id/followers` et `/following` | soi, un compte public, ou un compte que l'on suit |
+| `GET /stats/adherence` | le plan doit être celui de l'appelant |
+
+À adapter côté app :
+- Une séance d'un autre n'est lisible que depuis un post visible (`GET /posts/:id/workout`, ou `workoutId` d'un post). Ne plus appeler `GET /workouts/completed/:id` pour une séance jamais postée d'un autre.
+- Le plan d'un autre utilisateur n'est plus lisible : pour s'en inspirer, utiliser `POST /workouts/planned/from-post/:postId`, qui copie ses exercices dans ses propres séances.
+- Sur le profil d'un compte privé que l'on ne suit pas, ne pas afficher la liste d'abonnés (le serveur répond 404).
+
+### 10.2 Séances : valeurs limites (B-02)
+
+`POST` et `PATCH` sur `/workouts/completed` et `/workouts/planned` refusent désormais les valeurs aberrantes avec un **400 `VALIDATION_ERROR`**, `errors[].field` désignant le champ (`exercises.0.sets.0.reps`) et `code` la cause :
+
+| Champ | Limites | Codes |
+|---|---|---|
+| `reps` | 1 à 1000 | `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` |
+| `weight` | 0 à 1000, 2 décimales | inchangé |
+| `sets` d'un exercice | 1 à 30 | `ARRAY_TOO_SHORT`, `ARRAY_TOO_LONG` |
+| `exercises` | 1 à 40 | `ARRAY_TOO_SHORT`, `ARRAY_TOO_LONG` |
+| `title` | 1 à 100 caractères (espaces retirés) | `FIELD_TOO_SHORT`, `FIELD_TOO_LONG` |
+| `description` | 0 à 1000 | `FIELD_TOO_LONG` |
+| `totalDurationSeconds` | 1 à 86 400 | `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` |
+| `timerSeconds`, `plannedRestSeconds` | 0 à 3 600 | idem |
+| `completionDate` | au plus 24 h dans le futur | `DATE_TOO_FAR_IN_FUTURE` (nouveau) |
+
+À vérifier côté app :
+- **Un exercice sans série** : omettre `sets`, ne jamais envoyer `sets: []` (400 `ARRAY_TOO_SHORT`). C'est le cas d'un exercice passé pendant une séance.
+- Une séance sans aucun exercice n'est plus acceptée (`exercises` : au moins 1).
+- Limiter les champs de saisie aux mêmes bornes pour éviter l'erreur.
+
+### 10.3 Programmes : jours, taille et date de départ (B-03)
+
+- **Jours** (`POST /programmes`, `PATCH /programmes/:id`) : numérotés de **1 à N** sans trou ni doublon, 84 au plus. Un jour de repos est un jour **sans** `workoutId`, il ne faut pas sauter son numéro. L'app qui renumérote avec `index + 1` est déjà conforme.
+  - 400 `DAY_NUMBER_DUPLICATE` (avec `dayNumbers`) : un numéro apparaît deux fois.
+  - 400 `DAY_NUMBERS_NOT_CONSECUTIVE` (avec `missingDayNumber`) : il manque un numéro.
+  - 400 `VALIDATION_ERROR` : plus de 84 jours (`days`, `ARRAY_TOO_LONG`) ou `dayNumber` au-dessus de 84.
+- **Date de départ** (`POST /programmes/:id/start`) : à **7 jours au plus** d'aujourd'hui, avant ou après, sinon 400 `START_DATE_OUT_OF_RANGE` (avec `windowDays`). Pour un départ dans quelques jours, `GET /programmes/active/today` renvoie `status: "not_started"` et `daysUntilStart` jusqu'à la date.
+
+### 10.4 Import de notes : titres de séance (B-04)
+
+`POST /workouts/import` reconnaît maintenant un **titre sans mot-clé** : une ligne courte (40 caractères au plus), sans séries ni charge, suivie d'une ligne d'exercice. Elle ouvre une nouvelle séance.
+
+```
+Push A                     → séance « Push A »
+Bench press 4x8 60kg
+Overhead press 3x10 40kg
+
+Pull B                     → séance « Pull B »
+Rowing barre 4x8 50kg
+```
+
+- Plusieurs titres donnent plusieurs `workouts` et un `programme` proposé (un jour par séance, dans l'ordre) ; un seul titre nomme l'unique séance, sans programme.
+- Les en-têtes `Jour 1`, `Day 2`, `Lundi`, `Séance A`, `Push :` fonctionnaient déjà et gardent leur sens (jours numérotés, semaine).
+- Une vraie ligne inconnue (`unknownthing 3x10`), ou un texte court sans exercice derrière, reste dans `unrecognized` avec `unknown_exercise`.
+
+### 10.5 Flux : plus d'appel de détail par carte (B-06)
+
+Chaque carte de `GET /posts/feed/following` et `GET /posts/feed/top` contient désormais tous les champs de `GET /posts/:id` : **l'appel de détail par carte peut être supprimé**.
+
+Champs ajoutés aux cartes : `userId`, `uniqueName`, `workoutTitle`, `workoutPhotoUrl`, `workoutDescription`, `workoutCompletionDate`, `workoutDurationSeconds` et `totalExercises` (nombre d'exercices). Déjà présents et inchangés : `id`, `createdAt`, `displayName`, `avatarThumbnailUrl`, `workoutId`, `workoutPhotoThumbnailUrl`, `likesCount`, `commentsCount`, `partners`, `isLiked`, `exercises[]` (nombre de séries et meilleure série) et `stats`.
+
+`totalExercises` est aussi dans `GET /posts/mine`. Mesure : 5 posts de 6 exercices pèsent environ 7,5 Ko. Les séries détaillées restent dans `GET /posts/:id/workout`, à ouvrir seulement au toucher d'une carte.
+
+### 10.6 Format d'erreur unique et 413 (B-07, B-08)
+
+Toutes les erreurs ont la forme `{ statusCode, code, message }`, `message` étant une chaîne. **Changement** : les erreurs 404/401/400 « simples » avaient `message: { message, error, statusCode }` ; lisez désormais `body.message` directement et branchez sur `body.code` (`NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`, `EMAIL_IN_USE`, `VALIDATION_ERROR`, `RATE_LIMITED`…).
+
+Un corps JSON de plus de 100 Ko renvoie `413` avec `code: "PAYLOAD_TOO_LARGE"`. `POST /users/register` est limité : après 5 essais pour un même e-mail en une heure, `429 TOO_MANY_ATTEMPTS` avec `retryAfterSeconds`.
+
+### 10.7 Pagination et requêtes légères (B-09)
+
+- `GET /connections/:id/followers|following?limit=&offset=` : `limit` plafonné à 100 (défaut 100), tri du plus récent au plus ancien.
+- `GET /posts/mine/ids` : `[{ postId, workoutId }]`, 1000 au plus. À utiliser à la place de `GET /posts/mine?limit=100` pour savoir quelles séances sont publiées.
+- Catalogues (`/exercises`, `/exercises/stats`, `/badges`) : le serveur envoie un `ETag`. Gardez-le et renvoyez `If-None-Match` ; un `304` signifie « rien n'a changé », sans corps.
+
+### 10.8 Modèles de séances traduits (B-10)
+
+Envoyez `Accept-Language` (déjà fait pour les exercices) sur `/workouts/templates`, `/workouts/templates/:key` et `/:key/use`. `fr*` donne le français, toute autre langue l'anglais ; sans en-tête, français comme avant. Sont traduits : `title`, `description` du modèle et `title` de chaque séance. Les noms d'exercices suivent le même en-tête. Les `insights` des stats sont des codes : le texte reste à traduire côté app.
+
+### 10.9 Texte saisi par les utilisateurs (B-11)
+
+L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` compris). React Native l'affiche comme du texte, rien à faire. Si vous les injectez un jour dans du HTML (WebView, page de partage), échappez-les à l'affichage.

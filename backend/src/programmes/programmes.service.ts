@@ -16,6 +16,10 @@ import {
 import { UpdateProgrammeDto } from './dto/update-programme.dto';
 import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { programmePositionOn, todayUtc } from './utils/programme-day';
+import {
+  assertDayNumbers,
+  assertStartDateNear,
+} from './utils/programme-limits';
 
 @Injectable()
 export class ProgrammesService {
@@ -165,6 +169,7 @@ export class ProgrammesService {
       });
     const startedOn = startDate ?? todayUtc();
 
+    if (startDate) assertStartDateNear(startDate, todayUtc());
     await this.programmeRepo.manager.query(
       `INSERT INTO active_programmes ("userId", "programmeId", "startedOn", "startDay")
        VALUES ($1, $2, $3, $4)
@@ -275,6 +280,7 @@ export class ProgrammesService {
     user: AuthUser,
     dayDtos: ProgrammeDayDto[],
   ): Promise<ProgrammeDay[]> {
+    assertDayNumbers(dayDtos);
     const workoutIds = [
       ...new Set(dayDtos.map((d) => d.workoutId).filter(Boolean)),
     ] as string[];

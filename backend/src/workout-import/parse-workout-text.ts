@@ -291,6 +291,34 @@ interface Section {
 
 export const MAX_IMPORT_LINES = 300;
 
+/** A workout title is a short line: « Push A », « Haut du corps ». */
+const MAX_TITLE_LENGTH = 40;
+
+/**
+ * Whether the first meaningful line after `index` is an exercise: what makes
+ * a bare line above it the title of a workout, rather than an exercise we do
+ * not know. A header, a blank line or a line of sets alone does not count.
+ */
+function exerciseFollows(
+  lines: string[],
+  index: number,
+  matcher: ExerciseMatcher,
+): boolean {
+  for (let j = index + 1; j < lines.length; j++) {
+    const original = stripBullet(lines[j].trim()).trim();
+    const normalized = normalizeText(original).replace(/[×✕*]/g, 'x');
+
+    if (!/[a-z0-9]/.test(normalized)) continue;
+    if (readHeader(original, normalized, matcher)) return false;
+    const name = readSets(normalized)
+      .rest.replace(/[^a-z' ]+/g, ' ')
+      .trim();
+
+    return /[a-z]{2,}/.test(name) && matcher.match(name) !== null;
+  }
+  return false;
+}
+
 export function parseWorkoutText(
   text: string,
   matcher: ExerciseMatcher,
@@ -298,61 +326,73 @@ export function parseWorkoutText(
   const sections: Section[] = [{ header: null, label: '', exercises: [] }];
   const unrecognized: UnrecognizedLine[] = [];
   let last: DraftExercise | null = null;
+  const lines = text.split(/\r?\n/).slice(0, MAX_IMPORT_LINES);
 
-  text
-    .split(/\r?\n/)
-    .slice(0, MAX_IMPORT_LINES)
-    .forEach((raw, i) => {
-      const line = i + 1;
-      const original = stripBullet(raw.trim()).trim();
-      const normalized = normalizeText(original).replace(/[×✕*]/g, 'x');
+  lines.forEach((raw, i) => {
+    const line = i + 1;
+    const original = stripBullet(raw.trim()).trim();
+    const normalized = normalizeText(original).replace(/[×✕*]/g, 'x');
 
-      if (!/[a-z0-9]/.test(normalized)) return;
-      const header = readHeader(original, normalized, matcher);
+    if (!/[a-z0-9]/.test(normalized)) return;
+    const header = readHeader(original, normalized, matcher);
 
-      if (header) {
+    if (header) {
+      sections.push({
+        header,
+        label: original.replace(/[\s:]+$/, ''),
+        exercises: [],
+      });
+      last = null;
+      return;
+    }
+    const read = readSets(normalized);
+    const name = read.rest.replace(/[^a-z' ]+/g, ' ').trim();
+    const sets = read.sets.map((set) => ({
+      reps: set.reps,
+      weight: set.weight ?? 0,
+    }));
+
+    if (!/[a-z]{2,}|^[a-z]$/.test(name)) {
+      // Sets on their own line belong to the exercise above.
+      if (read.found && last) {
+        last.sets.push(...sets);
+        last.durationSeconds ??= read.durationSeconds;
+        last.plannedRestSeconds ??= read.restSeconds;
+      } else unrecognized.push({ line, text: original, reason: 'no_exercise' });
+      return;
+    }
+    const exercise = matcher.match(name);
+
+    if (!exercise) {
+      last = null;
+      // A short bare line above an exercise names the workout below it.
+      if (
+        !read.found &&
+        original.length <= MAX_TITLE_LENGTH &&
+        exerciseFollows(lines, i, matcher)
+      ) {
+        const title = original.replace(/[\s:]+$/, '');
+
         sections.push({
-          header,
-          label: original.replace(/[\s:]+$/, ''),
+          header: { kind: 'session', title, rest: false },
+          label: title,
           exercises: [],
         });
-        last = null;
         return;
       }
-      const read = readSets(normalized);
-      const name = read.rest.replace(/[^a-z' ]+/g, ' ').trim();
-      const sets = read.sets.map((set) => ({
-        reps: set.reps,
-        weight: set.weight ?? 0,
-      }));
-
-      if (!/[a-z]{2,}|^[a-z]$/.test(name)) {
-        // Sets on their own line belong to the exercise above.
-        if (read.found && last) {
-          last.sets.push(...sets);
-          last.durationSeconds ??= read.durationSeconds;
-          last.plannedRestSeconds ??= read.restSeconds;
-        } else
-          unrecognized.push({ line, text: original, reason: 'no_exercise' });
-        return;
-      }
-      const exercise = matcher.match(name);
-
-      if (!exercise) {
-        unrecognized.push({ line, text: original, reason: 'unknown_exercise' });
-        last = null;
-        return;
-      }
-      last = {
-        exerciseId: exercise.id,
-        name: exercise.name,
-        sets,
-        durationSeconds: read.durationSeconds,
-        plannedRestSeconds: read.restSeconds,
-        line,
-      };
-      sections[sections.length - 1].exercises.push(last);
-    });
+      unrecognized.push({ line, text: original, reason: 'unknown_exercise' });
+      return;
+    }
+    last = {
+      exerciseId: exercise.id,
+      name: exercise.name,
+      sets,
+      durationSeconds: read.durationSeconds,
+      plannedRestSeconds: read.restSeconds,
+      line,
+    };
+    sections[sections.length - 1].exercises.push(last);
+  });
 
   return { ...assemble(sections), unrecognized };
 }
