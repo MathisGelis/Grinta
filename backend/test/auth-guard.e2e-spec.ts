@@ -25,6 +25,7 @@ const PUBLIC_ROUTES = [
   'GET /exercises/:id',
   'GET /health',
   'POST /auth/apple',
+  'POST /auth/confirm-email',
   'POST /auth/forgot-password',
   'POST /auth/google',
   'POST /auth/login',

@@ -1099,3 +1099,12 @@ Envoyez `Accept-Language` (déjà fait pour les exercices) sur `/workouts/templa
 ### 10.9 Texte saisi par les utilisateurs (B-11)
 
 L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` compris). React Native l'affiche comme du texte, rien à faire. Si vous les injectez un jour dans du HTML (WebView, page de partage), échappez-les à l'affichage.
+
+## 11. Audit backend v3
+
+### 11.1 E-mail et mot de passe (B-16, B-21)
+
+- `PATCH /users/:id` refuse `email` et `password` (400, `errors[].code = FIELD_NOT_ALLOWED`) : retirez-les du formulaire de profil.
+- Changer le mot de passe : `PATCH /users/me/password` (inchangé).
+- Changer l'e-mail : `POST /users/me/email` `{ email, currentPassword }` → 204. Un lien part vers la nouvelle adresse (`CONFIRM_EMAIL_URL?token=…`, par défaut `grinta://confirm-email?token=…`) ; l'app l'ouvre et appelle `POST /auth/confirm-email` `{ token }` (public) → 204, puis redemande une connexion (les anciennes sessions sont coupées). Erreurs : `CURRENT_PASSWORD_INVALID`, `EMAIL_IN_USE`, `EMAIL_UNCHANGED`, `EMAIL_TOKEN_INVALID`.
+- Pseudo pris : `400` avec `code: "USERNAME_TAKEN"` et `suggestion`.

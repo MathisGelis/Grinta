@@ -1,5 +1,4 @@
 import {
-  IsEmail,
   IsString,
   IsOptional,
   MinLength,
@@ -36,20 +35,6 @@ export class UpdateUserDto {
   @MaxLength(30)
   @Matches(USERNAME_PATTERN, { message: USERNAME_RULE_MESSAGE })
   uniqueName?: string;
-
-  @ApiProperty({ example: 'user@example.com', required: false })
-  @IsOptional()
-  @Transform(toLowerTrimmed)
-  @IsEmail()
-  @MaxLength(254)
-  email?: string;
-
-  @ApiProperty({ example: 'NewPassword123!', required: false })
-  @IsOptional()
-  @IsString()
-  @MinLength(8)
-  @MaxLength(72)
-  password?: string;
 
   @ApiProperty({ example: '1995-06-15', required: false })
   @IsOptional()

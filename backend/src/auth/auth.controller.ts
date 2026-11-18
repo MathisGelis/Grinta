@@ -17,7 +17,12 @@ import {
   LOGIN_ATTEMPTS,
   RESET_PASSWORD_ATTEMPTS,
 } from './auth.constants';
-import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import { EmailChangeService } from './email-change.service';
+import {
+  ConfirmEmailDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/password.dto';
 import { PasswordResetService } from './password-reset.service';
 import type { AuthenticatedRequest } from './auth-user.interface';
 
@@ -27,6 +32,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly passwordReset: PasswordResetService,
+    private readonly emailChange: EmailChangeService,
   ) {}
 
   @Post('forgot-password')
@@ -60,6 +66,23 @@ export class AuthController {
   @ApiResponse({ status: 429, description: 'Too many attempts' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.passwordReset.resetPassword(dto.token, dto.password);
+  }
+
+  @Post('confirm-email')
+  @HttpCode(204)
+  @AttemptLimit(RESET_PASSWORD_ATTEMPTS)
+  @ApiOperation({
+    summary: 'Confirm a new e-mail from the link',
+    description:
+      'Applies the change and logs out every session of the account (tokens issued before are refused).',
+  })
+  @ApiResponse({ status: 204, description: 'E-mail changed' })
+  @ApiResponse({
+    status: 400,
+    description: '{ code: EMAIL_TOKEN_INVALID | EMAIL_IN_USE }',
+  })
+  async confirmEmail(@Body() dto: ConfirmEmailDto) {
+    await this.emailChange.confirm(dto.token);
   }
 
   @Post('login')

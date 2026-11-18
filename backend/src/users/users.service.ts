@@ -111,18 +111,6 @@ export class UsersService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-    if (updateData.email && updateData.email !== user.email) {
-      const existing = await this.userRepository.findOne({
-        where: { email: updateData.email },
-      });
-
-      if (existing)
-        throw new BadRequestException({
-          statusCode: 400,
-          code: 'EMAIL_IN_USE',
-          message: 'Email already in use',
-        });
-    }
     if (updateData.uniqueName && updateData.uniqueName !== user.uniqueName) {
       const existing = await this.userRepository.findOne({
         where: { uniqueName: updateData.uniqueName },
@@ -133,16 +121,18 @@ export class UsersService {
           user.displayName,
         );
 
-        throw new BadRequestException(
-          `Username already in use, recommended: ${generatedName}`,
-        );
+        throw new BadRequestException({
+          statusCode: 400,
+          code: 'USERNAME_TAKEN',
+          message: `Username already in use, recommended: ${generatedName}`,
+          suggestion: generatedName,
+        });
       }
     }
 
-    const { password, ...profileFields } = updateData;
-
-    Object.assign(user, profileFields);
-    if (password) user.password = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    // The e-mail and the password never change here: see EmailChangeService
+    // and PATCH /users/me/password, which ask for the current password.
+    Object.assign(user, updateData);
     return await this.userRepository.save(user);
   }
 

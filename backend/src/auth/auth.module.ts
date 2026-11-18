@@ -7,6 +7,8 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/entities/users.entity';
+import { EmailChangeToken } from './entities/email-change-token.entity';
+import { EmailChangeService } from './email-change.service';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { PasswordController } from './password.controller';
 import { PasswordResetService } from './password-reset.service';
@@ -25,7 +27,12 @@ import { UserIdentity } from './social/user-identity.entity';
 @Module({
   imports: [
     UsersModule,
-    TypeOrmModule.forFeature([User, PasswordResetToken, UserIdentity]),
+    TypeOrmModule.forFeature([
+      User,
+      PasswordResetToken,
+      EmailChangeToken,
+      UserIdentity,
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -41,6 +48,7 @@ import { UserIdentity } from './social/user-identity.entity';
     AuthService,
     JwtStrategy,
     PasswordResetService,
+    EmailChangeService,
     PasswordStateService,
     SocialAuthService,
     SocialTokenVerifier,

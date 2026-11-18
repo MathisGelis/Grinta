@@ -77,6 +77,16 @@ export const RESET_PASSWORD_ATTEMPTS: AttemptLimitOptions = {
   message: (minutes) => `Trop de tentatives. Réessayez dans ${minutes} min.`,
 };
 
+/** Changing the e-mail checks the current password and sends two e-mails. */
+export const CHANGE_EMAIL_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'change-email',
+  account: 'user',
+  perAccount: { limit: 5, ttl: HOUR },
+  perAddress: { limit: 20, ttl: HOUR },
+  code: 'TOO_MANY_ATTEMPTS',
+  message: (minutes) => `Trop de tentatives. Réessayez dans ${minutes} min.`,
+};
+
 /** Changing the password checks the current one: same care as a login. */
 export const CHANGE_PASSWORD_ATTEMPTS: AttemptLimitOptions = {
   scope: 'change-password',

@@ -42,3 +42,23 @@ export class ChangePasswordDto {
   @MaxLength(72)
   newPassword: string;
 }
+
+export class ChangeEmailDto {
+  @ApiProperty({ example: 'new@example.com' })
+  @Transform(toLowerTrimmed)
+  @IsEmail()
+  @MaxLength(254)
+  email: string;
+
+  @ApiProperty()
+  @IsString()
+  @MaxLength(72)
+  currentPassword: string;
+}
+
+export class ConfirmEmailDto {
+  @ApiProperty({ description: 'The token of the link received by email' })
+  @IsString()
+  @Length(20, 200)
+  token: string;
+}

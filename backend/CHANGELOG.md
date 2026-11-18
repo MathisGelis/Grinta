@@ -1,5 +1,10 @@
 # Changelog backend
 
+## Non publié : audit backend v3
+
+- **B-16 (sécurité).** `PATCH /users/:id` n'accepte plus `email` ni `password` : 400 `VALIDATION_ERROR` avec l'erreur `FIELD_NOT_ALLOWED`. Avant, un jeton volé suffisait à changer le mot de passe ou l'e-mail sans aucune vérification, durablement. Le mot de passe se change par `PATCH /users/me/password`. L'e-mail se change par `POST /users/me/email` (mot de passe actuel requis, lien de confirmation envoyé à la **nouvelle** adresse, avis à l'**ancienne**), puis `POST /auth/confirm-email` avec le jeton du lien : l'e-mail ne change qu'à ce moment, et tous les jetons émis avant sont refusés (on réutilise `passwordChangedAt`, donc pas de `tokenVersion` en plus). Migration : table `email_change_tokens`. Nouvelle variable optionnelle `CONFIRM_EMAIL_URL` (lien profond de l'app, défaut `grinta://confirm-email`).
+- **B-21.** Pseudo déjà pris : `400 USERNAME_TAKEN` avec `suggestion`.
+
 ## Non publié : audit backend v2
 
 - **B-01 (sécurité, P1) : contrôle d'accès des séances et des listes d'abonnés.** Un utilisateur connecté qui ne suivait pas un compte **privé** pouvait lire ses séances (`GET /workouts/completed/:id`, `GET /workouts/planned/:id`) et la liste de ses abonnés et abonnements. Ces routes répondent désormais 404, comme `/posts/:id`, pour ne pas révéler l'existence d'un id. **Cela remplace la décision antérieure de laisser ces deux lectures ouvertes à tout utilisateur connecté.**
