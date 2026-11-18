@@ -79,7 +79,35 @@ function LikeHeart({ liked }: { liked: boolean }) {
   );
 }
 
+const MAX_CACHED_DETAILS = 200;
+const MAX_PARALLEL_DETAILS = 2;
+/** Détails de posts déjà chargés (borné : les plus anciens sont retirés). */
 const details = new Map<string, Post>();
+
+function rememberDetail(id: string, post: Post) {
+  details.delete(id);
+  details.set(id, post);
+  if (details.size > MAX_CACHED_DETAILS) {
+    const oldest = details.keys().next().value;
+    if (oldest !== undefined) details.delete(oldest);
+  }
+}
+
+// Le flux ne renvoie pas encore titre ni description (B-06) : on charge le détail de chaque carte,
+// mais deux requêtes à la fois au plus, pour ne pas saturer la connexion à l'ouverture de l'accueil.
+let running = 0;
+const waiting: (() => void)[] = [];
+
+async function loadDetail(id: string): Promise<Post | null> {
+  if (running >= MAX_PARALLEL_DETAILS) await new Promise<void>((resolve) => waiting.push(resolve));
+  running += 1;
+  try {
+    return (await PostsService.getPostById(id)) ?? null;
+  } finally {
+    running -= 1;
+    waiting.shift()?.();
+  }
+}
 
 export default function PostCard({
   post,
@@ -102,10 +130,10 @@ export default function PostCard({
   useEffect(() => {
     if (details.has(post.id)) return;
     let cancelled = false;
-    PostsService.getPostById(post.id)
+    loadDetail(post.id)
       .then((data) => {
         if (!data) return;
-        details.set(post.id, data);
+        rememberDetail(post.id, data);
         if (!cancelled) setDetail(data);
       })
       .catch(() => {});
