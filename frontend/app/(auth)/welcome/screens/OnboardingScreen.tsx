@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { View, FlatList, StyleSheet, Text, Animated, Dimensions } from "react-native";
 import { slides } from "@/constants/slides";
-import OnboardingSlide from "../components/OnboardingSlide";
+import OnboardingSlide from "@/components/auth/OnboardingSlide";
 import { router } from "expo-router";
 
 import { WorkoutTheme } from "@/constants/Colors";
