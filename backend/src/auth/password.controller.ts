@@ -1,11 +1,15 @@
-import { Body, Controller, Patch, Req } from '@nestjs/common';
+import { Body, Controller, HttpCode, Patch, Post, Req } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AttemptLimit } from '../common/throttling/attempt-limit';
-import { CHANGE_PASSWORD_ATTEMPTS } from './auth.constants';
+import {
+  CHANGE_EMAIL_ATTEMPTS,
+  CHANGE_PASSWORD_ATTEMPTS,
+} from './auth.constants';
 import { Auth } from './auth.decorators';
 import type { AuthenticatedRequest } from './auth-user.interface';
 import { AuthService } from './auth.service';
-import { ChangePasswordDto } from './dto/password.dto';
+import { EmailChangeService } from './email-change.service';
+import { ChangeEmailDto, ChangePasswordDto } from './dto/password.dto';
 import { PasswordResetService } from './password-reset.service';
 
 @ApiTags('users')
@@ -14,6 +18,7 @@ export class PasswordController {
   constructor(
     private readonly passwordReset: PasswordResetService,
     private readonly authService: AuthService,
+    private readonly emailChange: EmailChangeService,
   ) {}
 
   // AttemptLimit above Auth: guards run in the reverse order of the
@@ -44,5 +49,27 @@ export class PasswordController {
     );
 
     return this.authService.login(user);
+  }
+
+  @Post('me/email')
+  @HttpCode(204)
+  @AttemptLimit(CHANGE_EMAIL_ATTEMPTS)
+  @Auth()
+  @ApiOperation({
+    summary: 'Ask to change my e-mail',
+    description:
+      'Needs the current password. A confirmation link goes to the NEW address and a notice to the old one; the e-mail changes only when the link is opened (POST /auth/confirm-email). 5 attempts per hour.',
+  })
+  @ApiResponse({ status: 204, description: 'Link sent' })
+  @ApiResponse({
+    status: 400,
+    description:
+      '{ code: CURRENT_PASSWORD_INVALID | EMAIL_IN_USE | EMAIL_UNCHANGED } or a validation error',
+  })
+  async changeEmail(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: ChangeEmailDto,
+  ) {
+    await this.emailChange.request(req.user.id, dto.email, dto.currentPassword);
   }
 }

@@ -18,6 +18,7 @@ import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { programmePositionOn, todayUtc } from './utils/programme-day';
 import {
   assertDayNumbers,
+  assertHasWorkout,
   assertStartDateNear,
 } from './utils/programme-limits';
 
@@ -281,6 +282,7 @@ export class ProgrammesService {
     dayDtos: ProgrammeDayDto[],
   ): Promise<ProgrammeDay[]> {
     assertDayNumbers(dayDtos);
+    assertHasWorkout(dayDtos);
     const workoutIds = [
       ...new Set(dayDtos.map((d) => d.workoutId).filter(Boolean)),
     ] as string[];

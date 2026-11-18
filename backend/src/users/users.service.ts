@@ -1,3 +1,4 @@
+import { PasswordStateService } from 'src/auth/password-state.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -41,6 +42,8 @@ export class UsersService {
     private readonly connectionsService: ConnectionsService,
 
     private readonly photos: PhotosService,
+
+    private readonly passwordState: PasswordStateService,
   ) {}
 
   async registerUser(userData: CreateUserDto): Promise<User> {
@@ -111,18 +114,6 @@ export class UsersService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-    if (updateData.email && updateData.email !== user.email) {
-      const existing = await this.userRepository.findOne({
-        where: { email: updateData.email },
-      });
-
-      if (existing)
-        throw new BadRequestException({
-          statusCode: 400,
-          code: 'EMAIL_IN_USE',
-          message: 'Email already in use',
-        });
-    }
     if (updateData.uniqueName && updateData.uniqueName !== user.uniqueName) {
       const existing = await this.userRepository.findOne({
         where: { uniqueName: updateData.uniqueName },
@@ -133,16 +124,18 @@ export class UsersService {
           user.displayName,
         );
 
-        throw new BadRequestException(
-          `Username already in use, recommended: ${generatedName}`,
-        );
+        throw new BadRequestException({
+          statusCode: 400,
+          code: 'USERNAME_TAKEN',
+          message: `Username already in use, recommended: ${generatedName}`,
+          suggestion: generatedName,
+        });
       }
     }
 
-    const { password, ...profileFields } = updateData;
-
-    Object.assign(user, profileFields);
-    if (password) user.password = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    // The e-mail and the password never change here: see EmailChangeService
+    // and PATCH /users/me/password, which ask for the current password.
+    Object.assign(user, updateData);
     return await this.userRepository.save(user);
   }
 
@@ -152,10 +145,31 @@ export class UsersService {
   ): Promise<{ message: string }> {
     this.assertSelf(currentUserId, id);
     const photoUrls = await this.findPhotoUrls(id);
-    const result = await this.userRepository.delete(id);
+    // Everything the account owns goes with it (ON DELETE CASCADE). The like
+    // and comment counters of other people's posts are fixed first, in the
+    // same transaction, or they would keep counting a deleted user.
+    const affected = await this.userRepository.manager.transaction(
+      async (manager) => {
+        await manager.query(
+          `UPDATE posts p SET "likesCount" = GREATEST(p."likesCount" - l.n, 0)
+             FROM (SELECT "postId", COUNT(*)::int AS n FROM post_likes
+                    WHERE "userId" = $1 GROUP BY "postId") l
+            WHERE p.id = l."postId"`,
+          [id],
+        );
+        await manager.query(
+          `UPDATE posts p SET "commentsCount" = GREATEST(p."commentsCount" - c.n, 0)
+             FROM (SELECT "postId", COUNT(*)::int AS n FROM post_comments
+                    WHERE "userId" = $1 GROUP BY "postId") c
+            WHERE p.id = c."postId"`,
+          [id],
+        );
+        return (await manager.delete(User, id)).affected;
+      },
+    );
 
-    if (result.affected === 0)
-      throw new NotFoundException(`User with ID ${id} not found`);
+    if (!affected) throw new NotFoundException(`User with ID ${id} not found`);
+    this.passwordState.forget(id);
     await this.photos.removeAll(photoUrls);
     return { message: 'User deleted successfully' };
   }
@@ -288,6 +302,11 @@ export class UsersService {
   }
 
   // One statement for the four counters instead of one round trip each.
+  // Rule (B-15): the counters are public figures, shown even on a private
+  // profile, like the display name; the lists behind them are not. A viewer
+  // who may not open them has `isPrivate: true` and gets 404 on the lists
+  // (followers, following, posts), so the app shows the numbers and hides the
+  // rows.
   private async getProfileCounts(userId: string): Promise<{
     followersCount: number;
     followingCount: number;
@@ -356,7 +375,11 @@ export class UsersService {
   ): Promise<UserListDto[]> {
     const normalized = search.toLowerCase().trim();
 
-    if (!normalized) return [];
+    // Under two characters, or with no letter or digit at all, a search only
+    // lists arbitrary people.
+    if (normalized.length < 2 || !/[\p{L}\p{N}]/u.test(normalized)) return [];
+    const like = escapeLike(normalized);
+
     return this.userRepository
       .createQueryBuilder('user')
       .select([
@@ -369,26 +392,31 @@ export class UsersService {
       .andWhere(
         `
         similarity(LOWER(user.uniqueName), :search) > 0.2
-        OR LOWER(user.uniqueName) LIKE :likeSearch
+        OR LOWER(user.uniqueName) LIKE :likeSearch ESCAPE '\\'
         `,
         {
           search: normalized,
-          likeSearch: `%${normalized}%`,
+          likeSearch: `%${like}%`,
         },
       )
       .orderBy(
         `
         CASE
-          WHEN LOWER(user.uniqueName) LIKE :prefix THEN 0
+          WHEN LOWER(user.uniqueName) LIKE :prefix ESCAPE '\\' THEN 0
           ELSE 1
         END
         `,
         'ASC',
       )
       .addOrderBy(`similarity(LOWER(user.uniqueName), :search)`, 'DESC')
-      .setParameter('prefix', `${normalized}%`)
+      .setParameter('prefix', `${like}%`)
       .setParameter('search', normalized)
       .limit(10)
       .getRawMany();
   }
+}
+
+/** Escapes the LIKE wildcards (% _) and the escape character itself. */
+export function escapeLike(text: string): string {
+  return text.replace(/[\\%_]/g, (char) => `\\${char}`);
 }

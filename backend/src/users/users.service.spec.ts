@@ -1,5 +1,4 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { User } from './entities/users.entity';
 
@@ -32,6 +31,7 @@ describe('UsersService access control', () => {
       {} as never,
       {} as never,
       {} as never,
+      { forget: jest.fn() } as never,
     );
   });
 
@@ -50,17 +50,14 @@ describe('UsersService access control', () => {
     expect(userRepository.delete).not.toHaveBeenCalled();
   });
 
-  it('lets a user update their own account and hashes a new password', async () => {
+  it('lets a user update their own profile and never touches the password', async () => {
+    const before = owner.password;
     const saved = await service.updateUser(owner.id, owner.id, {
       height: 182,
-      password: 'NewPassword123!',
     });
 
     expect(saved.height).toBe(182);
-    expect(saved.password).not.toBe('NewPassword123!');
-    await expect(
-      bcrypt.compare('NewPassword123!', saved.password),
-    ).resolves.toBe(true);
+    expect(saved.password).toBe(before);
   });
 
   it('returns the full account to its owner', async () => {
@@ -120,6 +117,7 @@ describe('UsersService profile photo', () => {
       {} as never,
       {} as never,
       photos as never,
+      { forget: jest.fn() } as never,
     );
   });
 

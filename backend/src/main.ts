@@ -5,7 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
-import { configureApp } from './app.setup';
+import { configureApp, isSwaggerEnabled } from './app.setup';
 import { findSchemaDrift } from './database/schema-drift';
 import { readPhotoStorageConfig, UPLOADS_ROUTE } from './photos/photos.config';
 
@@ -35,25 +35,27 @@ async function bootstrap() {
     });
 
   // SWAGGER
-  const config = new DocumentBuilder()
-    .setTitle('Grinta API')
-    .setDescription('User management API')
-    .setVersion('0.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'Authorization',
-        description: 'Enter JWT token',
-        in: 'header',
-      },
-      'JWT',
-    )
-    .addTag('users')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  if (isSwaggerEnabled()) {
+    const config = new DocumentBuilder()
+      .setTitle('Grinta API')
+      .setDescription('User management API')
+      .setVersion('0.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'Authorization',
+          description: 'Enter JWT token',
+          in: 'header',
+        },
+        'JWT',
+      )
+      .addTag('users')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+  }
 
   // RUN
   await app.listen(process.env.PORT ?? 3000);

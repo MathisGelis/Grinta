@@ -67,12 +67,30 @@ export const REGISTER_ATTEMPTS: AttemptLimitOptions = {
     `Trop de tentatives d'inscription. Réessayez dans ${minutes} min.`,
 };
 
+/**
+ * "Email already in use" answers per address and hour, before they turn into
+ * a 429: the one answer of the API that tells whether an address has an
+ * account. Kept (rather than a neutral answer) for the UX of a user who
+ * forgot they had signed up.
+ */
+export const EMAIL_PROBE = { limit: 10, ttl: HOUR };
+
 /** Reset links: a token cannot be guessed, this only caps the noise. */
 export const RESET_PASSWORD_ATTEMPTS: AttemptLimitOptions = {
   scope: 'reset-password',
   account: { bodyField: 'token' },
   perAccount: { limit: 5, ttl: 15 * 60_000 },
   perAddress: { limit: 20, ttl: 15 * 60_000 },
+  code: 'TOO_MANY_ATTEMPTS',
+  message: (minutes) => `Trop de tentatives. Réessayez dans ${minutes} min.`,
+};
+
+/** Changing the e-mail checks the current password and sends two e-mails. */
+export const CHANGE_EMAIL_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'change-email',
+  account: 'user',
+  perAccount: { limit: 5, ttl: HOUR },
+  perAddress: { limit: 20, ttl: HOUR },
   code: 'TOO_MANY_ATTEMPTS',
   message: (minutes) => `Trop de tentatives. Réessayez dans ${minutes} min.`,
 };

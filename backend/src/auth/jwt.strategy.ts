@@ -8,7 +8,8 @@ import { PasswordStateService } from './password-state.service';
 
 export interface JwtPayload {
   sub: string;
-  email: string;
+  /** Present only in tokens issued before it was dropped. */
+  email?: string;
   /** Issue date, seconds since the epoch, set by jsonwebtoken. */
   iat?: number;
 }
@@ -35,6 +36,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   async validate(payload: JwtPayload): Promise<AuthUser> {
     if (!(await this.passwordState.isTokenCurrent(payload.sub, payload.iat)))
       throw new UnauthorizedException();
-    return { id: payload.sub, email: payload.email };
+    return { id: payload.sub };
   }
 }

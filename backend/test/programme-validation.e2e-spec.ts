@@ -191,4 +191,20 @@ describe('Programme limits (e2e)', () => {
       });
     });
   });
+
+  it('refuses a programme of rest days only, on create and on update', async () => {
+    const rest = [1, 2, 3].map((dayNumber) => ({ dayNumber }));
+    const created = await as()
+      .post('/programmes')
+      .send(programme(rest))
+      .expect(400);
+
+    expect((created.body as Failure).code).toBe('PROGRAMME_NEEDS_WORKOUT');
+    const updated = await as()
+      .patch(`/programmes/${programmeId}`)
+      .send({ days: rest })
+      .expect(400);
+
+    expect((updated.body as Failure).code).toBe('PROGRAMME_NEEDS_WORKOUT');
+  });
 });

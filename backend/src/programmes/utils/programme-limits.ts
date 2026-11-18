@@ -41,6 +41,18 @@ export function assertDayNumbers(days: Array<{ dayNumber: number }>): void {
       });
 }
 
+/** A programme of rest days only is not a programme: one session at least. */
+export function assertHasWorkout(
+  days: Array<{ workoutId?: string | null }>,
+): void {
+  if (!days.some((day) => day.workoutId))
+    throw new BadRequestException({
+      statusCode: 400,
+      code: 'PROGRAMME_NEEDS_WORKOUT',
+      message: 'Un programme doit contenir au moins une séance.',
+    });
+}
+
 /** The start date within `START_DATE_WINDOW_DAYS` of today, else 400. */
 export function assertStartDateNear(startDate: string, today: string): void {
   if (Math.abs(daysBetween(today, startDate)) > START_DATE_WINDOW_DAYS)

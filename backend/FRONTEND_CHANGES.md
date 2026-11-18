@@ -1099,3 +1099,38 @@ Envoyez `Accept-Language` (déjà fait pour les exercices) sur `/workouts/templa
 ### 10.9 Texte saisi par les utilisateurs (B-11)
 
 L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` compris). React Native l'affiche comme du texte, rien à faire. Si vous les injectez un jour dans du HTML (WebView, page de partage), échappez-les à l'affichage.
+
+## 11. Audit backend v3
+
+### 11.1 E-mail et mot de passe (B-16, B-21)
+
+- `PATCH /users/:id` refuse `email` et `password` (400, `errors[].code = FIELD_NOT_ALLOWED`) : retirez-les du formulaire de profil.
+- Changer le mot de passe : `PATCH /users/me/password` (inchangé).
+- Changer l'e-mail : `POST /users/me/email` `{ email, currentPassword }` → 204. Un lien part vers la nouvelle adresse (`CONFIRM_EMAIL_URL?token=…`, par défaut `grinta://confirm-email?token=…`) ; l'app l'ouvre et appelle `POST /auth/confirm-email` `{ token }` (public) → 204, puis redemande une connexion (les anciennes sessions sont coupées). Erreurs : `CURRENT_PASSWORD_INVALID`, `EMAIL_IN_USE`, `EMAIL_UNCHANGED`, `EMAIL_TOKEN_INVALID`.
+- Pseudo pris : `400` avec `code: "USERNAME_TAKEN"` et `suggestion`.
+
+### 11.2 Suppression de compte (B-17)
+
+`DELETE /users/:id` fonctionne maintenant pour tout compte : réponse 200 `{ message }`. Toutes les données du compte sont supprimées (séances, posts, likes, commentaires, programmes, groupes créés, photos). Le jeton est refusé aussitôt (401) : renvoyez l'utilisateur à l'écran de connexion. L'e-mail peut être réutilisé pour une nouvelle inscription.
+
+### 11.3 Profil et programmes (B-18, B-22)
+
+- `height` 50–250 cm, `weight` 20–400 kg, `birthDate` entre 1900 et il y a 13 ans : sinon 400 `VALIDATION_ERROR` (`VALUE_TOO_SMALL`, `VALUE_TOO_LARGE`, `DATE_OUT_OF_RANGE`). Validez aussi côté formulaire.
+- Un programme doit contenir au moins un jour avec `workoutId` : sinon 400 `PROGRAMME_NEEDS_WORKOUT`.
+
+### 11.4 Recherche d'utilisateurs (B-20)
+
+`GET /users/search?q=` renvoie une liste vide sous 2 caractères ou sans lettre ni chiffre. Inutile d'appeler le serveur avant 2 caractères.
+
+### 11.5 En-têtes, Swagger, jeton (B-19)
+
+Rien à changer côté app. Le jeton ne contient plus l'e-mail (ne le décodez pas) ; `GET /auth/me` renvoie toujours `{ id, email }`. Swagger est fermé en production.
+
+### 11.6 Records paginés (B-13)
+
+`GET /exercises/stats?limit=50` → `{ items, nextBefore }`. Chargez la page suivante avec `?limit=50&before=<nextBefore>` au défilement ; `nextBefore: null` signifie la fin. Sans `limit`, le tableau complet comme avant. À préférer : la première page suffit pour ouvrir l'écran Records.
+
+### 11.7 Inscription et profils privés (B-14, B-15)
+
+- `POST /users/register` : après 10 réponses `EMAIL_IN_USE` en une heure depuis la même adresse, 429 `TOO_MANY_ATTEMPTS` avec `retryAfterSeconds`. Affichez le message du serveur.
+- Profil privé vu par un non-abonné : les compteurs sont présents et exacts, `isPrivate` vaut `true`, les listes (abonnés, abonnements, posts) renvoient 404. N'ouvrez pas la liste quand `isPrivate` est vrai.

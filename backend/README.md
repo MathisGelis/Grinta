@@ -132,6 +132,7 @@ A body or query that fails validation gets a `400` with a stable code per error,
 | `VALUE_NOT_ALLOWED` | Not one of the accepted values (enum) |
 | `DATE_INVALID` | Not a valid date |
 | `DATE_TOO_FAR_IN_FUTURE` | Date more than 24 h ahead (workout completion date) |
+| `DATE_OUT_OF_RANGE` | Birth date before 1900 or making the user under 13 |
 | `ID_INVALID` | Not a valid identifier (uuid) |
 | `FORMAT_INVALID` | Does not match the expected format |
 | `ARRAY_EXPECTED` | List expected |

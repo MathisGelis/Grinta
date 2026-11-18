@@ -1,3 +1,4 @@
+import { PasswordStateModule } from './auth/password-state.module';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -27,6 +28,7 @@ import { MailModule } from './mail/mail.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     DatabaseModule,
     UserContentAccessModule,
+    PasswordStateModule,
     MailModule,
     AuthModule,
     UsersModule,

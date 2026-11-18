@@ -17,7 +17,7 @@ export class PostComment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   user: User;
 
   @ManyToOne(() => Post, (post) => post.comments, {

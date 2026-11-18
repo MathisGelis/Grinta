@@ -7,7 +7,8 @@ import type { Request } from 'express';
  */
 export interface AuthUser {
   id: string;
-  email: string;
+  /** Not carried by the token any more: load the user to read it. */
+  email?: string;
 }
 
 export type AuthenticatedRequest = Request & { user: AuthUser };
