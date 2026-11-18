@@ -75,7 +75,9 @@ export function FollowersView({ userProfilePath }: FollowersViewProps) {
     }
   };
 
-  const countLabel = (count: number, more: boolean) => (more ? `${count}+` : String(count));
+  // Liste inaccessible : pas de compteur « (0) » trompeur.
+  const countLabel = (count: number, more: boolean) =>
+    restricted ? "" : ` (${more ? `${count}+` : count})`;
 
   return (
     <View className="flex-1">
@@ -99,7 +101,7 @@ export function FollowersView({ userProfilePath }: FollowersViewProps) {
               onPress={() => setActiveTab("followers")}
             >
               <Text className={`text-[13px] font-semibold ${activeTab === "followers" ? "text-ink" : "text-ink-muted"}`}>
-                {t.followersLabel} ({countLabel(followers.length, hasMore.followers)})
+                {t.followersLabel}{countLabel(followers.length, hasMore.followers)}
               </Text>
             </PressableScale>
             <PressableScale
@@ -107,7 +109,7 @@ export function FollowersView({ userProfilePath }: FollowersViewProps) {
               onPress={() => setActiveTab("following")}
             >
               <Text className={`text-[13px] font-semibold ${activeTab === "following" ? "text-ink" : "text-ink-muted"}`}>
-                {t.followingLabel} ({countLabel(following.length, hasMore.following)})
+                {t.followingLabel}{countLabel(following.length, hasMore.following)}
               </Text>
             </PressableScale>
           </View>

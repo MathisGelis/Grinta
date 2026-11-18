@@ -3,7 +3,7 @@ import { ScrollView, Text, View } from "react-native";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useUnits } from "@/contexts/UnitsContext";
-import { getAllExerciseStats, type ExerciseStats } from "@/services/exercises.service";
+import { getExerciseStatsPage, type ExerciseStats } from "@/services/exercises.service";
 import {
   StatsService,
   type Progression,
@@ -31,9 +31,9 @@ export default function ProgressionCard({ exerciseId: fixedId }: { exerciseId?: 
 
   useEffect(() => {
     if (fixedId) return;
-    getAllExerciseStats()
-      .then((list) => {
-        const top = list.slice(0, MAX_EXERCISES);
+    getExerciseStatsPage(MAX_EXERCISES)
+      .then(({ items }) => {
+        const top = items.slice(0, MAX_EXERCISES);
         setExercises(top);
         setExerciseId((current) => current ?? top[0]?.exerciseId ?? null);
       })

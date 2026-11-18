@@ -257,10 +257,24 @@ export const getExerciseStats = async (
   }
 };
 
-/** Tous les exercices pratiqués, du plus récent au plus ancien. */
-export const getAllExerciseStats = async (): Promise<ExerciseStats[]> => {
+export const EXERCISE_STATS_PAGE_SIZE = 50;
+
+export interface ExerciseStatsPage {
+  items: ExerciseStats[];
+  /** Curseur de la page suivante ; `null` = fin de la liste. */
+  nextBefore: string | null;
+}
+
+/** Une page des exercices pratiqués, du plus récent au plus ancien (B-13). */
+export const getExerciseStatsPage = async (
+  limit = EXERCISE_STATS_PAGE_SIZE,
+  before?: string | null,
+): Promise<ExerciseStatsPage> => {
   const token = await TokenService.get();
-  return api.get<ExerciseStats[]>("/exercises/stats", token ?? undefined);
+  const qs = `limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ""}`;
+  const response = await api.get<ExerciseStatsPage | ExerciseStats[]>(`/exercises/stats?${qs}`, token ?? undefined);
+  // Ancien format (tableau complet) : tout est déjà là.
+  return Array.isArray(response) ? { items: response, nextBefore: null } : response;
 };
 
 export interface CompareStats {

@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Badge, BadgesService } from "@/services/badges.service";
-import { ExerciseStats, getAllExerciseStats } from "@/services/exercises.service";
+import { ExerciseStats, getExerciseStatsPage } from "@/services/exercises.service";
 import ErrorState from "@/components/ui/ErrorState";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader from "@/components/ui/ScreenHeader";
@@ -31,10 +31,30 @@ export default function RecordsScreen() {
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>("exercises");
   const { data, loading, error, reload } = useCachedQuery("records", async () => {
-    const [stats, badges] = await Promise.all([getAllExerciseStats(), BadgesService.list({ limit: 100 })]);
-    return { stats, badges };
+    const [page, badges] = await Promise.all([getExerciseStatsPage(), BadgesService.list({ limit: 100 })]);
+    return { stats: page.items, nextBefore: page.nextBefore, badges };
   });
-  const stats: ExerciseStats[] = useMemo(() => data?.stats ?? [], [data]);
+  // Pages suivantes chargées au défilement ; repart de zéro quand la première page est rafraîchie.
+  const [more, setMore] = useState<{ source: unknown; items: ExerciseStats[]; next: string | null } | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const extra = more && more.source === data ? more : null;
+  const stats: ExerciseStats[] = useMemo(
+    () => [...(data?.stats ?? []), ...(extra?.items ?? [])],
+    [data, extra],
+  );
+  const cursor = extra ? extra.next : (data?.nextBefore ?? null);
+
+  const loadMore = async () => {
+    if (tab !== "exercises" || !cursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await getExerciseStatsPage(undefined, cursor);
+      setMore({ source: data, items: [...(extra?.items ?? []), ...page.items], next: page.nextBefore });
+    } catch {
+    } finally {
+      setLoadingMore(false);
+    }
+  };
   const badges: Badge[] = useMemo(() => data?.badges ?? [], [data]);
 
   const muscle = (key: string) => t.muscleNames[key] ?? key.replace(/_/g, " ");
@@ -111,6 +131,9 @@ export default function RecordsScreen() {
           maxToRenderPerBatch={10}
           windowSize={7}
           removeClippedSubviews
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore ? <ListSkeleton count={2} /> : undefined}
           ListHeaderComponent={
             <SegmentedControl<Tab>
               id="records-tab"
