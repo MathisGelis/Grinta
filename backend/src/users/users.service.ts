@@ -370,7 +370,11 @@ export class UsersService {
   ): Promise<UserListDto[]> {
     const normalized = search.toLowerCase().trim();
 
-    if (!normalized) return [];
+    // Under two characters, or with no letter or digit at all, a search only
+    // lists arbitrary people.
+    if (normalized.length < 2 || !/[\p{L}\p{N}]/u.test(normalized)) return [];
+    const like = escapeLike(normalized);
+
     return this.userRepository
       .createQueryBuilder('user')
       .select([
@@ -383,26 +387,31 @@ export class UsersService {
       .andWhere(
         `
         similarity(LOWER(user.uniqueName), :search) > 0.2
-        OR LOWER(user.uniqueName) LIKE :likeSearch
+        OR LOWER(user.uniqueName) LIKE :likeSearch ESCAPE '\\'
         `,
         {
           search: normalized,
-          likeSearch: `%${normalized}%`,
+          likeSearch: `%${like}%`,
         },
       )
       .orderBy(
         `
         CASE
-          WHEN LOWER(user.uniqueName) LIKE :prefix THEN 0
+          WHEN LOWER(user.uniqueName) LIKE :prefix ESCAPE '\\' THEN 0
           ELSE 1
         END
         `,
         'ASC',
       )
       .addOrderBy(`similarity(LOWER(user.uniqueName), :search)`, 'DESC')
-      .setParameter('prefix', `${normalized}%`)
+      .setParameter('prefix', `${like}%`)
       .setParameter('search', normalized)
       .limit(10)
       .getRawMany();
   }
+}
+
+/** Escapes the LIKE wildcards (% _) and the escape character itself. */
+export function escapeLike(text: string): string {
+  return text.replace(/[\\%_]/g, (char) => `\\${char}`);
 }

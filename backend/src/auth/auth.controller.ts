@@ -114,6 +114,6 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Token is valid' })
   @ApiResponse({ status: 401, description: 'Token is invalid or expired' })
   me(@Req() req: AuthenticatedRequest) {
-    return req.user;
+    return this.authService.currentUser(req.user.id);
   }
 }

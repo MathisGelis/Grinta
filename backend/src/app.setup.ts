@@ -1,8 +1,20 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import compression from 'compression';
+import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { validationExceptionFactory } from './common/validation/validation-errors';
+
+/**
+ * Swagger lists every route and its payloads: open in development, closed
+ * in production unless SWAGGER_ENABLED=true is set on purpose.
+ */
+export function isSwaggerEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' ||
+    process.env.SWAGGER_ENABLED === 'true'
+  );
+}
 
 export const JSON_BODY_LIMIT = '100kb';
 
@@ -23,6 +35,14 @@ export function configureApp(app: NestExpressApplication) {
   // every response above 1 KB. Brotli when the client accepts it, else gzip.
   // Photos are already compressed and are left alone.
   app.use(compression());
+  // Security headers (nosniff, HSTS, frame and referrer rules...). The API
+  // serves JSON, so the default Content-Security-Policy fits, except for the
+  // Swagger page, which loads inline scripts: it is left off while Swagger
+  // is served. nginx may add the same headers; helmet makes them hold even
+  // without it.
+  app.use(
+    helmet({ contentSecurityPolicy: isSwaggerEnabled() ? false : undefined }),
+  );
 
   // Explicit body limits: a JSON body is 100 KB at most (the longest text,
   // an import, is a few KB). Photos travel as multipart and have their own

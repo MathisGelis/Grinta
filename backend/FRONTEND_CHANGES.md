@@ -1117,3 +1117,11 @@ L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` co
 
 - `height` 50–250 cm, `weight` 20–400 kg, `birthDate` entre 1900 et il y a 13 ans : sinon 400 `VALIDATION_ERROR` (`VALUE_TOO_SMALL`, `VALUE_TOO_LARGE`, `DATE_OUT_OF_RANGE`). Validez aussi côté formulaire.
 - Un programme doit contenir au moins un jour avec `workoutId` : sinon 400 `PROGRAMME_NEEDS_WORKOUT`.
+
+### 11.4 Recherche d'utilisateurs (B-20)
+
+`GET /users/search?q=` renvoie une liste vide sous 2 caractères ou sans lettre ni chiffre. Inutile d'appeler le serveur avant 2 caractères.
+
+### 11.5 En-têtes, Swagger, jeton (B-19)
+
+Rien à changer côté app. Le jeton ne contient plus l'e-mail (ne le décodez pas) ; `GET /auth/me` renvoie toujours `{ id, email }`. Swagger est fermé en production.
