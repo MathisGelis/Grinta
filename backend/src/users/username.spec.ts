@@ -38,7 +38,7 @@ describe('username validation on the DTOs', () => {
   const errorsOf = async (cls: UserDto, uniqueName: string) =>
     (
       await validate(
-        plainToInstance(cls, {
+        plainToInstance(cls as new () => object, {
           displayName: 'Test',
           email: 'test@example.com',
           password: 'Password123!',
