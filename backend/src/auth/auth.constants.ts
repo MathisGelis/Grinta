@@ -53,6 +53,20 @@ export const FORGOT_PASSWORD_ATTEMPTS: AttemptLimitOptions = {
     `Trop de demandes de réinitialisation. Réessayez dans ${minutes} min.`,
 };
 
+/**
+ * Sign-ups: the "email already in use" answer tells whether an address is
+ * registered, so probing a list of addresses is capped per address.
+ */
+export const REGISTER_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'register',
+  account: { bodyField: 'email' },
+  perAccount: { limit: 5, ttl: HOUR },
+  perAddress: { limit: 100, ttl: HOUR },
+  code: 'TOO_MANY_ATTEMPTS',
+  message: (minutes) =>
+    `Trop de tentatives d'inscription. Réessayez dans ${minutes} min.`,
+};
+
 /** Reset links: a token cannot be guessed, this only caps the noise. */
 export const RESET_PASSWORD_ATTEMPTS: AttemptLimitOptions = {
   scope: 'reset-password',

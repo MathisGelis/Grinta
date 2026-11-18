@@ -48,7 +48,12 @@ export class UsersService {
       where: { email: userData.email },
     });
 
-    if (existing) throw new BadRequestException('Email already in use');
+    if (existing)
+      throw new BadRequestException({
+        statusCode: 400,
+        code: 'EMAIL_IN_USE',
+        message: 'Email already in use',
+      });
     const existingUsername = await this.userRepository.findOne({
       where: { uniqueName: userData.uniqueName },
     });
@@ -111,7 +116,12 @@ export class UsersService {
         where: { email: updateData.email },
       });
 
-      if (existing) throw new BadRequestException('Email already in use');
+      if (existing)
+        throw new BadRequestException({
+          statusCode: 400,
+          code: 'EMAIL_IN_USE',
+          message: 'Email already in use',
+        });
     }
     if (updateData.uniqueName && updateData.uniqueName !== user.uniqueName) {
       const existing = await this.userRepository.findOne({

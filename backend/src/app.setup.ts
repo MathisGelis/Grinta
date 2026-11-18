@@ -4,6 +4,8 @@ import compression from 'compression';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { validationExceptionFactory } from './common/validation/validation-errors';
 
+export const JSON_BODY_LIMIT = '100kb';
+
 /**
  * HTTP settings every request goes through: proxy, compression, validation
  * and the error format. Shared by main.ts and the e2e tests, so the tests
@@ -21,6 +23,13 @@ export function configureApp(app: NestExpressApplication) {
   // every response above 1 KB. Brotli when the client accepts it, else gzip.
   // Photos are already compressed and are left alone.
   app.use(compression());
+
+  // Explicit body limits: a JSON body is 100 KB at most (the longest text,
+  // an import, is a few KB). Photos travel as multipart and have their own
+  // 2 MB limit in the upload interceptor. Past the limit the filter answers
+  // 413 PAYLOAD_TOO_LARGE.
+  app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
+  app.useBodyParser('urlencoded', { limit: JSON_BODY_LIMIT, extended: true });
 
   // The only ValidationPipe. Unknown properties in a body or query are
   // rejected with a 400 rather than silently stripped, so a client typo

@@ -1079,3 +1079,9 @@ Chaque carte de `GET /posts/feed/following` et `GET /posts/feed/top` contient d�
 Champs ajoutés aux cartes : `userId`, `uniqueName`, `workoutTitle`, `workoutPhotoUrl`, `workoutDescription`, `workoutCompletionDate`, `workoutDurationSeconds` et `totalExercises` (nombre d'exercices). Déjà présents et inchangés : `id`, `createdAt`, `displayName`, `avatarThumbnailUrl`, `workoutId`, `workoutPhotoThumbnailUrl`, `likesCount`, `commentsCount`, `partners`, `isLiked`, `exercises[]` (nombre de séries et meilleure série) et `stats`.
 
 `totalExercises` est aussi dans `GET /posts/mine`. Mesure : 5 posts de 6 exercices pèsent environ 7,5 Ko. Les séries détaillées restent dans `GET /posts/:id/workout`, à ouvrir seulement au toucher d'une carte.
+
+### 10.6 Format d'erreur unique et 413 (B-07, B-08)
+
+Toutes les erreurs ont la forme `{ statusCode, code, message }`, `message` étant une chaîne. **Changement** : les erreurs 404/401/400 « simples » avaient `message: { message, error, statusCode }` ; lisez désormais `body.message` directement et branchez sur `body.code` (`NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`, `EMAIL_IN_USE`, `VALIDATION_ERROR`, `RATE_LIMITED`…).
+
+Un corps JSON de plus de 100 Ko renvoie `413` avec `code: "PAYLOAD_TOO_LARGE"`. `POST /users/register` est limité : après 5 essais pour un même e-mail en une heure, `429 TOO_MANY_ATTEMPTS` avec `retryAfterSeconds`.

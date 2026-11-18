@@ -27,6 +27,9 @@
 
 - **B-06 : flux sans appel de détail par carte.** `GET /posts/feed/following` et `/posts/feed/top` obligeaient l'app à appeler `GET /posts/:id` pour chaque carte. Une carte contient maintenant **tout ce que contient le détail** : `userId`, `uniqueName`, `workoutTitle`, `workoutPhotoUrl`, `workoutDescription`, `workoutCompletionDate`, `workoutDurationSeconds`, en plus de `partners`, de la vignette, des compteurs, de `isLiked`, de `exercises` et de `stats`, avec un nouveau `totalExercises`. Le détail et les deux flux partagent la même liste de colonnes (`POST_CARD_COLUMNS`), donc ils ne peuvent plus diverger, et un test compare chaque carte au détail champ par champ. Taille mesurée : 7,5 Ko pour 5 posts de 6 exercices (limite demandée : 10 Ko).
 
+- **B-07 : format d'erreur unique.** Toute erreur renvoie `{ statusCode, code, message }` (`message` est toujours une chaîne, plus d'objet imbriqué). Codes par défaut : `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `PAYLOAD_TOO_LARGE`, `TOO_MANY_REQUESTS`, `INTERNAL_ERROR` ; les erreurs métier gardent leur code propre (`VALIDATION_ERROR`, `EMAIL_IN_USE`, `DAY_NUMBER_DUPLICATE`…). L'inscription avec un e-mail déjà pris répond `400 EMAIL_IN_USE` et la route est limitée (5 essais par e-mail et par heure, 100 par adresse), ce qui freine le test d'une liste d'adresses. Choix assumé : on garde ce message précis pour l'UX plutôt qu'une réponse neutre.
+- **B-08 : corps trop gros.** Les corps JSON sont limités à 100 Ko et répondent `413 PAYLOAD_TOO_LARGE` au lieu d'un 500. Les photos gardent leur limite d'upload dédiée.
+
 ## Non publié : deuxième lot de l'audit front
 
 - **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.
