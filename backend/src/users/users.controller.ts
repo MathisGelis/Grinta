@@ -11,6 +11,11 @@ import {
   Req,
   UploadedFile,
 } from '@nestjs/common';
+import { BadRequestException, Res } from '@nestjs/common';
+import { InjectThrottlerStorage, ThrottlerStorage } from '@nestjs/throttler';
+import type { Request, Response } from 'express';
+import { TooManyRequestsException } from 'src/common/throttling/too-many-requests.exception';
+import { EMAIL_PROBE } from 'src/auth/auth.constants';
 import { UsersService } from './users.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,15 +30,50 @@ import { PhotoUpload } from 'src/photos/photo-upload.decorator';
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    @InjectThrottlerStorage() private readonly storage: ThrottlerStorage,
+  ) {}
 
   @Post('register')
   @AttemptLimit(REGISTER_ATTEMPTS)
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request' })
-  async register(@Body() user: CreateUserDto) {
-    return this.usersService.registerUser(user);
+  async register(
+    @Body() user: CreateUserDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      return await this.usersService.registerUser(user);
+    } catch (error) {
+      // "Email already in use" tells whether an address has an account.
+      // Each such answer counts against the caller's address; past the cap
+      // it is a 429 instead, so a list of addresses cannot be probed.
+      if (
+        error instanceof BadRequestException &&
+        (error.getResponse() as { code?: string }).code === 'EMAIL_IN_USE'
+      ) {
+        const record = await this.storage.increment(
+          `register-taken:ip:${req.ip ?? 'unknown'}`,
+          EMAIL_PROBE.ttl,
+          EMAIL_PROBE.limit,
+          EMAIL_PROBE.ttl,
+          'attempts',
+        );
+
+        if (record.isBlocked) {
+          res.header('Retry-After', String(record.timeToBlockExpire));
+          throw new TooManyRequestsException(
+            'TOO_MANY_ATTEMPTS',
+            "Trop d'inscriptions avec une adresse déjà utilisée. Réessayez plus tard.",
+            record.timeToBlockExpire,
+          );
+        }
+      }
+      throw error;
+    }
   }
 
   // Static segments are declared before ':id' so they are never captured as an id.

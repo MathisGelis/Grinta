@@ -73,4 +73,28 @@ describe('Uniform error format and body limits (e2e)', () => {
     expect(limited.status).toBe(429);
     expect(limited.body.code).toBe('TOO_MANY_ATTEMPTS');
   });
+
+  it('stops probing a list of taken addresses from one address (B-14)', async () => {
+    const taken: string[] = [];
+
+    for (let i = 0; i < 12; i++)
+      taken.push((await createUser(app, 'probe')).email);
+    const statuses: number[] = [];
+
+    for (const email of taken) {
+      const res = await http(app)
+        .post('/users/register')
+        .set('X-Forwarded-For', '10.9.9.9')
+        .send({
+          email,
+          password: 'Password123!',
+          displayName: 'Probe',
+          uniqueName: 'probe',
+        });
+
+      statuses.push(res.status);
+    }
+    expect(statuses.slice(0, 10).every((status) => status === 400)).toBe(true);
+    expect(statuses.slice(10)).toEqual([429, 429]);
+  });
 });

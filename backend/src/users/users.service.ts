@@ -302,6 +302,11 @@ export class UsersService {
   }
 
   // One statement for the four counters instead of one round trip each.
+  // Rule (B-15): the counters are public figures, shown even on a private
+  // profile, like the display name; the lists behind them are not. A viewer
+  // who may not open them has `isPrivate: true` and gets 404 on the lists
+  // (followers, following, posts), so the app shows the numbers and hides the
+  // rows.
   private async getProfileCounts(userId: string): Promise<{
     followersCount: number;
     followingCount: number;

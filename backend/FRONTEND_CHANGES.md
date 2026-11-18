@@ -1129,3 +1129,8 @@ Rien à changer côté app. Le jeton ne contient plus l'e-mail (ne le décodez p
 ### 11.6 Records paginés (B-13)
 
 `GET /exercises/stats?limit=50` → `{ items, nextBefore }`. Chargez la page suivante avec `?limit=50&before=<nextBefore>` au défilement ; `nextBefore: null` signifie la fin. Sans `limit`, le tableau complet comme avant. À préférer : la première page suffit pour ouvrir l'écran Records.
+
+### 11.7 Inscription et profils privés (B-14, B-15)
+
+- `POST /users/register` : après 10 réponses `EMAIL_IN_USE` en une heure depuis la même adresse, 429 `TOO_MANY_ATTEMPTS` avec `retryAfterSeconds`. Affichez le message du serveur.
+- Profil privé vu par un non-abonné : les compteurs sont présents et exacts, `isPrivate` vaut `true`, les listes (abonnés, abonnements, posts) renvoient 404. N'ouvrez pas la liste quand `isPrivate` est vrai.
