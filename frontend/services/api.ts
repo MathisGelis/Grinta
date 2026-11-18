@@ -1,6 +1,6 @@
 import { File } from "expo-file-system";
 import { router } from "expo-router";
-import { getStrings } from "@/i18n/current";
+import { getCurrentLang, getStrings } from "@/i18n/current";
 import { clearUserSession } from "./session.service";
 const DEV_API = "https://grinta-backend.duckdns.org";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API;
@@ -200,6 +200,7 @@ async function request<T>(
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      "Accept-Language": getCurrentLang(),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -218,7 +219,11 @@ async function upload<T>(endpoint: string, uri: string, token: string): Promise<
   form.append("photo", new File(uri) as any);
   const response = await send(endpoint, {
     method: "PUT",
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      Accept: "application/json",
+      "Accept-Language": getCurrentLang(),
+      Authorization: `Bearer ${token}`,
+    },
     body: form,
   });
   return parseResponse<T>(response, { authenticated: true, endpoint });
