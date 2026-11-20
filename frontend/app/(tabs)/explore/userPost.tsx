@@ -1,10 +1,10 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useCallback, useEffect, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Linking from "expo-linking";
 import { UserService } from "@/services/user.service";
@@ -29,7 +29,9 @@ import MentionText from "@/components/explorePage/MentionText";
 import PostPartners from "@/components/explorePage/PostPartners";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
+import { PostCardSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
+import { formatDate } from "@/utils/formatDate";
 export default function UserPostScreen() {
   const { t, lang } = useTranslation();
   const { formatWeight, formatVolume } = useUnits();
@@ -161,8 +163,8 @@ export default function UserPostScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center px-5">
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      <View className="flex-1 px-5" style={{ paddingTop: 100 }}>
+        <PostCardSkeleton />
       </View>
     );
   }
@@ -213,11 +215,7 @@ export default function UserPostScreen() {
             <View className="flex-1">
               <Text className="text-ink text-lg font-bold">{post.displayName}</Text>
               <Text className="text-ink-muted text-xs mt-0.5">
-                {new Date(post.createdAt).toLocaleDateString(LOCALES[lang], {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })}
+                {formatDate(post.createdAt, lang, "dayLong")}
               </Text>
             </View>
           </View>
@@ -332,11 +330,7 @@ export default function UserPostScreen() {
               ) : null}
             </View>
           ) : (
-            <View className="bg-raised rounded-tile p-[18px] items-center justify-center">
-              <Text className="text-ink-muted text-sm">
-                {t.noLinkedWorkout}
-              </Text>
-            </View>
+            <EmptyState plain icon="barbell-outline" title={t.noLinkedWorkout} />
           )}
 
         </View>

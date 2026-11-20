@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AccessibilityInfo, View } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { mediaUrl } from "@/services/api";
 

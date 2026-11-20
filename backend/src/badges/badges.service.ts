@@ -1,0 +1,132 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EntityManager, Repository } from 'typeorm';
+import {
+  ExerciseHistory,
+  ExerciseRecords,
+} from '../exercise/exercise-stats.service';
+import { compareToRealLife } from '../common/utils/real-life-comparison';
+import { percentChange } from '../stats/utils/stats.util';
+import { BadgeDto } from './dto/badge.dto';
+import { ListBadgesQueryDto } from './dto/list-badges-query.dto';
+import { Badge } from './entities/badge.entity';
+import { BADGE_UNIT, BadgeType } from './enums/badge-type.enum';
+import { detectPersonalRecords } from './utils/personal-records.util';
+import { roundBadgeValue } from './utils/badge-rounding';
+
+const DEFAULT_LIMIT = 50;
+
+// Records that are a weight really lifted, worth telling as everyday objects.
+// An estimated 1RM was never lifted, and reps are not a weight.
+const LIFTED_LOAD = new Set<BadgeType>([
+  BadgeType.HEAVIEST_WEIGHT,
+  BadgeType.BEST_SESSION_VOLUME,
+]);
+
+@Injectable()
+export class BadgesService {
+  constructor(
+    @InjectRepository(Badge)
+    private readonly badgeRepository: Repository<Badge>,
+  ) {}
+
+  /**
+   * (Re)computes the badges earned by one workout, from the history of the
+   * exercises it contains, and returns them. Badges already attached to the
+   * workout are replaced, so an edit that lowers a weight also removes the
+   * record it no longer holds. Badges of other workouts are left alone: a
+   * badge records that the workout beat every other one when it was saved.
+   */
+  async awardForWorkout(
+    manager: EntityManager,
+    userId: string,
+    workout: { id: string; completionDate: Date },
+    histories: Map<string, ExerciseHistory>,
+    { replaceExisting }: { replaceExisting: boolean },
+  ): Promise<BadgeDto[]> {
+    if (replaceExisting)
+      await manager.delete(Badge, { workout: { id: workout.id } });
+    return this.awardRecords(
+      manager,
+      userId,
+      workout,
+      [...histories.values()].map((history) => ({
+        exerciseId: history.exerciseId,
+        exerciseName: history.exerciseName,
+        records: detectPersonalRecords(history.sessions, workout.id),
+      })),
+    );
+  }
+
+  /** Saves the badges of records already detected for a workout. */
+  async awardRecords(
+    manager: EntityManager,
+    userId: string,
+    workout: { id: string; completionDate: Date },
+    exercises: ExerciseRecords[],
+  ): Promise<BadgeDto[]> {
+    const badges: Badge[] = [];
+
+    for (const exercise of exercises)
+      for (const record of exercise.records)
+        badges.push(
+          manager.create(Badge, {
+            user: { id: userId },
+            exercise: { id: exercise.exerciseId, name: exercise.exerciseName },
+            workout: { id: workout.id },
+            type: record.type,
+            value: record.value,
+            previousValue: record.previousValue,
+            weight: record.weight,
+            reps: record.reps,
+            achievedAt: workout.completionDate,
+          }),
+        );
+    if (!badges.length) return [];
+    await manager.insert(Badge, badges);
+    return badges.map((badge) => toDto(badge, workout.id));
+  }
+
+  async listForUser(
+    userId: string,
+    query: ListBadgesQueryDto,
+  ): Promise<BadgeDto[]> {
+    const qb = this.badgeRepository
+      .createQueryBuilder('badge')
+      .innerJoinAndSelect('badge.exercise', 'exercise')
+      .where('badge."userId" = :userId', { userId })
+      .orderBy('badge."achievedAt"', 'DESC')
+      .addOrderBy('badge."createdAt"', 'DESC')
+      .addOrderBy('badge.id', 'DESC')
+      .limit(query.limit ?? DEFAULT_LIMIT);
+
+    if (query.exerciseId)
+      qb.andWhere('badge."exerciseId" = :exerciseId', {
+        exerciseId: query.exerciseId,
+      });
+    if (query.type) qb.andWhere('badge.type = :type', { type: query.type });
+    const badges = await qb.getMany();
+
+    return badges.map((badge) => toDto(badge, badge.workoutId));
+  }
+}
+
+function toDto(badge: Badge, workoutId: string): BadgeDto {
+  return {
+    id: badge.id,
+    type: badge.type,
+    exercise: { id: badge.exercise.id, name: badge.exercise.name },
+    workoutId,
+    unit: BADGE_UNIT[badge.type],
+    value: roundBadgeValue(badge.type, badge.value),
+    previousValue: roundBadgeValue(badge.type, badge.previousValue),
+    improvement: roundBadgeValue(badge.type, badge.value - badge.previousValue),
+    improvementPct: percentChange(badge.value, badge.previousValue),
+    weight: badge.weight,
+    reps: badge.reps,
+    achievedAt: badge.achievedAt,
+    realLifeComparison: LIFTED_LOAD.has(badge.type)
+      ? compareToRealLife(badge.value)
+      : null,
+  };
+}

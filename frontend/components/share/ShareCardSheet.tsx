@@ -2,7 +2,7 @@ import { useUnits } from "@/contexts/UnitsContext";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Text, View, ScrollView, useWindowDimensions, type LayoutChangeEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";

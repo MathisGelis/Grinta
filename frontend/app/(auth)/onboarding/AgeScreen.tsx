@@ -6,7 +6,8 @@ import { DrumRollPicker } from "@/components/DrumRollPicker";
 import OnboardingNav from "@/components/ui/OnboardingNav";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import { useTranslation } from "@/contexts/LanguageContext";
-const MIN_AGE = 10;
+// Le serveur refuse une date de naissance de moins de 13 ans.
+const MIN_AGE = 13;
 const MAX_AGE = 80;
 const ages = Array.from({ length: MAX_AGE - MIN_AGE + 1 }, (_, i) => MIN_AGE + i);
 const DEFAULT_AGE = 25;

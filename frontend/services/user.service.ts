@@ -59,10 +59,9 @@ export type Level = "beginner" | "intermediate" | "advanced";
 export type TrainingLocation = "gym" | "home";
 export type Goal = "gain_weight" | "lose_weight" | "get_fitter" | "flexibility" | "learn_basics";
 
-interface UpdateUserData {
+export interface UpdateUserData {
   displayName?: string;
   uniqueName?: string;
-  email?: string;
   birthDate?: string;
   height?: number;
   weight?: number;
@@ -81,6 +80,8 @@ export interface SearchUser {
 }
 
 let myIdCache: { token: string; id: string } | null = null;
+/** Requête `/auth/me` en cours : partagée entre tous les appelants simultanés. */
+let myIdInflight: { token: string; promise: Promise<string> } | null = null;
 
 export const UserService = {
   async updateProfile(userId: string, data: UpdateUserData) {
@@ -88,21 +89,36 @@ export const UserService = {
     return api.patch<CurrentUser>(`/users/${userId}`, data, token ?? undefined);
   },
 
+  /** Id déjà connu, sans requête (null tant qu'il n'a pas été chargé). */
+  peekMyId(): string | null {
+    return myIdCache?.id ?? null;
+  },
+
   /** Id de l'utilisateur connecté (une seule requête par token). */
   async getMyId(): Promise<string | null> {
     const token = await TokenService.get();
     if (!token) return null;
     if (myIdCache?.token === token) return myIdCache.id;
-    const me = await api.get<{ id: string }>("/auth/me", token);
-    myIdCache = { token, id: me.id };
-    return me.id;
+    if (myIdInflight?.token !== token) {
+      const promise = api
+        .get<{ id: string }>("/auth/me", token)
+        .then((me) => {
+          myIdCache = { token, id: me.id };
+          return me.id;
+        })
+        .finally(() => {
+          if (myIdInflight?.promise === promise) myIdInflight = null;
+        });
+      myIdInflight = { token, promise };
+    }
+    return myIdInflight.promise;
   },
 
   async getMe(): Promise<CurrentUser> {
     const token = await TokenService.get();
-    const me = await api.get<{ id: string; email: string }>("/auth/me", token ?? undefined);
-    const full = await api.get<CurrentUser>(`/users/${me.id}`, token ?? undefined);
-    return full;
+    const id = await UserService.getMyId();
+    if (!id) throw new Error("Not authenticated");
+    return api.get<CurrentUser>(`/users/${id}`, token ?? undefined);
   },
 
   /** Renvoie un nouvel access_token : l'ancien est refusé (B-05). */
@@ -121,10 +137,18 @@ export const UserService = {
     return api.patch<{ isPublic: boolean }>("/users/me/toggle-visibility", {}, token ?? undefined);
   },
 
+  /** Supprime le compte et toutes ses données : le jeton est refusé aussitôt après. */
   async deleteAccount(): Promise<void> {
     const token = await TokenService.get();
-    const me = await api.get<{ id: string }>("/auth/me", token ?? undefined);
-    await api.delete(`/users/${me.id}`, token ?? undefined);
+    const id = await UserService.getMyId();
+    if (!id) throw new Error("Not authenticated");
+    await api.delete(`/users/${id}`, token ?? undefined);
+  },
+
+  /** Envoie un lien de confirmation à la nouvelle adresse (`204`). L'e-mail ne change qu'à la confirmation. */
+  async requestEmailChange(email: string, currentPassword: string): Promise<void> {
+    const token = await TokenService.get();
+    await api.post<void>("/users/me/email", { email: email.trim(), currentPassword }, token ?? undefined);
   },
 
   async getProfile(userId: string): Promise<UserProfile> {

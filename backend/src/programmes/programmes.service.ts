@@ -1,15 +1,26 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Programme } from './entities/programme.entity';
 import { ProgrammeDay } from './entities/programme-day.entity';
 import { PlannedWorkout } from 'src/workouts/entities/planned-workout.entity';
-import { User } from 'src/users/entities/users.entity';
+import { AuthUser } from 'src/auth/auth-user.interface';
 import {
   CreateProgrammeDto,
   ProgrammeDayDto,
 } from './dto/create-programme.dto';
 import { UpdateProgrammeDto } from './dto/update-programme.dto';
+import { omitUndefined } from 'src/common/utils/omit-undefined';
+import { programmePositionOn, todayUtc } from './utils/programme-day';
+import {
+  assertDayNumbers,
+  assertHasWorkout,
+  assertStartDateNear,
+} from './utils/programme-limits';
 
 @Injectable()
 export class ProgrammesService {
@@ -25,7 +36,7 @@ export class ProgrammesService {
   ) {}
 
   async createProgramme(
-    user: User,
+    user: AuthUser,
     dto: CreateProgrammeDto,
   ): Promise<Programme> {
     const programme = this.programmeRepo.create({
@@ -37,14 +48,12 @@ export class ProgrammesService {
       description: dto.description,
     });
 
-    programme.days = await Promise.all(
-      dto.days.map((dayDto) => this.buildDay(user, dayDto)),
-    );
+    programme.days = await this.buildDays(user, dto.days);
     return this.programmeRepo.save(programme);
   }
 
   async updateProgramme(
-    user: User,
+    user: AuthUser,
     id: string,
     dto: UpdateProgrammeDto,
   ): Promise<Programme> {
@@ -54,33 +63,48 @@ export class ProgrammesService {
     });
     if (!programme) throw new NotFoundException('Programme not found');
 
-    Object.assign(programme, dto);
-    if (dto.days) {
+    // Only scalar fields are merged. Spreading the whole dto would also put
+    // the raw `days` payload on the entity before it is rebuilt below.
+    const { days, ...scalarFields } = dto;
+
+    Object.assign(programme, omitUndefined(scalarFields));
+    if (days) {
       await this.dayRepo.delete({ programme: { id: programme.id } });
-      programme.days = await Promise.all(
-        dto.days.map((dayDto) => this.buildDay(user, dayDto)),
-      );
+      programme.days = await this.buildDays(user, days);
     }
     return this.programmeRepo.save(programme);
   }
 
-  async getProgrammesByUser(user: User) {
-    const programmes = await this.programmeRepo.find({
-      where: { user: { id: user.id } },
-      relations: ['days', 'days.workout'],
-      order: { weekNumber: 'ASC' },
-    });
-
-    return programmes.map((p) => ({
-      id: p.id,
-      title: p.title,
-      totalDays: p.days.length,
-      workoutDays: p.days.filter((d) => d.workout !== null).length,
-      difficulty: p.difficulty,
-    }));
+  // Counted in SQL: loading every day and its planned workout only to count
+  // them read about 1 KB per programme from the database for a few bytes of
+  // response.
+  async getProgrammesByUser(user: AuthUser): Promise<
+    Array<{
+      id: string;
+      title: string;
+      totalDays: number;
+      workoutDays: number;
+      difficulty: string;
+    }>
+  > {
+    return this.programmeRepo
+      .createQueryBuilder('p')
+      .leftJoin('p.days', 'd')
+      .select([
+        'p.id AS id',
+        'p.title AS title',
+        'COUNT(d.id)::int AS "totalDays"',
+        'COUNT(d."workoutId")::int AS "workoutDays"',
+        'p.difficulty AS difficulty',
+      ])
+      .where('p."userId" = :userId', { userId: user.id })
+      .groupBy('p.id')
+      .orderBy('p."weekNumber"', 'ASC')
+      .addOrderBy('p.id', 'ASC')
+      .getRawMany();
   }
 
-  async getProgrammeById(user: User, id: string) {
+  async getProgrammeById(user: AuthUser, id: string) {
     const programme = await this.programmeRepo.findOne({
       where: { id, user: { id: user.id } },
       relations: ['days', 'days.workout'],
@@ -112,7 +136,134 @@ export class ProgrammesService {
     };
   }
 
-  async deleteProgramme(user: User, id: string): Promise<{ message: string }> {
+  /**
+   * Starts following one of the user's programmes on `startDate`, today by
+   * default. `startDay` is the day of the programme that date is (1 by
+   * default), to start midway: at most the programme's last day. It
+   * replaces the programme followed until now, if any. Returns what the
+   * start date holds, as GET /programmes/active/today.
+   */
+  async startProgramme(
+    user: AuthUser,
+    programmeId: string,
+    startDate?: string,
+    startDay = 1,
+  ) {
+    const [programme] = await this.programmeRepo.manager.query<
+      Array<{ lastDay: number | null }>
+    >(
+      `SELECT (SELECT MAX(d."dayNumber") FROM programme_days d
+                WHERE d."programmeId" = p.id) AS "lastDay"
+         FROM programmes p WHERE p.id = $1 AND p."userId" = $2`,
+      [programmeId, user.id],
+    );
+
+    if (!programme) throw new NotFoundException('Programme not found');
+    const cycleLength = Math.max(1, programme.lastDay ?? 1);
+
+    if (startDay > cycleLength)
+      throw new BadRequestException({
+        statusCode: 400,
+        code: 'START_DAY_OUT_OF_RANGE',
+        message: `Ce programme compte ${cycleLength} jour${cycleLength > 1 ? 's' : ''} : choisissez un jour entre 1 et ${cycleLength}.`,
+        cycleLength,
+      });
+    const startedOn = startDate ?? todayUtc();
+
+    if (startDate) assertStartDateNear(startDate, todayUtc());
+    await this.programmeRepo.manager.query(
+      `INSERT INTO active_programmes ("userId", "programmeId", "startedOn", "startDay")
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT ("userId") DO UPDATE
+         SET "programmeId" = EXCLUDED."programmeId",
+             "startedOn" = EXCLUDED."startedOn",
+             "startDay" = EXCLUDED."startDay",
+             "createdAt" = now()`,
+      [user.id, programmeId, startedOn, startDay],
+    );
+    return this.todaysWorkout(user, startedOn);
+  }
+
+  /**
+   * Stops following the current programme. The programme itself and its
+   * workouts are kept, and can be started again. 404 when none is followed.
+   */
+  async endProgramme(user: AuthUser): Promise<void> {
+    const [deleted] = await this.programmeRepo.manager.query<unknown[][]>(
+      `DELETE FROM active_programmes WHERE "userId" = $1 RETURNING id`,
+      [user.id],
+    );
+
+    if (!deleted.length)
+      throw new NotFoundException('Aucun programme en cours.');
+  }
+
+  /**
+   * The workout the followed programme plans for a date, today by default.
+   * The day is counted in calendar days from the start, whether or not the
+   * user trained, and the programme starts over after its last day; a day
+   * missing from the programme is a rest day. `status` is `workout`, `rest`,
+   * or `not_started` for a date before the start.
+   */
+  async todaysWorkout(user: AuthUser, date = todayUtc()) {
+    // to_char: the pg driver would turn a DATE into a Date at local midnight.
+    const [active] = await this.programmeRepo.manager.query<
+      Array<{ programmeId: string; startedOn: string; startDay: number }>
+    >(
+      `SELECT "programmeId", "startDay",
+              to_char("startedOn", 'YYYY-MM-DD') AS "startedOn"
+         FROM active_programmes WHERE "userId" = $1`,
+      [user.id],
+    );
+
+    if (!active) throw new NotFoundException('Aucun programme en cours.');
+    const programme = await this.programmeRepo.findOneOrFail({
+      where: { id: active.programmeId },
+      relations: ['days', 'days.workout', 'days.workout.exercises'],
+    });
+    // A programme edited down to no day at all is all rest.
+    const cycleLength = Math.max(1, ...programme.days.map((d) => d.dayNumber));
+    const position = programmePositionOn(
+      active.startedOn,
+      date,
+      cycleLength,
+      // A programme edited down to fewer days than the start day.
+      Math.min(active.startDay, cycleLength),
+    );
+    const base = {
+      programme: { id: programme.id, title: programme.title },
+      startedOn: active.startedOn,
+      startDay: active.startDay,
+      date,
+      cycleLength,
+    };
+
+    if (position.status === 'not_started')
+      return {
+        ...base,
+        status: 'not_started' as const,
+        daysUntilStart: position.daysUntilStart,
+        dayNumber: null,
+        cycle: null,
+        workout: null,
+      };
+    const workout =
+      programme.days.find((d) => d.dayNumber === position.dayNumber)?.workout ??
+      null;
+
+    return {
+      ...base,
+      status: workout ? ('workout' as const) : ('rest' as const),
+      dayNumber: position.dayNumber,
+      cycle: position.cycle,
+      workout,
+    };
+  }
+
+  async deleteProgramme(
+    user: AuthUser,
+    id: string,
+  ): Promise<{ message: string }> {
     const programme = await this.programmeRepo.findOne({
       where: { id, user: { id: user.id } },
     });
@@ -122,19 +273,35 @@ export class ProgrammesService {
     return { message: 'Programme deleted successfully' };
   }
 
-  private async buildDay(
-    user: User,
-    dayDto: ProgrammeDayDto,
-  ): Promise<ProgrammeDay> {
-    let workout: PlannedWorkout | null = null;
+  /**
+   * Builds the days of a programme, checking in one query that every referenced
+   * workout belongs to the caller. A day without workoutId is a rest day.
+   */
+  private async buildDays(
+    user: AuthUser,
+    dayDtos: ProgrammeDayDto[],
+  ): Promise<ProgrammeDay[]> {
+    assertDayNumbers(dayDtos);
+    assertHasWorkout(dayDtos);
+    const workoutIds = [
+      ...new Set(dayDtos.map((d) => d.workoutId).filter(Boolean)),
+    ] as string[];
+    const owned = workoutIds.length
+      ? await this.workoutRepo.find({
+          where: { id: In(workoutIds), user: { id: user.id } },
+        })
+      : [];
+    const byId = new Map(owned.map((w) => [w.id, w]));
 
-    if (dayDto.workoutId) {
-      workout = await this.workoutRepo.findOne({
-        where: { id: dayDto.workoutId, user: { id: user.id } },
-      });
-      if (!workout)
-        throw new NotFoundException(`Workout ${dayDto.workoutId} not found`);
-    }
-    return this.dayRepo.create({ dayNumber: dayDto.dayNumber, workout });
+    return dayDtos.map((dayDto) => {
+      let workout: PlannedWorkout | null = null;
+
+      if (dayDto.workoutId) {
+        workout = byId.get(dayDto.workoutId) ?? null;
+        if (!workout)
+          throw new NotFoundException(`Workout ${dayDto.workoutId} not found`);
+      }
+      return this.dayRepo.create({ dayNumber: dayDto.dayNumber, workout });
+    });
   }
 }

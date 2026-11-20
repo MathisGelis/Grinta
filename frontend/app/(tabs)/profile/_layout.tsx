@@ -17,6 +17,7 @@ export default function ProfileStack() {
       <Stack.Screen name="privacy-policy" />
       <Stack.Screen name="settings" />
       <Stack.Screen name="change-password" />
+      <Stack.Screen name="change-email" />
       <Stack.Screen
         name="premium"
         options={{ animation: "slide_from_left", gestureEnabled: false }}

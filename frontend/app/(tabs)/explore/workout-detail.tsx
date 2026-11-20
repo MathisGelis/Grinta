@@ -1,14 +1,16 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Dimensions, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Dimensions, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { getAllExercises } from "@/services/exercises.service";
 
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { ExerciseListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface Exercise {
@@ -99,11 +101,9 @@ export default function WorkoutDetailScreen() {
 
         <Text className="text-lg font-bold text-ink mb-3">{t.exercises}</Text>
         {loading ? (
-          <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: 16 }} />
+          <ExerciseListSkeleton count={3} />
         ) : exercises.length === 0 ? (
-          <View className="bg-raised rounded-tile p-5 items-center">
-            <Text className="text-ink-faint text-sm">{t.noExerciseAvailable}</Text>
-          </View>
+          <EmptyState plain icon="barbell-outline" title={t.noExerciseAvailable} />
         ) : (
           exercises.map((ex) => (
             <View key={ex.id} className="flex-row items-center bg-raised rounded-tile p-3.5 mb-2.5">

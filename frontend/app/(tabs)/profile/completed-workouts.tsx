@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { FlatList, Text, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { mediaUrl } from "@/services/api";
@@ -9,17 +9,26 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme } from "@/constants/Colors";
 import { formatDate } from "@/utils/formatDate";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import EmptyState from "@/components/ui/EmptyState";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import PressableScale from "@/components/ui/PressableScale";
 import ErrorState from "@/components/ui/ErrorState";
+import { queryCache } from "@/services/queryCache";
+import { ListSkeleton } from "@/components/ui/skeletons";
+import { formatDuration } from "@/utils/formatDuration";
+
+const COMPLETED_KEY = "completed:first-page";
+const ROW_HEIGHT = 80;
+const ROW_GAP = 8;
 
 export default function CompletedWorkoutsScreen() {
   const headerHeight = useFloatingHeaderHeight();
   const { t, lang } = useTranslation();
-  const [workouts, setWorkouts] = useState<CompletedWorkout[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = queryCache.peek<CompletedWorkout[]>(COMPLETED_KEY);
+  const [workouts, setWorkouts] = useState<CompletedWorkout[]>(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState((cached?.length ?? 0) >= COMPLETED_PAGE_SIZE);
   const loadingMore = useRef(false);
 
   const load = useCallback(async () => {
@@ -28,8 +37,9 @@ export default function CompletedWorkoutsScreen() {
       const page = await WorkoutService.getCompleted({ limit: COMPLETED_PAGE_SIZE });
       setWorkouts(page);
       setHasMore(page.length === COMPLETED_PAGE_SIZE);
+      queryCache.set(COMPLETED_KEY, page);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.loadingError);
+      if (!queryCache.peek(COMPLETED_KEY)) setError(err instanceof Error ? err.message : t.loadingError);
     } finally {
       setLoading(false);
     }
@@ -59,7 +69,7 @@ export default function CompletedWorkoutsScreen() {
     <View className="flex-1">
       <ScreenHeader floating title={t.workoutsLabel} />
       {loading ? (
-        <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight + 32 }} />
+        <View className="px-4" style={{ paddingTop: headerHeight }}><ListSkeleton count={8} /></View>
       ) : error ? (
         <View style={{ paddingTop: headerHeight }}>
           <ErrorState message={error} onRetry={load} />
@@ -71,13 +81,20 @@ export default function CompletedWorkoutsScreen() {
           keyExtractor={(w) => w.id}
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
+          onEndReachedThreshold={0.4}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={7}
+          removeClippedSubviews
+          // Lignes de hauteur fixe (avatar 48 + padding 2×16) séparées par un gap de 8.
+          getItemLayout={(_, index) => ({
+            length: ROW_HEIGHT,
+            offset: headerHeight + index * (ROW_HEIGHT + ROW_GAP),
+            index,
+          })}
           contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 16, paddingBottom: 120, gap: 8 }}
           ListEmptyComponent={
-            <View className="items-center mt-12 gap-2.5">
-              <Ionicons name="barbell-outline" size={36} color={WorkoutTheme.text.disabled} />
-              <Text className="text-ink-faint text-sm">{t.noWorkouts}</Text>
-            </View>
+            <EmptyState icon="barbell-outline" title={t.noWorkouts} className="mt-4" />
           }
           renderItem={({ item: w }) => (
             <PressableScale
@@ -109,7 +126,7 @@ export default function CompletedWorkoutsScreen() {
                 </Text>
                 <Text className="mt-0.5 text-xs text-ink-muted">
                   {formatDate(new Date(w.completionDate), lang, "weekday")} ·{" "}
-                  {Math.round(w.totalDurationSeconds / 60)} min
+                  {formatDuration(w.totalDurationSeconds)}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={WorkoutTheme.text.disabled} />

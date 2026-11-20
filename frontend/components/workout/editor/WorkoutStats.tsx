@@ -1,14 +1,15 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
 import { View, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutStatsProps {
   exercises: ExerciseSetupData[];
-  estimatedTime: string;
+  /** Durée estimée en minutes (calculée à partir des exercices). */
+  estimatedMinutes: number;
 }
 
 interface StatItemProps {
@@ -38,7 +39,7 @@ function StatItem({ icon, value, label }: StatItemProps) {
 
 export default function WorkoutStats({
   exercises,
-  estimatedTime,
+  estimatedMinutes,
 }: WorkoutStatsProps) {
   const { t } = useTranslation();
   const { formatVolume } = useUnits();
@@ -60,7 +61,7 @@ export default function WorkoutStats({
           label={t.totalWeight}
         />
         <StatItem icon="repeat" value={String(totalSets)} label={t.sets} />
-        <StatItem icon="timer" value={`${estimatedTime}m`} label={t.duration} />
+        <StatItem icon="timer" value={`${estimatedMinutes}m`} label={t.duration} />
       </View>
     </View>
   );

@@ -1,7 +1,7 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import ErrorState from "@/components/ui/ErrorState";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
@@ -23,14 +23,14 @@ import type { MuscleValue } from "@/utils/muscles";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Stat from "@/components/ui/Stat";
+import { StatsSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
+import { formatDuration } from "@/utils/formatDuration";
 
 const TOP_MUSCLES = 6;
+/** Délai avant de charger les blocs secondaires, pour laisser le résumé s'afficher d'abord. */
+const SECONDARY_DELAY_MS = 400;
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
-}
 
 function Bar({ percent, color }: { percent: number; color: string }) {
   return (
@@ -83,9 +83,13 @@ export default function GlobalStatsSection({ userId }: Props) {
   const [consistency, setConsistency] = useState<Consistency | null>(null);
   const [frequency, setFrequency] = useState<MuscleFrequency | null>(null);
 
+  // Régularité et récupération sont plus bas dans la page : on les charge une fois l'écran affiché.
   useEffect(() => {
-    StatsService.getConsistency(userId).then(setConsistency).catch(() => {});
-    StatsService.getMuscleFrequency(userId).then(setFrequency).catch(() => {});
+    const timer = setTimeout(() => {
+      StatsService.getConsistency(userId).then(setConsistency).catch(() => {});
+      StatsService.getMuscleFrequency(userId).then(setFrequency).catch(() => {});
+    }, SECONDARY_DELAY_MS);
+    return () => clearTimeout(timer);
   }, [reloadKey, userId]);
 
   useEffect(() => {
@@ -185,15 +189,13 @@ export default function GlobalStatsSection({ userId }: Props) {
       ) : null}
 
       {empty ? (
-        <View className="items-center rounded-card bg-surface p-8">
-          <Text className="text-base text-ink-muted">{t.noStatsYet}</Text>
-        </View>
+        <EmptyState icon="stats-chart-outline" title={t.noStatsYet} />
       ) : null}
 
       {!userId ? <ComparisonCard period={period} /> : null}
 
       {failed && !loading ? null : loading ? (
-        <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} />
+        <StatsSkeleton />
       ) : (
         <>
           {summary ? (
@@ -206,7 +208,12 @@ export default function GlobalStatsSection({ userId }: Props) {
                     style={{ width: "47.5%", flexGrow: 1 }}
                   >
                     <Stat value={item.value} label={item.label} size="md" />
-                    <Delta pct={summary.delta[item.key]?.changePct} />
+                    {/* Pas de % sans période précédente à comparer (sinon « +100 % » dès la première séance). */}
+                    <Delta
+                      pct={
+                        (summary.delta[item.key]?.previous ?? 0) > 0 ? summary.delta[item.key]?.changePct : null
+                      }
+                    />
                   </View>
                 ))}
               </View>
@@ -215,7 +222,7 @@ export default function GlobalStatsSection({ userId }: Props) {
 
           {distribution && distribution.distribution.length > 0 ? (
             <View className="gap-3">
-              <SectionHeader title={t.muscleDistributionTitle} />
+              <SectionHeader title={t.muscleDistributionTitle} help={t.helpMuscleDistribution} />
               <View className="gap-6 rounded-card bg-surface p-5">
                 <MuscleMap data={muscleData} unit={t.sets.toLowerCase()} />
                 {distribution.distribution.slice(0, TOP_MUSCLES).map((m) => (
@@ -233,7 +240,7 @@ export default function GlobalStatsSection({ userId }: Props) {
 
           {balance && balance.totalEffectiveSets > 0 ? (
             <View className="gap-3">
-              <SectionHeader title={t.trainingBalanceTitle} />
+              <SectionHeader title={t.trainingBalanceTitle} help={t.helpTrainingBalance} />
               <View className="gap-4 rounded-card bg-surface p-5">
                 <View className="flex-row gap-3">
                   <View className="flex-1 items-center rounded-tile bg-raised p-4">
@@ -275,7 +282,7 @@ export default function GlobalStatsSection({ userId }: Props) {
 
       {consistency ? (
         <View className="gap-3">
-          <SectionHeader title={t.consistencyTitle} />
+          <SectionHeader title={t.consistencyTitle} help={t.helpConsistency} />
           <View className="gap-5 rounded-card bg-surface p-5">
             <View className="flex-row flex-wrap gap-y-4">
               {[
@@ -312,7 +319,7 @@ export default function GlobalStatsSection({ userId }: Props) {
 
       {recoveryData.length > 0 ? (
         <View className="gap-3">
-          <SectionHeader title={t.muscleRecoveryTitle} />
+          <SectionHeader title={t.muscleRecoveryTitle} help={t.helpMuscleRecovery} />
           <View className="rounded-card bg-surface p-5">
             <MuscleMap data={recoveryData} legend={recoveryLegend} />
           </View>

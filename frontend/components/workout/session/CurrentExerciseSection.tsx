@@ -1,13 +1,15 @@
 import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Alert } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 import type { LiveExerciseStats } from "@/services/exercises.service";
 import PressableScale from "@/components/ui/PressableScale";
 import Button from "@/components/ui/Button";
+import { LIMITS } from "@/utils/validation";
 export interface CompletedSet {
   reps: number;
   weight: number;
@@ -165,7 +167,9 @@ export default function CurrentExerciseSection({
             onChangeText={(input) =>
               setWeight(input.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1").replace(/(\.\d{2})\d+/, "$1"))
             }
-            onBlur={() => !weight.trim() && setWeight("0")}
+            onBlur={() =>
+              setWeight(!weight.trim() ? "0" : String(Math.min(LIMITS.maxWeightKg, parseFloat(weight) || 0)))
+            }
             selectTextOnFocus
             keyboardType="decimal-pad"
             maxLength={5}

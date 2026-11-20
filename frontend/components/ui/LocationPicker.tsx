@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 
 type Option = { key: string; label: string };
@@ -45,11 +45,12 @@ export default function LocationPicker({
     if (next >= 0 && next < options.length) onChange(options[next].key);
   };
 
-  const Chevron = ({ icon, delta }: { icon: "chevron-back" | "chevron-forward"; delta: number }) => {
+  const renderChevron = (icon: "chevron-back" | "chevron-forward", delta: number) => {
     const next = index + delta;
     const disabled = next < 0 || next >= options.length;
     return (
       <Pressable
+        key={icon}
         onPress={() => go(next)}
         hitSlop={10}
         accessibilityRole="button"
@@ -68,8 +69,8 @@ export default function LocationPicker({
           {required ? <Text className="text-danger"> *</Text> : null}
         </Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Chevron icon="chevron-back" delta={-1} />
-          <Chevron icon="chevron-forward" delta={1} />
+          {renderChevron("chevron-back", -1)}
+          {renderChevron("chevron-forward", 1)}
         </View>
       </View>
 

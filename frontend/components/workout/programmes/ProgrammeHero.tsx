@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Svg, { Circle } from "react-native-svg";
 import { router } from "expo-router";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { getProgrammeById, type ProgrammeDay, type SmallProgramm } from "@/services/programms.service";
-import { LOCALES } from "@/i18n/labels";
 import { localDate } from "@/utils/date";
 import Card from "@/components/ui/Card";
 import PressableScale from "@/components/ui/PressableScale";
+import { formatDate } from "@/utils/formatDate";
 
 const SIZE = 76;
 const STROKE = 7;
@@ -24,7 +25,6 @@ type Props = {
   startedOn?: string;
 };
 
-const DAY_MS = 86400000;
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
 const STRIP_DAYS = 60;
@@ -93,7 +93,7 @@ function DaysStrip({
                 className="text-xs font-semibold"
                 style={{ color: fg, opacity: isToday ? 1 : 0.7 }}
               >
-                {date.toLocaleDateString(LOCALES[lang], { weekday: "narrow" }).toUpperCase()}
+                {formatDate(date, lang, "weekdayNarrow").toUpperCase()}
               </Text>
               <View className="h-4 items-center justify-center">
                 {entry?.workout ? (

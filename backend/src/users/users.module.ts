@@ -7,11 +7,13 @@ import { ConnectionsModule } from 'src/connections/connections.module';
 import { Connection } from 'src/connections/entities/connections.entity';
 import { CompletedWorkout } from 'src/workouts/entities/completed-workout.entity';
 import { Post } from 'src/posts/entities/post.entity';
+import { PhotosModule } from 'src/photos/photos.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Connection, CompletedWorkout, Post]),
     ConnectionsModule,
+    PhotosModule,
   ],
   providers: [UsersService],
   controllers: [UsersController],

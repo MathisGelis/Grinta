@@ -6,6 +6,9 @@ const STYLES = {
   long: { weekday: "long", day: "numeric", month: "long", year: "numeric" },
   weekday: { weekday: "short", day: "numeric", month: "short" },
   month: { month: "long", year: "numeric" },
+  dayMonth: { day: "numeric", month: "short" },
+  dayLong: { day: "numeric", month: "long", year: "numeric" },
+  weekdayNarrow: { weekday: "narrow" },
 } as const satisfies Record<string, Intl.DateTimeFormatOptions>;
 
 export type DateStyle = keyof typeof STYLES;

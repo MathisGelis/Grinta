@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
-import { View, Text, Alert, ActivityIndicator } from "react-native";
-import { WorkoutTheme } from "@/constants/Colors";
+import { View, Text, Alert } from "react-native";
 import { TokenService } from "@/services/token.service";
 import {
   getWorkoutById,
@@ -18,6 +17,11 @@ import WorkoutStatsTab from "@/components/workout/card/WorkoutStatsTab";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
+import { toast } from "@/components/ui/Toast";
+import { LIMITS } from "@/utils/validation";
+import { MAX_EXERCISES } from "@/utils/sanitizeWorkout";
 
 export type WorkoutStatsTotals = {
   totalSets: number;
@@ -167,6 +171,10 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
   };
 
   const handleAddExercise = (exercise: ExerciseSetupData) => {
+    if (editedExercises.length >= MAX_EXERCISES) {
+      toast.info(t.maxExercisesReached);
+      return;
+    }
     setEditedExercises((prev) => [...prev, exercise]);
     setHasChanges(true);
   };
@@ -197,6 +205,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
           sets: ex.sets,
           plannedRestSeconds: ex.plannedRestSeconds ?? 90,
         })),
+        estimatedDurationMinutes: estimateWorkoutMinutes(editedExercises, 90) || undefined,
       };
 
       Object.keys(updateData).forEach(
@@ -213,7 +222,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
 
       if (onUpdate && updatedWorkout) onUpdate(updatedWorkout);
 
-      Alert.alert(t.success, t.workoutUpdated);
+      toast.success(t.workoutUpdated);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t.cannotSaveProfile;
@@ -237,7 +246,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
               const token = await TokenService.get();
               await deletePlannedWorkout(workout.id, token || undefined);
               onDelete?.(workout.id);
-              Alert.alert(t.success, t.workoutDeleted);
+              toast.success(t.workoutDeleted);
             } catch {
               Alert.alert(t.error, t.cannotDeleteWorkout);
             }
@@ -263,8 +272,8 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
 
   if (isLoading && !fullWorkout) {
     return (
-      <View className="h-[300px] items-center justify-center">
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      <View className="h-[300px] justify-center">
+        <DetailSkeleton rows={1} />
       </View>
     );
   }
@@ -277,6 +286,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
             <FormField label={t.titleLabel}>
               <TextField
                 value={editedTitle}
+                maxLength={LIMITS.title}
                 onChangeText={(text) => {
                   onEditedTitleChange(text);
                   setHasChanges(true);
@@ -287,6 +297,7 @@ const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(
               <TextField
                 multiline
                 value={editedDescription}
+                maxLength={LIMITS.description}
                 onChangeText={(text) => {
                   setEditedDescription(text);
                   setHasChanges(true);

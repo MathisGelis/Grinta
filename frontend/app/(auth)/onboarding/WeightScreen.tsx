@@ -6,8 +6,9 @@ import RulerPicker from "@/components/ui/RulerPicker";
 import OnboardingNav from "@/components/ui/OnboardingNav";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import { useTranslation } from "@/contexts/LanguageContext";
-const MIN_WEIGHT = 0;
-const MAX_WEIGHT = 200;
+// Bornes acceptées par le serveur : 20 à 400 kg.
+const MIN_WEIGHT = 20;
+const MAX_WEIGHT = 250;
 const DEFAULT_WEIGHT = 70;
 
 export default function WeightScreen() {

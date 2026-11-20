@@ -1,19 +1,24 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import ErrorState from "@/components/ui/ErrorState";
-import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { startProgramme } from "@/services/programms.service";
 import {
   getWorkoutTemplates,
   applyWorkoutTemplate,
+  previewWorkoutTemplate,
+  type TemplatePreview,
   type WorkoutTemplate,
 } from "@/services/workouts.service";
 import { localDate } from "@/utils/date";
 import { normalizeText } from "@/utils/text";
+import { ListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
+import { toast } from "@/components/ui/Toast";
+import TemplatePreviewSheet from "./TemplatePreviewSheet";
 
 type Props = {
   /** Filtre local sur le titre et la description. */
@@ -28,6 +33,18 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
   const [templates, setTemplates] = useState<WorkoutTemplate[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [selected, setSelected] = useState<WorkoutTemplate | null>(null);
+  const [preview, setPreview] = useState<TemplatePreview | null>(null);
+  const [previewFailed, setPreviewFailed] = useState(false);
+
+  const openPreview = useCallback((template: WorkoutTemplate) => {
+    setSelected(template);
+    setPreview(null);
+    setPreviewFailed(false);
+    previewWorkoutTemplate(template.key)
+      .then(setPreview)
+      .catch(() => setPreviewFailed(true));
+  }, []);
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -46,10 +63,13 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
     if (busyKey) return;
     setBusyKey(template.key);
     try {
+      // Accepté tel quel : le serveur enregistre séances et programme.
       const programme = await applyWorkoutTemplate(template.key);
       // Le modèle crée un programme non démarré : on le lance avec la date locale.
       await startProgramme(programme.id, localDate());
-      Alert.alert(t.tplUsed, t.tplUsedMessage, [{ text: t.ok, onPress: onUsed }]);
+      setSelected(null);
+      toast.success(t.tplUsedMessage);
+      onUsed?.();
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
     } finally {
@@ -58,16 +78,18 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
   };
 
   if (failed) return <ErrorState onRetry={load} />;
-  if (!templates) return <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />;
+  if (!templates) return <ListSkeleton count={4} gap={12} />;
   const needle = normalizeText(query.trim());
   const visible = needle
     ? templates.filter((tpl) => normalizeText(`${tpl.title} ${tpl.description}`).includes(needle))
     : templates;
   if (visible.length === 0) {
     return (
-      <Text className="py-6 text-center text-sm text-ink-muted">
-        {templates.length === 0 ? t.tplEmpty : t.noResultsLabel}
-      </Text>
+      <EmptyState
+        plain
+        icon="albums-outline"
+        title={templates.length === 0 ? t.tplEmpty : t.noResultsLabel}
+      />
     );
   }
 
@@ -91,12 +113,20 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
           <Button
             label={t.tplUse}
             variant={tpl.recommended ? "primary" : "secondary"}
-            loading={busyKey === tpl.key}
-            disabled={!!busyKey}
-            onPress={() => use(tpl)}
+            onPress={() => openPreview(tpl)}
           />
         </Card>
       ))}
+      <TemplatePreviewSheet
+        visible={!!selected}
+        title={selected?.title ?? ""}
+        preview={preview}
+        failed={previewFailed}
+        saving={!!busyKey}
+        onRetry={() => selected && openPreview(selected)}
+        onClose={() => !busyKey && setSelected(null)}
+        onSave={() => selected && use(selected)}
+      />
     </View>
   );
 }

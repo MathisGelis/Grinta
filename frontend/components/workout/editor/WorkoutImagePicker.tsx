@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Image } from "expo-image";
 import { pickImage } from "@/services/photo.service";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 
 import { mediaUrl } from "@/services/api";

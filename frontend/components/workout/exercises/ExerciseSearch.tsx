@@ -2,14 +2,13 @@ import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } fr
 import {
   View,
   Text,
-  ActivityIndicator,
   Alert,
   FlatList,
   Keyboard,
   Platform,
   useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { getAllExercises, Exercise } from "@/services/exercises.service";
@@ -19,6 +18,8 @@ import GlassSearchBar from "@/components/GlassSearchBar";
 import BottomBlur from "@/components/ui/BottomBlur";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { normalizeText } from "@/utils/text";
+import { ExerciseListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface ExerciseSearchProps {
   visible: boolean;
@@ -80,6 +81,8 @@ export default function ExerciseSearch({
     if (!visible) setSearchQuery("");
   }, [visible]);
 
+  const existingIds = useMemo(() => new Set(existingExerciseIds), [existingExerciseIds]);
+
   const filteredExercises = useMemo(() => {
     const q = normalizeText(deferredQuery.trim());
     return q
@@ -124,8 +127,8 @@ export default function ExerciseSearch({
         </View>
 
         {loadingExercises ? (
-          <View className="flex-1 items-center justify-center py-10">
-            <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <View className="flex-1 px-4 pt-2">
+            <ExerciseListSkeleton count={8} />
           </View>
         ) : (
           <FlatList
@@ -134,9 +137,13 @@ export default function ExerciseSearch({
             className="flex-1"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            initialNumToRender={12}
+            maxToRenderPerBatch={12}
+            windowSize={7}
+            removeClippedSubviews
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace, flexGrow: 1 }}
             renderItem={({ item }) => {
-              const isDuplicate = existingExerciseIds.includes(item.id);
+              const isDuplicate = existingIds.has(item.id);
               return (
                 <PressableScale
                   onPress={() =>
@@ -164,10 +171,7 @@ export default function ExerciseSearch({
               );
             }}
             ListEmptyComponent={
-              <View className="flex-1 items-center justify-center py-10">
-                <Ionicons name="barbell-outline" size={40} color={WorkoutTheme.text.tertiary} />
-                <Text className="mt-4 text-sm text-ink-soft">{t.noExerciseFound}</Text>
-              </View>
+              <EmptyState plain icon="barbell-outline" title={t.noExerciseFound} />
             }
           />
         )}

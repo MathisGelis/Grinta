@@ -11,6 +11,11 @@ import {
   CompletedWorkoutExercise,
 } from './entities/completed-workout.entity';
 import { Exercise } from '../exercise/entities/exercise.entity';
+import { ExerciseModule } from '../exercise/exercise.module';
+import { BadgesModule } from '../badges/badges.module';
+import { PhotosModule } from '../photos/photos.module';
+import { PostsModule } from '../posts/posts.module';
+import { StatsModule } from '../stats/stats.module';
 
 @Module({
   imports: [
@@ -21,6 +26,11 @@ import { Exercise } from '../exercise/entities/exercise.entity';
       CompletedWorkoutExercise,
       Exercise,
     ]),
+    ExerciseModule,
+    BadgesModule,
+    PhotosModule,
+    PostsModule,
+    StatsModule,
   ],
   providers: [WorkoutService],
   controllers: [WorkoutsController],

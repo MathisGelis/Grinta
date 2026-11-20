@@ -41,32 +41,32 @@ export default function LogoIntro({ onFinish }: Props) {
 
   useEffect(() => {
     arcOffset.value = withTiming(0, {
-      duration: 800,
+      duration: 350,
       easing: Easing.out(Easing.cubic),
     });
 
     chevronAOffset.value = withDelay(
-      700,
-      withTiming(0, { duration: 400, easing: Easing.out(Easing.quad) }),
+      300,
+      withTiming(0, { duration: 180, easing: Easing.out(Easing.quad) }),
     );
 
     chevronBOffset.value = withDelay(
-      950,
-      withTiming(0, { duration: 400, easing: Easing.out(Easing.quad) }),
+      420,
+      withTiming(0, { duration: 180, easing: Easing.out(Easing.quad) }),
     );
 
     // Le titre apparaît une fois le logo presque complet.
     titleOpacity.value = withDelay(
-      1100,
-      withTiming(1, { duration: 450, easing: Easing.out(Easing.quad) }),
+      480,
+      withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) }),
     );
 
-    // Un peu plus long qu'avant pour laisser lire le titre avant le fondu.
+    // Intro courte : elle retarde chaque lancement, on ne garde que le temps de lire le titre.
     containerOpacity.value = withDelay(
-      2000,
+      850,
       withTiming(
         0,
-        { duration: 350, easing: Easing.in(Easing.quad) },
+        { duration: 200, easing: Easing.in(Easing.quad) },
         (finished) => {
           if (finished) runOnJS(onFinish)();
         },

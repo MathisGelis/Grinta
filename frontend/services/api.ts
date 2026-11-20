@@ -1,7 +1,8 @@
 import { File } from "expo-file-system";
 import { router } from "expo-router";
-import { getStrings } from "@/i18n/current";
+import { getCurrentLang, getStrings } from "@/i18n/current";
 import { clearUserSession } from "./session.service";
+import { queryCache } from "./queryCache";
 const DEV_API = "https://grinta-backend.duckdns.org";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API;
 
@@ -14,8 +15,9 @@ export async function checkServerHealth(): Promise<boolean> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
   try {
-    await fetch(`${BASE_URL}/health`, { signal: controller.signal });
-    return true;
+    const response = await fetch(`${BASE_URL}/health`, { signal: controller.signal });
+    // 503 = la base de données ne répond pas.
+    return response.ok;
   } catch {
     return false;
   } finally {
@@ -35,11 +37,25 @@ export const mediaUrl = (url?: string | null): string | undefined => {
 export class ApiError extends Error {
   status: number;
   code?: string;
-  constructor(message: string, status: number, code?: string) {
+  /** Délai avant de pouvoir réessayer (429), en secondes. */
+  retryAfterSeconds?: number;
+  /** Erreurs de validation par champ (`errors[].field` → message), 400 uniquement. */
+  fieldErrors?: Record<string, string>;
+  /** Corps JSON de la réponse d'erreur (champs additionnels : `suggestion`, `cycleLength`…). */
+  body?: Record<string, unknown>;
+  constructor(
+    message: string,
+    status: number,
+    code?: string,
+    retryAfterSeconds?: number,
+    fieldErrors?: Record<string, string>,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -58,6 +74,22 @@ function extractCode(data: unknown): string | undefined {
   if (typeof body.code === "string") return body.code;
   if (body.message && typeof body.message === "object") return extractCode(body.message);
   return undefined;
+}
+
+/** Messages de validation par champ : le code stable est traduit, sinon le message du serveur. */
+function extractFieldErrors(data: unknown, apiErrors: Record<string, string>): Record<string, string> | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const list = (data as { errors?: unknown }).errors;
+  if (!Array.isArray(list)) return undefined;
+  const result: Record<string, string> = {};
+  for (const item of list) {
+    if (!item || typeof item !== "object") continue;
+    const { field, code, message } = item as { field?: unknown; code?: unknown; message?: unknown };
+    if (typeof field !== "string" || field in result) continue;
+    const text = (typeof code === "string" && apiErrors[code]) || (typeof message === "string" ? message : "");
+    if (text) result[field] = text;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
 }
 
 export const isNotFound = (error: unknown): boolean =>
@@ -121,17 +153,33 @@ async function parseResponse<T>(
         : endpoint.startsWith("/auth/login")
           ? strings.tooManyAttempts
           : strings.tooManyRequests;
-    throw new ApiError(message, 429, isJson ? extractCode(data) : undefined);
+    throw new ApiError(
+      message,
+      429,
+      isJson ? extractCode(data) : undefined,
+      typeof retryAfter === "number" ? retryAfter : undefined,
+    );
   }
   if (response.status >= 500 && !(await checkServerHealth())) {
     throw new ApiError(strings.apiUnreachable, response.status);
   }
-  if (response.status === 413) throw new ApiError(strings.photoTooHeavy, 413);
+  if (response.status === 413) {
+    const isPhoto = /\/(avatar|photo)(\?|$)/.test(endpoint);
+    throw new ApiError(isPhoto ? strings.photoTooHeavy : strings.payloadTooLarge, 413);
+  }
 
   // Une réponse non JSON (ex. page HTML de nginx) devient une erreur générique.
   const code = isJson ? extractCode(data) : undefined;
   const message = (code && strings.apiErrors[code]) || (isJson ? extractMessage(data) : undefined);
-  throw new ApiError(message || `${strings.serverError} ${response.status}`, response.status, code);
+  const error = new ApiError(
+    message || `${strings.serverError} ${response.status}`,
+    response.status,
+    code,
+    undefined,
+    isJson && response.status === 400 ? extractFieldErrors(data, strings.apiErrors) : undefined,
+  );
+  if (isJson && data && typeof data === "object") error.body = data as Record<string, unknown>;
+  throw error;
 }
 
 async function send(
@@ -160,11 +208,17 @@ async function request<T>(
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      "Accept-Language": getCurrentLang(),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  return parseResponse<T>(response, { authenticated: !!token, endpoint });
+  const result = await parseResponse<T>(response, { authenticated: !!token, endpoint });
+  // Toute modification de séances, de programmes ou de modèles périme l'onglet Séances.
+  if (method !== "GET" && /^\/(programmes|workouts\/(planned|templates|import))/.test(endpoint)) {
+    queryCache.invalidate("workouts:");
+  }
+  return result;
 }
 
 /**
@@ -178,7 +232,11 @@ async function upload<T>(endpoint: string, uri: string, token: string): Promise<
   form.append("photo", new File(uri) as any);
   const response = await send(endpoint, {
     method: "PUT",
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      Accept: "application/json",
+      "Accept-Language": getCurrentLang(),
+      Authorization: `Bearer ${token}`,
+    },
     body: form,
   });
   return parseResponse<T>(response, { authenticated: true, endpoint });

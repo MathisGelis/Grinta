@@ -7,7 +7,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Modal from "@/components/ui/AppModal";
 import PressableScale from "@/components/ui/PressableScale";
@@ -23,6 +23,7 @@ import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import type { Exercise } from "@/services/exercises.service";
 import { normalizeText } from "@/utils/text";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Props = {
   visible: boolean;
@@ -129,10 +130,7 @@ function ExercisesListSheet({ visible, onClose, exercises, createdIds, onOpen, o
             />
           )}
           ListEmptyComponent={
-            <View className="flex-1 items-center justify-center py-10">
-              <Ionicons name="barbell-outline" size={40} color={WorkoutTheme.text.tertiary} />
-              <Text className="mt-4 text-sm text-ink-soft">{t.noExerciseFound}</Text>
-            </View>
+            <EmptyState plain icon="barbell-outline" title={t.noExerciseFound} />
           }
         />
 

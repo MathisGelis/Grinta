@@ -6,11 +6,12 @@ import {
   type ViewStyle,
 } from "react-native";
 import type { BottomTabBarProps } from "expo-router/build/layouts/Tabs";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  useReducedMotion,
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
@@ -155,11 +156,13 @@ export default function FloatingTabBar({
   }));
 
   const pulse = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
-    pulse.value = sessionActive
-      ? withRepeat(withTiming(1, { duration: 1100, easing: Easing.out(Easing.quad) }), -1)
+    pulse.value = sessionActive && !reduceMotion
+      ? // Quelques pulsations puis repos : pas d'animation permanente pendant toute la séance.
+        withRepeat(withTiming(1, { duration: 1100, easing: Easing.out(Easing.quad) }), 4)
       : 0;
-  }, [sessionActive, pulse]);
+  }, [sessionActive, reduceMotion, pulse]);
   const haloStyle = useAnimatedStyle(() => ({
     opacity: 0.5 * (1 - pulse.value),
     transform: [{ scale: 1 + 0.6 * pulse.value }],

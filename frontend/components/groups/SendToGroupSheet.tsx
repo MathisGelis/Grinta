@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, View, useWindowDimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Modal from "@/components/ui/AppModal";
 import PressableScale from "@/components/ui/PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import { GroupsService, type GroupSummary } from "@/services/groups.service";
+import { ListSkeleton } from "@/components/ui/skeletons";
+import { toast } from "@/components/ui/Toast";
 
 type Props = {
   postId: string | null;
@@ -42,7 +44,7 @@ export default function SendToGroupSheet({ postId, onClose }: Props) {
       setSendingTo(group.id);
       await GroupsService.share(group.id, postId);
       onClose();
-      Alert.alert(group.name, t.grpSent);
+      toast.success(`${group.name} · ${t.grpSent}`);
     } catch (err) {
       // Le serveur renvoie `409` avec un message lisible si le post est déjà dans le groupe.
       Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
@@ -66,7 +68,7 @@ export default function SendToGroupSheet({ postId, onClose }: Props) {
         <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-raised" />
         <Text className="mb-4 text-xl font-semibold text-ink">{t.grpSendTitle}</Text>
         {groups === null ? (
-          <ActivityIndicator color={WorkoutTheme.accent.purple} />
+          <ListSkeleton count={3} />
         ) : groups.length === 0 ? (
           <Text className="py-6 text-center text-sm text-ink-muted">{t.grpEmpty}</Text>
         ) : (

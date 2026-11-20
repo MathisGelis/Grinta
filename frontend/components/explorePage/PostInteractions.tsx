@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   ScrollView,
@@ -9,7 +8,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { PostsService, ReportReason } from "@/services/posts.service";
 import { isNotFound } from "@/services/api";
@@ -25,8 +24,13 @@ import { TextField } from "@/components/ui/FormField";
 import Chip from "@/components/ui/Chip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { UserListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
+import { toast } from "@/components/ui/Toast";
 
 const COMMENT_MAX_LENGTH = 500;
+/** Le compteur n'apparaît qu'à l'approche de la limite. */
+const COMMENT_COUNTER_FROM = 400;
 
 const REPORT_REASONS: ReportReason[] = [
   "spam",
@@ -184,7 +188,7 @@ export function usePostInteractions(
     try {
       await PostsService.reportComment(reportCommentId, reportReason);
       closeReport();
-      Alert.alert(t.reportTitle, t.reportSentMsg);
+      toast.success(t.reportSentMsg);
     } catch (error: any) {
       Alert.alert(t.error, error?.message || t.cannotReportComment);
     }
@@ -296,11 +300,7 @@ export function usePostInteractions(
           </View>
 
           {postModalLoading ? (
-            <ActivityIndicator
-              size="small"
-              color={WorkoutTheme.accent.purple}
-              style={{ marginTop: 24 }}
-            />
+            <UserListSkeleton count={5} />
           ) : postModalType === "likes" ? (
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -341,12 +341,7 @@ export function usePostInteractions(
                   ))}
                 </View>
               ) : (
-                <View className="items-center gap-2 rounded-card bg-raised p-8">
-                  <Ionicons name="heart-outline" size={28} color={WorkoutTheme.text.tertiary} />
-                  <Text className="text-center text-sm text-ink-muted">
-                    {t.noLikesOnPost}
-                  </Text>
-                </View>
+                <EmptyState plain icon="heart-outline" title={t.noLikesOnPost} />
               )}
             </ScrollView>
           ) : postModalType === "comments" ? (
@@ -479,12 +474,7 @@ export function usePostInteractions(
                     })}
                   </View>
                 ) : (
-                  <View className="items-center gap-3">
-                    <Ionicons name="chatbubble-outline" size={36} color={WorkoutTheme.text.tertiary} />
-                    <Text className="text-center text-sm text-ink-muted">
-                      {t.noCommentsOnPost}
-                    </Text>
-                  </View>
+                  <EmptyState plain icon="chatbubble-outline" title={t.noCommentsOnPost} />
                 )}
               </ScrollView>
 
@@ -495,6 +485,16 @@ export function usePostInteractions(
                   transform: [{ translateY: keyboardY }],
                 }}
               >
+                {commentDraft.length >= COMMENT_COUNTER_FROM ? (
+                  <Text
+                    className={`absolute -top-5 right-5 text-xs ${
+                      commentDraft.length >= COMMENT_MAX_LENGTH ? "text-danger" : "text-ink-muted"
+                    }`}
+                    style={{ fontVariant: ["tabular-nums"] }}
+                  >
+                    {commentDraft.length}/{COMMENT_MAX_LENGTH}
+                  </Text>
+                ) : null}
                 <Glass className="flex-row items-end gap-2 rounded-[28px] p-2 pl-5">
                   <TextInput
                     value={commentDraft}
@@ -526,9 +526,7 @@ export function usePostInteractions(
               </Animated.View>
             </View>
           ) : (
-            <Text className="text-sm text-ink-muted">
-              {t.noContentAvailable}
-            </Text>
+            <EmptyState plain icon="albums-outline" title={t.noContentAvailable} />
           )}
           {reportCommentId && postModalType === "comments" ? (
             <View className="absolute inset-0 gap-4 rounded-t-hero bg-surface px-5 pb-6 pt-6">

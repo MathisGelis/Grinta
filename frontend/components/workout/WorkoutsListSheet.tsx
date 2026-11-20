@@ -1,6 +1,6 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { FlatList, Keyboard, Platform, ScrollView, Text, View, useWindowDimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Modal from "@/components/ui/AppModal";
@@ -19,6 +19,7 @@ import { format } from "@/i18n/translations";
 import type { SmallProgramm } from "@/services/programms.service";
 import type { PlannedWorkout } from "@/services/workouts.service";
 import { normalizeText } from "@/utils/text";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Sort = "default" | "name" | "count";
 
@@ -120,14 +121,11 @@ function WorkoutsListSheet({
   };
 
   const empty = (
-    <View className="flex-1 items-center justify-center py-10">
-      <Ionicons
-        name={isProgrammes ? "calendar-outline" : "barbell-outline"}
-        size={40}
-        color={WorkoutTheme.text.tertiary}
-      />
-      <Text className="mt-4 text-sm text-ink-soft">{t.noResultsLabel}</Text>
-    </View>
+    <EmptyState
+      plain
+      icon={isProgrammes ? "calendar-outline" : "barbell-outline"}
+      title={t.noResultsLabel}
+    />
   );
 
   const header = (

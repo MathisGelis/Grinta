@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from "react";
 import { Alert, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Post, PostsService } from "@/services/posts.service";
 import type { ProfilePost } from "@/services/user.service";
 import PressableScale from "@/components/ui/PressableScale";
 import PostCard from "@/components/explorePage/PostCard";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Props = {
   posts: ProfilePost[];
@@ -90,13 +91,7 @@ export default function MyPostsSection({
       </View>
 
       {posts.length === 0 ? (
-        <View className="items-center gap-2 rounded-card bg-surface p-8">
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-raised">
-            <Ionicons name="images-outline" size={26} color={WorkoutTheme.text.tertiary} />
-          </View>
-          <Text className="text-base font-semibold text-ink-soft">{t.noPostsYet}</Text>
-          <Text className="text-center text-sm text-ink-muted">{t.noPostsHint}</Text>
-        </View>
+        <EmptyState icon="images-outline" title={t.noPostsYet} message={t.noPostsHint} />
       ) : (
         <View className="gap-3">
           {posts.map((post) => {

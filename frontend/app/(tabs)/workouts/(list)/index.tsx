@@ -5,8 +5,8 @@ import React, {
   useState,
 } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, FlatList, RefreshControl } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import PressableScale from "@/components/ui/PressableScale";
 import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
@@ -30,6 +30,12 @@ import {
 import { localDate } from "@/utils/date";
 import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
+import { WorkoutListSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
+
+const ACTIVE_KEY = "workouts:active";
+const TAB_STALE_MS = 45_000;
+type ActiveInfo = { id?: string; day?: number; startedOn?: string };
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
@@ -40,9 +46,10 @@ export default function WorkoutScreen() {
   const [programmes, setProgrammes] = useState<SmallProgramm[]>(
     () => programmsList.peek() ?? [],
   );
-  const [activeProgrammeId, setActiveProgrammeId] = useState<string | undefined>();
-  const [activeDay, setActiveDay] = useState<number | undefined>();
-  const [startedOn, setStartedOn] = useState<string | undefined>();
+  const cachedActive = queryCache.peek<ActiveInfo>(ACTIVE_KEY);
+  const [activeProgrammeId, setActiveProgrammeId] = useState<string | undefined>(cachedActive?.id);
+  const [activeDay, setActiveDay] = useState<number | undefined>(cachedActive?.day);
+  const [startedOn, setStartedOn] = useState<string | undefined>(cachedActive?.startedOn);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(() => plannedWorkoutsList.peek() === null);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +69,11 @@ export default function WorkoutScreen() {
       setActiveProgrammeId(today?.programme.id);
       setActiveDay(today?.dayNumber);
       setStartedOn(today?.startedOn);
+      queryCache.set<ActiveInfo>(ACTIVE_KEY, {
+        id: today?.programme.id,
+        day: today?.dayNumber,
+        startedOn: today?.startedOn,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : t.loadingError);
       console.error("Erreur:", err);
@@ -72,6 +84,8 @@ export default function WorkoutScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Données récentes et aucune modification depuis : pas de nouvelle requête.
+      if (queryCache.isFresh(ACTIVE_KEY, TAB_STALE_MS) && plannedWorkoutsList.peek() !== null) return;
       loadWorkouts();
     }, [loadWorkouts]),
   );
@@ -151,11 +165,8 @@ export default function WorkoutScreen() {
       {loading ? (
         <View className="flex-1">
           <WorkoutsNavBar />
-          <View className="flex-1 items-center justify-center px-8 py-[60px]">
-            <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-surface">
-              <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
-            </View>
-            <Text className="text-sm text-ink-muted">{t.loadingWorkouts}</Text>
+          <View className="flex-1 px-4 pt-4">
+            <WorkoutListSkeleton count={4} />
           </View>
         </View>
       ) : error ? (

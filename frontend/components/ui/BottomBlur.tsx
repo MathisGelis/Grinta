@@ -7,7 +7,7 @@ import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 
 const VEIL_STOPS = [1, 0.75, 0.45, 0.2, 0.06, 0];
 const VEIL_ALPHA = Platform.OS === "ios" ? 0.3 : 0.55;
-const BLUR_LAYER_COUNT = 16;
+const BLUR_LAYER_COUNT = 4;
 const BLUR_LAYERS = Array.from({ length: BLUR_LAYER_COUNT }, (_, i) => 1 - i / BLUR_LAYER_COUNT);
 
 /** Même flou que `TopBlur`, inversé : le plus fort en bas, qui s'estompe vers le haut. */
@@ -22,7 +22,7 @@ export default function BottomBlur({ height }: { height: number }) {
         ? BLUR_LAYERS.map((share) => (
             <BlurView
               key={share}
-              intensity={3.5}
+              intensity={14}
               tint="dark"
               style={{
                 position: "absolute",

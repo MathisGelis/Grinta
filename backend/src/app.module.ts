@@ -1,33 +1,53 @@
-import { Module } from '@nestjs/common';
+import { PasswordStateModule } from './auth/password-state.module';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AppThrottlerGuard } from './common/throttling/app-throttler.guard';
 import { UsersModule } from './users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { ExerciseModule } from './exercise/exercise.module';
 import { WorkoutsModule } from './workouts/workouts.module';
 import { ProgrammesModule } from './programmes/programmes.module';
+import { WorkoutTemplatesModule } from './workout-templates/workout-templates.module';
+import { UserContentAccessModule } from './common/access/user-content-access';
+import { WorkoutImportModule } from './workout-import/workout-import.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { PostsModule } from './posts/posts.module';
 import { StatsModule } from './stats/stats.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { BadgesModule } from './badges/badges.module';
+import { GroupsModule } from './groups/groups.module';
+import { AppController } from './app.controller';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     DatabaseModule,
+    UserContentAccessModule,
+    PasswordStateModule,
+    MailModule,
     AuthModule,
     UsersModule,
     ExerciseModule,
     WorkoutsModule,
     ProgrammesModule,
+    WorkoutTemplatesModule,
+    WorkoutImportModule,
     ConnectionsModule,
     PostsModule,
     StatsModule,
     ModerationModule,
+    BadgesModule,
+    GroupsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  controllers: [AppController],
+  providers: [
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
+  ],
 })
 export class AppModule {}

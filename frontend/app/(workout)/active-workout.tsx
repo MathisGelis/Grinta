@@ -5,13 +5,12 @@ import {
   ScrollView,
   StatusBar,
   Alert,
-  ActivityIndicator,
   Keyboard,
   Platform,
   Text,
   useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
@@ -48,6 +47,9 @@ import { FormField, TextField } from "@/components/ui/FormField";
 import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
 import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
 import { PhotoService } from "@/services/photo.service";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
+import { LIMITS } from "@/utils/validation";
 const dedupeCompletedSets = (state: ExerciseState): ExerciseState => {
   const seen = new Set<number>();
   const completedSetIndices: number[] = [];
@@ -291,6 +293,7 @@ export default function ActiveWorkoutScreen() {
   const handleAddSet = () => {
     const newState = [...exercisesState];
     const exState = newState[currentExerciseIndex];
+    if (exState.exerciseData.sets.length >= LIMITS.maxSets) return;
     const lastSet =
       exState.exerciseData.sets[exState.exerciseData.sets.length - 1];
     exState.exerciseData.sets.push({ ...lastSet });
@@ -420,6 +423,12 @@ export default function ActiveWorkoutScreen() {
       return;
     }
 
+    // Une séance sans aucune série validée n'a rien à enregistrer.
+    if (!exercisesState.some((state) => state.completedSets.length > 0)) {
+      Alert.alert(t.error, t.noValidatedSet);
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const token = await TokenService.get();
@@ -455,6 +464,7 @@ export default function ActiveWorkoutScreen() {
         }
       }
       await clearActiveSession();
+      queryCache.invalidate("stats", "records", "profile");
 
       const goToStats = leaveWorkout;
       const records = saved.badges ?? [];
@@ -485,7 +495,7 @@ export default function ActiveWorkoutScreen() {
       <SafeAreaView className="flex-1">
         <ScreenBackground flat />
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <View className="w-full px-4"><DetailSkeleton rows={3} /></View>
         </View>
       </SafeAreaView>
     );
@@ -637,6 +647,7 @@ export default function ActiveWorkoutScreen() {
                   <TextField
                     placeholder={t.workoutNameLabel}
                     value={completionTitle}
+                    maxLength={LIMITS.title}
                     onChangeText={setCompletionTitle}
                     editable={!isSubmitting}
                   />
@@ -647,6 +658,7 @@ export default function ActiveWorkoutScreen() {
                     multiline
                     placeholder={t.addDescriptionPlaceholder}
                     value={completionDescription}
+                    maxLength={LIMITS.description}
                     onChangeText={setCompletionDescription}
                     editable={!isSubmitting}
                   />

@@ -6,29 +6,77 @@ import {
   Param,
   Patch,
   Delete,
+  Put,
   Query,
   Req,
+  UploadedFile,
 } from '@nestjs/common';
+import { BadRequestException, Res } from '@nestjs/common';
+import { InjectThrottlerStorage, ThrottlerStorage } from '@nestjs/throttler';
+import type { Request, Response } from 'express';
+import { TooManyRequestsException } from 'src/common/throttling/too-many-requests.exception';
+import { EMAIL_PROBE } from 'src/auth/auth.constants';
 import { UsersService } from './users.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Auth } from 'src/auth/auth.decorators';
+import type { AuthenticatedRequest } from 'src/auth/auth-user.interface';
 import { UserListDto } from './dto/users-list.dto';
+import { AttemptLimit } from 'src/common/throttling/attempt-limit';
+import { REGISTER_ATTEMPTS } from 'src/auth/auth.constants';
+import { PhotoUpload } from 'src/photos/photo-upload.decorator';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    @InjectThrottlerStorage() private readonly storage: ThrottlerStorage,
+  ) {}
 
   @Post('register')
+  @AttemptLimit(REGISTER_ATTEMPTS)
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request' })
-  async register(@Body() user: CreateUserDto) {
-    return this.usersService.registerUser(user);
+  async register(
+    @Body() user: CreateUserDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      return await this.usersService.registerUser(user);
+    } catch (error) {
+      // "Email already in use" tells whether an address has an account.
+      // Each such answer counts against the caller's address; past the cap
+      // it is a 429 instead, so a list of addresses cannot be probed.
+      if (
+        error instanceof BadRequestException &&
+        (error.getResponse() as { code?: string }).code === 'EMAIL_IN_USE'
+      ) {
+        const record = await this.storage.increment(
+          `register-taken:ip:${req.ip ?? 'unknown'}`,
+          EMAIL_PROBE.ttl,
+          EMAIL_PROBE.limit,
+          EMAIL_PROBE.ttl,
+          'attempts',
+        );
+
+        if (record.isBlocked) {
+          res.header('Retry-After', String(record.timeToBlockExpire));
+          throw new TooManyRequestsException(
+            'TOO_MANY_ATTEMPTS',
+            "Trop d'inscriptions avec une adresse déjà utilisée. Réessayez plus tard.",
+            record.timeToBlockExpire,
+          );
+        }
+      }
+      throw error;
+    }
   }
 
+  // Static segments are declared before ':id' so they are never captured as an id.
   @Auth()
   @Get('search')
   @ApiOperation({
@@ -40,45 +88,8 @@ export class UsersController {
     type: UserListDto,
     isArray: true,
   })
-  searchUsers(@Query('q') query: string, @Req() req) {
+  searchUsers(@Query('q') query: string, @Req() req: AuthenticatedRequest) {
     return this.usersService.searchUsers(query, req.user.id);
-  }
-
-  @Auth()
-  @Get(':id')
-  @ApiOperation({ summary: 'Find a user by ID' })
-  @ApiResponse({ status: 200, description: 'User found' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async getUser(@Param('id') id: string) {
-    return this.usersService.findUserById(id);
-  }
-
-  @Auth()
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update a user by ID' })
-  @ApiResponse({ status: 200, description: 'User updated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid request' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async updateUser(@Param('id') id: string, @Body() updateData: UpdateUserDto) {
-    return this.usersService.updateUser(id, updateData);
-  }
-
-  @Auth()
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete a user by ID' })
-  @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async deleteUser(@Param('id') id: string) {
-    return this.usersService.deleteUser(id);
-  }
-
-  @Auth()
-  @Get(':id/profile')
-  @ApiOperation({ summary: 'Get user profile' })
-  @ApiResponse({ status: 200, description: 'User profile returned' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async getUserProfile(@Req() req, @Param('id') id: string) {
-    return this.usersService.getUserProfile(req.user.id, id);
   }
 
   @Auth()
@@ -89,7 +100,96 @@ export class UsersController {
     description: 'Profile visibility updated successfully',
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async toggleVisibility(@Req() req) {
+  async toggleVisibility(@Req() req: AuthenticatedRequest) {
     return this.usersService.toggleProfileVisibility(req.user.id);
+  }
+
+  @Auth()
+  @Put('me/avatar')
+  @PhotoUpload()
+  @ApiOperation({
+    summary: 'Set the profile photo of the current user',
+    description:
+      'Multipart upload in the `photo` field. The photo is cropped to a 512 px square, plus a 128 px thumbnail for lists, re-encoded as WebP and stripped of its metadata (EXIF, GPS). Replaces and deletes the previous one. The URL is public: anyone it is shared with can open it.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '{ avatarUrl, avatarThumbnailUrl }',
+  })
+  @ApiResponse({ status: 400, description: 'No photo, or not an image' })
+  @ApiResponse({ status: 413, description: 'Over 10 MB or 50 megapixels' })
+  @ApiResponse({ status: 415, description: 'Not JPEG, PNG or WebP' })
+  setAvatar(
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
+    return this.usersService.setAvatar(req.user.id, file);
+  }
+
+  @Auth()
+  @Delete('me/avatar')
+  @ApiOperation({ summary: 'Remove the profile photo of the current user' })
+  @ApiResponse({
+    status: 200,
+    description: '{ avatarUrl: null, avatarThumbnailUrl: null }',
+  })
+  removeAvatar(@Req() req: AuthenticatedRequest) {
+    return this.usersService.removeAvatar(req.user.id);
+  }
+
+  @Auth()
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Find a user by ID',
+    description:
+      'Returns the full account for the authenticated user and only the public identity (id, displayName, uniqueName, isPublic, avatarUrl, avatarThumbnailUrl) for anyone else.',
+  })
+  @ApiResponse({ status: 200, description: 'User found' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUser(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.usersService.getUserForViewer(req.user.id, id);
+  }
+
+  @Auth()
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Update a user by ID',
+    description: 'Only the authenticated user can update their own account.',
+  })
+  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request' })
+  @ApiResponse({ status: 403, description: 'Not your account' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async updateUser(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() updateData: UpdateUserDto,
+  ) {
+    return this.usersService.updateUser(req.user.id, id, updateData);
+  }
+
+  @Auth()
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Delete a user by ID',
+    description: 'Only the authenticated user can delete their own account.',
+  })
+  @ApiResponse({ status: 200, description: 'User deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Not your account' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async deleteUser(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.usersService.deleteUser(req.user.id, id);
+  }
+
+  @Auth()
+  @Get(':id/profile')
+  @ApiOperation({ summary: 'Get user profile' })
+  @ApiResponse({ status: 200, description: 'User profile returned' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUserProfile(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.usersService.getUserProfile(req.user.id, id);
   }
 }

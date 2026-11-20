@@ -6,7 +6,8 @@ import WallMeterPicker from "@/components/ui/WallMeterPicker";
 import OnboardingNav from "@/components/ui/OnboardingNav";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import { useTranslation } from "@/contexts/LanguageContext";
-const MIN_HEIGHT = 0;
+// Bornes acceptées par le serveur : 50 à 250 cm.
+const MIN_HEIGHT = 50;
 const MAX_HEIGHT = 250;
 const DEFAULT_HEIGHT = 170;
 

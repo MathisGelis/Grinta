@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { Alert, ScrollView, Text, View } from "react-native";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
 import {
@@ -21,39 +21,30 @@ import GroupIcon from "@/components/groups/GroupIcon";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/FormField";
+import { ListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function GroupsScreen() {
   const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [groups, setGroups] = useState<GroupSummary[]>([]);
-  const [invitations, setInvitations] = useState<ReceivedInvitation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, reload: load } = useCachedQuery(
+    "groups:list",
+    async () => {
+      const [groups, invitations] = await Promise.all([
+        GroupsService.list(),
+        GroupsService.receivedInvitations().catch(() => [] as ReceivedInvitation[]),
+      ]);
+      return { groups, invitations };
+    },
+    { staleMs: 0 },
+  );
+  const groups: GroupSummary[] = data?.groups ?? [];
+  const invitations: ReceivedInvitation[] = data?.invitations ?? [];
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [busyInvitation, setBusyInvitation] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      const [mine, received] = await Promise.all([
-        GroupsService.list(),
-        GroupsService.receivedInvitations().catch(() => []),
-      ]);
-      setGroups(mine);
-      setInvitations(received);
-    } catch (err) {
-      Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
 
   const create = async () => {
     const trimmed = name.trim();
@@ -80,7 +71,7 @@ export default function GroupsScreen() {
       } else {
         await GroupsService.decline(invitation.id);
       }
-      await load();
+      load();
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
     } finally {
@@ -104,7 +95,7 @@ export default function GroupsScreen() {
         }
       />
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><ListSkeleton count={5} gap={12} /></View>
       ) : (
         <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
@@ -174,7 +165,7 @@ export default function GroupsScreen() {
           ) : null}
 
           {groups.length === 0 ? (
-            <Text className="py-6 text-center text-sm text-ink-muted">{t.grpEmpty}</Text>
+            <EmptyState icon="people-outline" title={t.grpEmpty} />
           ) : (
             groups.map((group) => (
               <PressableScale

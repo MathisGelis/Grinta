@@ -124,13 +124,13 @@ export function DrumRollPicker({
       scrollRef.current?.scrollTo({ y: live.current * itemHeight, animated: false });
     }, 50);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [itemHeight]);
 
   useEffect(() => {
     if (selectedIndex === live.current) return;
     live.current = selectedIndex;
     scrollRef.current?.scrollTo({ y: selectedIndex * itemHeight, animated: false });
-  }, [selectedIndex]);
+  }, [selectedIndex, itemHeight]);
 
   return (
     <View style={[styles.container, { height: itemHeight * rows }]}>

@@ -1,11 +1,13 @@
 import React from "react";
 import { Text, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 
 type FormFieldProps = {
   label: string;
   required?: boolean;
+  /** Message d'erreur affiché sous le champ. */
+  error?: string | null;
   children: React.ReactNode;
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -14,6 +16,7 @@ type FormFieldProps = {
 export function FormField({
   label,
   required,
+  error,
   children,
   className = "",
   style,
@@ -25,6 +28,11 @@ export function FormField({
         {required ? <Text className="text-danger"> *</Text> : null}
       </Text>
       {children}
+      {error ? (
+        <Text className="ml-4 text-xs text-danger" accessibilityLiveRegion="polite">
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }

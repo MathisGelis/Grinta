@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { View, FlatList, StyleSheet, Text, Animated, Dimensions } from "react-native";
 import { slides } from "@/constants/slides";
-import OnboardingSlide from "../components/OnboardingSlide";
+import OnboardingSlide from "@/components/auth/OnboardingSlide";
 import { router } from "expo-router";
 
 import { WorkoutTheme } from "@/constants/Colors";
@@ -24,12 +24,13 @@ export default function OnboardingScreen() {
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const finish = (route: "/(auth)/RegisterScreen" | "/(auth)/LoginScreen") => {
+  const finish = (route: "/(auth)/onboarding/GenderScreen" | "/(auth)/LoginScreen") => {
     void saveItem("hasSeenOnboarding", "true");
     router.replace(route);
   };
 
-  const handleStart = () => finish("/(auth)/RegisterScreen");
+  // Le questionnaire passe avant l'inscription.
+  const handleStart = () => finish("/(auth)/onboarding/GenderScreen");
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
@@ -80,7 +81,7 @@ export default function OnboardingScreen() {
         <SkipLink
           className="mt-2"
           label={isLastSlide ? t.haveAccount : t.skipBtn}
-          onPress={() => finish(isLastSlide ? "/(auth)/LoginScreen" : "/(auth)/RegisterScreen")}
+          onPress={() => finish(isLastSlide ? "/(auth)/LoginScreen" : "/(auth)/onboarding/GenderScreen")}
         />
       </View>
     </View>

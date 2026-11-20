@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, ScrollView, Alert } from "react-native";
 import { router } from "expo-router";
@@ -17,6 +17,7 @@ import { TokenService } from "@/services/token.service";
 import WorkoutFormFields from "@/components/workout/editor/WorkoutFormFields";
 import ExerciseSection from "@/components/workout/editor/ExerciseSection";
 import WorkoutPickerSheet from "@/components/workout/editor/WorkoutPickerSheet";
+import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 import WorkoutStats from "@/components/workout/editor/WorkoutStats";
 
 import IconButton from "@/components/ui/IconButton";
@@ -24,7 +25,9 @@ import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
-const DEFAULT_REST_SECONDS = 60;
+import { toast } from "@/components/ui/Toast";
+import { MAX_EXERCISES } from "@/utils/sanitizeWorkout";
+const DEFAULT_REST_SECONDS = 90;
 
 export default function CreateWorkoutScreen() {
   const { t } = useTranslation();
@@ -36,7 +39,6 @@ export default function CreateWorkoutScreen() {
     ExerciseSetupData[]
   >([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
-  const [estimatedTime, setEstimatedTime] = useState("45");
   const [loading, setLoading] = useState(false);
   const [showWorkoutPicker, setShowWorkoutPicker] = useState(false);
   const [workouts, setWorkouts] = useState<PlannedWorkout[]>(
@@ -70,6 +72,10 @@ export default function CreateWorkoutScreen() {
   };
 
   const handleSelectExercise = (exercise: Exercise) => {
+    if (selectedExercises.length >= MAX_EXERCISES) {
+      toast.info(t.maxExercisesReached);
+      return;
+    }
     const exerciseExists = selectedExercises.some(
       (ex) => ex.id === exercise.id,
     );
@@ -115,7 +121,10 @@ export default function CreateWorkoutScreen() {
     setSelectedExercises((prev) => prev.filter((ex) => ex.id !== id));
   };
 
-  const estimatedMinutes = Math.min(600, Math.max(0, parseInt(estimatedTime, 10) || 0));
+  const estimatedMinutes = useMemo(
+    () => estimateWorkoutMinutes(selectedExercises, DEFAULT_REST_SECONDS),
+    [selectedExercises],
+  );
 
   const transformExercisesToAPI = (): CreateWorkoutRequest => ({
     title: name.trim(),
@@ -145,9 +154,8 @@ export default function CreateWorkoutScreen() {
     try {
       const token = await TokenService.get();
       await createPlannedWorkout(transformExercisesToAPI(), token || undefined);
-      Alert.alert(t.success, t.workoutCreated, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.workoutCreated);
+      router.back();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t.creationError;
@@ -185,8 +193,6 @@ export default function CreateWorkoutScreen() {
           onNameChange={setName}
           description={description}
           onDescriptionChange={setDescription}
-          estimatedTime={estimatedTime}
-          onEstimatedTimeChange={setEstimatedTime}
         />
 
         <ExerciseSection
@@ -201,7 +207,7 @@ export default function CreateWorkoutScreen() {
         {selectedExercises.length > 0 && (
           <WorkoutStats
             exercises={selectedExercises}
-            estimatedTime={estimatedTime}
+            estimatedMinutes={estimatedMinutes}
           />
         )}
       </ScrollView>

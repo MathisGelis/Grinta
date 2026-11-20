@@ -1,5 +1,6 @@
 import React from "react";
-import { Image, Text, View, useWindowDimensions, type ImageSourcePropType } from "react-native";
+import { Text, View, useWindowDimensions } from "react-native";
+import { Image, type ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,7 +11,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 type Tab = "login" | "register";
 
 type Props = {
-  image: ImageSourcePropType;
+  image: ImageSource | number;
   active: Tab;
   title: React.ReactNode;
   subtitle?: string;
@@ -26,7 +27,7 @@ export default function AuthHero({ image, active, title, subtitle }: Props) {
   return (
     <View>
       <View className="overflow-hidden rounded-b-hero" style={{ height: heroHeight, borderCurve: "continuous" }}>
-        <Image source={image} className="absolute h-full w-full" resizeMode="cover" />
+        <Image source={image} className="absolute h-full w-full" contentFit="cover" cachePolicy="memory-disk" />
         <LinearGradient
           colors={["transparent", WorkoutTheme.background]}
           className="absolute inset-x-0 bottom-0 h-[75%]"
@@ -38,7 +39,7 @@ export default function AuthHero({ image, active, title, subtitle }: Props) {
             id="auth-tabs"
             value={active}
             onChange={(tab) =>
-              router.replace(tab === "login" ? "/(auth)/LoginScreen" : "/(auth)/RegisterScreen")
+              router.replace(tab === "login" ? "/(auth)/LoginScreen" : "/(auth)/onboarding/GenderScreen")
             }
             options={[
               { value: "login", label: t.login },

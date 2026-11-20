@@ -18,24 +18,23 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"password" | "confirm", string>>>({});
   const [invalidLink, setInvalidLink] = useState(!token);
 
   const submit = async () => {
     setError("");
-    if (password.length < MIN_PASSWORD) {
-      setError(t.passwordTooShort);
-      return;
-    }
-    if (password !== confirm) {
-      setError(t.passwordsDontMatch);
-      return;
-    }
+    const errors: typeof fieldErrors = {};
+    if (password.length < MIN_PASSWORD) errors.password = t.passwordTooShort;
+    else if (password !== confirm) errors.confirm = t.passwordsDontMatch;
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     try {
       setLoading(true);
       await AuthService.resetPassword(String(token), password);
       setDone(true);
     } catch (err) {
       if (err instanceof ApiError && err.code === "RESET_TOKEN_INVALID") setInvalidLink(true);
+      else if (err instanceof ApiError && err.fieldErrors?.password) setFieldErrors({ password: err.fieldErrors.password });
       else setError(err instanceof Error ? err.message : t.genericError);
     } finally {
       setLoading(false);
@@ -63,7 +62,7 @@ export default function ResetPasswordScreen() {
         ) : (
           <>
             <Text className="text-sm text-ink-muted">{t.resetIntro}</Text>
-            <FormField label={t.newPasswordLabel}>
+            <FormField label={t.newPasswordLabel} error={fieldErrors.password}>
               <TextField
                 icon="lock-closed-outline"
                 placeholder="••••••••"
@@ -74,7 +73,7 @@ export default function ResetPasswordScreen() {
               />
               <Text className="ml-4 text-xs text-ink-muted">{t.passwordHint}</Text>
             </FormField>
-            <FormField label={t.passwordAgain}>
+            <FormField label={t.passwordAgain} error={fieldErrors.confirm}>
               <TextField
                 icon="lock-closed-outline"
                 placeholder="••••••••"

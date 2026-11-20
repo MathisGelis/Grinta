@@ -1,9 +1,8 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { GroupsService, type GroupDetail } from "@/services/groups.service";
 import { ConnectionsService, type UserListItem } from "@/services/connections.service";
@@ -15,6 +14,7 @@ import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import Button from "@/components/ui/Button";
 import { TextField } from "@/components/ui/FormField";
+import { UserListSkeleton } from "@/components/ui/skeletons";
 
 /**
  * Invitation dans un groupe. Le serveur n'expose pas de recherche dans ses abonnements :
@@ -89,7 +89,7 @@ export default function GroupAddMemberScreen() {
       <ScreenBackground flat />
       <ScreenHeader floating title={t.grpAddMember} />
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><UserListSkeleton count={7} action /></View>
       ) : (
         <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}

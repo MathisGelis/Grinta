@@ -10,6 +10,8 @@ interface SearchContextType {
   clearSearch: () => void;
 }
 
+const MIN_SEARCH_LENGTH = 2;
+
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
 
 export function SearchProvider({ children }: { children: React.ReactNode }) {
@@ -22,7 +24,8 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     setQuery(text);
     setSearchAttempted(true);
 
-    if (!text.trim()) {
+    // Le serveur ne répond rien sous 2 caractères ou sans lettre ni chiffre : inutile de l'interroger.
+    if (text.trim().length < MIN_SEARCH_LENGTH || !/[\p{L}\p{N}]/u.test(text)) {
       setResults([]);
       return;
     }

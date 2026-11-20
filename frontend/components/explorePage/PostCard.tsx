@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import Animated, {
   Easing,
@@ -15,7 +15,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
 import { format } from "@/i18n/translations";
 import { Post, PostsService } from "@/services/posts.service";
 import { mediaUrl } from "@/services/api";
@@ -80,7 +79,35 @@ function LikeHeart({ liked }: { liked: boolean }) {
   );
 }
 
+const MAX_CACHED_DETAILS = 200;
+const MAX_PARALLEL_DETAILS = 2;
+/** Détails déjà chargés pour les posts qui ne viennent pas d'un fil (borné : les plus anciens sont retirés). */
 const details = new Map<string, Post>();
+
+function rememberDetail(id: string, post: Post) {
+  details.delete(id);
+  details.set(id, post);
+  if (details.size > MAX_CACHED_DETAILS) {
+    const oldest = details.keys().next().value;
+    if (oldest !== undefined) details.delete(oldest);
+  }
+}
+
+// Les fils renvoient des cartes complètes (B-06) : le détail n'est demandé que pour les posts
+// issus d'une autre liste (profil), deux requêtes à la fois au plus.
+let running = 0;
+const waiting: (() => void)[] = [];
+
+async function loadDetail(id: string): Promise<Post | null> {
+  if (running >= MAX_PARALLEL_DETAILS) await new Promise<void>((resolve) => waiting.push(resolve));
+  running += 1;
+  try {
+    return (await PostsService.getPostById(id)) ?? null;
+  } finally {
+    running -= 1;
+    waiting.shift()?.();
+  }
+}
 
 export default function PostCard({
   post,
@@ -99,31 +126,33 @@ export default function PostCard({
   const [detail, setDetail] = useState<Post | undefined>(details.get(post.id));
   const [declinedBy, setDeclinedBy] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const hasFeedTitle = post.workoutTitle !== undefined;
 
   useEffect(() => {
-    if (details.has(post.id)) return;
+    // Carte de fil : déjà complète, aucune requête.
+    if (hasFeedTitle || details.has(post.id)) return;
     let cancelled = false;
-    PostsService.getPostById(post.id)
+    loadDetail(post.id)
       .then((data) => {
         if (!data) return;
-        details.set(post.id, data);
+        rememberDetail(post.id, data);
         if (!cancelled) setDetail(data);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [post.id]);
+  }, [post.id, hasFeedTitle]);
 
-  const userId = detail?.userId ?? post.userId;
-  const title = detail?.workoutTitle ?? detail?.workout?.title ?? t.completedWorkoutTitle;
-  const description = detail?.workoutDescription ?? detail?.workout?.description;
-  const duration = post.stats?.durationSeconds ?? detail?.workoutDurationSeconds;
+  const userId = post.userId ?? detail?.userId;
+  const title = post.workoutTitle ?? detail?.workoutTitle ?? detail?.workout?.title ?? t.completedWorkoutTitle;
+  const description = post.workoutDescription ?? detail?.workoutDescription ?? detail?.workout?.description;
+  const duration = post.stats?.durationSeconds ?? post.workoutDurationSeconds ?? detail?.workoutDurationSeconds;
   const exercises = post.exercises ?? detail?.exercises;
   const stats = post.stats ?? detail?.stats;
-  const totalExercises = detail?.workout?.totalExercises;
-  const photo = mediaUrl(detail?.workoutPhotoThumbnailUrl ?? post.workoutPhotoThumbnailUrl);
-  const partners = (detail?.partners ?? post.partners)?.filter((p) => p.id !== declinedBy);
+  const totalExercises = post.totalExercises ?? detail?.workout?.totalExercises;
+  const photo = mediaUrl(post.workoutPhotoThumbnailUrl ?? detail?.workoutPhotoThumbnailUrl);
+  const partners = (post.partners ?? detail?.partners)?.filter((p) => p.id !== declinedBy);
 
   // Avec le maximum d'exercices (et la ligne « +N » s'il y en a plus), la liste remplit toute la hauteur.
   const hasMoreExercises = (exercises?.length ?? 0) > MAX_EXERCISES;
@@ -294,11 +323,8 @@ export default function PostCard({
                   size="md"
                   label={t.completedLabel}
                   value={
-                    detail?.workoutCompletionDate
-                      ? new Date(detail.workoutCompletionDate).toLocaleDateString(LOCALES[lang], {
-                          day: "numeric",
-                          month: "short",
-                        })
+                    (post.workoutCompletionDate ?? detail?.workoutCompletionDate)
+                      ? formatDate((post.workoutCompletionDate ?? detail?.workoutCompletionDate)!, lang, "dayMonth")
                       : "–"
                   }
                   className="flex-1 items-center"

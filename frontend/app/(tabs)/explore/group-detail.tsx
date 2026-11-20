@@ -1,11 +1,9 @@
 import React, { useCallback, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
 import { format } from "@/i18n/translations";
 import {
   GroupsService,
@@ -17,10 +15,13 @@ import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import IconButton from "@/components/ui/IconButton";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import { formatDate } from "@/utils/formatDate";
 
 const PAGE_SIZE = 20;
 
@@ -101,7 +102,7 @@ export default function GroupDetailScreen() {
   };
 
   const date = (iso: string) =>
-    new Date(iso).toLocaleDateString(LOCALES[lang], { day: "numeric", month: "short" });
+    formatDate(iso, lang, "dayMonth");
 
   return (
     <View className="flex-1">
@@ -127,10 +128,16 @@ export default function GroupDetailScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton rows={3} /></View>
       ) : error || !group ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.loadingError}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.loadingError}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}

@@ -8,7 +8,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -30,8 +31,13 @@ import PressableScale from "@/components/ui/PressableScale";
 import IconButton from "@/components/ui/IconButton";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import EmptyState from "@/components/ui/EmptyState";
+import { toast } from "@/components/ui/Toast";
 
 /** Hauteur fixe d'une ligne : le calcul des positions pendant le glisser n'a besoin d'aucune mesure. */
+/** Nombre maximal de jours d'un programme (B-03). */
+const MAX_PROGRAMME_DAYS = 84;
+
 const ROW_HEIGHT = 64;
 const ROW_GAP = 8;
 const PITCH = ROW_HEIGHT + ROW_GAP;
@@ -240,6 +246,11 @@ export default function ProgrammeDayEditor({
 
   const addWorkoutDay = useCallback(
     (workout: PlannedWorkout) => {
+      if (days.length >= MAX_PROGRAMME_DAYS) {
+        toast.info(t.maxProgrammeDays);
+        setShowWorkoutPicker(false);
+        return;
+      }
       onChangeDays([
         ...days,
         {
@@ -253,10 +264,14 @@ export default function ProgrammeDayEditor({
       ]);
       setShowWorkoutPicker(false);
     },
-    [days, onChangeDays],
+    [days, onChangeDays, t],
   );
 
   const addRestDay = useCallback(() => {
+    if (days.length >= MAX_PROGRAMME_DAYS) {
+      toast.info(t.maxProgrammeDays);
+      return;
+    }
     onChangeDays([
       ...days,
       {
@@ -264,7 +279,7 @@ export default function ProgrammeDayEditor({
         workout: null,
       },
     ]);
-  }, [days, onChangeDays]);
+  }, [days, onChangeDays, t]);
 
   const removeDay = (dayNumber: number) => {
     onChangeDays(renumber(days.filter((item) => item.dayNumber !== dayNumber)));
@@ -376,14 +391,7 @@ export default function ProgrammeDayEditor({
       >
         {listHeader}
         {days.length === 0 ? (
-          <View className="items-center py-6">
-            <Ionicons
-              name="calendar-outline"
-              size={36}
-              color={WorkoutTheme.text.secondary}
-            />
-            <Text className="mt-2 text-sm text-ink-soft">{t.noDaysYet}</Text>
-          </View>
+          <EmptyState plain icon="calendar-outline" title={t.noDaysYet} />
         ) : (
           <View style={{ height: days.length * PITCH - ROW_GAP }}>
             {days.map((item, index) => (
@@ -432,14 +440,7 @@ export default function ProgrammeDayEditor({
               showsVerticalScrollIndicator={false}
             >
               {availableWorkouts.length === 0 ? (
-                <View className="items-center py-6">
-                  <Text className="text-sm text-ink-soft">
-                    {t.noWorkoutAvailable}
-                  </Text>
-                  <Text className="mt-1 text-xs text-ink-soft">
-                    {t.createWorkoutFirst}
-                  </Text>
-                </View>
+                <EmptyState plain icon="barbell-outline" title={t.noWorkoutAvailable} message={t.createWorkoutFirst} />
               ) : (
                 availableWorkouts.map((workout) => (
                   <PressableScale

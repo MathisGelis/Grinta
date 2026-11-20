@@ -1,8 +1,9 @@
 import { isValidEmail } from "@/utils/validation";
 import { clearUserSession } from "@/services/session.service";
 import { AuthService } from "@/services/auth.service";
+import { ApiError } from "@/services/api";
 import { TokenService } from "@/services/token.service";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { router } from "expo-router";
 
@@ -20,6 +21,14 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Secondes restantes avant de pouvoir réessayer après un 429.
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const handleLogin = async () => {
     setError(null);
@@ -38,6 +47,9 @@ export default function LoginScreen() {
       await TokenService.save(response.access_token);
       router.replace("/(tabs)/explore");
     } catch (err: any) {
+      if (err instanceof ApiError && err.status === 429 && err.retryAfterSeconds) {
+        setCooldown(Math.ceil(err.retryAfterSeconds));
+      }
       setError(err.message || t.wrongCredentials);
     } finally {
       setLoading(false);
@@ -85,8 +97,9 @@ export default function LoginScreen() {
 
           <Button
             icon="log-in-outline"
-            label={t.login}
+            label={cooldown > 0 ? `${t.login} (${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(2, "0")})` : t.login}
             loading={loading}
+            disabled={cooldown > 0}
             onPress={handleLogin}
           />
         </View>

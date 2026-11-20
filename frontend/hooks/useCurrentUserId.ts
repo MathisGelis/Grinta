@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { UserService } from "@/services/user.service";
 
 export function useCurrentUserId(): string | null {
-  const [id, setId] = useState<string | null>(null);
+  const [id, setId] = useState<string | null>(() => UserService.peekMyId());
   useEffect(() => {
     let cancelled = false;
     UserService.getMyId()

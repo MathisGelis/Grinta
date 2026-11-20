@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import React, { useState } from "react";
+import { View, Text } from "react-native";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { router } from "expo-router";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme } from "@/constants/Colors";
@@ -17,6 +18,7 @@ import { usePostInteractions } from "@/components/explorePage/PostInteractions";
 import GlobalStatsSection from "@/components/profile/GlobalStatsSection";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import ErrorState from "@/components/ui/ErrorState";
+import { ProfileSkeleton } from "@/components/ui/skeletons";
 
 function formatJoinDate(dateStr: string, months: string[]): string {
   const d = new Date(dateStr);
@@ -26,45 +28,29 @@ function formatJoinDate(dateStr: string, months: string[]): string {
 export default function ProfileScreen() {
   const { t } = useTranslation();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [tab, setTab] = useState<"stats" | "posts">("stats");
+  const { data, loading, error, reload, mutate } = useCachedQuery("profile:me", async () => {
+    const id = await UserService.getMyId();
+    if (!id) throw new Error(t.loadingError);
+    const [user, profile] = await Promise.all([UserService.getMe(), UserService.getProfile(id)]);
+    return { user, profile };
+  });
+  const user: CurrentUser | null = data?.user ?? null;
+  const profile: UserProfile | null = data?.profile ?? null;
   const { openLikes, openComments, modals } = usePostInteractions(
     user?.id ?? "",
     { userProfilePath: "/(tabs)/profile/user-profile" },
   );
 
-  const fetchData = useCallback(async () => {
-    try {
-      setError(null);
-      const me = await UserService.getMe();
-      setUser(me);
-      setProfile(await UserService.getProfile(me.id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.loadingError);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [fetchData]),
-  );
-
   const handlePostDeleted = (postId: string) => {
-    setProfile((prev) =>
-      prev
-        ? {
-            ...prev,
-            posts: (prev.posts ?? []).filter((p) => p.id !== postId),
-            postsCount: Math.max(0, prev.postsCount - 1),
-          }
-        : prev,
-    );
+    mutate((current) => ({
+      ...current,
+      profile: {
+        ...current.profile,
+        posts: (current.profile.posts ?? []).filter((p) => p.id !== postId),
+        postsCount: Math.max(0, current.profile.postsCount - 1),
+      },
+    }));
   };
 
   const goalLabels = {
@@ -117,14 +103,11 @@ export default function ProfileScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <ProfileSkeleton />
         ) : error || !user ? (
           <ErrorState
             message={error ?? undefined}
-            onRetry={() => {
-              setLoading(true);
-              fetchData();
-            }}
+            onRetry={reload}
           />
         ) : (
           <>

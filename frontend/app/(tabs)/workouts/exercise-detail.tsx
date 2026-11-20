@@ -1,9 +1,9 @@
 import { useUnits } from "@/contexts/UnitsContext";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { ScrollView, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import {
@@ -18,14 +18,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import IconButton from "@/components/ui/IconButton";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import Stat from "@/components/ui/Stat";
 import MuscleMap from "@/components/ui/MuscleMap";
 import ExerciseAnimation from "@/components/workout/exercises/ExerciseAnimation";
+import ProgressionCard from "@/components/stats/ProgressionCard";
 import BadgeList from "@/components/workout/badges/BadgeList";
 import { Badge, BadgesService } from "@/services/badges.service";
 import type { MuscleValue } from "@/utils/muscles";
 import CompareSheet from "@/components/workout/exercises/CompareSheet";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function ExerciseDetailScreen() {
   const { formatWeight } = useUnits();
@@ -33,40 +37,26 @@ export default function ExerciseDetailScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useFloatingHeaderHeight();
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
-  const [exercise, setExercise] = useState<ExerciseDetail | null>(null);
-  const [stats, setStats] = useState<ExerciseStats | null>(null);
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [canEdit, setCanEdit] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [compareVisible, setCompareVisible] = useState(false);
-
-  const load = useCallback(async () => {
-    if (!exerciseId) return;
-    try {
-      setError(null);
-      const [data, userStats, createdIds, userBadges] = await Promise.all([
+  const { data, loading, error, reload } = useCachedQuery(
+    `exercise:${exerciseId}`,
+    async () => {
+      const [exercise, stats, createdIds, badges] = await Promise.all([
         getExerciseById(exerciseId),
         getExerciseStats(exerciseId).catch(() => null),
         getUserCreatedExerciseIds(),
-        BadgesService.list({ exerciseId, limit: 10 }).catch(() => []),
+        BadgesService.list({ exerciseId, limit: 10 }).catch(() => [] as Badge[]),
       ]);
-      setExercise(data);
-      setStats(userStats);
-      setBadges(userBadges);
-      setCanEdit(createdIds.includes(exerciseId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.loadingError);
-    } finally {
-      setLoading(false);
-    }
-  }, [exerciseId, t]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
+      return { exercise, stats, badges, canEdit: createdIds.includes(exerciseId) };
+    },
+    { staleMs: 0 },
   );
+  const exercise: ExerciseDetail | null = data?.exercise ?? null;
+  const stats: ExerciseStats | null = data?.stats ?? null;
+  const badges: Badge[] = data?.badges ?? [];
+  const canEdit = data?.canEdit ?? false;
+  const [compareVisible, setCompareVisible] = useState(false);
+
+
 
   const muscle = (key: string) => t.muscleNames[key] ?? key.replace(/_/g, " ");
   const mapData = useMemo<MuscleValue[]>(() => {
@@ -129,10 +119,13 @@ export default function ExerciseDetailScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton rows={3} /></View>
       ) : error || !exercise ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.noExerciseFound}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.noExerciseFound}
+            onRetry={reload}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}
@@ -260,14 +253,11 @@ export default function ExerciseDetailScreen() {
                 </View>
               </View>
             ) : (
-              <View className="items-center gap-2 rounded-tile bg-raised p-6">
-                <Ionicons name="stats-chart-outline" size={26} color={WorkoutTheme.text.tertiary} />
-                <Text className="text-center text-sm text-ink-muted">
-                  {t.noExerciseStats}
-                </Text>
-              </View>
+              <EmptyState plain icon="stats-chart-outline" title={t.noExerciseStats} />
             )}
           </Card>
+
+          {hasStats && exerciseId ? <ProgressionCard exerciseId={exerciseId} /> : null}
 
           {badges.length > 0 ? (
             <Card className="gap-4">

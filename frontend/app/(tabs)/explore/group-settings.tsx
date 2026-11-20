@@ -1,21 +1,22 @@
 import React, { useCallback, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { GroupsService, type GroupDetail, type GroupUser } from "@/services/groups.service";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import IconButton from "@/components/ui/IconButton";
 import GroupIcon from "@/components/groups/GroupIcon";
 import Avatar from "@/components/ui/Avatar";
 import { TextField } from "@/components/ui/FormField";
+import { UserListSkeleton } from "@/components/ui/skeletons";
 
 /** Gestion d'un groupe : nom, membres, invitations, départ et suppression. */
 export default function GroupSettingsScreen() {
@@ -124,10 +125,16 @@ export default function GroupSettingsScreen() {
       <ScreenHeader floating title="" />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><UserListSkeleton count={6} /></View>
       ) : error || !group ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.loadingError}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.loadingError}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}

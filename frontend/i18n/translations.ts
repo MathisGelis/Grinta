@@ -446,6 +446,10 @@ export interface Strings extends V3Strings, V4Strings {
   recoveryOverdue: string;
   daysAgoShort: string;
   noStatsYet: string;
+  helpMuscleDistribution: string;
+  helpTrainingBalance: string;
+  helpConsistency: string;
+  helpMuscleRecovery: string;
   lastPerformanceLabel: string;
   personalRecordLabel: string;
   editExercise: string;
@@ -470,7 +474,7 @@ export interface Strings extends V3Strings, V4Strings {
   premiumNote: string;
 }
 
-const en: BaseStrings = {
+const en = (): BaseStrings => ({
   hello: "Hello",
   goodMorning: "Good morning",
   goodAfternoon: "Good afternoon",
@@ -976,6 +980,10 @@ const en: BaseStrings = {
   recoveryOverdue: "Overdue",
   daysAgoShort: "{n}d ago",
   noStatsYet: "No stats yet",
+  helpMuscleDistribution: "Share of your training volume going to each muscle group over the period.",
+  helpTrainingBalance: "Compares pushing exercises (chest, shoulders, triceps) with pulling ones (back, biceps), and upper with lower body. A balanced mix lowers injury risk.",
+  helpConsistency: "How regularly you train: current and longest streak, and workouts per week.",
+  helpMuscleRecovery: "Shows whether each muscle has had enough rest since it was last trained: recovering, ready or overdue.",
   lastPerformanceLabel: "Last",
   personalRecordLabel: "Record",
   editExercise: "Edit exercise",
@@ -998,9 +1006,9 @@ const en: BaseStrings = {
   reportReasonOther: "Other",
   premiumCta: "Go Premium",
   premiumNote: "Subscriptions will be available soon. Nothing is charged for now.",
-};
+});
 
-const fr: BaseStrings = {
+const fr = (): BaseStrings => ({
   hello: "Bonjour",
   goodMorning: "Bonne matinée",
   goodAfternoon: "Bon après-midi",
@@ -1506,6 +1514,10 @@ const fr: BaseStrings = {
   recoveryOverdue: "En retard",
   daysAgoShort: "il y a {n} j",
   noStatsYet: "Aucune statistique",
+  helpMuscleDistribution: "Part de ton volume d'entraînement consacrée à chaque groupe musculaire sur la période.",
+  helpTrainingBalance: "Compare les exercices de poussée (pecs, épaules, triceps) à ceux de tirage (dos, biceps), et le haut du corps au bas. Un bon équilibre réduit le risque de blessure.",
+  helpConsistency: "Ta régularité : série de jours en cours, plus longue série et séances par semaine.",
+  helpMuscleRecovery: "Indique si chaque muscle a eu assez de repos depuis sa dernière séance : en récupération, prêt ou à retravailler.",
   lastPerformanceLabel: "Dernier",
   personalRecordLabel: "Record",
   editExercise: "Modifier l'exercice",
@@ -1528,9 +1540,9 @@ const fr: BaseStrings = {
   reportReasonOther: "Autre",
   premiumCta: "Passer à Premium",
   premiumNote: "Les abonnements arriveront bientôt. Rien n'est facturé pour le moment.",
-};
+});
 
-const es: BaseStrings = {
+const es = (): BaseStrings => ({
   hello: "Hola",
   goodMorning: "Buenos días",
   goodAfternoon: "Buenas tardes",
@@ -1884,8 +1896,8 @@ const es: BaseStrings = {
   nextWeek: "Semana siguiente",
   prevMonth: "Mes anterior",
   nextMonth: "Mes siguiente",
-  setsCount: "{n} series",
-  exercisesCount: "{n} ejercicios",
+  setsCount: "{n} serie|{n} series",
+  exercisesCount: "{n} ejercicio|{n} ejercicios",
   equipmentNames: {
     barbell: "Barra",
     dumbbell: "Mancuernas",
@@ -1950,10 +1962,10 @@ const es: BaseStrings = {
   editLabel: "Editar",
   requestsLabel: "Solicitudes",
   postedOn: "Publicado el {date}",
-  daysCount: "{n} día(s)",
-  workoutsCountLabel: "{n} entrenamiento(s)",
+  daysCount: "{n} día|{n} días",
+  workoutsCountLabel: "{n} entrenamiento|{n} entrenamientos",
   dayN: "Día {n}",
-  commentsCount: "{n} comentario(s)",
+  commentsCount: "{n} comentario|{n} comentarios",
   apiUnreachable: "No se pudo contactar con el servidor",
   serverError: "Error del servidor",
   cannotUploadPhoto: "No se pudo enviar la foto",
@@ -2036,6 +2048,10 @@ const es: BaseStrings = {
   recoveryOverdue: "Atrasado",
   daysAgoShort: "hace {n} d",
   noStatsYet: "Aún no hay estadísticas",
+  helpMuscleDistribution: "Parte de tu volumen de entrenamiento dedicada a cada grupo muscular en el periodo.",
+  helpTrainingBalance: "Compara los ejercicios de empuje (pecho, hombros, tríceps) con los de tirón (espalda, bíceps), y la parte superior con la inferior. Un buen equilibrio reduce el riesgo de lesión.",
+  helpConsistency: "Tu regularidad: racha actual, racha más larga y entrenamientos por semana.",
+  helpMuscleRecovery: "Indica si cada músculo ha descansado lo suficiente desde su último entrenamiento: recuperándose, listo o pendiente.",
   lastPerformanceLabel: "Último",
   personalRecordLabel: "Récord",
   editExercise: "Editar ejercicio",
@@ -2058,9 +2074,9 @@ const es: BaseStrings = {
   reportReasonOther: "Otro",
   premiumCta: "Hazte Premium",
   premiumNote: "Las suscripciones llegarán pronto. De momento no se cobra nada.",
-};
+});
 
-const de: BaseStrings = {
+const de = (): BaseStrings => ({
   hello: "Hallo",
   goodMorning: "Guten Morgen",
   goodAfternoon: "Guten Tag",
@@ -2414,8 +2430,8 @@ const de: BaseStrings = {
   nextWeek: "Nächste Woche",
   prevMonth: "Vorheriger Monat",
   nextMonth: "Nächster Monat",
-  setsCount: "{n} Sätze",
-  exercisesCount: "{n} Übungen",
+  setsCount: "{n} Satz|{n} Sätze",
+  exercisesCount: "{n} Übung|{n} Übungen",
   equipmentNames: {
     barbell: "Langhantel",
     dumbbell: "Kurzhanteln",
@@ -2480,10 +2496,10 @@ const de: BaseStrings = {
   editLabel: "Bearbeiten",
   requestsLabel: "Anfragen",
   postedOn: "Veröffentlicht am {date}",
-  daysCount: "{n} Tag(e)",
-  workoutsCountLabel: "{n} Workout(s)",
+  daysCount: "{n} Tag|{n} Tage",
+  workoutsCountLabel: "{n} Workout|{n} Workouts",
   dayN: "Tag {n}",
-  commentsCount: "{n} Kommentar(e)",
+  commentsCount: "{n} Kommentar|{n} Kommentare",
   apiUnreachable: "Server nicht erreichbar",
   serverError: "Serverfehler",
   cannotUploadPhoto: "Foto konnte nicht gesendet werden",
@@ -2566,6 +2582,10 @@ const de: BaseStrings = {
   recoveryOverdue: "Überfällig",
   daysAgoShort: "vor {n} T.",
   noStatsYet: "Noch keine Statistiken",
+  helpMuscleDistribution: "Anteil deines Trainingsvolumens pro Muskelgruppe im Zeitraum.",
+  helpTrainingBalance: "Vergleicht Druckübungen (Brust, Schultern, Trizeps) mit Zugübungen (Rücken, Bizeps) sowie Ober- und Unterkörper. Ein ausgewogenes Verhältnis senkt das Verletzungsrisiko.",
+  helpConsistency: "Wie regelmäßig du trainierst: aktuelle und längste Serie sowie Workouts pro Woche.",
+  helpMuscleRecovery: "Zeigt, ob jeder Muskel seit dem letzten Training genug Pause hatte: in Erholung, bereit oder überfällig.",
   lastPerformanceLabel: "Zuletzt",
   personalRecordLabel: "Rekord",
   editExercise: "Übung bearbeiten",
@@ -2588,9 +2608,9 @@ const de: BaseStrings = {
   reportReasonOther: "Sonstiges",
   premiumCta: "Premium werden",
   premiumNote: "Abos folgen bald. Aktuell wird nichts berechnet.",
-};
+});
 
-const it: BaseStrings = {
+const it = (): BaseStrings => ({
   hello: "Ciao",
   goodMorning: "Buongiorno",
   goodAfternoon: "Buon pomeriggio",
@@ -2944,8 +2964,8 @@ const it: BaseStrings = {
   nextWeek: "Settimana successiva",
   prevMonth: "Mese precedente",
   nextMonth: "Mese successivo",
-  setsCount: "{n} serie",
-  exercisesCount: "{n} esercizi",
+  setsCount: "{n} serie|{n} serie",
+  exercisesCount: "{n} esercizio|{n} esercizi",
   equipmentNames: {
     barbell: "Bilanciere",
     dumbbell: "Manubri",
@@ -3010,10 +3030,10 @@ const it: BaseStrings = {
   editLabel: "Modifica",
   requestsLabel: "Richieste",
   postedOn: "Pubblicato il {date}",
-  daysCount: "{n} giorno/i",
-  workoutsCountLabel: "{n} allenamento/i",
+  daysCount: "{n} giorno|{n} giorni",
+  workoutsCountLabel: "{n} allenamento|{n} allenamenti",
   dayN: "Giorno {n}",
-  commentsCount: "{n} commento/i",
+  commentsCount: "{n} commento|{n} commenti",
   apiUnreachable: "Impossibile raggiungere il server",
   serverError: "Errore del server",
   cannotUploadPhoto: "Impossibile inviare la foto",
@@ -3096,6 +3116,10 @@ const it: BaseStrings = {
   recoveryOverdue: "In ritardo",
   daysAgoShort: "{n} g fa",
   noStatsYet: "Ancora nessuna statistica",
+  helpMuscleDistribution: "Quota del tuo volume di allenamento dedicata a ogni gruppo muscolare nel periodo.",
+  helpTrainingBalance: "Confronta gli esercizi di spinta (petto, spalle, tricipiti) con quelli di trazione (schiena, bicipiti) e la parte alta con la bassa. Un buon equilibrio riduce il rischio di infortuni.",
+  helpConsistency: "La tua regolarità: serie attuale, serie più lunga e allenamenti a settimana.",
+  helpMuscleRecovery: "Indica se ogni muscolo ha riposato abbastanza dall'ultimo allenamento: in recupero, pronto o da riallenare.",
   lastPerformanceLabel: "Ultimo",
   personalRecordLabel: "Record",
   editExercise: "Modifica esercizio",
@@ -3118,9 +3142,9 @@ const it: BaseStrings = {
   reportReasonOther: "Altro",
   premiumCta: "Passa a Premium",
   premiumNote: "Gli abbonamenti arriveranno presto. Per ora non viene addebitato nulla.",
-};
+});
 
-const pt: BaseStrings = {
+const pt = (): BaseStrings => ({
   hello: "Olá",
   goodMorning: "Bom dia",
   goodAfternoon: "Boa tarde",
@@ -3474,8 +3498,8 @@ const pt: BaseStrings = {
   nextWeek: "Semana seguinte",
   prevMonth: "Mês anterior",
   nextMonth: "Mês seguinte",
-  setsCount: "{n} séries",
-  exercisesCount: "{n} exercícios",
+  setsCount: "{n} série|{n} séries",
+  exercisesCount: "{n} exercício|{n} exercícios",
   equipmentNames: {
     barbell: "Barra",
     dumbbell: "Halteres",
@@ -3540,10 +3564,10 @@ const pt: BaseStrings = {
   editLabel: "Editar",
   requestsLabel: "Pedidos",
   postedOn: "Publicado em {date}",
-  daysCount: "{n} dia(s)",
-  workoutsCountLabel: "{n} treino(s)",
+  daysCount: "{n} dia|{n} dias",
+  workoutsCountLabel: "{n} treino|{n} treinos",
   dayN: "Dia {n}",
-  commentsCount: "{n} comentário(s)",
+  commentsCount: "{n} comentário|{n} comentários",
   apiUnreachable: "Não foi possível contactar o servidor",
   serverError: "Erro do servidor",
   cannotUploadPhoto: "Não foi possível enviar a foto",
@@ -3626,6 +3650,10 @@ const pt: BaseStrings = {
   recoveryOverdue: "Atrasado",
   daysAgoShort: "há {n} d",
   noStatsYet: "Ainda sem estatísticas",
+  helpMuscleDistribution: "Parte do seu volume de treino dedicada a cada grupo muscular no período.",
+  helpTrainingBalance: "Compara os exercícios de empurrar (peito, ombros, tríceps) com os de puxar (costas, bíceps), e a parte superior com a inferior. Um bom equilíbrio reduz o risco de lesão.",
+  helpConsistency: "A sua regularidade: sequência atual, maior sequência e treinos por semana.",
+  helpMuscleRecovery: "Indica se cada músculo descansou o suficiente desde o último treino: em recuperação, pronto ou atrasado.",
   lastPerformanceLabel: "Último",
   personalRecordLabel: "Recorde",
   editExercise: "Editar exercício",
@@ -3648,9 +3676,9 @@ const pt: BaseStrings = {
   reportReasonOther: "Outro",
   premiumCta: "Subscrever Premium",
   premiumNote: "As subscrições chegarão em breve. Por agora, nada é cobrado.",
-};
+});
 
-const ru: BaseStrings = {
+const ru = (): BaseStrings => ({
   hello: "Привет",
   goodMorning: "Доброе утро",
   goodAfternoon: "Добрый день",
@@ -4156,6 +4184,10 @@ const ru: BaseStrings = {
   recoveryOverdue: "Просрочено",
   daysAgoShort: "{n} дн. назад",
   noStatsYet: "Статистики пока нет",
+  helpMuscleDistribution: "Доля твоего тренировочного объёма на каждую группу мышц за период.",
+  helpTrainingBalance: "Сравнивает жимовые упражнения (грудь, плечи, трицепс) с тяговыми (спина, бицепс) и верх тела с низом. Баланс снижает риск травм.",
+  helpConsistency: "Твоя регулярность: текущая и самая длинная серия, тренировки в неделю.",
+  helpMuscleRecovery: "Показывает, достаточно ли отдыхала каждая мышца после последней тренировки: восстанавливается, готова или давно не работала.",
   lastPerformanceLabel: "Прошлый",
   personalRecordLabel: "Рекорд",
   editExercise: "Изменить упражнение",
@@ -4178,9 +4210,9 @@ const ru: BaseStrings = {
   reportReasonOther: "Другое",
   premiumCta: "Перейти на Premium",
   premiumNote: "Подписки скоро появятся. Пока ничего не списывается.",
-};
+});
 
-const zh: BaseStrings = {
+const zh = (): BaseStrings => ({
   hello: "你好",
   goodMorning: "早上好",
   goodAfternoon: "下午好",
@@ -4686,6 +4718,10 @@ const zh: BaseStrings = {
   recoveryOverdue: "已过久",
   daysAgoShort: "{n}天前",
   noStatsYet: "暂无统计",
+  helpMuscleDistribution: "本期训练量在各肌群上的占比。",
+  helpTrainingBalance: "比较推类动作（胸、肩、三头肌）与拉类动作（背、二头肌），以及上肢与下肢。均衡的训练可降低受伤风险。",
+  helpConsistency: "你的训练规律：当前连续天数、最长连续天数和每周训练次数。",
+  helpMuscleRecovery: "显示每个肌群自上次训练后是否得到足够休息：恢复中、可训练或已久未训练。",
   lastPerformanceLabel: "上次",
   personalRecordLabel: "纪录",
   editExercise: "编辑动作",
@@ -4708,9 +4744,9 @@ const zh: BaseStrings = {
   reportReasonOther: "其他",
   premiumCta: "升级到 Premium",
   premiumNote: "订阅即将上线。目前不会收取任何费用。",
-};
+});
 
-const ja: BaseStrings = {
+const ja = (): BaseStrings => ({
   hello: "こんにちは",
   goodMorning: "おはようございます",
   goodAfternoon: "こんにちは",
@@ -5216,6 +5252,10 @@ const ja: BaseStrings = {
   recoveryOverdue: "間隔超過",
   daysAgoShort: "{n}日前",
   noStatsYet: "統計はまだありません",
+  helpMuscleDistribution: "この期間のトレーニング量が各筋群にどれだけ配分されたか。",
+  helpTrainingBalance: "押す種目（胸・肩・上腕三頭筋）と引く種目（背中・上腕二頭筋）、上半身と下半身を比較します。バランスが良いとケガのリスクが下がります。",
+  helpConsistency: "トレーニングの継続性：現在と最長の連続日数、週あたりの回数。",
+  helpMuscleRecovery: "最後に鍛えてから各筋肉が十分休めたかを示します：回復中、準備OK、久しぶり。",
   lastPerformanceLabel: "前回",
   personalRecordLabel: "自己ベスト",
   editExercise: "種目を編集",
@@ -5238,9 +5278,9 @@ const ja: BaseStrings = {
   reportReasonOther: "その他",
   premiumCta: "Premiumにアップグレード",
   premiumNote: "サブスクリプションは近日公開予定です。現時点で課金はありません。",
-};
+});
 
-const ko: BaseStrings = {
+const ko = (): BaseStrings => ({
   hello: "안녕하세요",
   goodMorning: "좋은 아침이에요",
   goodAfternoon: "좋은 오후예요",
@@ -5746,6 +5786,10 @@ const ko: BaseStrings = {
   recoveryOverdue: "오래됨",
   daysAgoShort: "{n}일 전",
   noStatsYet: "아직 통계 없음",
+  helpMuscleDistribution: "이 기간 동안 각 근육군에 쓴 운동량의 비율입니다.",
+  helpTrainingBalance: "미는 운동(가슴, 어깨, 삼두)과 당기는 운동(등, 이두), 상체와 하체를 비교합니다. 균형이 좋으면 부상 위험이 줄어듭니다.",
+  helpConsistency: "운동 꾸준함: 현재와 최장 연속 일수, 주당 운동 횟수입니다.",
+  helpMuscleRecovery: "마지막 운동 이후 각 근육이 충분히 쉬었는지 보여줍니다: 회복 중, 준비됨, 오래 쉼.",
   lastPerformanceLabel: "지난 기록",
   personalRecordLabel: "최고 기록",
   editExercise: "운동 수정",
@@ -5768,7 +5812,7 @@ const ko: BaseStrings = {
   reportReasonOther: "기타",
   premiumCta: "Premium 시작하기",
   premiumNote: "구독은 곧 제공됩니다. 현재는 어떤 요금도 청구되지 않습니다.",
-};
+});
 
 type BaseStrings = Omit<Strings, keyof V3Strings | keyof V4Strings>;
 
@@ -5782,11 +5826,24 @@ export function format(
   return chosen.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
 }
 
-const base: Record<Lang, BaseStrings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };
+/** Chaque langue est construite à la demande : seules celles utilisées occupent de la mémoire. */
+const base: Record<Lang, () => BaseStrings> = { en, fr, es, de, it, pt, ru, zh, ja, ko };
 
-export const translations = Object.fromEntries(
-  (Object.keys(base) as Lang[]).map((lang) => [lang, { ...base[lang], ...v3Strings(lang), ...v4Strings(lang) }]),
-) as Record<Lang, Strings>;
+const built: Partial<Record<Lang, Strings>> = {};
+
+function build(lang: Lang): Strings {
+  return (built[lang] ??= { ...base[lang](), ...v3Strings(lang), ...v4Strings(lang) });
+}
+
+export const translations = new Proxy({} as Record<Lang, Strings>, {
+  get: (_, lang) => (typeof lang === "string" && lang in base ? build(lang as Lang) : undefined),
+  has: (_, lang) => typeof lang === "string" && lang in base,
+  ownKeys: () => Object.keys(base),
+  getOwnPropertyDescriptor: (_, lang) =>
+    typeof lang === "string" && lang in base
+      ? { enumerable: true, configurable: true, value: build(lang as Lang) }
+      : undefined,
+});
 
 export const LANGUAGE_OPTIONS: { code: Lang; label: string; nativeLabel: string }[] = [
   { code: "en", label: "English", nativeLabel: "English" },

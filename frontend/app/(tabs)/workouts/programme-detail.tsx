@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TokenService } from "@/services/token.service";
@@ -9,6 +9,7 @@ import {
 } from "@/services/workouts.service";
 import {
   getTodayProgramme,
+  endActiveProgramme,
   getProgrammeById,
   updateProgramme,
   deleteProgramme,
@@ -18,22 +19,23 @@ import {
 } from "@/services/programms.service";
 import { localDate } from "@/utils/date";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
-import { WorkoutTheme } from "@/constants/Colors";
 import IconButton from "@/components/ui/IconButton";
 import StartDateSheet from "@/components/workout/programmes/StartDateSheet";
 import WorkoutActionMenu from "@/components/workout/card/WorkoutActionMenu";
+import ErrorState from "@/components/ui/ErrorState";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { difficultyLabel } from "@/i18n/labels";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import { toast } from "@/components/ui/Toast";
 
 /**
  * Planification à une date future désactivée pour l'instant (le programme en cours serait remplacé
  * immédiatement). Passer à `true` pour rétablir le calendrier de choix de la date de début.
  */
-const START_DATE_PICKER_ENABLED = false;
 
 export default function ProgrammeDetailScreen() {
   const { t } = useTranslation();
@@ -44,6 +46,7 @@ export default function ProgrammeDetailScreen() {
   const [availableWorkouts, setAvailableWorkouts] = useState<PlannedWorkout[]>([]);
   const [days, setDays] = useState<ProgrammeDay[]>([]);
   const [currentDay, setCurrentDay] = useState<number | undefined>();
+  const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -71,6 +74,7 @@ export default function ProgrammeDetailScreen() {
       setDays(loadedDays);
       savedDays.current = daysKey(loadedDays);
       setAvailableWorkouts(workouts);
+      setIsActive(today?.programme.id === programmeId);
       setCurrentDay(
         today?.programme.id === programmeId ? today.dayNumber : undefined,
       );
@@ -95,6 +99,11 @@ export default function ProgrammeDetailScreen() {
       setEditing(false);
       return;
     }
+    // Un programme ne peut pas n'être fait que de jours de repos (B-22).
+    if (!days.some((day) => day.workout)) {
+      Alert.alert(t.error, t.apiErrors.PROGRAMME_NEEDS_WORKOUT);
+      return;
+    }
     try {
       setSaving(true);
       await updateProgramme(programmeId, {
@@ -110,7 +119,7 @@ export default function ProgrammeDetailScreen() {
       });
       savedDays.current = daysKey(days);
       setEditing(false);
-      Alert.alert(t.success, t.programmeUpdated);
+      toast.success(t.programmeUpdated);
     } catch (err) {
       Alert.alert(t.error, err instanceof Error ? err.message : t.cannotSaveProfile);
     } finally {
@@ -118,12 +127,13 @@ export default function ProgrammeDetailScreen() {
     }
   }, [t, days, programme, programmeId]);
 
-  const handleStart = useCallback(async (startDate: string) => {
+  const handleStart = useCallback(async (startDate: string, startDay = 1) => {
     if (!programmeId) return;
     try {
       setStarting(true);
-      const started = await startProgramme(programmeId, startDate);
+      const started = await startProgramme(programmeId, startDate, startDay);
       setPickingDate(false);
+      setIsActive(true);
       // Début dans le futur : aucun jour n'est « aujourd'hui » pour l'instant.
       setCurrentDay(startDate === localDate() ? started.dayNumber : undefined);
       Alert.alert(t.prgStarted, t.prgStartedMessage);
@@ -133,6 +143,26 @@ export default function ProgrammeDetailScreen() {
       setStarting(false);
     }
   }, [t, programmeId]);
+
+  const handleEnd = useCallback(() => {
+    Alert.alert(t.prgEnd, t.prgEndMessage, [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.prgEnd,
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await endActiveProgramme();
+            setIsActive(false);
+            setCurrentDay(undefined);
+            toast.success(t.prgEnded);
+          } catch (err) {
+            Alert.alert(t.error, err instanceof Error ? err.message : t.genericError);
+          }
+        },
+      },
+    ]);
+  }, [t]);
 
   const handleCancelEdit = useCallback(() => {
     if (saving) return;
@@ -189,10 +219,16 @@ export default function ProgrammeDetailScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: headerHeight }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton /></View>
       ) : error || !programme ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.noProgrammeFound}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.noProgrammeFound}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ProgrammeDayEditor
@@ -238,8 +274,9 @@ export default function ProgrammeDetailScreen() {
       )}
 
       <StartDateSheet
-        visible={START_DATE_PICKER_ENABLED && pickingDate}
+        visible={pickingDate}
         loading={starting}
+        dayCount={days.length}
         onClose={() => setPickingDate(false)}
         onConfirm={handleStart}
       />
@@ -248,7 +285,8 @@ export default function ProgrammeDetailScreen() {
         <WorkoutActionMenu
           onClose={() => setMenuOpen(false)}
           items={[
-            { icon: "play-outline", label: t.prgStart, onPress: () => (START_DATE_PICKER_ENABLED ? setPickingDate(true) : handleStart(localDate())) },
+            { icon: "play-outline", label: t.prgStart, onPress: () => setPickingDate(true) },
+            ...(isActive ? [{ icon: "stop-circle-outline" as const, label: t.prgEnd, onPress: handleEnd }] : []),
             { icon: "create-outline", label: t.editLabel, onPress: () => setEditing(true) },
             { icon: "trash-outline", label: t.delete, danger: true, onPress: handleDelete },
           ]}

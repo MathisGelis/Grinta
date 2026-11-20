@@ -7,7 +7,6 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { LOCALES } from "@/i18n/labels";
 import { format } from "@/i18n/translations";
 import {
   CompletedWorkoutDetail,
@@ -25,9 +24,10 @@ import ScreenBackground from "@/components/ui/ScreenBackground";
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import PressableScale from "@/components/ui/PressableScale";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Stat from "@/components/ui/Stat";
 import IconButton from "@/components/ui/IconButton";
 import { FormField, TextField } from "@/components/ui/FormField";
@@ -41,12 +41,13 @@ import { duplicateWorkoutFromCompleted } from "@/services/workouts.service";
 import RealLifeValue from "@/components/ui/RealLifeValue";
 import { realLifeText } from "@/utils/realLife";
 import ShareCardSheet, { type ShareCardData } from "@/components/share/ShareCardSheet";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import { formatDate } from "@/utils/formatDate";
+import { queryCache } from "@/services/queryCache";
+import { formatDuration } from "@/utils/formatDuration";
+import { MAX_EXERCISES } from "@/utils/sanitizeWorkout";
+import { toast } from "@/components/ui/Toast";
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.round((seconds % 3600) / 60);
-  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m} min`;
-}
 
 export default function CompletedWorkoutDetailScreen() {
   const { t, lang } = useTranslation();
@@ -191,6 +192,7 @@ export default function CompletedWorkoutDetailScreen() {
           entry.timerSeconds,
         ]),
       );
+      queryCache.invalidate("stats", "records", "profile");
       const saved = await WorkoutService.updateCompleted(workout.id, {
         title: draftTitle.trim(),
         description: draftDescription,
@@ -207,6 +209,7 @@ export default function CompletedWorkoutDetailScreen() {
       try {
         if (typeof draftPhoto === "string") {
           await PhotoService.uploadWorkoutPhoto(workout.id, draftPhoto);
+          queryCache.invalidate("stats", "profile");
         } else if (draftPhoto === null && workout.photoUrl) {
           await PhotoService.removeWorkoutPhoto(workout.id);
         }
@@ -300,14 +303,18 @@ export default function CompletedWorkoutDetailScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          style={{ marginTop: headerHeight }}
-          color={WorkoutTheme.accent.purple}
-        />
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <DetailSkeleton />
+        </View>
       ) : error || !workout ? (
-        <View className="items-center px-5" style={{ paddingTop: headerHeight }}>
-          <Text className="text-danger">{error ?? t.loadingError}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.loadingError}
+            onRetry={() => {
+              setLoading(true);
+              load();
+            }}
+          />
         </View>
       ) : (
         <ScrollView {...chromeScrollProps}
@@ -372,6 +379,11 @@ export default function CompletedWorkoutDetailScreen() {
                 visible={addVisible}
                 onClose={() => setAddVisible(false)}
                 onSelectExercise={(exercise) => {
+                  if (draftExercises.length >= MAX_EXERCISES) {
+                    toast.info(t.maxExercisesReached);
+                    setAddVisible(false);
+                    return;
+                  }
                   setDraftExercises((prev) => [
                     ...prev,
                     {
@@ -424,14 +436,7 @@ export default function CompletedWorkoutDetailScreen() {
                     size="md"
                     label={t.completedLabel}
                     labelPosition="top"
-                    value={new Date(workout.completionDate).toLocaleDateString(
-                      LOCALES[lang],
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      },
-                    )}
+                    value={formatDate(workout.completionDate, lang)}
                     className="flex-1"
                   />
                   <Stat

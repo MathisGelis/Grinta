@@ -26,6 +26,8 @@ import {
   difficultyLabel,
   locationLabel,
 } from "@/i18n/labels";
+import { toast } from "@/components/ui/Toast";
+import { LIMITS } from "@/utils/validation";
 export default function CreateProgrammScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -87,6 +89,11 @@ export default function CreateProgrammScreen() {
       Alert.alert(t.error, t.addAtLeastOneDay);
       return;
     }
+    // Un programme ne peut pas n'être fait que de jours de repos (B-22).
+    if (!days.some((day) => day.workout)) {
+      Alert.alert(t.error, t.apiErrors.PROGRAMME_NEEDS_WORKOUT);
+      return;
+    }
 
     setLoading(true);
 
@@ -103,9 +110,8 @@ export default function CreateProgrammScreen() {
         })),
       });
 
-      Alert.alert(t.success, t.programmeCreated, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.programmeCreated);
+      router.back();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t.creationError;
@@ -152,6 +158,7 @@ export default function CreateProgrammScreen() {
           label={t.titleLabel}
           required
           value={title}
+          maxLength={LIMITS.title}
           onChangeText={setTitle}
           placeholder={t.programmeTitlePlaceholder}
         />
@@ -160,6 +167,7 @@ export default function CreateProgrammScreen() {
           label={t.descriptionLabel}
           multiline
           value={description}
+          maxLength={LIMITS.description}
           onChangeText={setDescription}
           placeholder={t.programmeDescPlaceholder}
         />

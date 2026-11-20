@@ -7,6 +7,7 @@ import Screen from "@/components/ui/Screen";
 import Button from "@/components/ui/Button";
 import { FormField, TextField } from "@/components/ui/FormField";
 import { AuthService } from "@/services/auth.service";
+import { ApiError } from "@/services/api";
 import { isValidEmail } from "@/utils/validation";
 import { useTranslation } from "@/contexts/LanguageContext";
 
@@ -16,11 +17,13 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const submit = async () => {
     setError("");
+    setEmailError("");
     if (!isValidEmail(email)) {
-      setError(t.invalidEmail);
+      setEmailError(t.invalidEmail);
       return;
     }
     try {
@@ -28,7 +31,9 @@ export default function ForgotPasswordScreen() {
       await AuthService.forgotPassword(email);
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.genericError);
+      const serverEmail = err instanceof ApiError ? err.fieldErrors?.email : undefined;
+      if (serverEmail) setEmailError(serverEmail);
+      else setError(err instanceof Error ? err.message : t.genericError);
     } finally {
       setLoading(false);
     }
@@ -40,7 +45,7 @@ export default function ForgotPasswordScreen() {
       <ScreenHeader title={t.forgotTitle} />
       <Screen topInset={false} tabBar={false} keyboardShouldPersistTaps="handled">
         <Text className="text-sm text-ink-muted">{t.forgotIntro}</Text>
-        <FormField label={t.email}>
+        <FormField label={t.email} error={emailError}>
           <TextField
             icon="mail-outline"
             placeholder={t.emailPlaceholder}

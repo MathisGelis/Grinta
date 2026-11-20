@@ -53,6 +53,8 @@ export interface Post {
   workoutCompletionDate?: string,
   workoutPhotoUrl?: string | null,
   workoutPhotoThumbnailUrl?: string | null,
+  /** Nombre d'exercices (flux et `/posts/mine`). */
+  totalExercises?: number,
   partners?: PostPartner[],
   exercises?: FeedExercise[],
   stats?: FeedStats,
@@ -191,11 +193,11 @@ export const PostsService = {
   },
 
   async getPublishedWorkoutMap(): Promise<Record<string, string>> {
-    const posts = await PostsService.getMyPosts();
+    // Route légère : seulement { postId, workoutId } (1000 au plus).
+    const token = await TokenService.get();
+    const rows = await api.get<{ postId: string; workoutId: string }[]>("/posts/mine/ids", token ?? undefined);
     const map: Record<string, string> = {};
-    for (const post of posts) {
-      if (post.workoutId) map[post.workoutId] = post.id;
-    }
+    for (const row of rows) map[row.workoutId] = row.postId;
     return map;
   },
 };

@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { UserService, CurrentUser } from "@/services/user.service";
 import { saveItem } from "@/core/services/storage";
 import { PhotoService, pickImage } from "@/services/photo.service";
 import { LIMITS, isValidUniqueName, sanitizeUniqueName } from "@/utils/validation";
+import { ApiError } from "@/services/api";
 import Avatar from "@/components/ui/Avatar";
 
 import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { FormSkeleton } from "@/components/ui/skeletons";
+import { toast } from "@/components/ui/Toast";
+import { queryCache } from "@/services/queryCache";
+import { format } from "@/i18n/translations";
 export default function EditProfileScreen() {
   const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
@@ -24,6 +29,7 @@ export default function EditProfileScreen() {
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"displayName" | "uniqueName", string>>>({});
 
   useEffect(() => {
     UserService.getMe()
@@ -39,24 +45,22 @@ export default function EditProfileScreen() {
   }, [t]);
 
   const handleSave = async () => {
-    if (!displayName.trim()) {
-      Alert.alert(t.error, t.nameEmptyError);
-      return;
-    }
     if (!user) return;
+    const errors: typeof fieldErrors = {};
+    if (!displayName.trim()) errors.displayName = t.nameEmptyError;
     // Un ancien pseudo non conforme reste valable tant qu'il n'est pas modifié.
     const uniqueNameChanged = uniqueName.trim() !== user.uniqueName;
     if (uniqueNameChanged && !isValidUniqueName(uniqueName)) {
-      Alert.alert(t.error, uniqueName.trim().length < LIMITS.uniqueNameMin ? t.usernameTooShort : t.usernameInvalid);
-      return;
+      errors.uniqueName = uniqueName.trim().length < LIMITS.uniqueNameMin ? t.usernameTooShort : t.usernameInvalid;
     }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     setSaving(true);
     try {
       const updates: Record<string, string> = {};
       if (displayName.trim() !== user.displayName) updates.displayName = displayName.trim();
       if (uniqueName.trim() !== user.uniqueName) updates.uniqueName = uniqueName.trim().toLowerCase();
-      if (email.trim() !== user.email) updates.email = email.trim().toLowerCase();
 
       if (Object.keys(updates).length === 0) {
         router.back();
@@ -64,12 +68,22 @@ export default function EditProfileScreen() {
       }
 
       await UserService.updateProfile(user.id, updates);
+      queryCache.invalidate("profile");
       await saveItem("user_name", displayName.trim());
-      Alert.alert(t.success, t.profileUpdatedMsg, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.profileUpdatedMsg);
+      router.back();
     } catch (err: any) {
-      Alert.alert(t.error, err.message || t.cannotSaveProfile);
+      const server = err instanceof ApiError ? err.fieldErrors : undefined;
+      if (err instanceof ApiError && err.code === "USERNAME_TAKEN") {
+        const suggestion = typeof err.body?.suggestion === "string" ? err.body.suggestion : null;
+        setFieldErrors({
+          uniqueName: suggestion ? `${t.usernameTaken} ${format(t.usernameSuggestion, { name: suggestion })}` : t.usernameTaken,
+        });
+      } else if (server && (server.displayName || server.uniqueName)) {
+        setFieldErrors({ displayName: server.displayName, uniqueName: server.uniqueName });
+      } else {
+        Alert.alert(t.error, err.message || t.cannotSaveProfile);
+      }
     } finally {
       setSaving(false);
     }
@@ -81,6 +95,7 @@ export default function EditProfileScreen() {
       if (!uri) return;
       setPhotoBusy(true);
       const result = await PhotoService.uploadAvatar(uri);
+      queryCache.invalidate("profile");
       setAvatarUrl(result.avatarUrl);
     } catch (err: any) {
       Alert.alert(t.error, err.message || t.cannotUploadPhoto);
@@ -93,6 +108,7 @@ export default function EditProfileScreen() {
     try {
       setPhotoBusy(true);
       await PhotoService.removeAvatar();
+      queryCache.invalidate("profile");
       setAvatarUrl(null);
     } catch (err: any) {
       Alert.alert(t.error, err.message || t.cannotUploadPhoto);
@@ -109,8 +125,8 @@ export default function EditProfileScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      <View className="flex-1 px-5" style={{ paddingTop: headerHeight }}>
+        <FormSkeleton fields={6} />
       </View>
     );
   }
@@ -173,6 +189,7 @@ export default function EditProfileScreen() {
               placeholderTextColor={WorkoutTheme.text.disabled}
             />
             <View className="h-[1px] bg-raised mt-1.5" />
+            {fieldErrors.displayName ? <Text className="text-[11px] mt-1.5 text-danger">{fieldErrors.displayName}</Text> : null}
           </View>
 
           <View className="mb-7">
@@ -190,23 +207,26 @@ export default function EditProfileScreen() {
               />
             </View>
             <View className="h-[1px] bg-raised mt-1.5" />
-            <Text className={`text-[11px] mt-1.5 ${uniqueNameError ? "text-danger" : "text-ink-faint"}`}>
-              {uniqueNameError ? t.usernameInvalid : t.usernameHint}
+            <Text className={`text-[11px] mt-1.5 ${uniqueNameError || fieldErrors.uniqueName ? "text-danger" : "text-ink-faint"}`}>
+              {fieldErrors.uniqueName ?? (uniqueNameError ? t.usernameInvalid : t.usernameHint)}
             </Text>
           </View>
 
           <View className="mb-7">
             <Text className="text-accent-light text-xs mb-2.5">{t.email}</Text>
-            <TextInput
-              className="text-ink text-base py-1.5"
-              value={email}
-              maxLength={LIMITS.email}
-              onChangeText={setEmail}
-              placeholder={t.emailPlaceholder}
-              placeholderTextColor={WorkoutTheme.text.disabled}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
+            <View className="flex-row items-center justify-between gap-3 py-1.5">
+              <Text className="flex-1 text-base text-ink" numberOfLines={1}>
+                {email}
+              </Text>
+              <PressableScale
+                onPress={() => router.push("/(tabs)/profile/change-email" as any)}
+                accessibilityRole="button"
+                halo={false}
+                hitSlop={10}
+              >
+                <Text className="text-sm font-semibold text-accent-light">{t.emailChangeLink}</Text>
+              </PressableScale>
+            </View>
             <View className="h-[1px] bg-raised mt-1.5" />
           </View>
         </View>
