@@ -15,6 +15,12 @@ npm run build
 echo "→ Running database migrations..."
 npm run migration:run:prod
 
+# The migrations table only records which migrations ran, not that their
+# columns are still there. Stops here, on the previous version, if the schema
+# lacks anything the new code uses.
+echo "→ Checking the database schema..."
+npm run schema:check:prod
+
 echo "→ Restarting PM2..."
 pm2 restart grinta-api
 

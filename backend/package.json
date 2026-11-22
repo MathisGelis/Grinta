@@ -5,6 +5,9 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -19,6 +22,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node src/scripts/seed.ts",
+    "seed:prod": "node dist/scripts/seed.js",
     "photos:gc": "ts-node src/scripts/photos-gc.ts",
     "photos:setup": "ts-node src/scripts/photos-setup.ts",
     "demo:seed": "ts-node src/scripts/demo-seed.ts",
@@ -31,6 +35,8 @@
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:show": "npm run typeorm -- migration:show",
     "migration:run:prod": "typeorm migration:run -d dist/data-source.js",
+    "schema:check": "ts-node -r tsconfig-paths/register src/scripts/schema-check.ts",
+    "schema:check:prod": "node dist/scripts/schema-check.js",
     "backfill:exercise-stats": "ts-node -r tsconfig-paths/register src/scripts/backfill-exercise-stats.ts",
     "backfill:exercise-stats:prod": "node dist/scripts/backfill-exercise-stats.js"
   },
@@ -48,19 +54,22 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "compression": "^1.8.2",
+    "helmet": "^8.3.0",
+    "jose": "^5.10.0",
+    "nodemailer": "^10.6.0",
     "obscenity": "^0.4.6",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.5",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.27"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.18.0",
+    "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
@@ -72,7 +81,7 @@
     "@types/node": "^22.19.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
-    "eslint": "^9.18.0",
+    "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
@@ -105,6 +114,12 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
+    }
+  },
+  "overrides": {
+    "glob": "^14.0.6",
+    "test-exclude": {
+      "minimatch": "^11.0.5"
     }
   }
 }

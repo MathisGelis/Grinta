@@ -1,84 +1,77 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import ExerciseSetupItem, {
   ExerciseSetupData,
 } from "@/components/workout/exercises/ExerciseSetupItem";
 
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
+import EmptyState from "@/components/ui/EmptyState";
 interface ExerciseSectionProps {
   exercises: ExerciseSetupData[];
   onAdd: () => void;
+  onImport?: () => void;
   onUpdate: (updated: ExerciseSetupData) => void;
   onRemove: (id: string) => void;
+  defaultRestSeconds?: number;
 }
 
 export default function ExerciseSection({
   exercises,
   onAdd,
+  onImport,
   onUpdate,
   onRemove,
+  defaultRestSeconds,
 }: ExerciseSectionProps) {
+  const { t } = useTranslation();
   return (
-    <View className="mt-5">
-      {/* Header */}
-      <View className="flex-row justify-between items-center mb-3">
-        <Text
-          className="text-sm font-bold"
-          style={{ color: WorkoutTheme.text.primary }}
-        >
-          Exercices ({exercises.length})
+    <View className="gap-4">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-xl font-semibold text-ink">
+          {t.exercises}{" "}
+          <Text className="text-base font-normal text-ink-muted">
+            {exercises.length}
+          </Text>
         </Text>
-        <TouchableOpacity
+        <View className="flex-row items-center gap-2">
+          {onImport && (
+            <PressableScale
+              onPress={onImport}
+              accessibilityRole="button"
+              accessibilityLabel={t.chooseWorkout}
+              className="h-11 w-11 items-center justify-center rounded-full bg-raised"
+            >
+              <Ionicons name="albums-outline" size={22} color={WorkoutTheme.text.primary} />
+            </PressableScale>
+          )}
+        <PressableScale
           onPress={onAdd}
-          className="px-2.5 py-2 ml-2 items-center justify-center"
+          accessibilityRole="button"
+          accessibilityLabel={t.addExerciseTitle}
+          className="h-11 w-11 items-center justify-center rounded-full bg-accent"
         >
-          <Ionicons
-            name="add-circle"
-            size={24}
-            color={WorkoutTheme.accent.purple}
-          />
-        </TouchableOpacity>
+          <Ionicons name="add" size={24} color={WorkoutTheme.text.primary} />
+        </PressableScale>
+        </View>
       </View>
 
-      {/* Liste ou état vide */}
       {exercises.length > 0 ? (
-        <View>
+        <View className="gap-3">
           {exercises.map((exercise) => (
             <ExerciseSetupItem
               key={exercise.id}
               exercise={exercise}
               onUpdate={onUpdate}
               onRemove={() => onRemove(exercise.id)}
+              defaultRestSeconds={defaultRestSeconds}
             />
           ))}
         </View>
       ) : (
-        <View
-          className="rounded-xl py-8 items-center gap-3 border"
-          style={{
-            backgroundColor: WorkoutTheme.backgroundSecondary,
-            borderColor: WorkoutTheme.border,
-          }}
-        >
-          <Ionicons
-            name="barbell"
-            size={40}
-            color={WorkoutTheme.text.tertiary}
-          />
-          <Text
-            className="text-sm font-semibold"
-            style={{ color: WorkoutTheme.text.secondary }}
-          >
-            Aucun exercice ajouté
-          </Text>
-          <Text
-            className="text-xs"
-            style={{ color: WorkoutTheme.text.tertiary }}
-          >
-            Appuyez sur le bouton + pour ajouter un exercice
-          </Text>
-        </View>
+        <EmptyState plain icon="barbell-outline" title={t.noExercisesAdded} message={t.tapToAddExercise} />
       )}
     </View>
   );

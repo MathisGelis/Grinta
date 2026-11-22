@@ -333,6 +333,7 @@ export interface DemoData {
     exerciseId: string;
     sets: SetPair[];
     plannedRestSeconds: number;
+    position: number;
   }>;
   programmes: Array<{
     id: string;
@@ -576,7 +577,7 @@ export function generateDemoData(options: {
         description: `Routine ${template.title[0].toLowerCase()}, ${template.moves.length} exercices.`,
         createdAt: new Date(+u.createdAt + DAY),
       });
-      for (const move of template.moves)
+      template.moves.forEach((move, position) =>
         plannedExercises.push({
           id: uuid(rng),
           workoutId: id,
@@ -588,7 +589,9 @@ export function generateDemoData(options: {
               : 0,
           })),
           plannedRestSeconds: move.ratio >= 1 ? 150 : 90,
-        });
+          position,
+        }),
+      );
     }
     if (u.showcase || rng() < 0.5) {
       const programmeId = uuid(rng);

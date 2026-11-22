@@ -1,6 +1,10 @@
 # Changements du backend à intégrer dans l'app
 
-Branche backend : `claude/eloquent-franklin-77c84i`, à merger dans `backend`. Ce document liste tout ce que l'app voit changer : comportements, formats de réponse, nouvelles routes. Le détail technique côté serveur est dans `backend/CHANGELOG.md`, et tous les schémas de requête et de réponse sont dans Swagger (`GET /api` sur l'API).
+Deux livraisons backend :
+- **Sections 1 à 6** : branche `claude/eloquent-franklin-77c84i`, **déjà en production** depuis le 29 octobre.
+- **Section 7** : branche `feat/backend-v3`, **pas encore déployée**. Ses routes répondront `404` tant qu'elle ne l'est pas.
+
+Ce document liste tout ce que l'app voit changer : comportements, formats de réponse, nouvelles routes. Le détail technique côté serveur est dans `backend/CHANGELOG.md`, et tous les schémas de requête et de réponse sont dans Swagger (`GET /api` sur l'API).
 
 Ordre de lecture conseillé :
 
@@ -370,3 +374,763 @@ L'egress (données sortantes) est la ressource la plus limitée du plan gratuit 
 - [ ] Historique paginé.
 - [ ] `workout-detail.tsx` utilise le cache du catalogue.
 - [ ] Une réponse non JSON (`413` en HTML de nginx) est traitée comme une erreur générique.
+
+---
+
+## 7. Nouveautés de la branche `feat/backend-v3`
+
+Tous les détails des routes sont aussi dans Swagger (`GET /api`). Les erreurs gardent le format habituel : `{ statusCode, message: { message, ... } }`.
+
+### 7.1 Le fil populaire n'affiche plus mes propres posts
+
+`GET /posts/feed/top` exclut les posts de l'utilisateur connecté. Rien à changer côté app.
+
+### 7.2 Exercices et stats de la séance dans les fils
+
+Chaque post de `GET /posts/feed/following`, `GET /posts/feed/top`, `GET /posts/mine` et des `posts` de `GET /users/:id/profile` contient maintenant :
+
+```json
+{
+  "workoutId": "uuid",
+  "exercises": [
+    { "exerciseId": "uuid", "name": "Bench Press (Barbell)", "sets": 4, "bestSet": { "reps": 6, "weight": 85 } }
+  ],
+  "stats": { "durationSeconds": 3600, "totalVolume": 6400, "totalSets": 15, "totalReps": 120, "recordsCount": 2 }
+}
+```
+
+- `bestSet` : la série la plus lourde, et à poids égal celle avec le plus de reps. `null` pour un exercice sans série. Poids `0` = poids du corps.
+- `recordsCount` : nombre de records personnels battus pendant la séance.
+- Les séries complètes ne sont pas dans les fils : elles sont dans le détail (7.3).
+- `workoutId` est nouveau dans `feed/following`, `feed/top` et les posts du profil.
+
+### 7.3 Détail de la séance d'un post : `GET /posts/:postId/workout`
+
+C'est la route de la spec front, livrée telle quelle.
+
+- **Visibilité** : la même que `GET /posts/:postId` (l'auteur, tout le monde pour un compte public, les abonnés pour un compte privé). Sinon `404` avec le message `Post not found`.
+- **Accès** : uniquement par le post. Une séance non publiée reste inaccessible.
+- **Réponse** : `{ workoutId, totalExercises, exercises, stats }`.
+  - `exercises` a exactement le format de `GET /workouts/completed/:id`.
+  - `stats` contient `{ estimatedCalories, totalVolume, totalSets, totalReps, realLifeComparison }`.
+- **Calories** : pour un autre que l'auteur, elles sont calculées pour un poids de corps par défaut de 70 kg. Avec le poids de l'auteur, elles révéleraient son poids. L'auteur voit les mêmes calories que dans `GET /stats/workout/:id`.
+- **Point à trancher de la spec** : un post sans séance renvoie `404 Post not found`. L'API ne peut pas créer un tel post.
+- **Erreurs** : `400` avec le message `Identifiant invalide` pour un id mal formé, `401` sans token.
+- **Correction de la spec** : `GET /workouts/completed/:id` ne filtre pas sur le propriétaire. Cette lecture est ouverte par choix. La nouvelle route reste la bonne pour les posts, car elle respecte la confidentialité des comptes privés.
+
+### 7.4 Comparaisons avec la vie réelle
+
+Le champ `realLifeComparison` vaut `{ "object": "car", "count": 3.2 }` ou `null`. L'app traduit `object`. `count` vaut toujours 1 ou plus, avec une décimale.
+
+Où il apparaît :
+- `GET /stats/workout/:id` et `stats` de `GET /posts/:postId/workout` : à partir du volume total de la séance ;
+- les badges (`GET /badges`, `badges` après `POST` ou `PATCH /workouts/completed`) : seulement pour `heaviest_weight` (la charge) et `best_session_volume` (le volume). Il vaut `null` pour le 1RM estimé (jamais réellement soulevé) et pour les reps.
+
+Il vaut aussi `null` sous 7 kg.
+
+Clés à traduire, avec leur poids de référence :
+
+| Clé | Poids | Clé | Poids |
+| --- | --- | --- | --- |
+| `bowling_ball` | 7 kg | `car` | 1,5 t |
+| `golden_retriever` | 30 kg | `white_rhinoceros` | 2,3 t |
+| `washing_machine` | 70 kg | `african_elephant` | 6 t |
+| `giant_panda` | 100 kg | `school_bus` | 11 t |
+| `upright_piano` | 230 kg | `boeing_737` | 41 t |
+| `horse` | 500 kg | `statue_of_liberty` | 225 t |
+
+L'objet choisi est le plus lourd que la charge atteint au moins une fois. Exemple : 9,2 t donne `{ "object": "african_elephant", "count": 1.5 }`.
+
+### 7.5 Comparer ses stats à celles d'une personne suivie
+
+`GET /exercises/:id/stats/compare/:userId`
+
+```json
+{
+  "exercise": { "id": "uuid", "name": "Bench Press (Barbell)" },
+  "me": { "heaviestWeight": 90, "estimatedOneRepMax": 101.3, "bestSessionVolume": 2880, "maxReps": null, "totalSessions": 26, "lastPerformedAt": "..." },
+  "user": { "id": "uuid", "uniqueName": "paul.martin", "displayName": "Paul Martin", "avatarThumbnailUrl": null },
+  "them": { "heaviestWeight": 80, "...": "..." }
+}
+```
+
+- `me` : toutes mes séances.
+- `them` : **uniquement les séances que la personne a publiées**. Ses séances non postées ne comptent jamais.
+- `null` quand l'exercice n'a jamais été fait (ou jamais publié, pour `them`).
+- Erreurs : `403` si je ne suis pas cette personne, `400` si `userId` est moi-même, `404` pour un exercice inconnu.
+
+### 7.6 Dupliquer une séance
+
+Les deux routes créent une **séance planifiée** chez moi, avec le même titre et les mêmes exercices dans le même ordre. Elles ne copient ni les séries, ni les charges, ni la description. La réponse a le format de `GET /workouts/planned/:id` : `{ workout, totalExercises }`, avec `sets: null` sur chaque exercice.
+
+- `POST /workouts/planned/from-post/:postId` : depuis n'importe quel post que je peux voir. Sinon `404`.
+- `POST /workouts/planned/from-completed/:id` : depuis une de mes séances terminées. `404` si ce n'est pas la mienne.
+
+### 7.7 Groupes
+
+Règles :
+- **Inviter** : n'importe quel membre peut inviter par pseudo (avec ou sans `@`), à condition que l'invitant et l'invité **se suivent mutuellement**. L'invité doit accepter.
+- **Taille** : 20 membres au plus, créateur compris. Les invitations en attente comptent dans la limite.
+- **Renommer** : n'importe quel membre.
+- **Supprimer** : seulement le créateur.
+- **Partir** : n'importe quel membre. Si le créateur part, le membre le plus ancien devient créateur. Le dernier à partir supprime le groupe.
+- **Compte supprimé** : la suppression du compte du créateur supprime ses groupes.
+- **Confidentialité** : un groupe dont je ne suis pas membre répond `404`.
+
+| Route | Rôle | Réponse |
+| --- | --- | --- |
+| `POST /groups` `{ name }` | créer (1 à 50 caractères) | détail du groupe |
+| `GET /groups` | mes groupes | `[{ id, name, creatorId, createdAt, joinedAt, memberCount }]` |
+| `GET /groups/:id` | détail | `{ id, name, creatorId, createdAt, members: [{ id, uniqueName, displayName, avatarThumbnailUrl, joinedAt }], invitations: [{ id, createdAt, invitee: {...}, invitedById }] }` |
+| `PATCH /groups/:id` `{ name }` | renommer | détail |
+| `DELETE /groups/:id` | supprimer (`403` si pas créateur) | `{ deleted: true }` |
+| `POST /groups/:id/invitations` `{ uniqueName }` | inviter | invitations en attente du groupe |
+| `GET /groups/invitations` | invitations reçues | `[{ id, createdAt, group: { id, name, memberCount }, invitedBy: {...} }]` |
+| `POST /groups/invitations/:invitationId/accept` | accepter | détail du groupe |
+| `DELETE /groups/invitations/:invitationId` | refuser | `{ declined: true }` |
+| `DELETE /groups/:id/members/me` | partir | `{ left: true }` |
+| `POST /groups/:id/shares` `{ postId }` | envoyer un post dans le groupe | `{ id, postId, createdAt }` |
+| `DELETE /groups/:id/shares/:shareId` | retirer un post que j'ai envoyé | `{ deleted: true }` |
+| `GET /groups/:id/activity?limit=20&before=...` | fil du groupe | voir ci-dessous |
+
+Erreurs à l'invitation :
+- `403` : vous ne vous suivez pas mutuellement ;
+- `404` : pseudo inconnu ;
+- `409` : déjà membre, déjà invité, ou groupe complet.
+
+**Envoyer un post dans le groupe** : n'importe quel membre peut envoyer un post, d'une autre personne ou le sien, à condition de pouvoir le voir (même règle que `GET /posts/:postId`).
+- Un même post n'est envoyé qu'une fois par groupe : `409` la deuxième fois.
+- `404` pour un post invisible ou inexistant, ou si je ne suis pas membre. `400` (`Identifiant invalide`) pour un `postId` mal formé.
+- **Confidentialité** : le post envoyé n'apparaît dans le fil du groupe que pour les membres qui ont le droit de le voir. Le post d'un compte privé n'est visible que des membres qui suivent ce compte.
+- Seule la personne qui l'a envoyé peut le retirer. Il disparaît aussi si le post est supprimé, ou si cette personne quitte le groupe.
+- Bouton à prévoir sur un post : « Envoyer dans un groupe », avec le choix parmi `GET /groups`.
+
+**Fil du groupe** : deux sortes d'événements, de la plus récente à la plus ancienne, distinguées par `type`.
+- `workout` : une séance qu'un membre a **publiée après être entré dans le groupe**, avec ses records. Les séances non publiées n'apparaissent jamais.
+- `share` : un post qu'un membre a envoyé dans le groupe. `user` est la personne qui l'a envoyé, `author` l'auteur du post.
+
+```json
+[{
+  "type": "workout",
+  "postId": "uuid", "at": "2026-10-29T18:05:00.000Z",
+  "user": { "id": "uuid", "uniqueName": "paul.martin", "displayName": "Paul Martin", "avatarThumbnailUrl": null },
+  "workout": { "id": "uuid", "title": "Push" },
+  "records": [{ "exercise": { "id": "uuid", "name": "Bench Press (Barbell)" }, "type": "heaviest_weight", "value": 100, "unit": "kg" }]
+}, {
+  "type": "share",
+  "shareId": "uuid", "postId": "uuid", "at": "2026-10-29T17:40:00.000Z",
+  "user": { "id": "uuid", "uniqueName": "julie.roux", "...": "..." },
+  "author": { "id": "uuid", "uniqueName": "hugo.blanc", "...": "..." },
+  "workout": { "id": "uuid", "title": "Leg day" }
+}]
+```
+
+- `workout` : l'app affiche « Paul s'est entraîné », et « Paul a battu son record de … » pour chaque `records[]`.
+- `share` : l'app affiche « Julie a partagé la séance de Hugo », qui ouvre le post (`postId`).
+- Page suivante : `before` = le `at` du dernier événement reçu.
+- Il n'y a pas de notification push : l'app consulte le fil.
+
+### 7.8 Cards de partage
+
+Elles sont entièrement côté app : dessiner la card puis la capturer en image, par exemple avec `react-native-view-shot`, et l'ouvrir dans le partage natif.
+
+Données disponibles :
+- `GET /posts/:postId/workout`, ou `GET /stats/workout/:id` pour ses propres séances : séries, totaux, comparaison avec la vie réelle ;
+- les `badges` de la séance pour ses records.
+
+### 7.9 Suivre un programme
+
+Un programme (liste de jours, repos compris) peut maintenant être « commencé ». Un seul est suivi à la fois.
+
+- **`POST /programmes/:id/start`** `{ startDate?: "2026-10-30" }` démarre un de mes programmes. `startDate` est le jour 1, aujourd'hui par défaut. Le programme remplace celui suivi jusque-là. La réponse est la même que la route suivante, pour le jour de départ.
+- **`GET /programmes/active/today?date=2026-10-30`** renvoie la séance prévue pour ce jour :
+  - le jour se compte **au calendrier** : le jour de départ est le jour 1, le lendemain le jour 2, qu'on se soit entraîné ou non ;
+  - après le dernier jour, le programme **recommence** au jour 1, et `cycle` compte les tours.
+
+```json
+{
+  "programme": { "id": "uuid", "title": "Programme Push Pull Legs" },
+  "startedOn": "2026-10-26", "date": "2026-10-28", "cycleLength": 7,
+  "status": "workout", "dayNumber": 3, "cycle": 1,
+  "workout": { "id": "uuid", "title": "Legs", "description": "...", "exercises": [ ... ] }
+}
+```
+
+- `status` peut prendre trois valeurs :
+  - `workout` : la séance du jour est dans `workout`, au format de `GET /workouts/planned/:id` (le champ `workout` de cette route) ;
+  - `rest` : jour de repos, `workout` vaut `null` ;
+  - `not_started` : la date est avant le départ, avec `daysUntilStart`.
+- **Envoyez toujours `date`, la date locale de l'utilisateur** (`AAAA-MM-JJ`). Sans elle, c'est la date UTC qui sert. En France, entre minuit et 1 h ou 2 h du matin, ce serait encore la veille. Même conseil pour `startDate`.
+- Erreurs :
+  - `404` `Aucun programme en cours.` si rien n'est commencé ;
+  - `404` pour démarrer le programme de quelqu'un d'autre ;
+  - `400` pour une date qui n'est pas au format `AAAA-MM-JJ`.
+- Supprimer le programme suivi l'arrête. Une séance planifiée supprimée transforme son jour en jour de repos.
+- Il n'y a pas de route pour arrêter un programme sans le supprimer : ce n'était pas demandé.
+
+### 7.10 Suggérer une séance selon les muscles délaissés
+
+**`GET /workouts/planned/suggestion?period=week&date=2026-10-30`** choisit, parmi mes séances planifiées, celle qui travaille le plus les muscles **les moins entraînés sur la période**. La période est la semaine en cours par défaut, ou le mois avec `period=month`.
+
+```json
+{
+  "period": "week", "rangeStart": "...", "rangeEnd": "...",
+  "workedMuscles": [{ "muscle": "quads", "effectiveSets": 12.5 }],
+  "suggestion": {
+    "workout": { "id": "uuid", "title": "Push", "description": null, "totalExercises": 6 },
+    "score": 1,
+    "muscles": [{ "muscle": "triceps", "plannedSets": 7, "workedSets": 0 }]
+  },
+  "alternatives": [ { "...": "même format, les deux suivantes" } ]
+}
+```
+
+- `workedMuscles` : séries effectives par muscle sur la période (1 par série pour le muscle principal, 0,5 pour un secondaire). C'est le même calcul que `GET /stats/muscle-distribution`.
+- `score` va de 0 à 1. Il vaut 1 quand aucun des muscles de la séance n'a été travaillé sur la période.
+- `muscles` donne le pourquoi : les muscles de la séance, du moins entraîné au plus entraîné. Exemple d'affichage : « Triceps : 0 série cette semaine ».
+- `suggestion` vaut `null` si je n'ai aucune séance planifiée.
+
+### 7.11 Checklist
+
+- [ ] Fil populaire : rien à faire (mes posts n'y sont plus).
+- [ ] Cartes de post : afficher `exercises` (nom, séries, meilleure série) et `stats`.
+- [ ] `userPost.tsx` : un seul appel à `GET /posts/:postId/workout` pour tous les posts.
+- [ ] Traduire les clés de `realLifeComparison` (7.4) et l'afficher sur le résumé de séance et sur les badges de charge et de volume.
+- [ ] Écran d'un exercice : bouton « Comparer avec… » parmi les personnes suivies (gérer `403`).
+- [ ] « Dupliquer » sur un post et sur mes séances terminées, puis ouvrir la séance planifiée créée.
+- [ ] Groupes : liste, création, invitations (reçues et envoyées), fil d'activité (`type` `workout` et `share`), départ, suppression par le créateur.
+- [ ] « Envoyer dans un groupe » sur un post (gérer `409` déjà partagé), et « Retirer » sur mes partages dans le fil.
+- [ ] Cards de partage (7.8).
+- [ ] Bouton « Commencer ce programme » (`POST /programmes/:id/start`), et carte « Séance du jour » (`GET /programmes/active/today?date=` avec la date locale) : séance, repos ou départ à venir.
+- [ ] « Que faire aujourd'hui ? » : `GET /workouts/planned/suggestion` avec la raison (`muscles`) et les alternatives.
+
+---
+
+## 8. Corrections de l'audit front (branche `feat/backend-v3`)
+
+Une entrée par tâche de l'audit (B-xx).
+
+### B-04 Route de santé
+
+- `GET /health` → `200 { status: "ok", database: "ok" }`. Elle exécute un `SELECT 1` sur la base. Pas de token ni de limite de débit. Elle répond `503 { status: "error", database: "unreachable" }` si la base ne répond pas. **C'est la route à utiliser pour `checkServerHealth`.**
+- `GET /` → `200 { status: "ok" }`, sans vérifier la base. Elle répondait `Hello World!` avant, ou `404` sur le backend périmé.
+
+### B-01 Charges décimales
+
+- `weight` accepte maintenant **jusqu'à 2 décimales**, de 0 à 1000 kg, dans les séances terminées et planifiées (création et modification). Exemples : `62.5`, `1.25`. Les `reps` restent entières.
+- 3 décimales, une charge négative ou une charge au-dessus de 1000 kg donnent un `400`.
+- Les charges sont relues telles quelles. Volume, 1RM, records, badges et stats sont calculés sur les charges exactes, puis arrondis selon les règles de la section 9 « Nombres cohérents ».
+- Côté app : autoriser la virgule et le point dans le champ de charge, et envoyer un nombre (pas une chaîne).
+
+### B-02 Erreurs de validation structurées
+
+Un `400` de validation a maintenant ce format, **au premier niveau** :
+
+```json
+{
+  "statusCode": 400,
+  "code": "VALIDATION_ERROR",
+  "message": "Adresse e-mail invalide.",
+  "errors": [
+    { "field": "email", "code": "EMAIL_INVALID", "message": "Adresse e-mail invalide." },
+    { "field": "password", "code": "PASSWORD_TOO_SHORT", "message": "Le mot de passe doit contenir au moins 8 caractères." }
+  ]
+}
+```
+
+- `message` est une chaîne : le premier message, en français. `extractMessage` le lit déjà sans changement.
+- `errors[].code` est stable : c'est lui qu'il faut traduire. La liste complète est dans `backend/README.md`, section « Validation errors ». Les plus utiles : `EMAIL_INVALID`, `PASSWORD_TOO_SHORT`, `USERNAME_INVALID`, `FIELD_TOO_LONG`, `FIELD_REQUIRED`, `FIELD_NOT_ALLOWED`, `NUMBER_INVALID`, `VALUE_TOO_LARGE`.
+- `errors[].field` donne le chemin du champ, y compris imbriqué (`exercises.0.sets.1.weight`), pour afficher l'erreur sous le bon champ.
+- Les autres erreurs (`401`, `403`, `404`, `409`, `429`…) gardent leur format `{ statusCode, message: { message, … } }`.
+- Il n'y avait déjà qu'un seul `ValidationPipe` sur cette branche. Le doublon signalé par l'audit vient du backend périmé de la branche front (voir B-00).
+
+### B-07 Longueur des commentaires
+
+- Un commentaire fait **1 à 500 caractères**, à la création comme à la modification. La limite existait déjà côté serveur, elle est maintenant documentée et renvoie un code exploitable.
+- Au-delà : `400` avec `errors: [{ field: "content", code: "FIELD_TOO_LONG", message: "« content » ne doit pas dépasser 500 caractères." }]`.
+- Côté app : `maxLength={500}` sur le champ, et un compteur à l'approche de la limite.
+
+### B-03 Résumé des séances planifiées
+
+- `GET /workouts/planned` renvoie en plus :
+  - `totalSets` : séries prévues de tous les exercices, `0` pour un exercice sans séries ;
+  - `estimatedDurationMinutes` : nombre ou `null`.
+- `estimatedDurationMinutes` est accepté en option dans `POST /workouts/planned` et `PATCH /workouts/planned/:id` : un entier de 1 à 600. `null` en `PATCH` l'efface. Il est aussi relu dans `GET /workouts/planned/:id`.
+- Hors bornes : `400` avec le code `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` ou `INTEGER_EXPECTED`.
+- Côté app : envoyer le champ « Durée estimée » du formulaire.
+
+### B-06 Genre et objectif
+
+- `PATCH /users/:id` accepte :
+  - `gender` : `male`, `female` ou `other` ;
+  - `goal` : `gain_weight`, `lose_weight`, `get_fitter`, `flexibility` ou `learn_basics`.
+- Les deux sont optionnels. `null` les efface. Une autre valeur donne `400` avec le code `VALUE_NOT_ALLOWED`.
+- Ils sont relus dans `GET /users/:id` **pour son propre compte uniquement**. Les autres utilisateurs ne les voient jamais.
+- Côté app : envoyer les réponses de l'onboarding par `PATCH /users/:id` une fois le compte créé. L'inscription (`POST /users/register`) ne les accepte pas : l'audit ne demandait que l'édition. Dis-le si l'onboarding a lieu avant l'inscription.
+
+### B-12 Catalogue : Bayesian Curl et cache
+
+- « Baesyan Curl (Cable) » et « Baesyan Curl (Dumbbell) » deviennent **« Bayesian Curl (Cable) »** et **« Bayesian Curl (Dumbbell) »**. Les ids ne changent pas : historique, stats et séances restent liés.
+- `GET /exercises` renvoie un `ETag` et `Cache-Control: private, no-cache`. L'app garde la liste et la revalide à chaque appel :
+  - elle renvoie l'ETag reçu dans `If-None-Match` ;
+  - un catalogue inchangé répond `304` sans corps : on garde la liste locale ;
+  - sinon `200` avec la nouvelle liste et un nouvel ETag.
+- Le cache HTTP natif d'iOS et Android applique déjà ces règles avec `fetch`. Si l'app garde son propre cache (`exercises_cache_v2`), qu'elle stocke l'ETag à côté et traite le `304`.
+
+### B-10 Codes à la place des phrases dans les stats
+
+`insights` reste un tableau de chaînes, mais ce sont maintenant **des codes à traduire**, plus des phrases anglaises. Les chiffres sont dans les champs voisins de la réponse.
+
+`GET /stats/balance`, avec les chiffres `pushPullRatio` et `upperLowerRatio` :
+
+| Code | Sens |
+| --- | --- |
+| `INSUFFICIENT_PULL_VOLUME` | Pas assez de tirage pour juger l'équilibre poussée/tirage |
+| `PUSH_DOMINANT` | Poussée > 1,3 × tirage : ajouter du tirage |
+| `PULL_DOMINANT` | Tirage dominant (ratio < 0,77) : ajouter de la poussée |
+| `PUSH_PULL_BALANCED` | Équilibre poussée/tirage correct |
+| `NO_LOWER_BODY_VOLUME` | Aucun volume bas du corps sur la période |
+| `UPPER_BODY_DOMINANT` | Haut > 2 × bas : plus de jambes |
+| `LOWER_BODY_DOMINANT` | Bas dominant (ratio < 0,5) : haut du corps peut-être négligé |
+
+`GET /stats/comparisons`, avec les chiffres `comparison.workouts.changePct`, `comparison.volume.changePct`, `baseline.periodsConsidered` et `elapsedPct` :
+
+| Code | Sens |
+| --- | --- |
+| `NOT_ENOUGH_HISTORY` | Pas encore assez d'historique pour comparer |
+| `WORKOUTS_ON_TRACK` / `WORKOUTS_ABOVE_USUAL` / `WORKOUTS_BELOW_USUAL` | Nombre de séances dans la moyenne, au-dessus ou en dessous |
+| `VOLUME_ON_TRACK` / `VOLUME_ABOVE_USUAL` / `VOLUME_BELOW_USUAL` | Volume dans la moyenne, au-dessus ou en dessous |
+
+### B-09 Calories calculées par le serveur
+
+- `GET /workouts/completed` : chaque séance a **`calories`** (kcal estimées).
+- `GET /stats/heatmap` : chaque jour a **`calories`**, et la réponse a **`totalCalories`** pour l'année.
+- C'est exactement le même chiffre que `estimatedCalories` de `GET /stats/workout/:id` : même formule (MET par type d'exercice × poids de corps × durée), même poids de corps (celui du profil, sinon 70 kg), même arrondi. Le test e2e le vérifie.
+- **L'app ne doit plus calculer les calories elle-même.** C'est son calcul local qui donnait 31 au lieu de 47 kcal.
+
+### B-08 Limiteur de connexion
+
+- Le login n'est plus bloqué par adresse IP seule. Les limites sont désormais :
+  - **5 tentatives par 15 minutes pour un même identifiant depuis une même adresse** : les autres personnes derrière le même réseau ne sont plus bloquées ;
+  - **50 tentatives par 15 minutes par adresse**, tous comptes confondus.
+- Le `429` a un format exploitable, au premier niveau, avec l'en-tête `Retry-After` (mêmes secondes) :
+
+```json
+{ "statusCode": 429, "code": "TOO_MANY_LOGIN_ATTEMPTS", "message": "Trop de tentatives de connexion. Réessayez dans 15 min.", "retryAfterSeconds": 900 }
+```
+
+- La limite générale (60 requêtes par minute) renvoie le même format avec `code: "RATE_LIMITED"`.
+- Côté app : afficher le délai à partir de `retryAfterSeconds`, par exemple un compte à rebours sur le bouton de connexion.
+
+### B-05 Mot de passe oublié et changement de mot de passe
+
+Trois routes :
+
+| Route | Corps | Réponse |
+| --- | --- | --- |
+| `POST /auth/forgot-password` | `{ email }` | **toujours `204`**, que le compte existe ou non |
+| `POST /auth/reset-password` | `{ token, password }` | `204` |
+| `PATCH /users/me/password` (connecté) | `{ currentPassword, newPassword }` | `200 { access_token }` |
+
+**Mot de passe oublié**
+- L'e-mail contient un lien `grinta://reset-password?token=…`. Le préfixe est réglable côté serveur (`RESET_PASSWORD_URL`), par exemple un lien web si l'app gère les universal links.
+- Le lien marche **une fois, pendant 1 h**. Une nouvelle demande remplace l'ancien lien.
+- L'app doit ouvrir un écran « Nouveau mot de passe » sur ce lien, puis appeler `reset-password` avec le `token`.
+- Erreurs de `reset-password` :
+  - `400 { code: "RESET_TOKEN_INVALID" }` : lien inconnu, déjà utilisé ou expiré. Proposer de redemander un lien ;
+  - `400` avec `errors: [{ field: "password", code: "PASSWORD_TOO_SHORT" }]` : moins de 8 caractères.
+- Après une réinitialisation, **toutes les sessions du compte sont déconnectées**. Les anciens tokens répondent `401`. L'utilisateur se reconnecte avec le nouveau mot de passe.
+
+**Changement de mot de passe connecté**
+- Il renvoie un **nouveau `access_token`** : l'app doit le stocker à la place de l'ancien, qui est désormais refusé, comme ceux des autres appareils.
+- Mot de passe actuel incorrect : `400 { code: "CURRENT_PASSWORD_INVALID" }`. C'est volontairement un 400 et pas un 401, pour ne pas déclencher la déconnexion de l'app.
+
+**Limites de débit** : `429 { code: "TOO_MANY_ATTEMPTS", retryAfterSeconds }`.
+- 3 demandes de lien par heure par e-mail et par adresse, 10 par adresse ;
+- 5 changements par 15 min par utilisateur.
+
+**À savoir** : `PATCH /users/:id` accepte encore `password` sans demander l'actuel, pour ne pas casser l'app. Il faudrait passer à `PATCH /users/me/password`, puis retirer `password` de `PATCH /users/:id`.
+
+### B-13 Jeton invalide ou expiré → 401 partout
+
+- Toutes les routes protégées (88 aujourd'hui) répondent `401` avec un jeton absent, expiré, mal signé, malformé, en `alg: none`, ou appartenant à un compte supprimé. Un test e2e le vérifie route par route et découvre les routes automatiquement. Une route ajoutée plus tard sera testée, et toute nouvelle route publique doit y être déclarée.
+- Les seules routes publiques : `GET /`, `GET /health`, `GET /exercises`, `GET /exercises/:id`, `POST /users/register`, `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/reset-password`.
+- Nouveau depuis B-05 : un jeton est aussi refusé après une réinitialisation ou un changement de mot de passe, ou si le compte a été supprimé. Le `handleSessionExpired` de l'app sur `401` couvre ces cas.
+
+### B-00 Backend périmé sur la branche front (à faire côté front)
+
+- La branche `features/frontend-align_to_backend` n'a jamais modifié `backend/`. Son dossier est resté à un ancien état, d'où les `404` et `500` sur `/badges`, `/posts/mine` et `/exercises/stats`.
+- Ces trois routes répondent `200` sur `main` comme sur `feat/backend-v3` (vérifié).
+- **Fusion testée sans conflit** :
+  - `git merge origin/main` dans la branche front ;
+  - ou, une fois `feat/backend-v3` mergée, `git merge origin/main` à nouveau. La fusion directe de `feat/backend-v3` est elle aussi sans conflit.
+- Elle n'a pas été faite d'ici : elle pousserait sur la branche front, hors du périmètre demandé.
+
+### B-11 Connexion Apple et Google : décision produit
+
+- Rien n'est implémenté. Il faut soit des routes `POST /auth/apple` et `POST /auth/google` qui vérifient l'`identityToken`, soit retirer les boutons.
+- Implémenter demande des éléments à créer côté comptes développeur :
+  - Apple : Services ID, clé de connexion, Team ID ;
+  - Google : identifiants OAuth iOS et Android.
+- Il faut aussi décider comment rattacher un compte existant (même e-mail) ou un e-mail masqué par Apple.
+- Rappel : si l'app propose Google, l'App Store impose aussi « Se connecter avec Apple ».
+- **Mis à jour** : les routes existent désormais, voir la section 9.5.
+
+
+---
+
+## 9. Deuxième lot (branche `feat/backend-v3`)
+
+### 9.1 Nombres cohérents : le serveur est la source de vérité
+
+Chaque chiffre sort de l'API **déjà arrondi**, avec une règle par type de valeur. L'app ne fait plus que formater (séparateur décimal, unité) : elle n'arrondit plus et ne recalcule plus.
+
+| Type de valeur | Règle | Exemples de champs |
+| --- | --- | --- |
+| Charge saisie ou soulevée | telle quelle, 2 décimales au plus | `weight`, `heaviestWeight`, `prWeight`, `lastWeight`, `bestSet.weight`, badge `heaviest_weight` |
+| Estimation ou moyenne | **1 décimale** | 1RM (`estimatedOneRepMax`, `bestEstimatedOneRepMax`, badge `best_estimated_1rm`), `averageWeightPerSet`, `averageVolumePerSet`, `averageWorkoutsPerWeek`, moyennes et `expectedByNow` des comparaisons |
+| Volume (reps × charge) | **entier** | `totalVolume`, `volume`, `bestSessionVolume`, badge `best_session_volume`, `fullDayLoad` |
+| Calories | **entier** | `estimatedCalories`, `calories`, `totalCalories` |
+| Pourcentage, ratio | 1 décimale, 2 décimales | inchangé |
+
+- Une même séance a **les mêmes calories, le même volume et le même 1RM** sur toutes les routes : `/stats/workout/:id`, `/workouts/completed`, `/posts/:id/workout`, les feeds, `/exercises/:id/stats`, `/stats/records`, `/stats/summary` et la heatmap. Un test e2e le vérifie.
+- **Dates** : les horodatages sont en ISO 8601 UTC (`2026-11-05T18:05:00.000Z`) et les jours en `AAAA-MM-JJ` (heatmap, progression, `startedOn`, `birthDate`). C'était déjà le cas, sans exception : l'app doit simplement utiliser un seul formateur de dates.
+- Changements visibles : un 1RM de `77.08` devient `77.1`, un volume de `762.5` devient `763`.
+
+### 9.2 Profil et statistiques d'un autre utilisateur
+
+- `GET /users/:id/profile` renvoie en plus `createdAt` (date d'inscription, ISO 8601). Les infos privées (email, poids, taille, genre, objectif) restent réservées à leur propriétaire.
+- Les routes de l'onglet Stats acceptent un paramètre facultatif `userId` :
+  - `GET /stats/summary`, `/stats/muscle-distribution`, `/stats/balance` (avec `period`, `date`) ;
+  - `GET /stats/consistency`, `/stats/muscle-frequency`.
+- Visibilité identique aux posts du profil : son propre compte, un profil public, ou un profil privé que l'on suit. Sinon **404** (même réponse qu'un id inconnu). Un `userId` qui n'est pas un UUID donne **400**.
+- Pour un autre utilisateur :
+  - seules ses séances **publiées** (avec un post) comptent ;
+  - les calories utilisent le poids par défaut (**70 kg**), car son poids est privé.
+- Sans `userId` (ou avec son propre id), rien ne change.
+
+Côté app : sur le profil d'un autre, appeler les mêmes routes avec `?userId=<id>` et afficher l'onglet Stats seulement si `isPrivate` vaut `false`.
+
+### 9.3 Onboarding et modèles de séances
+
+**Nouveaux champs d'onboarding** (facultatifs, privés comme `gender` et `goal`), via `PATCH /users/:id` :
+
+| Champ | Valeurs |
+|---|---|
+| `level` | `beginner`, `intermediate`, `advanced` |
+| `trainingDaysPerWeek` | entier de 1 à 7 |
+| `trainingLocation` | `gym`, `home` |
+
+`null` efface la valeur. Ils ne sont visibles que par leur propriétaire (`GET /users/:id`).
+
+**`GET /workouts/templates`** : la liste des modèles, le plus adapté en premier.
+- Le classement utilise l'objectif, le niveau, les jours par semaine et le lieu. Chaque critère vaut par défaut la réponse enregistrée sur le profil, et peut être forcé en query : `goal`, `level`, `daysPerWeek`, `location` (pratique pendant l'onboarding, avant l'enregistrement).
+- Réponse : `{ criteria, templates[] }`. Chaque modèle contient `key`, `title`, `description`, `goals`, `levels`, `daysPerWeek`, `location`, `recommended` (les 2 meilleurs), `workouts[]` et `week[]`.
+  - Un `workout` contient `key`, `title`, `estimatedDurationMinutes` et `exercises[]` (`exerciseId`, `name`, `sets` avec `weight: 0`, `plannedRestSeconds`, `durationSeconds` pour les exercices chronométrés, sinon `null`).
+  - `week[]` contient 7 jours `{ dayNumber, workoutKey | null }`, lundi en premier, `null` pour le repos.
+- Modèles : Push Pull Legs (6 j), Haut / Bas (4 j), Full body (3 j), Débutant (2 j), Maison sans matériel (3 j), Renforcement + cardio (4 j), Mobilité et souplesse (3 j).
+
+**`POST /workouts/templates/:key/use`** : copie le modèle dans le compte.
+- Crée une séance planifiée par séance du modèle (charges à 0, à remplir par l'utilisateur ; durées des exercices chronométrés dans la `description`).
+- Crée aussi un programme de 7 jours (repos compris), **non démarré** : l'app le lance avec `POST /programmes/:id/start`.
+- Renvoie le programme avec ses jours et leurs séances. 404 si la clé est inconnue.
+
+### 9.4 Import d'un programme depuis des notes
+
+**`POST /workouts/import`** `{ text }` (10 000 caractères au plus) lit des notes en français ou en anglais et renvoie un **brouillon, rien n'est enregistré**. Lecture par règles fixes, sans IA.
+
+Ce que le serveur comprend :
+- **Exercices** : abréviations et noms courants, FR et EN (`dc`, `di`, `dm`, `sdt`, `rdl`, `tractions`, `pompes`, `dips`, `rowing`, `tirage vertical`, `curl`, `presse`, `fentes`, `mollets`, `gainage`, `vélo`, `rameur`…), le nom exact du catalogue, ou le nom le plus proche.
+- **Variantes** : `haltères`, `barre`, `poulie`, `machine`, `smith`, `incliné`, `assis`, `pdc`, `lesté`, `corde`… (« dc haltères » donne Bench Press (Dumbbell)).
+- **Séries** :
+  - `3x10` : 3 séries de 10 ;
+  - `45x8` ou `45kg x 8` : 1 série de 8 à 45 kg (le premier nombre est une charge s'il dépasse 12 ou porte une unité) ;
+  - `4x8 à 60kg`, `4x8 60kg`, `60kg 4x8`, `4x8 @60`, `4x8x60`, `140x5x3` ;
+  - `3 séries de 12`, `3 sets of 12`, `12/10/8`, `3x8-10` (8 retenu), `20 reps` ;
+  - `22,5kg`, `225 lbs` (converti en kg) ;
+  - `3x45s`, `20 min` (exercices chronométrés), `repos 90s`, `rest 2min`.
+- Une ligne de séries seule (`45x8`) s'ajoute à l'exercice de la ligne du dessus (« Développé couché : » puis une série par ligne).
+- **Jours** : `Lundi`…`Dimanche` (FR/EN), `Jour 2`, `J2`, `Day 2`, `Séance A`, `Push`, `Pecs / triceps`, une ligne finissant par `:` ; `repos`, `rest`, `off` font un jour de repos. Avec au moins deux jours, le brouillon contient aussi un programme.
+
+Réponse :
+
+```json
+{
+  "workouts": [
+    {
+      "title": "Push",
+      "exercises": [
+        {
+          "exerciseId": "…",
+          "name": "Bench Press (Barbell)",
+          "sets": [{ "reps": 8, "weight": 60 }],
+          "durationSeconds": null,
+          "plannedRestSeconds": null,
+          "line": 2
+        }
+      ]
+    }
+  ],
+  "programme": {
+    "title": "Programme importé",
+    "days": [{ "dayNumber": 1, "label": "Lundi : Push", "workoutIndex": 0 }]
+  },
+  "unrecognized": [{ "line": 5, "text": "blabla", "reason": "unknown_exercise" }]
+}
+```
+
+- `programme` vaut `null` quand les notes n'ont pas de jours. Avec des jours de semaine, les 7 jours sont listés et ceux que les notes omettent sont des repos.
+- `workoutIndex` pointe dans `workouts` ; `null` est un repos.
+- `reason` vaut `unknown_exercise` (exercice inconnu) ou `no_exercise` (des séries sans exercice au-dessus).
+
+Pour enregistrer après validation :
+1. `POST /workouts/planned` pour chaque séance, en n'envoyant que `exerciseId`, `sets` et `plannedRestSeconds` par exercice (les champs en trop sont refusés) ;
+2. puis, s'il y a un programme, `POST /programmes` avec les `workoutId` obtenus.
+
+### 9.5 Connexion Apple et Google
+
+Deux routes publiques renvoient `{ access_token, isNewUser }`, le même jeton qu'à `POST /auth/login` :
+
+- **`POST /auth/apple`** `{ identityToken, fullName? }`
+  - `identityToken` : celui de Sign in with Apple.
+  - `fullName` : `{ givenName, familyName }`. Apple ne le donne qu'à la première connexion : l'envoyer à ce moment-là, il devient le nom affiché.
+- **`POST /auth/google`** `{ idToken }` : celui de Google Sign-In.
+
+Comportement :
+1. Compte Apple ou Google déjà relié : connexion à ce compte.
+2. Sinon, un compte Grinta a la même adresse e-mail, vérifiée par Apple ou Google : il est relié automatiquement, puis connecté.
+3. Sinon, un compte est créé : pseudo généré à partir du nom (ou du début de l'e-mail), mot de passe aléatoire. « Mot de passe oublié » permet d'en définir un.
+
+`isNewUser: true` : afficher l'onboarding (puis `PATCH /users/:id` pour le pseudo, l'objectif, le niveau, etc.).
+
+Erreurs :
+
+| Statut | `code` | Cas |
+|---|---|---|
+| 401 | `SOCIAL_TOKEN_INVALID` | Signature, émetteur, audience ou expiration invalides |
+| 401 | `SOCIAL_EMAIL_NOT_VERIFIED` | Compte inconnu et e-mail absent ou non vérifié |
+| 503 | `SOCIAL_LOGIN_NOT_CONFIGURED` | Identifiants client absents côté serveur |
+| 429 | `TOO_MANY_LOGIN_ATTEMPTS` | 30 essais par 15 min et par adresse IP |
+
+**À faire avant la mise en production** : renseigner `APPLE_CLIENT_IDS` (bundle id de l'app) et `GOOGLE_CLIENT_IDS` (identifiants OAuth iOS / Android / web) sur le serveur. Sans eux, les routes répondent 503 et l'app peut masquer les boutons.
+
+### 9.6 Ordre des exercices d'une séance planifiée
+
+`GET /programmes/active/today` (et la réponse de `POST /programmes/:id/start`) pouvait renvoyer les exercices de la séance du jour dans le désordre. C'est corrigé : partout, les exercices d'une séance planifiée sortent dans l'ordre où ils ont été saisis. Chaque exercice porte en plus `position` (0, 1, 2…). Rien à changer côté app : l'ordre du tableau `exercises` fait foi.
+
+### 9.7 Créer un groupe avec une liste de personnes
+
+`POST /groups` accepte en plus `userIds` (facultatif, 19 ids au plus, sans doublon) :
+
+```json
+{ "name": "Team du mardi", "userIds": ["<id>", "<id>"] }
+```
+
+- Chaque personne de la liste reçoit une **invitation** dès la création, comme avec `POST /groups/:id/invitations`. Elle rejoint le groupe en acceptant. La réponse est le détail du groupe, avec ces invitations dans `invitations`.
+- Mêmes règles : il faut se suivre mutuellement. Son propre id est ignoré.
+- **Tout ou rien** : si une personne ne peut pas être invitée, aucun groupe n'est créé.
+  - 403 `{ code: "GROUP_USERS_NOT_MUTUAL", message, userIds }` : pas de suivi mutuel avec ces personnes ;
+  - 404 `{ code: "GROUP_USERS_NOT_FOUND", message, userIds }` : comptes inexistants.
+- Sans `userIds`, rien ne change.
+
+### 9.8 Catalogue d'exercices traduit
+
+Le serveur renvoie les exercices dans la langue de l'en-tête **`Accept-Language`**, sur **toutes** les routes : catalogue, détail d'un exercice, séances, programmes, posts, stats, records, badges, groupes, modèles, import.
+
+**À faire côté app** (une ligne dans `services/api.ts`) : ajouter `"Accept-Language": <langue choisie dans l'app>` aux en-têtes de chaque requête (`fr`, `en`, `es`, `de`, `it`, `pt`, `ru`, `zh`, `ja`, `ko`). Quand l'utilisateur change de langue, recharger la liste d'exercices.
+
+- `name` contient le nom traduit. Le nom anglais reste disponible dans `englishName` sur les objets exercice (`{ id, name, englishName }`), par exemple pour la recherche.
+- Langue absente ou non prise en charge : anglais, comme aujourd'hui.
+- `description` et `instructions` de `GET /exercises/:id` sont traduites en français ; les autres langues restent en anglais pour l'instant.
+- Le cache de la liste fonctionne par langue : l'ETag change avec la langue, et la réponse porte `Vary: Accept-Language`.
+- La recherche locale (`ex.name.includes(…)`) cherche donc dans la langue de l'utilisateur. Pour accepter aussi l'anglais, chercher dans `name` et `englishName`.
+- L'import de notes (`POST /workouts/import`) reconnaît aussi les noms traduits.
+
+### 9.9 Démarrer un programme à n'importe quel jour, y mettre fin
+
+**Démarrer en cours de programme** : `POST /programmes/:id/start` accepte en plus `startDay` (entier, 1 par défaut).
+
+```json
+{ "startDate": "2026-11-17", "startDay": 3 }
+```
+
+- `startDate` devient le jour `startDay` du programme. Le lendemain est le jour 4, et ainsi de suite ; après le dernier jour, le programme reprend au jour 1 (`cycle` passe à 2).
+- `startDay` au-delà du dernier jour : **400** `{ code: "START_DAY_OUT_OF_RANGE", message, cycleLength }`.
+- La réponse, comme celle de `GET /programmes/active/today`, contient en plus `startDay`. `startedOn` reste la vraie date de démarrage.
+
+**Mettre fin au programme en cours** : `DELETE /programmes/active`.
+
+- **204** si un programme était suivi, **404** sinon.
+- Le programme et ses séances sont conservés : on peut le relancer avec `POST /programmes/:id/start`.
+- Ensuite, `GET /programmes/active/today` répond 404 comme avant tout démarrage.
+
+### 9.10 Modèles : proposer au lieu d'enregistrer
+
+Les programmes personnalisés (carrousel d'onboarding, « Créer une séance ») ne doivent plus être enregistrés dès qu'on touche un modèle : l'app les **propose**, et l'utilisateur choisit de les enregistrer.
+
+**`GET /workouts/templates/:key`** renvoie la proposition, **rien n'est enregistré** (`saved: false`). Même forme que le brouillon d'import (9.4) :
+
+```json
+{
+  "key": "upper-lower-4",
+  "saved": false,
+  "workouts": [
+    {
+      "key": "upper",
+      "title": "Haut du corps",
+      "description": null,
+      "estimatedDurationMinutes": 65,
+      "exercises": [
+        { "exerciseId": "…", "name": "Développé couché (barre)", "sets": [{ "reps": 6, "weight": 0 }], "plannedRestSeconds": 150, "durationSeconds": null }
+      ]
+    }
+  ],
+  "programme": {
+    "title": "Haut / Bas du corps",
+    "description": "…",
+    "weekNumber": 1,
+    "difficulty": "INTERMEDIATE",
+    "locationType": "GYM",
+    "days": [{ "dayNumber": 1, "workoutIndex": 0 }, { "dayNumber": 3, "workoutIndex": null }]
+  }
+}
+```
+
+- `difficulty` suit le niveau de l'utilisateur quand le modèle lui convient. `workoutIndex` pointe dans `workouts` ; `null` est un repos.
+- `GET /workouts/templates` (la liste du carrousel) ne change pas et n'enregistre rien.
+
+Pour enregistrer quand l'utilisateur accepte :
+- **tel quel** : `POST /workouts/templates/:key/use` (inchangé) ;
+- **après ajustement** : `POST /workouts/planned` pour chaque séance (en n'envoyant que `title`, `description`, `estimatedDurationMinutes` et, par exercice, `exerciseId`, `sets`, `plannedRestSeconds`), puis `POST /programmes` avec `title`, `description`, `weekNumber`, `difficulty`, `locationType` et les `days` où `workoutIndex` est remplacé par le `workoutId` obtenu (aucun `workoutId` pour un repos).
+
+À changer côté app : `TemplatePicker` appelle aujourd'hui `applyWorkoutTemplate` (donc `use`) dès qu'on touche un modèle. Il faut d'abord afficher la proposition, puis n'appeler `use` (ou les routes ci-dessus) qu'à la validation.
+
+
+---
+
+## 10. Audit backend v2 (branche `feat/backend-v3`)
+
+### 10.1 Séances et listes d'abonnés : accès restreint (B-01)
+
+Un compte **privé** n'est plus lisible par n'importe qui. Les routes ci-dessous répondent **404** (jamais 403, pour ne pas révéler qu'un id existe) à qui n'y a pas droit :
+
+| Route | Qui y a accès |
+|---|---|
+| `GET /workouts/completed/:id` | le propriétaire, ses abonnés, et tout le monde pour un compte public **si la séance est publiée** (postée) |
+| `GET /workouts/planned/:id` | le propriétaire seulement |
+| `GET /connections/:id/followers` et `/following` | soi, un compte public, ou un compte que l'on suit |
+| `GET /stats/adherence` | le plan doit être celui de l'appelant |
+
+À adapter côté app :
+- Une séance d'un autre n'est lisible que depuis un post visible (`GET /posts/:id/workout`, ou `workoutId` d'un post). Ne plus appeler `GET /workouts/completed/:id` pour une séance jamais postée d'un autre.
+- Le plan d'un autre utilisateur n'est plus lisible : pour s'en inspirer, utiliser `POST /workouts/planned/from-post/:postId`, qui copie ses exercices dans ses propres séances.
+- Sur le profil d'un compte privé que l'on ne suit pas, ne pas afficher la liste d'abonnés (le serveur répond 404).
+
+### 10.2 Séances : valeurs limites (B-02)
+
+`POST` et `PATCH` sur `/workouts/completed` et `/workouts/planned` refusent désormais les valeurs aberrantes avec un **400 `VALIDATION_ERROR`**, `errors[].field` désignant le champ (`exercises.0.sets.0.reps`) et `code` la cause :
+
+| Champ | Limites | Codes |
+|---|---|---|
+| `reps` | 1 à 1000 | `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` |
+| `weight` | 0 à 1000, 2 décimales | inchangé |
+| `sets` d'un exercice | 1 à 30 | `ARRAY_TOO_SHORT`, `ARRAY_TOO_LONG` |
+| `exercises` | 1 à 40 | `ARRAY_TOO_SHORT`, `ARRAY_TOO_LONG` |
+| `title` | 1 à 100 caractères (espaces retirés) | `FIELD_TOO_SHORT`, `FIELD_TOO_LONG` |
+| `description` | 0 à 1000 | `FIELD_TOO_LONG` |
+| `totalDurationSeconds` | 1 à 86 400 | `VALUE_TOO_SMALL`, `VALUE_TOO_LARGE` |
+| `timerSeconds`, `plannedRestSeconds` | 0 à 3 600 | idem |
+| `completionDate` | au plus 24 h dans le futur | `DATE_TOO_FAR_IN_FUTURE` (nouveau) |
+
+À vérifier côté app :
+- **Un exercice sans série** : omettre `sets`, ne jamais envoyer `sets: []` (400 `ARRAY_TOO_SHORT`). C'est le cas d'un exercice passé pendant une séance.
+- Une séance sans aucun exercice n'est plus acceptée (`exercises` : au moins 1).
+- Limiter les champs de saisie aux mêmes bornes pour éviter l'erreur.
+
+### 10.3 Programmes : jours, taille et date de départ (B-03)
+
+- **Jours** (`POST /programmes`, `PATCH /programmes/:id`) : numérotés de **1 à N** sans trou ni doublon, 84 au plus. Un jour de repos est un jour **sans** `workoutId`, il ne faut pas sauter son numéro. L'app qui renumérote avec `index + 1` est déjà conforme.
+  - 400 `DAY_NUMBER_DUPLICATE` (avec `dayNumbers`) : un numéro apparaît deux fois.
+  - 400 `DAY_NUMBERS_NOT_CONSECUTIVE` (avec `missingDayNumber`) : il manque un numéro.
+  - 400 `VALIDATION_ERROR` : plus de 84 jours (`days`, `ARRAY_TOO_LONG`) ou `dayNumber` au-dessus de 84.
+- **Date de départ** (`POST /programmes/:id/start`) : à **7 jours au plus** d'aujourd'hui, avant ou après, sinon 400 `START_DATE_OUT_OF_RANGE` (avec `windowDays`). Pour un départ dans quelques jours, `GET /programmes/active/today` renvoie `status: "not_started"` et `daysUntilStart` jusqu'à la date.
+
+### 10.4 Import de notes : titres de séance (B-04)
+
+`POST /workouts/import` reconnaît maintenant un **titre sans mot-clé** : une ligne courte (40 caractères au plus), sans séries ni charge, suivie d'une ligne d'exercice. Elle ouvre une nouvelle séance.
+
+```
+Push A                     → séance « Push A »
+Bench press 4x8 60kg
+Overhead press 3x10 40kg
+
+Pull B                     → séance « Pull B »
+Rowing barre 4x8 50kg
+```
+
+- Plusieurs titres donnent plusieurs `workouts` et un `programme` proposé (un jour par séance, dans l'ordre) ; un seul titre nomme l'unique séance, sans programme.
+- Les en-têtes `Jour 1`, `Day 2`, `Lundi`, `Séance A`, `Push :` fonctionnaient déjà et gardent leur sens (jours numérotés, semaine).
+- Une vraie ligne inconnue (`unknownthing 3x10`), ou un texte court sans exercice derrière, reste dans `unrecognized` avec `unknown_exercise`.
+
+### 10.5 Flux : plus d'appel de détail par carte (B-06)
+
+Chaque carte de `GET /posts/feed/following` et `GET /posts/feed/top` contient désormais tous les champs de `GET /posts/:id` : **l'appel de détail par carte peut être supprimé**.
+
+Champs ajoutés aux cartes : `userId`, `uniqueName`, `workoutTitle`, `workoutPhotoUrl`, `workoutDescription`, `workoutCompletionDate`, `workoutDurationSeconds` et `totalExercises` (nombre d'exercices). Déjà présents et inchangés : `id`, `createdAt`, `displayName`, `avatarThumbnailUrl`, `workoutId`, `workoutPhotoThumbnailUrl`, `likesCount`, `commentsCount`, `partners`, `isLiked`, `exercises[]` (nombre de séries et meilleure série) et `stats`.
+
+`totalExercises` est aussi dans `GET /posts/mine`. Mesure : 5 posts de 6 exercices pèsent environ 7,5 Ko. Les séries détaillées restent dans `GET /posts/:id/workout`, à ouvrir seulement au toucher d'une carte.
+
+### 10.6 Format d'erreur unique et 413 (B-07, B-08)
+
+Toutes les erreurs ont la forme `{ statusCode, code, message }`, `message` étant une chaîne. **Changement** : les erreurs 404/401/400 « simples » avaient `message: { message, error, statusCode }` ; lisez désormais `body.message` directement et branchez sur `body.code` (`NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`, `EMAIL_IN_USE`, `VALIDATION_ERROR`, `RATE_LIMITED`…).
+
+Un corps JSON de plus de 100 Ko renvoie `413` avec `code: "PAYLOAD_TOO_LARGE"`. `POST /users/register` est limité : après 5 essais pour un même e-mail en une heure, `429 TOO_MANY_ATTEMPTS` avec `retryAfterSeconds`.
+
+### 10.7 Pagination et requêtes légères (B-09)
+
+- `GET /connections/:id/followers|following?limit=&offset=` : `limit` plafonné à 100 (défaut 100), tri du plus récent au plus ancien.
+- `GET /posts/mine/ids` : `[{ postId, workoutId }]`, 1000 au plus. À utiliser à la place de `GET /posts/mine?limit=100` pour savoir quelles séances sont publiées.
+- Catalogues (`/exercises`, `/exercises/stats`, `/badges`) : le serveur envoie un `ETag`. Gardez-le et renvoyez `If-None-Match` ; un `304` signifie « rien n'a changé », sans corps.
+
+### 10.8 Modèles de séances traduits (B-10)
+
+Envoyez `Accept-Language` (déjà fait pour les exercices) sur `/workouts/templates`, `/workouts/templates/:key` et `/:key/use`. `fr*` donne le français, toute autre langue l'anglais ; sans en-tête, français comme avant. Sont traduits : `title`, `description` du modèle et `title` de chaque séance. Les noms d'exercices suivent le même en-tête. Les `insights` des stats sont des codes : le texte reste à traduire côté app.
+
+### 10.9 Texte saisi par les utilisateurs (B-11)
+
+L'API renvoie les titres, pseudos et commentaires tels que saisis (`<script>` compris). React Native l'affiche comme du texte, rien à faire. Si vous les injectez un jour dans du HTML (WebView, page de partage), échappez-les à l'affichage.
+
+## 11. Audit backend v3
+
+### 11.1 E-mail et mot de passe (B-16, B-21)
+
+- `PATCH /users/:id` refuse `email` et `password` (400, `errors[].code = FIELD_NOT_ALLOWED`) : retirez-les du formulaire de profil.
+- Changer le mot de passe : `PATCH /users/me/password` (inchangé).
+- Changer l'e-mail : `POST /users/me/email` `{ email, currentPassword }` → 204. Un lien part vers la nouvelle adresse (`CONFIRM_EMAIL_URL?token=…`, par défaut `grinta://confirm-email?token=…`) ; l'app l'ouvre et appelle `POST /auth/confirm-email` `{ token }` (public) → 204, puis redemande une connexion (les anciennes sessions sont coupées). Erreurs : `CURRENT_PASSWORD_INVALID`, `EMAIL_IN_USE`, `EMAIL_UNCHANGED`, `EMAIL_TOKEN_INVALID`.
+- Pseudo pris : `400` avec `code: "USERNAME_TAKEN"` et `suggestion`.
+
+### 11.2 Suppression de compte (B-17)
+
+`DELETE /users/:id` fonctionne maintenant pour tout compte : réponse 200 `{ message }`. Toutes les données du compte sont supprimées (séances, posts, likes, commentaires, programmes, groupes créés, photos). Le jeton est refusé aussitôt (401) : renvoyez l'utilisateur à l'écran de connexion. L'e-mail peut être réutilisé pour une nouvelle inscription.
+
+### 11.3 Profil et programmes (B-18, B-22)
+
+- `height` 50–250 cm, `weight` 20–400 kg, `birthDate` entre 1900 et il y a 13 ans : sinon 400 `VALIDATION_ERROR` (`VALUE_TOO_SMALL`, `VALUE_TOO_LARGE`, `DATE_OUT_OF_RANGE`). Validez aussi côté formulaire.
+- Un programme doit contenir au moins un jour avec `workoutId` : sinon 400 `PROGRAMME_NEEDS_WORKOUT`.
+
+### 11.4 Recherche d'utilisateurs (B-20)
+
+`GET /users/search?q=` renvoie une liste vide sous 2 caractères ou sans lettre ni chiffre. Inutile d'appeler le serveur avant 2 caractères.
+
+### 11.5 En-têtes, Swagger, jeton (B-19)
+
+Rien à changer côté app. Le jeton ne contient plus l'e-mail (ne le décodez pas) ; `GET /auth/me` renvoie toujours `{ id, email }`. Swagger est fermé en production.
+
+### 11.6 Records paginés (B-13)
+
+`GET /exercises/stats?limit=50` → `{ items, nextBefore }`. Chargez la page suivante avec `?limit=50&before=<nextBefore>` au défilement ; `nextBefore: null` signifie la fin. Sans `limit`, le tableau complet comme avant. À préférer : la première page suffit pour ouvrir l'écran Records.
+
+### 11.7 Inscription et profils privés (B-14, B-15)
+
+- `POST /users/register` : après 10 réponses `EMAIL_IN_USE` en une heure depuis la même adresse, 429 `TOO_MANY_ATTEMPTS` avec `retryAfterSeconds`. Affichez le message du serveur.
+- Profil privé vu par un non-abonné : les compteurs sont présents et exacts, `isPrivate` vaut `true`, les listes (abonnés, abonnements, posts) renvoient 404. N'ouvrez pas la liste quand `isPrivate` est vrai.

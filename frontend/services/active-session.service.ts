@@ -19,7 +19,6 @@ export interface ActiveSession {
   currentSetIndex: number;
   completedExercises: number[];
   totalWorkoutTime: number;
-  /** Epoch ms of the last save, used to keep the timer running while minimized. */
   savedAt: number;
 }
 
@@ -39,7 +38,6 @@ export async function getActiveSession(): Promise<ActiveSession | null> {
   try {
     const session = JSON.parse(raw) as ActiveSession;
 
-    // Drop anything we can't resume from rather than crashing the screen.
     if (
       !session?.workoutId ||
       !Array.isArray(session.exercisesState) ||
@@ -59,7 +57,6 @@ export async function clearActiveSession(): Promise<void> {
   await removeItem(ACTIVE_SESSION_KEY);
 }
 
-/** Session duration including the time spent minimized. */
 export function elapsedSince(session: ActiveSession): number {
   const away = Math.max(0, Math.floor((Date.now() - session.savedAt) / 1000));
 

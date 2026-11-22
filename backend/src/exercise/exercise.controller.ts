@@ -1,4 +1,6 @@
+import { clampLimit } from '../common/utils/limit';
 import {
+  Header,
   Controller,
   Get,
   Patch,
@@ -13,6 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ExerciseService } from './exercise.service';
 import { ExerciseStatsService } from './exercise-stats.service';
 import { ExerciseStatsDto } from './dto/exercise-stats.dto';
+import { ExerciseComparisonDto } from './dto/exercise-comparison.dto';
 import { Auth } from '../auth/auth.decorators';
 import type { AuthenticatedRequest } from '../auth/auth-user.interface';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
@@ -28,11 +31,20 @@ export class ExerciseController {
     private readonly exerciseStats: ExerciseStatsService,
   ) {}
 
+  // The response carries an ETag (Express computes it from the body). With
+  // no-cache the app keeps the list and revalidates it on each call: an
+  // If-None-Match matching the current catalogue gets an empty 304 instead
+  // of the ~140 KB list.
   @Get()
+  @Header('Cache-Control', 'private, no-cache')
   @ApiOperation({
     summary: 'Get all exercises',
     description:
-      'Light list for browsing: use GET /exercises/:id for the description, instructions and photos.',
+      'Light list for browsing: use GET /exercises/:id for the description, instructions and photos. Send back the ETag of the last response in If-None-Match: an unchanged catalogue answers 304 with no body.',
+  })
+  @ApiResponse({
+    status: 304,
+    description: 'Catalogue unchanged since the ETag sent',
   })
   @ApiResponse({
     status: 200,
@@ -51,7 +63,10 @@ export class ExerciseController {
     summary: 'Stats of every exercise the current user has trained',
     description:
       'Most recently trained first. Updated automatically each time a ' +
-      'completed workout is saved, edited or deleted.',
+      'completed workout is saved, edited or deleted. Without `limit`, the ' +
+      'whole list as an array (ETag, so a repeat is a 304). With `limit` (1 ' +
+      'to 100): { items, nextBefore }, the page after the opaque `before` ' +
+      'cursor of the previous one; nextBefore is null on the last page.',
   })
   @ApiResponse({
     status: 200,
@@ -59,8 +74,18 @@ export class ExerciseController {
     type: ExerciseStatsDto,
     isArray: true,
   })
-  listMyStats(@Req() req: AuthenticatedRequest) {
-    return this.exerciseStats.listForUser(req.user.id);
+  listMyStats(
+    @Req() req: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+    @Query('before') before?: string,
+  ) {
+    if (limit === undefined && before === undefined)
+      return this.exerciseStats.listForUser(req.user.id);
+    return this.exerciseStats.listPageForUser(
+      req.user.id,
+      clampLimit(limit, 50),
+      before,
+    );
   }
 
   @Get(':id')
@@ -123,5 +148,24 @@ export class ExerciseController {
   })
   async getStats(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.exerciseStats.getForUser(req.user.id, id);
+  }
+
+  @Auth()
+  @Get(':id/stats/compare/:userId')
+  @ApiOperation({
+    summary: 'My stats on one exercise next to those of someone I follow',
+    description:
+      'Mine come from all my workouts, theirs only from the workouts they published (posted): unpublished sessions never count. Only for a user the current user follows.',
+  })
+  @ApiResponse({ status: 200, type: ExerciseComparisonDto })
+  @ApiResponse({ status: 400, description: 'Compared with oneself, or bad id' })
+  @ApiResponse({ status: 403, description: 'User not followed' })
+  @ApiResponse({ status: 404, description: 'Exercise not found' })
+  compareStats(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+  ): Promise<ExerciseComparisonDto> {
+    return this.exerciseStats.compareWithFollowed(req.user.id, userId, id);
   }
 }

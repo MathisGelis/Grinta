@@ -2,17 +2,20 @@ import { Stack } from "expo-router";
 
 export default function AuthNavigator() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    // Pas de retour par glissement : on ne revient en arrière qu'avec les boutons.
+    <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
       <Stack.Screen name="welcome/screens/SplashScreen" />
       <Stack.Screen name="welcome/screens/OnboardingScreen" />
-      <Stack.Screen name="LandingScreen" />
       <Stack.Screen name="LoginScreen" options={{ animation: "none" }} />
       <Stack.Screen name="RegisterScreen" options={{ animation: "none" }} />
+      <Stack.Screen name="ForgotPasswordScreen" />
       <Stack.Screen name="onboarding/GenderScreen" />
       <Stack.Screen name="onboarding/AgeScreen" />
       <Stack.Screen name="onboarding/WeightScreen" />
       <Stack.Screen name="onboarding/HeightScreen" />
       <Stack.Screen name="onboarding/GoalScreen" />
+      <Stack.Screen name="onboarding/TrainingScreen" />
+      <Stack.Screen name="onboarding/TemplatesScreen" />
     </Stack>
   );
 }

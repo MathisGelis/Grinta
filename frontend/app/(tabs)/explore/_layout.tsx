@@ -1,10 +1,27 @@
+import { useEffect } from "react";
 import { Stack, router, usePathname } from "expo-router";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { View, Text, TextInput } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchProvider, useSearch } from "@/contexts/SearchContext";
+import { WorkoutTheme } from "@/constants/Colors";
+import TopBlur from "@/components/ui/TopBlur";
+import IconButton from "@/components/ui/IconButton";
+import PressableScale from "@/components/ui/PressableScale";
+import Glass from "@/components/ui/Glass";
+import ScreenBackground from "@/components/ui/ScreenBackground";
 
+import { useTranslation } from "@/contexts/LanguageContext";
+const RIGHT_GROUP_WIDTH = 56;
 function ExploreHeader() {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const isSearchPage = pathname.endsWith("/search");
   const { query, handleSearch, clearSearch } = useSearch();
@@ -14,94 +31,147 @@ function ExploreHeader() {
     router.back();
   };
 
-  return (
-    <SafeAreaView edges={["top"]} className="bg-[#1a1a1a] pb-3">
-      <Text className="text-xl font-bold text-white text-center mb-3">
-        Explore
-      </Text>
-      {isSearchPage ? (
-        <View className="flex-row items-center px-4 gap-3">
-          <TouchableOpacity
-            className="w-10 h-10 items-center justify-center bg-[#2e2e2e] rounded-xl"
-            onPress={handleBack}
-          >
-            <Ionicons name="chevron-back-outline" size={20} color="#ffffff" />
-          </TouchableOpacity>
+  const progress = useSharedValue(isSearchPage ? 1 : 0);
+  useEffect(() => {
+    progress.set(
+      withTiming(isSearchPage ? 1 : 0, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+  }, [isSearchPage, progress]);
 
-          <View className="flex-1 flex-row items-center gap-2 bg-[#2e2e2e] rounded-full px-4 py-2">
-            <Ionicons name="search-outline" size={18} color="#888" />
-            <TextInput
-              placeholder="Search users..."
-              placeholderTextColor="#555"
-              className="flex-1 text-base text-white"
-              value={query}
-              onChangeText={handleSearch}
-              autoFocus
+  const rightStyle = useAnimatedStyle(() => ({
+    width: RIGHT_GROUP_WIDTH * (1 - progress.get()),
+    opacity: 1 - progress.get(),
+  }));
+
+  const fadeHeight = insets.top + 12 + 44 + 12;
+
+  return (
+    <View
+      className="absolute inset-x-0 top-0 z-10 px-5"
+      style={{ paddingTop: insets.top + 12, paddingBottom: 12 }}
+    >
+      <TopBlur height={fadeHeight} />
+      <View className="flex-row items-center" style={{ height: 44 }}>
+        <IconButton
+          icon={isSearchPage ? "chevron-back" : "notifications-outline"}
+          label={isSearchPage ? t.back : t.notifications}
+          variant="glass"
+          onPress={
+            isSearchPage
+              ? handleBack
+              : () => router.push("/(tabs)/explore/notification")
+          }
+        />
+
+        <PressableScale
+          className="ml-3 flex-1"
+          halo={isSearchPage ? false : "fill"}
+          accessibilityRole="search"
+          accessibilityLabel={t.searchLabel}
+          disabled={isSearchPage}
+          onPress={() => router.push("/(tabs)/explore/search")}
+        >
+          <Glass
+            className="flex-row items-center gap-2 rounded-full px-4"
+            style={{ height: 44 }}
+          >
+            <Ionicons
+              name="search-outline"
+              size={18}
+              color={WorkoutTheme.text.tertiary}
+            />
+            {isSearchPage ? (
+              <TextInput
+                placeholder={t.searchUsersPlaceholder}
+                placeholderTextColor={WorkoutTheme.text.tertiary}
+                className="flex-1 py-0 text-[16px] text-ink"
+                style={{ height: 44, textAlignVertical: "center" }}
+                value={query}
+                onChangeText={handleSearch}
+                autoFocus
+              />
+            ) : (
+              <Text
+                className="flex-1 text-base text-ink-muted"
+                style={{ textAlignVertical: "center" }}
+              >
+                {t.searchLabel}
+              </Text>
+            )}
+          </Glass>
+        </PressableScale>
+
+        <Animated.View
+          pointerEvents={isSearchPage ? "none" : "auto"}
+          style={[{ overflow: "hidden" }, rightStyle]}
+        >
+          <View
+            className="flex-row gap-3 pl-3"
+            style={{ width: RIGHT_GROUP_WIDTH }}
+          >
+            <IconButton
+              icon="people-outline"
+              label={t.chatLabel}
+              variant="glass"
+              onPress={() => router.push("/(tabs)/explore/groups")}
             />
           </View>
-        </View>
-      ) : (
-        <View className="flex-row items-center px-4 gap-3">
-          <TouchableOpacity
-            className="w-10 h-10 items-center justify-center bg-[#2e2e2e] rounded-xl"
-            onPress={() => router.push("/(tabs)/explore/notification")}
-          >
-            <Ionicons name="notifications-outline" size={20} color="#ffffff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 flex-row items-center justify-center gap-2 bg-[#2e2e2e] rounded-full px-4 py-2"
-            onPress={() => router.push("/(tabs)/explore/search")}
-          >
-            <Ionicons name="search-outline" size={18} color="#888" />
-            <Text className="flex-1 text-base text-gray-500">Search</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="w-10 h-10 items-center justify-center bg-[#2e2e2e] rounded-xl"
-            onPress={() => router.push("/(tabs)/social" as any)}
-          >
-            <Ionicons name="people-outline" size={20} color="#ffffff" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="w-10 h-10 items-center justify-center bg-[#2e2e2e] rounded-xl"
-            onPress={() => router.push("/(tabs)/explore/chat")}
-          >
-            <Ionicons name="paper-plane-outline" size={20} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
-      )}
-    </SafeAreaView>
+        </Animated.View>
+      </View>
+    </View>
   );
 }
 
 export default function ExploreLayout() {
   const pathname = usePathname();
 
-  // Ces écrans sont des pages plein écran, sans le header Explore
   const hideHeader =
     pathname.endsWith("/notification") ||
-    pathname.endsWith("/chat") ||
+    pathname.endsWith("/groups") ||
+    pathname.endsWith("/followers") ||
+    pathname.includes("/group-detail") ||
+    pathname.includes("/group-settings") ||
+    pathname.includes("/group-add-member") ||
     pathname.endsWith("/userPost") ||
     pathname.includes("/user-profile");
 
   return (
     <SearchProvider>
-      <View style={{ flex: 1, backgroundColor: "#1a1a1a" }}>
+      <View className="flex-1">
+        <ScreenBackground />
         {!hideHeader && <ExploreHeader />}
 
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: WorkoutTheme.background },
+          }}
+        >
+          <Stack.Screen
+            name="index"
+            options={{ contentStyle: { backgroundColor: "transparent" } }}
+          />
           <Stack.Screen
             name="search"
-            options={{ animation: "none", gestureEnabled: false }}
+            options={{
+              animation: "none",
+              gestureEnabled: false,
+              contentStyle: { backgroundColor: "transparent" },
+            }}
           />
           <Stack.Screen
             name="notification"
-            options={{ animation: "slide_from_left" }}
+            options={{ animation: "slide_from_left", gestureEnabled: false }}
           />
-          <Stack.Screen name="chat" />
-          <Stack.Screen name="userPost"/>
+          <Stack.Screen name="groups" />
+          <Stack.Screen name="followers" />
+          <Stack.Screen name="group-detail" />
+          <Stack.Screen name="group-settings" />
+          <Stack.Screen name="group-add-member" />
+          <Stack.Screen name="userPost" />
         </Stack>
       </View>
     </SearchProvider>

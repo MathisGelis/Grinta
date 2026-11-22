@@ -6,6 +6,7 @@ import {
   OneToMany,
   CreateDateColumn,
   Index,
+  AfterLoad,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/users.entity';
@@ -20,7 +21,7 @@ export class PlannedWorkout {
   @ApiProperty()
   id: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @ApiProperty({ type: () => User })
   user: User;
 
@@ -32,6 +33,11 @@ export class PlannedWorkout {
   @ApiProperty({ required: false })
   description?: string;
 
+  /** Duration the user expects, in minutes (1 to 600), as they entered it. */
+  @Column({ type: 'int', nullable: true })
+  @ApiProperty({ required: false, nullable: true, minimum: 1, maximum: 600 })
+  estimatedDurationMinutes?: number | null;
+
   @OneToMany(() => PlannedWorkoutExercise, (pwe) => pwe.workout, {
     cascade: true,
   })
@@ -41,6 +47,16 @@ export class PlannedWorkout {
   @CreateDateColumn()
   @ApiProperty()
   createdAt: Date;
+
+  /**
+   * Rows come back from Postgres in no guaranteed order (a join or an update
+   * can change it), so every load puts the exercises back in plan order,
+   * whichever route or relation loaded them.
+   */
+  @AfterLoad()
+  sortExercises() {
+    this.exercises?.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  }
 }
 
 @Entity('planned_workout_exercises')
@@ -68,4 +84,9 @@ export class PlannedWorkoutExercise {
 
   @Column({ type: 'int', nullable: true })
   plannedRestSeconds?: number;
+
+  /** Rank of the exercise in its workout, from 0. */
+  @Column({ type: 'int', default: 0 })
+  @ApiProperty({ example: 0, description: 'Rank in the workout, from 0' })
+  position: number;
 }

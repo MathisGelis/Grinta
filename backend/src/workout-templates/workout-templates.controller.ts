@@ -1,0 +1,89 @@
+import {
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Auth } from '../auth/auth.decorators';
+import type { AuthenticatedRequest } from '../auth/auth-user.interface';
+import { TemplatesQueryDto } from './dto/templates-query.dto';
+import { pickTemplateLanguage } from './template-texts';
+import { WorkoutTemplatesService } from './workout-templates.service';
+
+@ApiTags('workout templates')
+@Auth()
+@Controller('workouts/templates')
+export class WorkoutTemplatesController {
+  constructor(private readonly templates: WorkoutTemplatesService) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Ready-made programmes, the best fit first',
+    description:
+      'Ranked by goal, level, days per week and location. Each criterion ' +
+      'defaults to the onboarding answer stored on the profile. The best ' +
+      'fits are flagged `recommended`. Weights are 0: the user sets them.',
+  })
+  @ApiResponse({ status: 200, description: 'Templates returned' })
+  list(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: TemplatesQueryDto,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    return this.templates.listTemplates(
+      req.user,
+      query,
+      pickTemplateLanguage(acceptLanguage),
+    );
+  }
+
+  @Get(':key')
+  @ApiOperation({
+    summary: 'The programme a template proposes, nothing saved',
+    description:
+      'Same shape as the import draft: `workouts` (each with exercises ' +
+      'ready for POST /workouts/planned) and `programme` (fields of ' +
+      'POST /programmes, days pointing to `workouts` by `workoutIndex`, ' +
+      'null for rest). The app shows it as a proposal; the user saves it ' +
+      'adjusted through those routes, or as is with POST :key/use.',
+  })
+  @ApiResponse({ status: 200, description: 'Proposal returned' })
+  @ApiResponse({ status: 404, description: 'Unknown template' })
+  propose(
+    @Req() req: AuthenticatedRequest,
+    @Param('key') key: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    return this.templates.proposeTemplate(
+      req.user,
+      key,
+      pickTemplateLanguage(acceptLanguage),
+    );
+  }
+
+  @Post(':key/use')
+  @ApiOperation({
+    summary: 'Accept a template as proposed and save it',
+    description:
+      'Only when the user accepts the proposal: creates one planned ' +
+      'workout per session of the template and a programme over one week ' +
+      '(rest days included), not started.',
+  })
+  @ApiResponse({ status: 201, description: 'Programme created' })
+  @ApiResponse({ status: 404, description: 'Unknown template' })
+  use(
+    @Req() req: AuthenticatedRequest,
+    @Param('key') key: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    return this.templates.useTemplate(
+      req.user,
+      key,
+      pickTemplateLanguage(acceptLanguage),
+    );
+  }
+}

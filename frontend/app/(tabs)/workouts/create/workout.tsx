@@ -1,48 +1,89 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useMemo, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import { View, ScrollView, Alert } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { WorkoutTheme } from "@/constants/Colors";
+import { useTranslation } from "@/contexts/LanguageContext";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
-import { Exercise } from "@/services/exercises.service";
+import { Exercise, getExerciseStats } from "@/services/exercises.service";
 import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
 import {
   createPlannedWorkout,
+  getWorkoutById,
+  plannedWorkoutsList,
+  PlannedWorkout,
   CreateWorkoutRequest,
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
 import WorkoutFormFields from "@/components/workout/editor/WorkoutFormFields";
 import ExerciseSection from "@/components/workout/editor/ExerciseSection";
+import WorkoutPickerSheet from "@/components/workout/editor/WorkoutPickerSheet";
+import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 import WorkoutStats from "@/components/workout/editor/WorkoutStats";
 
+import IconButton from "@/components/ui/IconButton";
+import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import { toast } from "@/components/ui/Toast";
+import { MAX_EXERCISES } from "@/utils/sanitizeWorkout";
+const DEFAULT_REST_SECONDS = 90;
+
 export default function CreateWorkoutScreen() {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState<string | null>(null);
   const [selectedExercises, setSelectedExercises] = useState<
     ExerciseSetupData[]
   >([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
-  const [estimatedTime, setEstimatedTime] = useState("45");
   const [loading, setLoading] = useState(false);
+  const [showWorkoutPicker, setShowWorkoutPicker] = useState(false);
+  const [workouts, setWorkouts] = useState<PlannedWorkout[]>(
+    () => plannedWorkoutsList.peek() ?? [],
+  );
+
+  const openWorkoutPicker = () => {
+    setShowWorkoutPicker(true);
+    plannedWorkoutsList.load().then(setWorkouts).catch(() => {});
+  };
+
+  const handleImportWorkout = async (workout: PlannedWorkout) => {
+    setShowWorkoutPicker(false);
+    try {
+      const token = await TokenService.get();
+      const detail = await getWorkoutById(workout.id, token || undefined);
+      setSelectedExercises((prev) => {
+        const known = new Set(prev.map((ex) => ex.id));
+        const added = detail.exercises
+          .filter((ex) => !known.has(ex.exerciseId))
+          .map((ex) => ({
+            id: ex.exerciseId,
+            name: ex.exerciseName ?? "",
+            sets: ex.sets.length ? ex.sets : [{ reps: 10, weight: 0 }],
+          }));
+        return [...prev, ...added];
+      });
+    } catch (err) {
+      Alert.alert(t.error, err instanceof Error ? err.message : t.loadingError);
+    }
+  };
 
   const handleSelectExercise = (exercise: Exercise) => {
+    if (selectedExercises.length >= MAX_EXERCISES) {
+      toast.info(t.maxExercisesReached);
+      return;
+    }
     const exerciseExists = selectedExercises.some(
       (ex) => ex.id === exercise.id,
     );
 
     if (exerciseExists) {
       Alert.alert(
-        "Exercice en doublon",
-        `"${exercise.name}" est déjà ajouté à la séance.`,
+        t.duplicateExercise,
+        `"${exercise.name}" ${t.alreadyAdded}`,
       );
       return;
     }
@@ -54,6 +95,20 @@ export default function CreateWorkoutScreen() {
     };
     setSelectedExercises((prev) => [...prev, newExercise]);
     setShowExerciseSelector(false);
+
+    getExerciseStats(exercise.id)
+      .then((stats) => {
+        const weight = stats?.lastWeight;
+        if (!weight) return;
+        setSelectedExercises((prev) =>
+          prev.map((ex) =>
+            ex.id === exercise.id && ex.sets.every((set) => set.weight === 0)
+              ? { ...ex, sets: ex.sets.map((set) => ({ ...set, weight })) }
+              : ex,
+          ),
+        );
+      })
+      .catch(() => {});
   };
 
   const handleUpdateExercise = (updated: ExerciseSetupData) => {
@@ -66,23 +121,32 @@ export default function CreateWorkoutScreen() {
     setSelectedExercises((prev) => prev.filter((ex) => ex.id !== id));
   };
 
+  const estimatedMinutes = useMemo(
+    () => estimateWorkoutMinutes(selectedExercises, DEFAULT_REST_SECONDS),
+    [selectedExercises],
+  );
+
   const transformExercisesToAPI = (): CreateWorkoutRequest => ({
     title: name.trim(),
     description: description.trim(),
+    ...(estimatedMinutes ? { estimatedDurationMinutes: estimatedMinutes } : {}),
     exercises: selectedExercises.map((exercise) => ({
       exerciseId: exercise.id,
       sets: exercise.sets,
-      plannedRestSeconds: 60,
+      plannedRestSeconds: Math.min(
+        600,
+        Math.max(0, exercise.plannedRestSeconds ?? DEFAULT_REST_SECONDS),
+      ),
     })),
   });
 
   const createWorkout = async () => {
     if (!name.trim()) {
-      Alert.alert("Erreur", "Veuillez entrer un nom de séance");
+      Alert.alert(t.error, t.errorWorkoutName);
       return;
     }
     if (selectedExercises.length === 0) {
-      Alert.alert("Erreur", "Veuillez ajouter au moins un exercice");
+      Alert.alert(t.error, t.errorNoExercises);
       return;
     }
 
@@ -90,13 +154,12 @@ export default function CreateWorkoutScreen() {
     try {
       const token = await TokenService.get();
       await createPlannedWorkout(transformExercisesToAPI(), token || undefined);
-      Alert.alert("Succès", "Séance créée avec succès!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.workoutCreated);
+      router.back();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Erreur lors de la création";
-      Alert.alert("Erreur", message);
+        err instanceof Error ? err.message : t.creationError;
+      Alert.alert(t.error, message);
       console.error("Erreur de création:", err);
     } finally {
       setLoading(false);
@@ -104,68 +167,61 @@ export default function CreateWorkoutScreen() {
   };
 
   return (
-    <SafeAreaView
-      edges={["top"]}
-      className="flex-1 pb-5"
-      style={{ backgroundColor: WorkoutTheme.background }}
-    >
-      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+    <View className="flex-1">
+      <ScreenBackground flat />
+      <ScreenHeader
+        floating
+        title={t.newSession}
+        right={
+          <IconButton
+            icon={loading ? "hourglass-outline" : "checkmark"}
+            variant="accent"
+            label={t.createWorkoutBtn}
+            onPress={loading ? undefined : createWorkout}
+          />
+        }
+      />
+      <ScrollView {...chromeScrollProps}
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="gap-8 px-5"
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+        keyboardShouldPersistTaps="handled"
+      >
         <WorkoutFormFields
           name={name}
           onNameChange={setName}
           description={description}
           onDescriptionChange={setDescription}
-          image={image}
-          onImageChange={setImage}
-          estimatedTime={estimatedTime}
-          onEstimatedTimeChange={setEstimatedTime}
         />
 
         <ExerciseSection
           exercises={selectedExercises}
           onAdd={() => setShowExerciseSelector(true)}
+          onImport={openWorkoutPicker}
           onUpdate={handleUpdateExercise}
           onRemove={handleRemoveExercise}
+          defaultRestSeconds={DEFAULT_REST_SECONDS}
         />
 
         {selectedExercises.length > 0 && (
           <WorkoutStats
             exercises={selectedExercises}
-            estimatedTime={estimatedTime}
+            estimatedMinutes={estimatedMinutes}
           />
         )}
-
-        {/* Bouton de création */}
-        <TouchableOpacity
-          onPress={createWorkout}
-          disabled={loading}
-          className="rounded-xl py-3.5 mt-4 flex-row justify-center items-center gap-2"
-          style={[
-            { backgroundColor: WorkoutTheme.accent.purple },
-            loading && { opacity: 0.6 },
-          ]}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={WorkoutTheme.text.primary} />
-          ) : (
-            <>
-              <Ionicons
-                name="checkmark-done"
-                size={20}
-                color={WorkoutTheme.text.primary}
-              />
-              <Text
-                className="text-base font-bold"
-                style={{ color: WorkoutTheme.text.primary }}
-              >
-                Créer la séance
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        <View className="h-5" />
       </ScrollView>
+
+      <WorkoutPickerSheet
+        visible={showWorkoutPicker}
+        workouts={workouts}
+        onClose={() => setShowWorkoutPicker(false)}
+        onSelect={handleImportWorkout}
+        onCreate={() => {
+          setShowWorkoutPicker(false);
+          router.push("/(tabs)/workouts/create/workout");
+        }}
+      />
 
       <ExerciseSearch
         visible={showExerciseSelector}
@@ -173,6 +229,6 @@ export default function CreateWorkoutScreen() {
         onSelectExercise={handleSelectExercise}
         existingExerciseIds={selectedExercises.map((ex) => ex.id)}
       />
-    </SafeAreaView>
+    </View>
   );
 }

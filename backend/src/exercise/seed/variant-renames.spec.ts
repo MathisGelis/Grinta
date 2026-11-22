@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { NAME_FIXES_2026_10 } from './name-fixes';
 import { VARIANT_RENAMES_2026_10 } from './variant-renames';
 
 const catalogue: Array<{ name: string; equipment_type: string }> = JSON.parse(
@@ -11,8 +12,15 @@ const equipmentByName = new Map(
 
 describe('VARIANT_RENAMES_2026_10', () => {
   it('renames to catalogue entries of the same equipment', () => {
+    // A frozen target may have been corrected since by a name fix.
+    const current = (name: string) =>
+      NAME_FIXES_2026_10.find((f) => f.from === name)?.to ?? name;
+
     for (const r of VARIANT_RENAMES_2026_10)
-      expect([r.to, equipmentByName.get(r.to)]).toEqual([r.to, r.equipment]);
+      expect([r.to, equipmentByName.get(current(r.to))]).toEqual([
+        r.to,
+        r.equipment,
+      ]);
   });
 
   it('never renames a catalogue entry away from its own name', () => {

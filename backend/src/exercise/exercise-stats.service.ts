@@ -1,8 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { SetPair } from '../workouts/entities/completed-workout.entity';
 import { ExerciseStatsDto } from './dto/exercise-stats.dto';
+import {
+  ComparedExerciseStatsDto,
+  ExerciseComparisonDto,
+} from './dto/exercise-comparison.dto';
 import { Exercise } from './entities/exercise.entity';
 import { UserExerciseStats } from './entities/user-exercise-stats.entity';
 import {
@@ -18,6 +27,12 @@ import {
   StoredExerciseStats,
   summarizeSession,
 } from './utils/exercise-history.util';
+import { roundEstimate, roundVolume } from '../common/utils/numbers';
+
+const orNull = (
+  value: number | null | undefined,
+  rounding: (v: number) => number,
+) => (value == null ? null : rounding(value));
 
 /** Every session of one exercise for one user. */
 export interface ExerciseHistory {
@@ -245,10 +260,105 @@ export class ExerciseStatsService {
     return rows.map(toDto);
   }
 
+  /**
+   * One page of the same list, most recently trained first. `before` is the
+   * opaque `nextBefore` of the previous page: the position is a (date, id)
+   * pair, so the pages stay stable while workouts are saved in between.
+   */
+  async listPageForUser(
+    userId: string,
+    limit: number,
+    before?: string,
+  ): Promise<{ items: ExerciseStatsDto[]; nextBefore: string | null }> {
+    const qb = this.statsRepository
+      .createQueryBuilder('s')
+      .innerJoinAndSelect('s.exercise', 'exercise')
+      .where('s.user_id = :userId', { userId })
+      .orderBy('s.last_performed_at', 'DESC', 'NULLS LAST')
+      .addOrderBy('s.id', 'DESC')
+      .limit(limit + 1);
+
+    if (before) {
+      const [date, id] = decodeCursor(before);
+
+      if (date)
+        qb.andWhere(
+          '(s.last_performed_at < :date OR (s.last_performed_at = :date AND s.id < :id) OR s.last_performed_at IS NULL)',
+          { date, id },
+        );
+      else qb.andWhere('s.last_performed_at IS NULL AND s.id < :id', { id });
+    }
+    const rows = await qb.getMany();
+    const page = rows.slice(0, limit);
+    const last = page[page.length - 1];
+
+    return {
+      items: page.map(toDto),
+      nextBefore:
+        rows.length > limit && last
+          ? encodeCursor(last.last_performed_at, last.id)
+          : null,
+    };
+  }
+
+  /**
+   * The user's stats on one exercise next to those of someone they follow.
+   * Theirs come from their published workouts only, recomputed on the fly:
+   * the stored stats cover every workout, unpublished ones included.
+   */
+  async compareWithFollowed(
+    userId: string,
+    otherId: string,
+    exerciseId: string,
+  ): Promise<ExerciseComparisonDto> {
+    if (otherId === userId)
+      throw new BadRequestException(
+        "Choisissez quelqu'un d'autre que vous pour comparer vos stats.",
+      );
+    const manager = this.statsRepository.manager;
+    const [[user], [exercise], mine, theirs] = await Promise.all([
+      manager.query<ExerciseComparisonDto['user'][]>(
+        `SELECT u.id, u."uniqueName", u."displayName",
+                COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"
+           FROM users u
+           JOIN connections c ON c."followingId" = u.id AND c."followerId" = $1
+          WHERE u.id = $2`,
+        [userId, otherId],
+      ),
+      manager.query<Array<{ id: string; name: string }>>(
+        `SELECT id, name FROM exercises WHERE id = $1`,
+        [exerciseId],
+      ),
+      manager
+        .query<StatsRow[]>(
+          `SELECT * FROM user_exercise_stats
+            WHERE user_id = $1 AND exercise_id = $2`,
+          [userId, exerciseId],
+        )
+        .then(([row]) => row && fromRow(row)),
+      this.loadHistories(manager, otherId, [exerciseId], true),
+    ]);
+
+    if (!exercise) throw new NotFoundException('Exercise not found');
+    if (!user)
+      throw new ForbiddenException(
+        'Suivez cette personne pour comparer vos stats avec les siennes.',
+      );
+    const history = theirs.get(exerciseId);
+
+    return {
+      exercise,
+      me: mine ? compared(mine) : null,
+      user,
+      them: history ? compared(buildExerciseStats(history.sessions)) : null,
+    };
+  }
+
   private async loadHistories(
     manager: EntityManager,
     userId: string,
     exerciseIds: string[],
+    publishedOnly = false,
   ): Promise<Map<string, ExerciseHistory>> {
     const rows: Array<{
       exerciseId: string;
@@ -265,7 +375,8 @@ export class ExerciseStatsService {
          JOIN completed_workout_exercises e ON e."workoutId" = w.id
          JOIN exercises ex ON ex.id = e."exerciseId"
         WHERE w."userId" = $1
-          AND e."exerciseId" = ANY($2::uuid[])`,
+          AND e."exerciseId" = ANY($2::uuid[])
+          ${publishedOnly ? 'AND EXISTS (SELECT 1 FROM posts p WHERE p."workoutId" = w.id)' : ''}`,
       [userId, exerciseIds],
     );
     const histories = new Map<string, ExerciseHistory>();
@@ -313,6 +424,21 @@ function fromRow(row: StatsRow): StoredExerciseStats {
   };
 }
 
+function compared(
+  stats: Omit<StoredExerciseStats, 'lastWorkoutId'> | null,
+): ComparedExerciseStatsDto | null {
+  return (
+    stats && {
+      heaviestWeight: stats.prWeight,
+      estimatedOneRepMax: orNull(stats.bestEstimatedOneRepMax, roundEstimate),
+      bestSessionVolume: orNull(stats.bestSessionVolume, roundVolume),
+      maxReps: stats.maxReps,
+      totalSessions: stats.totalSessions,
+      lastPerformedAt: stats.lastPerformedAt,
+    }
+  );
+}
+
 function toColumns(snapshot: StoredExerciseStats) {
   return {
     PR: snapshot.prWeight,
@@ -345,13 +471,39 @@ function toDto(
     lastSets: row.last_sets ?? [],
     prWeight: row.PR ?? null,
     prReps: row.pr_reps ?? null,
-    bestEstimatedOneRepMax: row.best_estimated_1rm ?? null,
-    bestSessionVolume: row.best_session_volume ?? null,
+    bestEstimatedOneRepMax: orNull(row.best_estimated_1rm, roundEstimate),
+    bestSessionVolume: orNull(row.best_session_volume, roundVolume),
     maxReps: row.max_reps ?? null,
     totalSessions: row.total_sessions,
     totalSets: row.total_sets,
     totalReps: row.total_reps,
-    totalVolume: row.total_volume,
+    totalVolume: roundVolume(row.total_volume),
     updatedAt: row.updatedAt,
   };
+}
+
+const encodeCursor = (date: Date | null | undefined, id: string) =>
+  Buffer.from(JSON.stringify([date ? date.toISOString() : null, id])).toString(
+    'base64url',
+  );
+
+function decodeCursor(cursor: string): [string | null, string] {
+  try {
+    const [date, id] = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString(),
+    ) as [string | null, string];
+
+    if (
+      (date !== null && Number.isNaN(Date.parse(date))) ||
+      !/^[0-9a-f-]{36}$/i.test(id)
+    )
+      throw new Error('bad cursor');
+    return [date, id];
+  } catch {
+    throw new BadRequestException({
+      statusCode: 400,
+      code: 'CURSOR_INVALID',
+      message: 'Curseur de pagination invalide.',
+    });
+  }
 }

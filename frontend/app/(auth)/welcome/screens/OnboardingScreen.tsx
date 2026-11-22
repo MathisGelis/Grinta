@@ -1,20 +1,19 @@
 import React, { useRef, useState } from "react";
-import {
-  View,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  Text,
-  Animated,
-  Dimensions,
-} from "react-native";
+import { View, FlatList, StyleSheet, Text, Animated, Dimensions } from "react-native";
 import { slides } from "@/constants/slides";
-import OnboardingSlide from "../components/OnboardingSlide";
+import OnboardingSlide from "@/components/auth/OnboardingSlide";
 import { router } from "expo-router";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import PressableScale from "@/components/ui/PressableScale";
+import SkipLink from "@/components/ui/SkipLink";
+import { saveItem } from "@/core/services/storage";
+import { useTranslation } from "@/contexts/LanguageContext";
 const { width } = Dimensions.get("window");
 
 export default function OnboardingScreen() {
+  const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
@@ -25,9 +24,13 @@ export default function OnboardingScreen() {
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const handleStart = () => {
-    router.replace("/(auth)/LoginScreen");
+  const finish = (route: "/(auth)/onboarding/GenderScreen" | "/(auth)/LoginScreen") => {
+    void saveItem("hasSeenOnboarding", "true");
+    router.replace(route);
   };
+
+  // Le questionnaire passe avant l'inscription.
+  const handleStart = () => finish("/(auth)/onboarding/GenderScreen");
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
@@ -38,7 +41,8 @@ export default function OnboardingScreen() {
   const isLastSlide = currentSlide === slides.length - 1;
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1">
+      <ScreenBackground />
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -46,6 +50,7 @@ export default function OnboardingScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         pagingEnabled
+        scrollEnabled={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
           { useNativeDriver: false }
@@ -54,66 +59,42 @@ export default function OnboardingScreen() {
         viewabilityConfig={viewConfig}
       />
 
-      {/* Bottom area */}
-      <View style={styles.bottomContainer}>
-        {/* Dots */}
-        <View style={styles.dotsContainer}>
+      <View className="pb-12 pt-3 items-center bg-background">
+        <View className="flex-row justify-center mb-6">
           {slides.map((_, index) => (
             <View
               key={index}
-              style={[styles.dot, currentSlide === index && styles.activeDot]}
+              className={`w-6 h-1 rounded-sm mx-1 ${currentSlide === index ? "bg-accent" : "bg-ink-faint"}`}
             />
           ))}
         </View>
 
-        {/* Button */}
-        <TouchableOpacity
+        <PressableScale
           style={styles.button}
           onPress={isLastSlide ? handleStart : handleNext}
         >
-          <Text style={styles.buttonText}>
-            {isLastSlide ? "Start Now  ›" : "Next  ›"}
+          <Text className="text-ink font-bold text-base">
+            {isLastSlide ? t.startNowBtn : t.nextBtn}
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
+
+        <SkipLink
+          className="mt-2"
+          label={isLastSlide ? t.haveAccount : t.skipBtn}
+          onPress={() => finish(isLastSlide ? "/(auth)/LoginScreen" : "/(auth)/onboarding/GenderScreen")}
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  bottomContainer: {
-    paddingBottom: 48,
-    paddingTop: 12,
-    alignItems: "center",
-    backgroundColor: "#121212",
-  },
-  dotsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  dot: {
-    width: 24,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#444",
-    marginHorizontal: 4,
-  },
-  activeDot: {
-    backgroundColor: "#A56BFF",
-  },
   button: {
-    backgroundColor: "#A56BFF",
+    backgroundColor: WorkoutTheme.accent.purple,
     paddingVertical: 16,
     paddingHorizontal: 48,
     borderRadius: 40,
     width: width * 0.75,
     alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

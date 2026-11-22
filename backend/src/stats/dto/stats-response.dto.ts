@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { RealLifeComparisonDto } from '../../common/dto/real-life-comparison.dto';
 import { DetailedMuscleGroup } from '../../exercise/enums/detailed-muscle.enum';
+import { BalanceInsight, ComparisonInsight } from '../constants/insights';
 
 export class ExerciseStatsDto {
   @ApiProperty() exerciseId: string;
@@ -33,6 +35,13 @@ export class WorkoutStatsDto {
   totalReps: number;
   @ApiProperty({ description: 'Volume load for this workout (kg)' })
   totalVolume: number;
+  @ApiProperty({
+    type: () => RealLifeComparisonDto,
+    nullable: true,
+    description:
+      'totalVolume told as everyday objects, null under 7 kg. object is an English key the app translates',
+  })
+  realLifeComparison: RealLifeComparisonDto | null;
   @ApiProperty({
     description: 'Combined volume of every workout completed the same day (kg)',
   })
@@ -187,10 +196,12 @@ export class TrainingBalanceDto {
   })
   upperLowerRatio: number | null;
   @ApiProperty({
-    type: [String],
-    description: 'Human-readable balance insights',
+    enum: BalanceInsight,
+    isArray: true,
+    description:
+      'Codes for the app to translate, with pushPullRatio and upperLowerRatio for the figures',
   })
-  insights: string[];
+  insights: BalanceInsight[];
 }
 
 // ---------------------------------------------------------------------------
@@ -500,7 +511,13 @@ export class ComparisonsDto {
       'Per metric: workouts, durationSeconds, sets, reps, volume, calories',
   })
   comparison: Record<string, MetricComparisonDto>;
-  @ApiProperty({ type: [String] }) insights: string[];
+  @ApiProperty({
+    enum: ComparisonInsight,
+    isArray: true,
+    description:
+      'Codes for the app to translate, with comparison[metric].changePct and baseline.periodsConsidered for the figures',
+  })
+  insights: ComparisonInsight[];
 }
 
 // ---------------------------------------------------------------------------
@@ -540,6 +557,11 @@ export class HeatmapDayDto {
   @ApiProperty() durationSeconds: number;
   @ApiProperty({
     description:
+      'Estimated kcal of the day, workout by workout as GET /stats/workout/:id',
+  })
+  calories: number;
+  @ApiProperty({
+    description:
       'Intensity from 1 to maxLevel, relative to the longest day of the year',
   })
   level: number;
@@ -550,6 +572,8 @@ export class HeatmapDto {
   @ApiProperty() totalWorkouts: number;
   @ApiProperty() activeDays: number;
   @ApiProperty() totalDurationSeconds: number;
+  @ApiProperty({ description: 'Estimated kcal of the year' })
+  totalCalories: number;
   @ApiProperty() maxWorkoutsInDay: number;
   @ApiProperty({ description: 'Longest run of consecutive days in the year' })
   longestStreakDays: number;

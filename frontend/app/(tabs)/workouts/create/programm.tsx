@@ -1,16 +1,6 @@
 import React, { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { SelectList } from "react-native-dropdown-select-list";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
 import { createProgramme, ProgrammeDay } from "@/services/programms.service";
 import {
@@ -20,20 +10,32 @@ import {
 } from "@/services/workouts.service";
 import { TokenService } from "@/services/token.service";
 
-const DIFFICULTY_OPTIONS = [
-  { key: "BEGINNER", value: "Débutant" },
-  { key: "INTERMEDIATE", value: "Intermédiaire" },
-  { key: "ADVANCED", value: "Avancé" },
-];
-
-const LOCATION_OPTIONS = [
-  { key: "GYM", value: "Salle de sport" },
-  { key: "HOME", value: "Domicile" },
-  { key: "OUTDOORS", value: "Extérieur" },
-  { key: "ANY", value: "Tous lieux" },
-];
-
+import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
+import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import { OutlinedField } from "@/components/ui/OutlinedField";
+import DifficultyPicker from "@/components/ui/DifficultyPicker";
+import LocationPicker from "@/components/ui/LocationPicker";
+import { useTranslation } from "@/contexts/LanguageContext";
+import {
+  DIFFICULTY_KEYS,
+  LOCATION_KEYS,
+  difficultyLabel,
+  locationLabel,
+} from "@/i18n/labels";
+import { toast } from "@/components/ui/Toast";
+import { LIMITS } from "@/utils/validation";
 export default function CreateProgrammScreen() {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
+  const LOCATION_OPTIONS = LOCATION_KEYS.map((key) => ({
+    key,
+    value: locationLabel(t, key),
+  }));
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("BEGINNER");
@@ -59,8 +61,7 @@ export default function CreateProgrammScreen() {
               description: detail.description,
               totalExercises: detail.totalExercises,
             };
-          } catch (error) {
-            console.warn("Fallback workout id used", error);
+          } catch {
             return workout;
           }
         }),
@@ -80,12 +81,17 @@ export default function CreateProgrammScreen() {
 
   const submitProgramme = useCallback(async () => {
     if (!title.trim()) {
-      Alert.alert("Erreur", "Le titre du programme est requis.");
+      Alert.alert(t.error, t.programmeTitleRequired);
       return;
     }
 
     if (days.length === 0) {
-      Alert.alert("Erreur", "Ajoutez au moins un jour au programme.");
+      Alert.alert(t.error, t.addAtLeastOneDay);
+      return;
+    }
+    // Un programme ne peut pas n'être fait que de jours de repos (B-22).
+    if (!days.some((day) => day.workout)) {
+      Alert.alert(t.error, t.apiErrors.PROGRAMME_NEEDS_WORKOUT);
       return;
     }
 
@@ -104,147 +110,92 @@ export default function CreateProgrammScreen() {
         })),
       });
 
-      Alert.alert("Succès", "Programme créé avec succès", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.programmeCreated);
+      router.back();
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Erreur lors de la création";
-      Alert.alert("Erreur", message);
+        error instanceof Error ? error.message : t.creationError;
+      Alert.alert(t.error, message);
     } finally {
       setLoading(false);
     }
-  }, [days, description, difficulty, locationType, title]);
+  }, [t, days, description, difficulty, locationType, title]);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0F0F0F]">
-      <ScrollView
-        className="flex-1 px-4 py-4"
-        showsVerticalScrollIndicator={false}
-      >
-        <Text className="mb-2 text-2xl font-bold text-white">
-          Créer un programme
+    <View className="flex-1">
+      <ScreenBackground flat />
+      <ScreenHeader
+        floating
+        title={t.newProgramme}
+        right={
+          <IconButton
+            icon={loading ? "hourglass-outline" : "checkmark"}
+            variant="accent"
+            label={t.createProgramme}
+            onPress={loading ? undefined : submitProgramme}
+          />
+        }
+      />
+      <ProgrammeDayEditor
+        days={days}
+        onChangeDays={setDays}
+        availableWorkouts={availableWorkouts}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+        header={
+          <View style={{ gap: 20, marginBottom: 20 }}>
+        <Text className="text-sm text-ink-muted">
+          {t.programmeIntro}
         </Text>
-        <Text className="mb-4 text-sm text-[#C7C7C7]">
-          Définis le titre, la difficulté, le lieu et l’ordre des jours de ton
-          programme.
-        </Text>
 
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-            Titre *
-          </Text>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Ex: Programme force 4 semaines"
-            placeholderTextColor="#808080"
-            className="rounded-xl border border-[#2F2F2F] bg-[#171717] px-3 py-3 text-white"
-          />
-        </View>
-
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-            Description
-          </Text>
-          <TextInput
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={4}
-            placeholder="Objectif, fréquence, notes…"
-            placeholderTextColor="#808080"
-            className="rounded-xl border border-[#2F2F2F] bg-[#171717] px-3 py-3 text-white"
-            style={{ minHeight: 90, textAlignVertical: "top" }}
-          />
-        </View>
-
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-            Difficulté *
-          </Text>
-          <SelectList
-            setSelected={(value: string) => setDifficulty(value)}
-            data={DIFFICULTY_OPTIONS}
-            save="key"
-            search={false}
-            placeholder="Choisir une difficulté"
-            defaultOption={DIFFICULTY_OPTIONS.find(
-              (option) => option.key === difficulty,
-            )}
-            inputStyles={{ color: "#FFFFFF" }}
-            boxStyles={{
-              backgroundColor: "#171717",
-              borderColor: "#2F2F2F",
-              borderRadius: 12,
-            }}
-            dropdownStyles={{
-              backgroundColor: "#171717",
-              borderColor: "#2F2F2F",
-              borderRadius: 12,
-            }}
-            dropdownItemStyles={{
-              backgroundColor: "#171717",
-              borderBottomColor: "#2F2F2F",
-            }}
-            dropdownTextStyles={{ color: "#FFFFFF" }}
-          />
-        </View>
-
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-            Lieu *
-          </Text>
-          <SelectList
-            setSelected={(value: string) => setLocationType(value)}
-            data={LOCATION_OPTIONS}
-            save="key"
-            search={false}
-            placeholder="Choisir un lieu"
-            defaultOption={LOCATION_OPTIONS.find(
-              (option) => option.key === locationType,
-            )}
-            inputStyles={{ color: "#FFFFFF" }}
-            boxStyles={{
-              backgroundColor: "#171717",
-              borderColor: "#2F2F2F",
-              borderRadius: 12,
-            }}
-            dropdownStyles={{
-              backgroundColor: "#171717",
-              borderColor: "#2F2F2F",
-              borderRadius: 12,
-            }}
-            dropdownItemStyles={{
-              backgroundColor: "#171717",
-              borderBottomColor: "#2F2F2F",
-            }}
-            dropdownTextStyles={{ color: "#FFFFFF" }}
-          />
-        </View>
-
-        <ProgrammeDayEditor
-          days={days}
-          onChangeDays={setDays}
-          availableWorkouts={availableWorkouts}
+        <Button
+          label={t.imEntry}
+          variant="secondary"
+          icon="document-text-outline"
+          onPress={() => router.push("/(tabs)/workouts/import" as any)}
         />
 
-        <TouchableOpacity
-          onPress={submitProgramme}
-          disabled={loading}
-          className="mt-2 rounded-2xl bg-[#8B5CF6] px-4 py-3"
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text className="text-center text-base font-semibold text-white">
-              Créer le programme
-            </Text>
-          )}
-        </TouchableOpacity>
+        <OutlinedField
+          label={t.titleLabel}
+          required
+          value={title}
+          maxLength={LIMITS.title}
+          onChangeText={setTitle}
+          placeholder={t.programmeTitlePlaceholder}
+        />
 
-        <View className="h-6" />
-      </ScrollView>
-    </SafeAreaView>
+        <OutlinedField
+          label={t.descriptionLabel}
+          multiline
+          value={description}
+          maxLength={LIMITS.description}
+          onChangeText={setDescription}
+          placeholder={t.programmeDescPlaceholder}
+        />
+
+        <View className="flex-row gap-3">
+        <View className="flex-1">
+        <DifficultyPicker
+          label={t.difficultyLabel}
+          level={Math.max(1, DIFFICULTY_KEYS.indexOf(difficulty as any) + 1)}
+          levelLabel={difficultyLabel(t, difficulty)}
+          onChange={(level) => setDifficulty(DIFFICULTY_KEYS[level - 1])}
+        />
+        </View>
+
+        <View className="flex-1">
+        <LocationPicker
+          label={t.locationLabel}
+          required
+          options={LOCATION_OPTIONS.map((o) => ({ key: o.key, label: o.value }))}
+          value={locationType}
+          onChange={setLocationType}
+        />
+        </View>
+        </View>
+
+          </View>
+        }
+      />
+    </View>
   );
 }

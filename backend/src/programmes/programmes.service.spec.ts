@@ -68,10 +68,14 @@ describe('ProgrammesService day building', () => {
     expect(programmeRepo.save).not.toHaveBeenCalled();
   });
 
-  it('does not query the database when every day is a rest day', async () => {
-    await service.createProgramme(user, {
-      ...base,
-      days: [{ dayNumber: 1 }, { dayNumber: 2 }],
+  it('refuses a programme of rest days only without querying the database', async () => {
+    await expect(
+      service.createProgramme(user, {
+        ...base,
+        days: [{ dayNumber: 1 }, { dayNumber: 2 }],
+      }),
+    ).rejects.toMatchObject({
+      response: { code: 'PROGRAMME_NEEDS_WORKOUT' },
     });
     expect(workoutRepo.find).not.toHaveBeenCalled();
   });
