@@ -3,11 +3,7 @@
     "name": "Ab Scissors",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "upper_abs",
-      "hip_flexors",
-      "obliques"
-    ],
+    "secondary_muscles": ["upper_abs", "hip_flexors", "obliques"],
     "exercise_type": "bodyweight_reps",
     "description": "A lying core exercise where the legs cross over each other in a scissor motion while held off the floor, working the lower abs and hip flexors.",
     "instructions": [
@@ -23,11 +19,7 @@
     "name": "Ab Wheel",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs",
-      "obliques",
-      "lats"
-    ],
+    "secondary_muscles": ["lower_abs", "obliques", "lats"],
     "exercise_type": "bodyweight_reps",
     "description": "An anti-extension core exercise: rolling a wheel forward and back from the knees trains the abs to keep the spine from sagging.",
     "instructions": [
@@ -43,9 +35,7 @@
     "name": "Alternating Bicep Curl",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A dumbbell curl performed one arm at a time, letting you focus on each biceps and keep strict form.",
     "instructions": [
@@ -64,9 +54,7 @@
     "name": "Alternating Hammer Curl",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with a neutral grip (palms facing each other), done one arm at a time, that targets the brachialis, brachioradialis and biceps.",
     "instructions": [
@@ -85,10 +73,7 @@
     "name": "Arnold Press (Seated)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A seated dumbbell shoulder press that rotates the palms during the press, working all three heads of the deltoids with an emphasis on the front.",
     "instructions": [
@@ -107,10 +92,7 @@
     "name": "Arnold Press (Standing)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A standing version of the Arnold press, which adds core stabilisation to the rotating shoulder press.",
     "instructions": [
@@ -126,10 +108,7 @@
     "name": "Assisted Pistol Squats",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "assisted_bodyweight",
     "description": "A single-leg squat performed while holding a support, a progression toward the full pistol squat that builds leg strength and balance.",
     "instructions": [
@@ -145,10 +124,7 @@
     "name": "Back Extension (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lower_back",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A hip and spine extension movement that strengthens the lower back, glutes and hamstrings.",
     "instructions": [
@@ -164,10 +140,7 @@
     "name": "Back Extension (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "lower_back",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "A hip and spine extension movement that strengthens the lower back, glutes and hamstrings.",
     "instructions": [
@@ -186,10 +159,7 @@
     "name": "Back Extension (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "lower_back",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A back extension performed while holding a weight plate or dumbbell, to add load for the lower back, glutes and hamstrings.",
     "instructions": [
@@ -205,12 +175,12 @@
     ]
   },
   {
-    "name": "Baesyan Curl (Cable)",
+    "name": "Bayesian Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
     "exercise_type": "weight_reps",
-    "description": "Also called the Bayesian curl: a curl performed with the arm behind the torso, which stretches the long head of the biceps under load.",
+    "description": "A curl performed with the arm behind the torso, which stretches the long head of the biceps under load.",
     "instructions": [
       "Set a cable pulley low, grab the handle with one hand and step forward so that your arm is pulled slightly behind your body.",
       "Curl the handle toward your shoulder while keeping your elbow behind your torso.",
@@ -221,12 +191,12 @@
     "image_urls": []
   },
   {
-    "name": "Baesyan Curl (Dumbbell)",
+    "name": "Bayesian Curl (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
     "secondary_muscles": [],
     "exercise_type": "weight_reps",
-    "description": "Also called the Bayesian curl: a curl performed with the arm behind the torso, which stretches the long head of the biceps under load.",
+    "description": "A curl performed with the arm behind the torso, which stretches the long head of the biceps under load.",
     "instructions": [
       "Lie back on an incline bench or lean forward slightly so that the arm holding the dumbbell hangs behind your torso.",
       "Curl the handle toward your shoulder while keeping your elbow behind your torso.",
@@ -259,11 +229,7 @@
     "name": "Battle Ropes",
     "equipment_type": "none",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "forearms",
-      "front_delts",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["forearms", "front_delts", "upper_abs"],
     "exercise_type": "duration",
     "description": "A conditioning exercise using heavy ropes anchored to a point, creating waves to train the shoulders, arms, core and cardiovascular system.",
     "instructions": [
@@ -317,9 +283,7 @@
     "name": "Belt Squat",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weight_reps",
     "description": "A squat where the load hangs from a hip belt instead of resting on the spine, training the quads and glutes with very little back loading.",
     "instructions": [
@@ -335,10 +299,7 @@
     "name": "Bench Dip",
     "equipment_type": "none",
     "primary_muscle": "triceps",
-    "secondary_muscles": [
-      "front_delts",
-      "lower_chest"
-    ],
+    "secondary_muscles": ["front_delts", "lower_chest"],
     "exercise_type": "bodyweight_reps",
     "description": "A bodyweight triceps exercise performed with the hands on a bench behind you.",
     "instructions": [
@@ -357,10 +318,7 @@
     "name": "Bench Press (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "The classic horizontal press for the chest, front deltoids and triceps, done with a barbell on a flat bench.",
     "instructions": [
@@ -379,10 +337,7 @@
     "name": "Bench Press (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "The classic horizontal press for the chest, front deltoids and triceps.",
     "instructions": [
@@ -398,10 +353,7 @@
     "name": "Bench Press (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "The classic horizontal press for the chest, front deltoids and triceps.",
     "instructions": [
@@ -420,10 +372,7 @@
     "name": "Bench Press (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "The classic horizontal press for the chest, front deltoids and triceps.",
     "instructions": [
@@ -442,10 +391,7 @@
     "name": "Bench Press - Close Grip",
     "equipment_type": "barbell",
     "primary_muscle": "triceps",
-    "secondary_muscles": [
-      "middle_chest",
-      "front_delts"
-    ],
+    "secondary_muscles": ["middle_chest", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press with the hands about shoulder-width apart, shifting the work toward the triceps.",
     "instructions": [
@@ -464,9 +410,7 @@
     "name": "Bench Press - Wide Grip",
     "equipment_type": "barbell",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press with a grip wider than shoulder width, emphasising the chest over the triceps.",
     "instructions": [
@@ -485,10 +429,7 @@
     "name": "Bench Press (Decline, Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press performed on a decline bench, emphasising the lower part of the chest.",
     "instructions": [
@@ -507,10 +448,7 @@
     "name": "Bench Press (Decline, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press performed on a decline bench, emphasising the lower part of the chest.",
     "instructions": [
@@ -529,10 +467,7 @@
     "name": "Bench Press (Decline, Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press performed on a decline bench, emphasising the lower part of the chest.",
     "instructions": [
@@ -551,10 +486,7 @@
     "name": "Bench Press (Incline, Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "upper_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press on an incline bench (about 30 to 45 degrees), emphasising the upper chest and front deltoids.",
     "instructions": [
@@ -573,10 +505,7 @@
     "name": "Bench Press (Incline, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "upper_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press on an incline bench (about 30 to 45 degrees), emphasising the upper chest and front deltoids.",
     "instructions": [
@@ -595,10 +524,7 @@
     "name": "Bench Press (Incline, Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "upper_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press on an incline bench (about 30 to 45 degrees), emphasising the upper chest and front deltoids.",
     "instructions": [
@@ -617,11 +543,7 @@
     "name": "Bent Over Row (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rhomboids",
-      "traps",
-      "biceps"
-    ],
+    "secondary_muscles": ["rhomboids", "traps", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A hinged rowing movement that builds the lats, rhomboids, traps and rear deltoids.",
     "instructions": [
@@ -637,11 +559,7 @@
     "name": "Bent Over Row (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rhomboids",
-      "traps",
-      "biceps"
-    ],
+    "secondary_muscles": ["rhomboids", "traps", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A hinged rowing movement that builds the lats, rhomboids, traps and rear deltoids.",
     "instructions": [
@@ -660,11 +578,7 @@
     "name": "Bent Over Row (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rhomboids",
-      "traps",
-      "biceps"
-    ],
+    "secondary_muscles": ["rhomboids", "traps", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A hinged rowing movement that builds the lats, rhomboids, traps and rear deltoids.",
     "instructions": [
@@ -683,9 +597,7 @@
     "name": "Bicep Curl (Band)",
     "equipment_type": "band",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "The basic elbow flexion exercise for the biceps.",
     "instructions": [
@@ -702,9 +614,7 @@
     "name": "Bicep Curl (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "The basic elbow flexion exercise for the biceps.",
     "instructions": [
@@ -724,9 +634,7 @@
     "name": "Bicep Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "The basic elbow flexion exercise for the biceps.",
     "instructions": [
@@ -746,9 +654,7 @@
     "name": "Bicep Curl (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "The basic elbow flexion exercise for the biceps.",
     "instructions": [
@@ -802,9 +708,7 @@
     "name": "Bicep Curl (EZ Bar)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A biceps curl with an EZ bar, whose angled grip is easier on the wrists than a straight bar.",
     "instructions": [
@@ -822,9 +726,7 @@
     "name": "Bicep Curl (EZ Bar, Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A biceps curl with an EZ bar, whose angled grip is easier on the wrists than a straight bar.",
     "instructions": [
@@ -874,9 +776,7 @@
     "name": "Bicep Curl (Seated)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A dumbbell curl performed seated, which removes the leg drive and keeps the work on the biceps.",
     "instructions": [
@@ -894,9 +794,7 @@
     "name": "Bicep Curl (Standing, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A standing biceps curl with free weights.",
     "instructions": [
@@ -915,9 +813,7 @@
     "name": "Bicep Curl (Standing, Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A standing biceps curl with free weights.",
     "instructions": [
@@ -936,10 +832,7 @@
     "name": "Bicycle Crunch",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "obliques",
-      "lower_abs"
-    ],
+    "secondary_muscles": ["obliques", "lower_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A crunch with a pedalling leg motion and torso rotation, working the upper abs and obliques.",
     "instructions": [
@@ -958,11 +851,7 @@
     "name": "Bicycle Crunch Raised Legs",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "upper_abs",
-      "obliques",
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["upper_abs", "obliques", "hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A harder bicycle crunch where the legs stay raised throughout, increasing the work of the lower abs.",
     "instructions": [
@@ -978,10 +867,7 @@
     "name": "Bird Dog",
     "equipment_type": "none",
     "primary_muscle": "lower_back",
-    "secondary_muscles": [
-      "glutes",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["glutes", "upper_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A low-impact stability exercise on all fours that strengthens the lower back, glutes and deep core muscles.",
     "instructions": [
@@ -997,10 +883,7 @@
     "name": "Box Jump",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "calves"
-    ],
+    "secondary_muscles": ["glutes", "calves"],
     "exercise_type": "bodyweight_reps",
     "description": "A plyometric jump onto a box that develops explosive leg power.",
     "instructions": [
@@ -1019,10 +902,7 @@
     "name": "Box Squat (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A squat where you sit back onto a box at the bottom, teaching depth and hip drive.",
     "instructions": [
@@ -1042,10 +922,7 @@
     "name": "Box Squat (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A squat where you sit back onto a box at the bottom, teaching depth and hip drive.",
     "instructions": [
@@ -1062,9 +939,7 @@
     "name": "Boxing",
     "equipment_type": "none",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "full_body"
-    ],
+    "secondary_muscles": ["full_body"],
     "exercise_type": "duration",
     "description": "A combat sport workout (bag work, pads or shadow boxing) that trains conditioning, coordination and upper-body endurance.",
     "instructions": [
@@ -1080,10 +955,7 @@
     "name": "Bulgarian Split Squat",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A single-leg squat with the rear foot raised on a bench, building quads, glutes and balance.",
     "instructions": [
@@ -1102,9 +974,7 @@
     "name": "Burpee",
     "equipment_type": "none",
     "primary_muscle": "full_body",
-    "secondary_muscles": [
-      "cardio"
-    ],
+    "secondary_muscles": ["cardio"],
     "exercise_type": "bodyweight_reps",
     "description": "A full-body conditioning exercise chaining a squat, a plank, a push-up and a jump.",
     "instructions": [
@@ -1120,9 +990,7 @@
     "name": "Butterfly",
     "equipment_type": "machine",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "A pec deck machine fly that isolates the chest with a guided path.",
     "instructions": [
@@ -1362,10 +1230,7 @@
     "name": "Chest Dip (Assisted)",
     "equipment_type": "machine",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "assisted_bodyweight",
     "description": "A dip on an assisted machine where a counterweight reduces the load, to build toward bodyweight dips.",
     "instructions": [
@@ -1384,10 +1249,7 @@
     "name": "Chest Dip (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A dip on parallel bars with the torso leaning forward to emphasise the lower chest.",
     "instructions": [
@@ -1406,10 +1268,7 @@
     "name": "Chest Dip (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weighted_bodyweight",
     "description": "A chest dip with extra weight attached to a dip belt or held between the legs.",
     "instructions": [
@@ -1428,9 +1287,7 @@
     "name": "Chest Fly (Band)",
     "equipment_type": "band",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "An isolation exercise for the chest where the arms move in a wide arc with a slight bend at the elbows.",
     "instructions": [
@@ -1449,9 +1306,7 @@
     "name": "Chest Fly (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "An isolation exercise for the chest where the arms move in a wide arc with a slight bend at the elbows.",
     "instructions": [
@@ -1470,9 +1325,7 @@
     "name": "Chest Fly (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "An isolation exercise for the chest where the arms move in a wide arc with a slight bend at the elbows.",
     "instructions": [
@@ -1491,9 +1344,7 @@
     "name": "Chest Fly (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "An isolation exercise for the chest where the arms move in a wide arc with a slight bend at the elbows.",
     "instructions": [
@@ -1512,9 +1363,7 @@
     "name": "Chest Fly (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "An isolation exercise for the chest where the arms move in a wide arc with a slight bend at the elbows.",
     "instructions": [
@@ -1530,9 +1379,7 @@
     "name": "Chest Fly (Decline)",
     "equipment_type": "dumbbell",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "A dumbbell fly on a decline bench, emphasising the lower chest.",
     "instructions": [
@@ -1550,9 +1397,7 @@
     "name": "Chest Fly (High to Low)",
     "equipment_type": "cable",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "A cable fly that moves from high pulleys down toward the hips, emphasising the lower chest.",
     "instructions": [
@@ -1570,9 +1415,7 @@
     "name": "Chest Fly (Incline)",
     "equipment_type": "dumbbell",
     "primary_muscle": "upper_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "A dumbbell fly on an incline bench, emphasising the upper chest.",
     "instructions": [
@@ -1590,9 +1433,7 @@
     "name": "Chest Fly (Low to High)",
     "equipment_type": "cable",
     "primary_muscle": "upper_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "A cable fly that moves from low pulleys up toward the face, emphasising the upper chest.",
     "instructions": [
@@ -1610,9 +1451,7 @@
     "name": "Chest Fly (Seated)",
     "equipment_type": "cable",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "A cable fly performed seated, which removes the need to stabilise with the legs.",
     "instructions": [
@@ -1627,9 +1466,7 @@
     "name": "Chest Fly (Suspension)",
     "equipment_type": "cable",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts"
-    ],
+    "secondary_muscles": ["front_delts"],
     "exercise_type": "weight_reps",
     "description": "A fly performed with suspension straps (TRX), where body angle sets the difficulty.",
     "instructions": [
@@ -1644,10 +1481,7 @@
     "name": "Chest Press (Band)",
     "equipment_type": "band",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A guided horizontal press for the chest, shoulders and triceps.",
     "instructions": [
@@ -1662,10 +1496,7 @@
     "name": "Chest Press (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A guided horizontal press for the chest, shoulders and triceps.",
     "instructions": [
@@ -1683,10 +1514,7 @@
     "name": "Chest Press (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A guided horizontal press for the chest, shoulders and triceps.",
     "instructions": [
@@ -1704,10 +1532,7 @@
     "name": "Chest Press (Decline, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A decline press on a machine, emphasising the lower chest.",
     "instructions": [
@@ -1725,10 +1550,7 @@
     "name": "Chest Press (Decline, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A decline press on a machine, emphasising the lower chest.",
     "instructions": [
@@ -1746,10 +1568,7 @@
     "name": "Chest Press (Incline, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "upper_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "An incline press on a machine, emphasising the upper chest.",
     "instructions": [
@@ -1767,10 +1586,7 @@
     "name": "Chest Press (Incline, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "upper_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "An incline press on a machine, emphasising the upper chest.",
     "instructions": [
@@ -1788,11 +1604,7 @@
     "name": "Chest Supported Incline Row",
     "equipment_type": "dumbbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rhomboids",
-      "traps",
-      "biceps"
-    ],
+    "secondary_muscles": ["rhomboids", "traps", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A dumbbell row lying face down on an incline bench, which removes lower-back strain and isolates the back muscles.",
     "instructions": [
@@ -1810,10 +1622,7 @@
     "name": "Chest Supported Reverse Fly",
     "equipment_type": "dumbbell",
     "primary_muscle": "rear_delts",
-    "secondary_muscles": [
-      "rhomboids",
-      "traps"
-    ],
+    "secondary_muscles": ["rhomboids", "traps"],
     "exercise_type": "weight_reps",
     "description": "A reverse fly lying face down on an incline bench, isolating the rear deltoids and upper back.",
     "instructions": [
@@ -1831,9 +1640,7 @@
     "name": "Chest Supported Y Raise",
     "equipment_type": "dumbbell",
     "primary_muscle": "rear_delts",
-    "secondary_muscles": [
-      "traps"
-    ],
+    "secondary_muscles": ["traps"],
     "exercise_type": "weight_reps",
     "description": "A raise lying face down on an incline bench where the arms travel in a Y shape, working the lower traps and rear shoulders.",
     "instructions": [
@@ -1848,10 +1655,7 @@
     "name": "Chin Up",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps",
-      "forearms"
-    ],
+    "secondary_muscles": ["biceps", "forearms"],
     "exercise_type": "bodyweight_reps",
     "description": "A vertical pull with an underhand grip that works the lats and biceps.",
     "instructions": [
@@ -1870,10 +1674,7 @@
     "name": "Chin Up (Assisted)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps",
-      "forearms"
-    ],
+    "secondary_muscles": ["biceps", "forearms"],
     "exercise_type": "assisted_bodyweight",
     "description": "A chin-up on an assisted machine, where a counterweight reduces the load.",
     "instructions": [
@@ -1888,10 +1689,7 @@
     "name": "Chin Up (Weigthed)",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps",
-      "forearms"
-    ],
+    "secondary_muscles": ["biceps", "forearms"],
     "exercise_type": "weighted_bodyweight",
     "description": "A chin-up with extra weight attached to a belt or held between the legs.",
     "instructions": [
@@ -1906,10 +1704,7 @@
     "name": "Clap Push Ups",
     "equipment_type": "none",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "An explosive push-up where the hands leave the floor to clap, building upper-body power.",
     "instructions": [
@@ -1928,11 +1723,7 @@
     "name": "Climbing",
     "equipment_type": "none",
     "primary_muscle": "full_body",
-    "secondary_muscles": [
-      "forearms",
-      "lats",
-      "cardio"
-    ],
+    "secondary_muscles": ["forearms", "lats", "cardio"],
     "exercise_type": "duration",
     "description": "Rock or indoor climbing, which trains grip, back, arms and core while improving coordination.",
     "instructions": [
@@ -1967,9 +1758,7 @@
     "name": "Cross Body Hammer Curl",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A hammer curl where the dumbbell travels across the body toward the opposite shoulder, emphasising the brachialis.",
     "instructions": [
@@ -2075,10 +1864,7 @@
     "name": "Cycling (Stationary Bike)",
     "equipment_type": "machine",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "quads",
-      "calves"
-    ],
+    "secondary_muscles": ["quads", "calves"],
     "exercise_type": "distance_duration",
     "description": "Cycling outdoors or on a stationary bike, a low-impact cardio activity that mainly works the quads, glutes and calves.",
     "instructions": [
@@ -2098,10 +1884,7 @@
     "name": "Cycling (Outdoor)",
     "equipment_type": "none",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "quads",
-      "calves"
-    ],
+    "secondary_muscles": ["quads", "calves"],
     "exercise_type": "distance_duration",
     "description": "Cycling outdoors or on a stationary bike, a low-impact cardio activity that mainly works the quads, glutes and calves.",
     "instructions": [
@@ -2121,9 +1904,7 @@
     "name": "Cycling - Air Bike",
     "equipment_type": "machine",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "full_body"
-    ],
+    "secondary_muscles": ["full_body"],
     "exercise_type": "duration",
     "description": "Cycling on an air bike (fan bike) that combines arm and leg work, with resistance that rises the harder you push.",
     "instructions": [
@@ -2139,9 +1920,7 @@
     "name": "Dead Bug",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs"
-    ],
+    "secondary_muscles": ["lower_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A core stability exercise lying on the back, where opposite arm and leg extend while the lower back stays pressed to the floor.",
     "instructions": [
@@ -2160,9 +1939,7 @@
     "name": "Dead Hang",
     "equipment_type": "none",
     "primary_muscle": "forearms",
-    "secondary_muscles": [
-      "lats"
-    ],
+    "secondary_muscles": ["lats"],
     "exercise_type": "duration",
     "description": "Hanging from a bar with straight arms, which builds grip strength and decompresses the shoulders.",
     "instructions": [
@@ -2178,10 +1955,7 @@
     "name": "Deadlift (Band)",
     "equipment_type": "band",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings",
-      "lower_back"
-    ],
+    "secondary_muscles": ["hamstrings", "lower_back"],
     "exercise_type": "weight_reps",
     "description": "A hip hinge lift from the floor that builds the whole posterior chain: glutes, hamstrings, back and grip.",
     "instructions": [
@@ -2198,10 +1972,7 @@
     "name": "Deadlift (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings",
-      "lower_back"
-    ],
+    "secondary_muscles": ["hamstrings", "lower_back"],
     "exercise_type": "weight_reps",
     "description": "A hip hinge lift from the floor that builds the whole posterior chain: glutes, hamstrings, back and grip.",
     "instructions": [
@@ -2221,10 +1992,7 @@
     "name": "Deadlift (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings",
-      "lower_back"
-    ],
+    "secondary_muscles": ["hamstrings", "lower_back"],
     "exercise_type": "weight_reps",
     "description": "A hip hinge lift from the floor that builds the whole posterior chain: glutes, hamstrings, back and grip.",
     "instructions": [
@@ -2241,10 +2009,7 @@
     "name": "Deadlift (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings",
-      "lower_back"
-    ],
+    "secondary_muscles": ["hamstrings", "lower_back"],
     "exercise_type": "weight_reps",
     "description": "A hip hinge lift from the floor that builds the whole posterior chain: glutes, hamstrings, back and grip.",
     "instructions": [
@@ -2261,10 +2026,7 @@
     "name": "Deadlift (Sumo)",
     "equipment_type": "barbell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "adductors",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["adductors", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A deadlift with a wide stance and hands inside the knees, which shortens the range of motion and works more quads and adductors.",
     "instructions": [
@@ -2283,10 +2045,7 @@
     "name": "Deadlift High Pull",
     "equipment_type": "barbell",
     "primary_muscle": "traps",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "An explosive pull from the floor up to chest height, linking the deadlift to an upright row, for power and the upper traps.",
     "instructions": [
@@ -2340,10 +2099,7 @@
     "name": "Decline Push Up",
     "equipment_type": "none",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A push-up with the feet raised on a box or bench, which shifts more work to the upper chest and shoulders.",
     "instructions": [
@@ -2362,10 +2118,7 @@
     "name": "Diamond Push Up",
     "equipment_type": "none",
     "primary_muscle": "triceps",
-    "secondary_muscles": [
-      "middle_chest",
-      "front_delts"
-    ],
+    "secondary_muscles": ["middle_chest", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A push-up with the hands close together forming a diamond, emphasising the triceps.",
     "instructions": [
@@ -2384,10 +2137,7 @@
     "name": "Dip (Seated, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "triceps",
-    "secondary_muscles": [
-      "front_delts",
-      "lower_chest"
-    ],
+    "secondary_muscles": ["front_delts", "lower_chest"],
     "exercise_type": "weight_reps",
     "description": "A triceps dip performed on a seated machine with a guided path.",
     "instructions": [
@@ -2405,10 +2155,7 @@
     "name": "Dip (Seated, Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "triceps",
-    "secondary_muscles": [
-      "front_delts",
-      "lower_chest"
-    ],
+    "secondary_muscles": ["front_delts", "lower_chest"],
     "exercise_type": "weight_reps",
     "description": "A triceps dip performed on a seated machine with a guided path.",
     "instructions": [
@@ -2442,9 +2189,7 @@
     "name": "Drag Curl",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl where the weight is dragged up along the torso with the elbows moving back, emphasising the biceps and limiting the front deltoids.",
     "instructions": [
@@ -2459,10 +2204,7 @@
     "name": "Dragon Flag",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "upper_abs",
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["upper_abs", "hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "An advanced core exercise where the body is lowered as a rigid plank while lying on a bench, holding on behind the head.",
     "instructions": [
@@ -2478,10 +2220,7 @@
     "name": "Dragonfly",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "upper_abs",
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["upper_abs", "hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "Another name for the dragon flag: a demanding core exercise where the body is lowered as a rigid line from the shoulders.",
     "instructions": [
@@ -2497,9 +2236,7 @@
     "name": "Dual Low Bicep Curl",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A cable curl using two low pulleys at once, keeping constant tension on both biceps.",
     "instructions": [
@@ -2514,9 +2251,7 @@
     "name": "Elbow to Knee",
     "equipment_type": "none",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "upper_abs"
-    ],
+    "secondary_muscles": ["upper_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A crunch with rotation where the elbow is brought toward the opposite knee, working the obliques.",
     "instructions": [
@@ -2534,10 +2269,7 @@
     "name": "Elliptical Trainer",
     "equipment_type": "machine",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "quads",
-      "glutes"
-    ],
+    "secondary_muscles": ["quads", "glutes"],
     "exercise_type": "duration",
     "description": "A low-impact cardio machine that combines leg and arm movement.",
     "instructions": [
@@ -2556,10 +2288,7 @@
     "name": "Face Pull",
     "equipment_type": "cable",
     "primary_muscle": "rear_delts",
-    "secondary_muscles": [
-      "traps",
-      "rhomboids"
-    ],
+    "secondary_muscles": ["traps", "rhomboids"],
     "exercise_type": "weight_reps",
     "description": "A cable pull toward the face with a rope, which works the rear deltoids, upper back and rotator cuff.",
     "instructions": [
@@ -2578,10 +2307,7 @@
     "name": "Farmers Walk (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "forearms",
-    "secondary_muscles": [
-      "traps",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["traps", "upper_abs"],
     "exercise_type": "weight_distance",
     "description": "A loaded carry where heavy weights are held at the sides while walking, building grip, traps and core stability.",
     "instructions": [
@@ -2600,10 +2326,7 @@
     "name": "Farmers Walk (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "forearms",
-    "secondary_muscles": [
-      "traps",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["traps", "upper_abs"],
     "exercise_type": "weight_distance",
     "description": "A loaded carry where heavy weights are held at the sides while walking, building grip, traps and core stability.",
     "instructions": [
@@ -2622,10 +2345,7 @@
     "name": "Floor Press (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press performed lying on the floor, which limits the range of motion and focuses on the lockout and the triceps.",
     "instructions": [
@@ -2644,10 +2364,7 @@
     "name": "Floor Press (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A bench press performed lying on the floor, which limits the range of motion and focuses on the lockout and the triceps.",
     "instructions": [
@@ -2666,9 +2383,7 @@
     "name": "Flutter Kicks",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A lying core exercise with small alternating up and down leg kicks, working the lower abs and hip flexors.",
     "instructions": [
@@ -2684,10 +2399,7 @@
     "name": "Frog Jumps",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "calves"
-    ],
+    "secondary_muscles": ["glutes", "calves"],
     "exercise_type": "bodyweight_reps",
     "description": "A plyometric exercise of deep squat jumps forward, building leg power and conditioning.",
     "instructions": [
@@ -2703,9 +2415,7 @@
     "name": "Frog Pumps",
     "equipment_type": "dumbbell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "weight_distance",
     "description": "A glute bridge variation with the soles of the feet together and knees out, which isolates the glutes.",
     "instructions": [
@@ -2721,10 +2431,7 @@
     "name": "Front Lever Hold (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "upper_abs",
-      "biceps"
-    ],
+    "secondary_muscles": ["upper_abs", "biceps"],
     "exercise_type": "duration",
     "description": "An advanced static gymnastic hold where the body is held horizontal under a bar with straight arms, demanding huge lat and core strength.",
     "instructions": [
@@ -2740,10 +2447,7 @@
     "name": "Front Lever Hold (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "upper_abs",
-      "biceps"
-    ],
+    "secondary_muscles": ["upper_abs", "biceps"],
     "exercise_type": "duration",
     "description": "An advanced static gymnastic hold where the body is held horizontal under a bar with straight arms, demanding huge lat and core strength.",
     "instructions": [
@@ -2760,10 +2464,7 @@
     "name": "Front Lever Raise (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "upper_abs",
-      "biceps"
-    ],
+    "secondary_muscles": ["upper_abs", "biceps"],
     "exercise_type": "bodyweight_reps",
     "description": "A dynamic version of the front lever where the body is raised to horizontal and lowered under control.",
     "instructions": [
@@ -2779,10 +2480,7 @@
     "name": "Front Lever Raise (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "upper_abs",
-      "biceps"
-    ],
+    "secondary_muscles": ["upper_abs", "biceps"],
     "exercise_type": "assisted_bodyweight",
     "description": "A dynamic version of the front lever where the body is raised to horizontal and lowered under control.",
     "instructions": [
@@ -2902,10 +2600,7 @@
     "name": "Front Squat",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "lower_back"
-    ],
+    "secondary_muscles": ["glutes", "lower_back"],
     "exercise_type": "weight_reps",
     "description": "A squat with the bar held on the front of the shoulders, which keeps the torso upright and emphasises the quads.",
     "instructions": [
@@ -2924,10 +2619,7 @@
     "name": "Full Squat",
     "equipment_type": "barbell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "quads",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["quads", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A barbell squat taken to full depth (hips below the knees), working the glutes and quads over their whole range.",
     "instructions": [
@@ -2945,9 +2637,7 @@
     "name": "Glute Bridge",
     "equipment_type": "none",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "A hip extension lying on the back that strengthens the glutes and hamstrings.",
     "instructions": [
@@ -2965,10 +2655,7 @@
     "name": "Glute Ham Raise",
     "equipment_type": "none",
     "primary_muscle": "hamstrings",
-    "secondary_muscles": [
-      "glutes",
-      "lower_back"
-    ],
+    "secondary_muscles": ["glutes", "lower_back"],
     "exercise_type": "bodyweight_reps",
     "description": "A demanding posterior chain exercise where the body is lowered and raised by the hamstrings, usually on a GHD bench.",
     "instructions": [
@@ -3050,9 +2737,7 @@
     "name": "Goblet Squat",
     "equipment_type": "kettlebell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weight_reps",
     "description": "A squat with a kettlebell or dumbbell held against the chest, which encourages an upright torso and good depth.",
     "instructions": [
@@ -3071,10 +2756,7 @@
     "name": "Gorilla Row",
     "equipment_type": "kettlebell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rhomboids",
-      "biceps"
-    ],
+    "secondary_muscles": ["rhomboids", "biceps"],
     "exercise_type": "weight_reps",
     "description": "An alternating kettlebell row from a wide, hinged stance, with one bell resting on the floor while the other is rowed.",
     "instructions": [
@@ -3090,9 +2772,7 @@
     "name": "Hack Squat (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weight_reps",
     "description": "A squat with the body supported on a sliding sled or with the bar behind the legs, which emphasises the quads.",
     "instructions": [
@@ -3110,9 +2790,7 @@
     "name": "Hack Squat (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weight_reps",
     "description": "A squat with the body supported on a sliding sled or with the bar behind the legs, which emphasises the quads.",
     "instructions": [
@@ -3130,9 +2808,7 @@
     "name": "Hack Squat (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weight_reps",
     "description": "A squat with the body supported on a sliding sled or with the bar behind the legs, which emphasises the quads.",
     "instructions": [
@@ -3150,9 +2826,7 @@
     "name": "Hack Squat (Reverse)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A hack squat performed facing the machine, which shifts the work toward the glutes and hamstrings.",
     "instructions": [
@@ -3168,9 +2842,7 @@
     "name": "Hammer Curl (Band)",
     "equipment_type": "band",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with a neutral grip (palms facing each other) that works the brachialis and brachioradialis as well as the biceps.",
     "instructions": [
@@ -3186,9 +2858,7 @@
     "name": "Hammer Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with a neutral grip (palms facing each other) that works the brachialis and brachioradialis as well as the biceps.",
     "instructions": [
@@ -3207,9 +2877,7 @@
     "name": "Hammer Curl (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with a neutral grip (palms facing each other) that works the brachialis and brachioradialis as well as the biceps.",
     "instructions": [
@@ -3225,9 +2893,7 @@
     "name": "Hammer Curl (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with a neutral grip (palms facing each other) that works the brachialis and brachioradialis as well as the biceps.",
     "instructions": [
@@ -3243,9 +2909,7 @@
     "name": "Hammer Curl (Seated Incline)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A hammer curl lying back on an incline bench, which stretches the arm at the bottom of the movement.",
     "instructions": [
@@ -3263,9 +2927,7 @@
     "name": "Hammer Curl (Standing)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A standing dumbbell hammer curl with both arms or alternating.",
     "instructions": [
@@ -3393,10 +3055,7 @@
     "name": "Handstand Hold",
     "equipment_type": "none",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "upper_abs",
-      "triceps"
-    ],
+    "secondary_muscles": ["upper_abs", "triceps"],
     "exercise_type": "duration",
     "description": "A static inverted hold on the hands, usually against a wall, that builds shoulder strength and balance.",
     "instructions": [
@@ -3412,10 +3071,7 @@
     "name": "Handstand Push Up",
     "equipment_type": "none",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "triceps",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["triceps", "upper_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A vertical push-up in a handstand, usually against a wall, that works the shoulders and triceps.",
     "instructions": [
@@ -3434,9 +3090,7 @@
     "name": "Hanging Knee Raise",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A hanging core exercise where the knees are pulled toward the chest, working the lower abs.",
     "instructions": [
@@ -3451,9 +3105,7 @@
     "name": "Hanging Leg Raise",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A hanging core exercise where straight legs are raised to hip height or higher, strongly working the lower abs and hip flexors.",
     "instructions": [
@@ -3471,9 +3123,7 @@
     "name": "Heel Taps",
     "equipment_type": "none",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "upper_abs"
-    ],
+    "secondary_muscles": ["upper_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A lying oblique exercise where the hand reaches alternately toward each heel.",
     "instructions": [
@@ -3492,10 +3142,7 @@
     "name": "Hex Press",
     "equipment_type": "dumbbell",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A dumbbell press with the dumbbells squeezed together throughout, which increases the inner chest contraction.",
     "instructions": [
@@ -3510,10 +3157,7 @@
     "name": "High Knee Skips",
     "equipment_type": "none",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "quads",
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["quads", "hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A skipping drill with high knee drive, used as a warm-up and to improve running mechanics.",
     "instructions": [
@@ -3529,10 +3173,7 @@
     "name": "High Knees",
     "equipment_type": "none",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "quads",
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["quads", "hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A cardio drill of running in place while driving the knees up high.",
     "instructions": [
@@ -3548,9 +3189,7 @@
     "name": "HIIT",
     "equipment_type": "none",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "full_body"
-    ],
+    "secondary_muscles": ["full_body"],
     "exercise_type": "duration",
     "description": "High-intensity interval training: short bursts of hard effort alternated with short recovery periods.",
     "instructions": [
@@ -3638,9 +3277,7 @@
     "name": "Hip Thrust (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A hip extension with the upper back resting on a bench, one of the most effective exercises for the glutes.",
     "instructions": [
@@ -3659,9 +3296,7 @@
     "name": "Hip Thrust (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A hip extension with the upper back resting on a bench, one of the most effective exercises for the glutes.",
     "instructions": [
@@ -3677,9 +3312,7 @@
     "name": "Hip Thrust (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A hip extension with the upper back resting on a bench, one of the most effective exercises for the glutes.",
     "instructions": [
@@ -3695,9 +3328,7 @@
     "name": "Hip Thrust (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A hip extension with the upper back resting on a bench, one of the most effective exercises for the glutes.",
     "instructions": [
@@ -3712,9 +3343,7 @@
     "name": "Hip Thrust (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "A hip extension with the upper back resting on a bench, one of the most effective exercises for the glutes.",
     "instructions": [
@@ -3730,10 +3359,7 @@
     "name": "Hollow Rock",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs",
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["lower_abs", "hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A gymnastic core exercise where the body holds a hollow, banana-shaped position and rocks back and forth.",
     "instructions": [
@@ -3749,10 +3375,7 @@
     "name": "Incline Push Ups",
     "equipment_type": "none",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A push-up with the hands raised on a bench or box, an easier variation that emphasises the lower chest.",
     "instructions": [
@@ -3771,9 +3394,7 @@
     "name": "Inverted Row",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "bodyweight_reps",
     "description": "A horizontal bodyweight row under a bar or rings, which works the upper back and biceps.",
     "instructions": [
@@ -3792,9 +3413,7 @@
     "name": "Iso-Lateral High Row",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A plate-loaded row from a high angle with independent arms, working the lats and upper back.",
     "instructions": [
@@ -3812,9 +3431,7 @@
     "name": "Iso-Lateral Low Row",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A plate-loaded row from a low angle with independent arms, targeting the lats and mid back.",
     "instructions": [
@@ -3829,9 +3446,7 @@
     "name": "Iso-Lateral Row (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A chest-supported machine row with independent arms, working the mid back, lats and rear deltoids.",
     "instructions": [
@@ -3849,9 +3464,7 @@
     "name": "Iso-Lateral Row (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A chest-supported machine row with independent arms, working the mid back, lats and rear deltoids.",
     "instructions": [
@@ -3869,9 +3482,7 @@
     "name": "Jump Rope",
     "equipment_type": "none",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "calves"
-    ],
+    "secondary_muscles": ["calves"],
     "exercise_type": "duration",
     "description": "Skipping rope, a cardio exercise that also improves coordination, footwork and calf endurance.",
     "instructions": [
@@ -3890,10 +3501,7 @@
     "name": "Jump Shrug",
     "equipment_type": "barbell",
     "primary_muscle": "traps",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "An explosive Olympic lifting drill where the bar is lifted from the hang with a jump and a shrug, for hip power.",
     "instructions": [
@@ -3909,10 +3517,7 @@
     "name": "Jump Squat",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "calves"
-    ],
+    "secondary_muscles": ["glutes", "calves"],
     "exercise_type": "bodyweight_reps",
     "description": "An explosive bodyweight squat ending with a jump, for leg power and conditioning.",
     "instructions": [
@@ -3947,10 +3552,7 @@
     "name": "Jumping Lunge",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "A plyometric lunge where the legs switch in the air, building leg power and conditioning.",
     "instructions": [
@@ -3969,10 +3571,7 @@
     "name": "Kipping Pull Up",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["biceps", "upper_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A pull-up using a hip swing (kip) to generate momentum, common in CrossFit to do more repetitions.",
     "instructions": [
@@ -3988,9 +3587,7 @@
     "name": "Knee Raise Parallel Bars",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A knee raise performed on parallel bars or a captain's chair, working the lower abs.",
     "instructions": [
@@ -4008,9 +3605,7 @@
     "name": "Kneeling Pulldown (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A pulldown performed kneeling, which removes the thigh pad and makes the core work to stay stable.",
     "instructions": [
@@ -4026,9 +3621,7 @@
     "name": "Kneeling Pulldown (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A pulldown performed kneeling, which removes the thigh pad and makes the core work to stay stable.",
     "instructions": [
@@ -4047,10 +3640,7 @@
     "name": "Kneeling Push Up",
     "equipment_type": "none",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A push-up performed on the knees, an easier variation to build toward full push-ups.",
     "instructions": [
@@ -4066,10 +3656,7 @@
     "name": "L-Sit Hold",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "hip_flexors",
-      "triceps"
-    ],
+    "secondary_muscles": ["hip_flexors", "triceps"],
     "exercise_type": "duration",
     "description": "A static hold where the legs are held straight out in front with the body supported on the hands, working the abs, hip flexors and triceps.",
     "instructions": [
@@ -4085,10 +3672,7 @@
     "name": "Landmine 180",
     "equipment_type": "barbell",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "upper_abs",
-      "side_delts"
-    ],
+    "secondary_muscles": ["upper_abs", "side_delts"],
     "exercise_type": "weight_reps",
     "description": "A rotational core exercise where the end of a landmine bar is swung from one hip to the other.",
     "instructions": [
@@ -4107,10 +3691,7 @@
     "name": "Landmine Press",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "triceps",
-      "upper_chest"
-    ],
+    "secondary_muscles": ["triceps", "upper_chest"],
     "exercise_type": "weight_reps",
     "description": "A shoulder press using a barbell anchored in a landmine, whose angled path is easy on the shoulders.",
     "instructions": [
@@ -4126,9 +3707,7 @@
     "name": "Landmine Row",
     "equipment_type": "barbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A row with a barbell anchored in a landmine, holding the free end with a handle or both hands.",
     "instructions": [
@@ -4147,10 +3726,7 @@
     "name": "Landmine Squat and Press",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "front_delts"
-    ],
+    "secondary_muscles": ["glutes", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A combined exercise: a squat holding the end of a landmine bar, followed by a press as you stand up.",
     "instructions": [
@@ -4169,9 +3745,7 @@
     "name": "Lat Pulldown (Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A vertical pull to the chest that develops the lats and upper back.",
     "instructions": [
@@ -4187,9 +3761,7 @@
     "name": "Lat Pulldown (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A vertical pull to the chest that develops the lats and upper back.",
     "instructions": [
@@ -4208,9 +3780,7 @@
     "name": "Lat Pulldown (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A vertical pull to the chest that develops the lats and upper back.",
     "instructions": [
@@ -4226,9 +3796,7 @@
     "name": "Lat Pulldown (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A vertical pull to the chest that develops the lats and upper back.",
     "instructions": [
@@ -4244,9 +3812,7 @@
     "name": "Lat Pulldown - Close Grip",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A lat pulldown with a narrow grip, which increases the range of motion and the involvement of the lower lats.",
     "instructions": [
@@ -4264,9 +3830,7 @@
     "name": "Lat Pulldown (Narrow V-Handle)",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A lat pulldown with a V-handle and neutral grip, which lets you pull with a strong elbow position.",
     "instructions": [
@@ -4284,9 +3848,7 @@
     "name": "Lat Pulldown (Reverse Grip)",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A lat pulldown with an underhand grip, which involves more biceps and lower lats.",
     "instructions": [
@@ -4304,9 +3866,7 @@
     "name": "Lat Pullover (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rear_delts"
-    ],
+    "secondary_muscles": ["rear_delts"],
     "exercise_type": "weight_reps",
     "description": "A movement where the arms travel in an arc from overhead to the hips, isolating the lats and stretching the chest.",
     "instructions": [
@@ -4325,9 +3885,7 @@
     "name": "Lat Pullover (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rear_delts"
-    ],
+    "secondary_muscles": ["rear_delts"],
     "exercise_type": "weight_reps",
     "description": "A movement where the arms travel in an arc from overhead to the hips, isolating the lats and stretching the chest.",
     "instructions": [
@@ -4343,9 +3901,7 @@
     "name": "Lat Pullover (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rear_delts"
-    ],
+    "secondary_muscles": ["rear_delts"],
     "exercise_type": "weight_reps",
     "description": "A movement where the arms travel in an arc from overhead to the hips, isolating the lats and stretching the chest.",
     "instructions": [
@@ -4361,9 +3917,7 @@
     "name": "Lat Pullover (Bar)",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rear_delts"
-    ],
+    "secondary_muscles": ["rear_delts"],
     "exercise_type": "weight_reps",
     "description": "A standing cable pullover with a straight bar, also called a straight-arm pulldown, isolating the lats.",
     "instructions": [
@@ -4382,9 +3936,7 @@
     "name": "Lat Pullover (Rope)",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rear_delts"
-    ],
+    "secondary_muscles": ["rear_delts"],
     "exercise_type": "weight_reps",
     "description": "A standing cable pullover with a rope, which allows a longer range at the bottom.",
     "instructions": [
@@ -4403,10 +3955,7 @@
     "name": "Lateral Box Jump",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "calves"
-    ],
+    "secondary_muscles": ["glutes", "calves"],
     "exercise_type": "bodyweight_reps",
     "description": "A sideways jump onto a box that develops lateral power and agility.",
     "instructions": [
@@ -4425,9 +3974,7 @@
     "name": "Lateral Leg Raises",
     "equipment_type": "none",
     "primary_muscle": "abductors",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "bodyweight_reps",
     "description": "A side-lying leg raise that strengthens the hip abductors.",
     "instructions": [
@@ -4442,10 +3989,7 @@
     "name": "Lateral Lunge",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "adductors"
-    ],
+    "secondary_muscles": ["glutes", "adductors"],
     "exercise_type": "bodyweight_reps",
     "description": "A side lunge that works the quads, glutes and adductors.",
     "instructions": [
@@ -4461,9 +4005,7 @@
     "name": "Lateral Raise",
     "equipment_type": "band",
     "primary_muscle": "side_delts",
-    "secondary_muscles": [
-      "traps"
-    ],
+    "secondary_muscles": ["traps"],
     "exercise_type": "weight_reps",
     "description": "A shoulder raise to the sides that targets the side deltoids.",
     "instructions": [
@@ -4481,9 +4023,7 @@
     "name": "Lateral Raise (Seated, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "side_delts",
-    "secondary_muscles": [
-      "traps"
-    ],
+    "secondary_muscles": ["traps"],
     "exercise_type": "weight_reps",
     "description": "A seated lateral raise, which removes any leg drive and keeps the side deltoids under tension.",
     "instructions": [
@@ -4516,9 +4056,7 @@
     "name": "Lateral Raise (Standing, Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "side_delts",
-    "secondary_muscles": [
-      "traps"
-    ],
+    "secondary_muscles": ["traps"],
     "exercise_type": "weight_reps",
     "description": "A standing lateral raise that targets the side deltoids.",
     "instructions": [
@@ -4551,10 +4089,7 @@
     "name": "Lateral Squat",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "adductors"
-    ],
+    "secondary_muscles": ["glutes", "adductors"],
     "exercise_type": "bodyweight_reps",
     "description": "A side-to-side squat (also called a cossack-style squat) that works the legs and hip mobility.",
     "instructions": [
@@ -4569,10 +4104,7 @@
     "name": "Leg Press (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A machine press with the legs that works the quads and glutes with the back supported.",
     "instructions": [
@@ -4590,10 +4122,7 @@
     "name": "Leg Press (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A machine press with the legs that works the quads and glutes with the back supported.",
     "instructions": [
@@ -4611,10 +4140,7 @@
     "name": "Leg Press Horizontal (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A seated horizontal leg press where you push the platform straight ahead.",
     "instructions": [
@@ -4629,10 +4155,7 @@
     "name": "Leg Press Horizontal (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A seated horizontal leg press where you push the platform straight ahead.",
     "instructions": [
@@ -4647,9 +4170,7 @@
     "name": "Leg Raise Parallel Bars",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A straight-leg raise on parallel bars or a captain's chair, working the lower abs and hip flexors.",
     "instructions": [
@@ -4664,9 +4185,7 @@
     "name": "Leg Raise Parallel Bars (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["hip_flexors"],
     "exercise_type": "weighted_bodyweight",
     "description": "A leg raise on parallel bars or a captain's chair with ankle weights or a dumbbell between the feet.",
     "instructions": [
@@ -4682,10 +4201,7 @@
     "name": "Low Row (Suspension)",
     "equipment_type": "band",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rhomboids",
-      "biceps"
-    ],
+    "secondary_muscles": ["rhomboids", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A row performed with suspension straps, with difficulty set by the body angle.",
     "instructions": [
@@ -4703,10 +4219,7 @@
     "name": "Lunge (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A forward step into a split stance that works the quads, glutes and balance.",
     "instructions": [
@@ -4725,10 +4238,7 @@
     "name": "Lunge (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A forward step into a split stance that works the quads, glutes and balance.",
     "instructions": [
@@ -4747,9 +4257,7 @@
     "name": "Lying Bicep Curl",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl lying face up on a flat bench with the arms hanging below, which stretches the biceps strongly.",
     "instructions": [
@@ -4767,9 +4275,7 @@
     "name": "Lying Knee Raise",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A lying core exercise where the bent knees are brought toward the chest, working the lower abs.",
     "instructions": [
@@ -4787,9 +4293,7 @@
     "name": "Lying Leg Raise",
     "equipment_type": "none",
     "primary_muscle": "lower_abs",
-    "secondary_muscles": [
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A lying straight-leg raise that works the lower abs and hip flexors.",
     "instructions": [
@@ -4875,11 +4379,7 @@
     "name": "Meadows Rows",
     "equipment_type": "barbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rhomboids",
-      "rear_delts",
-      "biceps"
-    ],
+    "secondary_muscles": ["rhomboids", "rear_delts", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A single-arm landmine row with an overhand grip on the end of the bar, popularised by John Meadows, for the lats and upper back.",
     "instructions": [
@@ -4898,11 +4398,7 @@
     "name": "Moutain Climber",
     "equipment_type": "none",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "lower_abs",
-      "hip_flexors",
-      "quads"
-    ],
+    "secondary_muscles": ["lower_abs", "hip_flexors", "quads"],
     "exercise_type": "duration",
     "description": "A dynamic plank where the knees are driven toward the chest quickly, for cardio and core endurance.",
     "instructions": [
@@ -4921,11 +4417,7 @@
     "name": "Muscle Up",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps",
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["biceps", "triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "An advanced bodyweight movement combining a pull-up and a dip to get from below to above a bar or rings.",
     "instructions": [
@@ -4944,9 +4436,7 @@
     "name": "Negative Pull Up",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "bodyweight_reps",
     "description": "A pull-up where only the lowering phase is performed slowly, a progression toward full pull-ups.",
     "instructions": [
@@ -4981,9 +4471,7 @@
     "name": "Oblique Crunch",
     "equipment_type": "none",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "upper_abs"
-    ],
+    "secondary_muscles": ["upper_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A crunch to the side that targets the obliques.",
     "instructions": [
@@ -5002,9 +4490,7 @@
     "name": "Overhead Bicep Curl",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A cable curl with the arms raised to the sides at shoulder height, as in a double-biceps pose.",
     "instructions": [
@@ -5022,9 +4508,7 @@
     "name": "Overhead Lunge",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weight_reps",
     "description": "A lunge with a weight held overhead, which adds shoulder stability and core demand.",
     "instructions": [
@@ -5039,10 +4523,7 @@
     "name": "Overhead Press (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A standing press of the weight from the shoulders to overhead, working the deltoids and triceps.",
     "instructions": [
@@ -5061,10 +4542,7 @@
     "name": "Overhead Press (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A standing press of the weight from the shoulders to overhead, working the deltoids and triceps.",
     "instructions": [
@@ -5080,10 +4558,7 @@
     "name": "Overhead Press (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A standing press of the weight from the shoulders to overhead, working the deltoids and triceps.",
     "instructions": [
@@ -5102,10 +4577,7 @@
     "name": "Overhead Press (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A standing press of the weight from the shoulders to overhead, working the deltoids and triceps.",
     "instructions": [
@@ -5124,10 +4596,7 @@
     "name": "Overhead Press (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A standing press of the weight from the shoulders to overhead, working the deltoids and triceps.",
     "instructions": [
@@ -5142,9 +4611,7 @@
     "name": "Overhead Squat",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weight_reps",
     "description": "A squat with the barbell held overhead with a wide grip, demanding mobility, stability and core strength.",
     "instructions": [
@@ -5281,9 +4748,7 @@
     "name": "Palloff Press",
     "equipment_type": "cable",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "upper_abs"
-    ],
+    "secondary_muscles": ["upper_abs"],
     "exercise_type": "weight_reps",
     "description": "An anti-rotation core exercise where a cable handle is pressed out in front of the chest while resisting the pull to the side.",
     "instructions": [
@@ -5338,10 +4803,7 @@
     "name": "Pause Squat",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A squat with a pause of a few seconds at the bottom, which builds strength out of the hole and control.",
     "instructions": [
@@ -5360,11 +4822,7 @@
     "name": "Pendlay Row",
     "equipment_type": "barbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "rhomboids",
-      "rear_delts",
-      "biceps"
-    ],
+    "secondary_muscles": ["rhomboids", "rear_delts", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A strict barbell row from the floor with the torso parallel to the ground, each rep starting from a dead stop.",
     "instructions": [
@@ -5380,9 +4838,7 @@
     "name": "Pendulum Squat",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weight_reps",
     "description": "A machine squat on a pendulum arc that keeps the torso upright and focuses on the quads.",
     "instructions": [
@@ -5398,9 +4854,7 @@
     "name": "Pike Pushup",
     "equipment_type": "none",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "triceps"
-    ],
+    "secondary_muscles": ["triceps"],
     "exercise_type": "bodyweight_reps",
     "description": "A push-up in an inverted V position that shifts the work to the shoulders, a step toward handstand push-ups.",
     "instructions": [
@@ -5416,9 +4870,7 @@
     "name": "Pilates",
     "equipment_type": "none",
     "primary_muscle": "full_body",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "duration",
     "description": "A low-impact method of controlled movements that builds core strength, posture and flexibility.",
     "instructions": [
@@ -5434,9 +4886,7 @@
     "name": "Pinwheel Curl",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A hammer curl across the body toward the opposite shoulder, emphasising the brachialis.",
     "instructions": [
@@ -5454,10 +4904,7 @@
     "name": "Pistol Squat",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "A single-leg squat to full depth with the other leg extended in front, demanding strength, balance and mobility.",
     "instructions": [
@@ -5473,9 +4920,7 @@
     "name": "Plank",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs"
-    ],
+    "secondary_muscles": ["lower_abs"],
     "exercise_type": "duration",
     "description": "A static core exercise where the body is held straight on the forearms and toes.",
     "instructions": [
@@ -5494,10 +4939,7 @@
     "name": "Plank Pushup",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "middle_chest",
-      "triceps"
-    ],
+    "secondary_muscles": ["middle_chest", "triceps"],
     "exercise_type": "bodyweight_reps",
     "description": "A plank that moves between the forearms and the hands, working the core, shoulders and triceps.",
     "instructions": [
@@ -5513,9 +4955,7 @@
     "name": "Plate Curl",
     "equipment_type": "none",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A biceps curl holding a weight plate with both hands.",
     "instructions": [
@@ -5530,10 +4970,7 @@
     "name": "Plate Press",
     "equipment_type": "none",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "front_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["front_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A chest press holding a weight plate squeezed between the palms, which strongly contracts the inner chest.",
     "instructions": [
@@ -5551,11 +4988,7 @@
     "name": "Power Clean",
     "equipment_type": "barbell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings",
-      "quads",
-      "traps"
-    ],
+    "secondary_muscles": ["hamstrings", "quads", "traps"],
     "exercise_type": "weight_reps",
     "description": "An Olympic lift where the bar is pulled explosively from the floor and caught on the front of the shoulders, developing power.",
     "instructions": [
@@ -5574,11 +5007,7 @@
     "name": "Power Snatch",
     "equipment_type": "barbell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings",
-      "quads",
-      "front_delts"
-    ],
+    "secondary_muscles": ["hamstrings", "quads", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "An Olympic lift where the bar is pulled from the floor to overhead in one explosive movement and caught in a partial squat.",
     "instructions": [
@@ -5685,10 +5114,7 @@
     "name": "Press Under",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "An Olympic lifting drill where you press yourself down under a bar held overhead into a squat, for snatch and jerk stability.",
     "instructions": [
@@ -5704,9 +5130,7 @@
     "name": "Pull Through",
     "equipment_type": "cable",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings"
-    ],
+    "secondary_muscles": ["hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A cable hip hinge where a rope is pulled through the legs, working the glutes and hamstrings.",
     "instructions": [
@@ -5725,9 +5149,7 @@
     "name": "Pull Up",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "bodyweight_reps",
     "description": "A vertical bodyweight pull with an overhand grip that develops the lats and upper back.",
     "instructions": [
@@ -5746,9 +5168,7 @@
     "name": "Pull Up (Assisted, Band)",
     "equipment_type": "band",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "assisted_bodyweight",
     "description": "A pull-up with assistance from a band or a counterweight machine, to build toward bodyweight pull-ups.",
     "instructions": [
@@ -5767,9 +5187,7 @@
     "name": "Pull Up (Assisted, Machine)",
     "equipment_type": "machine",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "assisted_bodyweight",
     "description": "A pull-up with assistance from a band or a counterweight machine, to build toward bodyweight pull-ups.",
     "instructions": [
@@ -5785,9 +5203,7 @@
     "name": "Pull Up (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weighted_bodyweight",
     "description": "A pull-up with extra weight attached to a belt or held between the legs.",
     "instructions": [
@@ -5823,10 +5239,7 @@
     "name": "Push Press",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "triceps",
-      "quads"
-    ],
+    "secondary_muscles": ["triceps", "quads"],
     "exercise_type": "weight_reps",
     "description": "An overhead press driven by a quick dip and leg drive, letting you move heavier loads than a strict press.",
     "instructions": [
@@ -5845,10 +5258,7 @@
     "name": "Push Up",
     "equipment_type": "none",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "The classic bodyweight push for the chest, shoulders and triceps.",
     "instructions": [
@@ -5867,10 +5277,7 @@
     "name": "Push Up - Close Grip",
     "equipment_type": "none",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A push-up with the hands closer than shoulder width, shifting more work to the triceps.",
     "instructions": [
@@ -5889,10 +5296,7 @@
     "name": "Push Up - One Arm",
     "equipment_type": "none",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "An advanced push-up on a single arm, demanding chest, triceps and core strength.",
     "instructions": [
@@ -5911,10 +5315,7 @@
     "name": "Push Up (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weighted_bodyweight",
     "description": "A push-up with extra load from a weight vest or a plate on the back.",
     "instructions": [
@@ -5966,11 +5367,7 @@
     "name": "Rack Pull",
     "equipment_type": "barbell",
     "primary_muscle": "lower_back",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "traps"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "traps"],
     "exercise_type": "weight_reps",
     "description": "A partial deadlift from pins or blocks set around knee height, which overloads the top of the lift and the upper back.",
     "instructions": [
@@ -6058,10 +5455,7 @@
     "name": "Renegade Row",
     "equipment_type": "dumbbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["biceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A plank combined with an alternating dumbbell row, working the back, core and shoulders.",
     "instructions": [
@@ -6077,9 +5471,7 @@
     "name": "Reverse Crunch (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs"
-    ],
+    "secondary_muscles": ["lower_abs"],
     "exercise_type": "weight_reps",
     "description": "A crunch where the pelvis curls toward the chest, working the lower abs.",
     "instructions": [
@@ -6097,9 +5489,7 @@
     "name": "Reverse Crunch (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs"
-    ],
+    "secondary_muscles": ["lower_abs"],
     "exercise_type": "weight_reps",
     "description": "A crunch where the pelvis curls toward the chest, working the lower abs.",
     "instructions": [
@@ -6117,9 +5507,7 @@
     "name": "Reverse Curl (Band)",
     "equipment_type": "band",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with an overhand grip that works the brachioradialis and forearm extensors as well as the biceps.",
     "instructions": [
@@ -6135,9 +5523,7 @@
     "name": "Reverse Curl (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with an overhand grip that works the brachioradialis and forearm extensors as well as the biceps.",
     "instructions": [
@@ -6156,9 +5542,7 @@
     "name": "Reverse Curl (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with an overhand grip that works the brachioradialis and forearm extensors as well as the biceps.",
     "instructions": [
@@ -6177,9 +5561,7 @@
     "name": "Reverse Curl (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with an overhand grip that works the brachioradialis and forearm extensors as well as the biceps.",
     "instructions": [
@@ -6198,9 +5580,7 @@
     "name": "Reverse Curl (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with an overhand grip that works the brachioradialis and forearm extensors as well as the biceps.",
     "instructions": [
@@ -6216,9 +5596,7 @@
     "name": "Reverse Curl (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with an overhand grip that works the brachioradialis and forearm extensors as well as the biceps.",
     "instructions": [
@@ -6234,9 +5612,7 @@
     "name": "Reverse Curl (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A curl with an overhand grip that works the brachioradialis and forearm extensors as well as the biceps.",
     "instructions": [
@@ -6252,9 +5628,7 @@
     "name": "Reverse Curl (EZ Bar)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A reverse curl with an EZ bar, whose angled grip reduces wrist strain.",
     "instructions": [
@@ -6269,9 +5643,7 @@
     "name": "Reverse Curl (EZ Bar, Cable)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A reverse curl with an EZ bar, whose angled grip reduces wrist strain.",
     "instructions": [
@@ -6287,9 +5659,7 @@
     "name": "Reverse Curl (Seated Incline)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A reverse curl lying back on an incline bench, which stretches the forearms and biceps.",
     "instructions": [
@@ -6304,9 +5674,7 @@
     "name": "Reverse Curl (Seated)",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A seated reverse curl with dumbbells.",
     "instructions": [
@@ -6321,9 +5689,7 @@
     "name": "Reverse Curl (Standing)",
     "equipment_type": "barbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A standing reverse curl with a barbell.",
     "instructions": [
@@ -6341,9 +5707,7 @@
     "name": "Reverse Curl (Straight Bar)",
     "equipment_type": "cable",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A cable reverse curl with a straight bar.",
     "instructions": [
@@ -6361,9 +5725,7 @@
     "name": "Reverse Grip Concentration Curl",
     "equipment_type": "dumbbell",
     "primary_muscle": "biceps",
-    "secondary_muscles": [
-      "forearms"
-    ],
+    "secondary_muscles": ["forearms"],
     "exercise_type": "weight_reps",
     "description": "A seated concentration curl with an overhand grip, for the brachioradialis and biceps.",
     "instructions": [
@@ -6379,10 +5741,7 @@
     "name": "Reverse Hyperextension (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "lower_back",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["lower_back", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A movement where the legs are raised behind the body while the torso is supported, strengthening the glutes, hamstrings and lower back.",
     "instructions": [
@@ -6402,10 +5761,7 @@
     "name": "Reverse Hyperextension (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "lower_back",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["lower_back", "hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "A movement where the legs are raised behind the body while the torso is supported, strengthening the glutes, hamstrings and lower back.",
     "instructions": [
@@ -6421,10 +5777,7 @@
     "name": "Reverse Lunge (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A lunge stepping backward, which is easier on the knees than a forward lunge.",
     "instructions": [
@@ -6444,10 +5797,7 @@
     "name": "Reverse Lunge (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "A lunge stepping backward, which is easier on the knees than a forward lunge.",
     "instructions": [
@@ -6463,10 +5813,7 @@
     "name": "Reverse Plank",
     "equipment_type": "none",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["hamstrings", "upper_abs"],
     "exercise_type": "duration",
     "description": "A plank facing the ceiling, supported on the hands and heels, which works the glutes, hamstrings and back.",
     "instructions": [
@@ -6481,10 +5828,7 @@
     "name": "Ring Dips",
     "equipment_type": "none",
     "primary_muscle": "lower_chest",
-    "secondary_muscles": [
-      "triceps",
-      "side_delts"
-    ],
+    "secondary_muscles": ["triceps", "side_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A dip on gymnastic rings, which adds a strong stability challenge to the chest, shoulders and triceps.",
     "instructions": [
@@ -6503,10 +5847,7 @@
     "name": "Romanian Deadlift (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "hamstrings",
-    "secondary_muscles": [
-      "glutes",
-      "lower_back"
-    ],
+    "secondary_muscles": ["glutes", "lower_back"],
     "exercise_type": "weight_reps",
     "description": "A hip hinge with slightly bent knees, lowering the weight to mid-shin, that targets the hamstrings and glutes.",
     "instructions": [
@@ -6526,10 +5867,7 @@
     "name": "Romanian Deadlift (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "hamstrings",
-    "secondary_muscles": [
-      "glutes",
-      "lower_back"
-    ],
+    "secondary_muscles": ["glutes", "lower_back"],
     "exercise_type": "weight_reps",
     "description": "A hip hinge with slightly bent knees, lowering the weight to mid-shin, that targets the hamstrings and glutes.",
     "instructions": [
@@ -6549,9 +5887,7 @@
     "name": "Row",
     "equipment_type": "dumbbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A single-arm dumbbell row supported on a bench, for the lats and mid back.",
     "instructions": [
@@ -6570,10 +5906,7 @@
     "name": "Rowing Machine",
     "equipment_type": "machine",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "full_body",
-      "cardio"
-    ],
+    "secondary_muscles": ["full_body", "cardio"],
     "exercise_type": "weight_reps",
     "description": "Indoor rowing, a full-body cardio exercise that mainly uses the legs, back and arms.",
     "instructions": [
@@ -6592,11 +5925,7 @@
     "name": "Running",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "calves"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "calves"],
     "exercise_type": "distance_duration",
     "description": "Outdoor running, a cardio activity that develops endurance and works the legs.",
     "instructions": [
@@ -6615,10 +5944,7 @@
     "name": "Russian Twist",
     "equipment_type": "none",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "lower_abs",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["lower_abs", "upper_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A seated rotation exercise with the torso leaning back, working the obliques.",
     "instructions": [
@@ -6637,10 +5963,7 @@
     "name": "Russian Twist (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "lower_abs",
-      "upper_abs"
-    ],
+    "secondary_muscles": ["lower_abs", "upper_abs"],
     "exercise_type": "weighted_bodyweight",
     "description": "A Russian twist holding a weight plate, dumbbell or medicine ball.",
     "instructions": [
@@ -6659,9 +5982,7 @@
     "name": "Scapular Pull Ups",
     "equipment_type": "none",
     "primary_muscle": "rear_delts",
-    "secondary_muscles": [
-      "lats"
-    ],
+    "secondary_muscles": ["lats"],
     "exercise_type": "bodyweight_reps",
     "description": "A short-range movement hanging from a bar where only the shoulder blades move, building shoulder stability for pull-ups.",
     "instructions": [
@@ -6679,9 +6000,7 @@
     "name": "Seated Row - Bar Grip",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A seated cable row with a straight bar, for the mid back and lats.",
     "instructions": [
@@ -6697,9 +6016,7 @@
     "name": "Seated Row - V Handle",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps"
-    ],
+    "secondary_muscles": ["biceps"],
     "exercise_type": "weight_reps",
     "description": "A seated cable row with a V-handle (neutral grip), for the mid back and lats.",
     "instructions": [
@@ -6718,10 +6035,7 @@
     "name": "Shoulder Press (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A seated press of the weight overhead, working the deltoids and triceps with the back supported.",
     "instructions": [
@@ -6740,10 +6054,7 @@
     "name": "Shoulder Press (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A seated press of the weight overhead, working the deltoids and triceps with the back supported.",
     "instructions": [
@@ -6762,10 +6073,7 @@
     "name": "Shoulder Press (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A seated press of the weight overhead, working the deltoids and triceps with the back supported.",
     "instructions": [
@@ -6780,10 +6088,7 @@
     "name": "Shoulder Press (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A seated press of the weight overhead, working the deltoids and triceps with the back supported.",
     "instructions": [
@@ -6802,10 +6107,7 @@
     "name": "Shoulder Press (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A seated press of the weight overhead, working the deltoids and triceps with the back supported.",
     "instructions": [
@@ -6824,11 +6126,7 @@
     "name": "Shoulder Taps",
     "equipment_type": "none",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "upper_abs",
-      "lower_abs"
-    ],
+    "secondary_muscles": ["side_delts", "upper_abs", "lower_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A high plank where each hand taps the opposite shoulder, training anti-rotation core stability.",
     "instructions": [
@@ -6955,10 +6253,7 @@
     "name": "Side Bend (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "upper_abs",
-      "lower_abs"
-    ],
+    "secondary_muscles": ["upper_abs", "lower_abs"],
     "exercise_type": "weight_reps",
     "description": "A lateral flexion of the torso that works the obliques.",
     "instructions": [
@@ -6977,10 +6272,7 @@
     "name": "Side Bend (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "upper_abs",
-      "lower_abs"
-    ],
+    "secondary_muscles": ["upper_abs", "lower_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A lateral flexion of the torso that works the obliques.",
     "instructions": [
@@ -6995,9 +6287,7 @@
     "name": "Side Plank",
     "equipment_type": "none",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "side_delts"
-    ],
+    "secondary_muscles": ["side_delts"],
     "exercise_type": "duration",
     "description": "A plank on one forearm and the side of the foot, working the obliques and hip stabilisers.",
     "instructions": [
@@ -7015,9 +6305,7 @@
     "name": "Sissy Squat (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes"
-    ],
+    "secondary_muscles": ["glutes"],
     "exercise_type": "weighted_bodyweight",
     "description": "A squat where the knees travel far forward and the torso leans back, isolating the quads, here with extra weight.",
     "instructions": [
@@ -7036,9 +6324,7 @@
     "name": "Sit Up",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs"
-    ],
+    "secondary_muscles": ["lower_abs"],
     "exercise_type": "bodyweight_reps",
     "description": "A full sit-up from lying to seated, working the abs and hip flexors.",
     "instructions": [
@@ -7057,9 +6343,7 @@
     "name": "Sit Up (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs"
-    ],
+    "secondary_muscles": ["lower_abs"],
     "exercise_type": "weighted_bodyweight",
     "description": "A sit-up holding a weight against the chest or overhead.",
     "instructions": [
@@ -7074,9 +6358,7 @@
     "name": "SkiErg",
     "equipment_type": "machine",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "full_body"
-    ],
+    "secondary_muscles": ["full_body"],
     "exercise_type": "distance_duration",
     "description": "A cardio machine that reproduces cross-country ski poling, working the back, arms, core and legs.",
     "instructions": [
@@ -7148,11 +6430,7 @@
     "name": "Sled Pull",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "hamstrings",
-      "glutes",
-      "biceps"
-    ],
+    "secondary_muscles": ["hamstrings", "glutes", "biceps"],
     "exercise_type": "distance_duration",
     "description": "Pulling a weighted sled with a rope or harness, which builds leg drive, back and grip strength.",
     "instructions": [
@@ -7170,11 +6448,7 @@
     "name": "Sled Push",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "hamstrings",
-      "glutes",
-      "front_delts"
-    ],
+    "secondary_muscles": ["hamstrings", "glutes", "front_delts"],
     "exercise_type": "distance_duration",
     "description": "Pushing a weighted sled across the floor, building leg power and conditioning with little impact.",
     "instructions": [
@@ -7277,12 +6551,7 @@
     "name": "Split Jerk",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "quads",
-      "hamstrings",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "quads", "hamstrings", "triceps"],
     "exercise_type": "weight_reps",
     "description": "An Olympic lift where the bar is driven from the shoulders to overhead while the legs split forward and back.",
     "instructions": [
@@ -7301,10 +6570,7 @@
     "name": "Split Squat",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A static lunge where both feet stay in place, working the quads and glutes one leg at a time.",
     "instructions": [
@@ -7323,12 +6589,7 @@
     "name": "Sprints",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "calves",
-      "cardio"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "calves", "cardio"],
     "exercise_type": "distance_duration",
     "description": "Short maximal-effort runs that develop speed, power and anaerobic conditioning.",
     "instructions": [
@@ -7344,10 +6605,7 @@
     "name": "Squat (Band)",
     "equipment_type": "band",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "The fundamental lower-body exercise that works the quads, glutes and adductors.",
     "instructions": [
@@ -7367,10 +6625,7 @@
     "name": "Squat (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "The fundamental lower-body exercise that works the quads, glutes and adductors.",
     "instructions": [
@@ -7390,10 +6645,7 @@
     "name": "Squat (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "The fundamental lower-body exercise that works the quads, glutes and adductors.",
     "instructions": [
@@ -7413,10 +6665,7 @@
     "name": "Squat (Machine)",
     "equipment_type": "machine",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "The fundamental lower-body exercise that works the quads, glutes and adductors.",
     "instructions": [
@@ -7433,10 +6682,7 @@
     "name": "Squat (Plate Loaded)",
     "equipment_type": "plate_loaded",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "The fundamental lower-body exercise that works the quads, glutes and adductors.",
     "instructions": [
@@ -7453,10 +6699,7 @@
     "name": "Squat (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "The fundamental lower-body exercise that works the quads, glutes and adductors.",
     "instructions": [
@@ -7476,10 +6719,7 @@
     "name": "Squat (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "The fundamental lower-body exercise that works the quads, glutes and adductors.",
     "instructions": [
@@ -7499,11 +6739,7 @@
     "name": "Squat Row",
     "equipment_type": "cable",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "quads",
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["quads", "glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A combined exercise where a cable row is performed from the bottom of a squat while standing up, working the legs and back.",
     "instructions": [
@@ -7519,10 +6755,7 @@
     "name": "Squeeze Press",
     "equipment_type": "dumbbell",
     "primary_muscle": "middle_chest",
-    "secondary_muscles": [
-      "triceps",
-      "front_delts"
-    ],
+    "secondary_muscles": ["triceps", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A dumbbell bench press with the dumbbells pressed hard together throughout the movement, for chest contraction.",
     "instructions": [
@@ -7537,12 +6770,7 @@
     "name": "StairMaster",
     "equipment_type": "machine",
     "primary_muscle": "cardio",
-    "secondary_muscles": [
-      "quads",
-      "glutes",
-      "hamstrings",
-      "calves"
-    ],
+    "secondary_muscles": ["quads", "glutes", "hamstrings", "calves"],
     "exercise_type": "distance_duration",
     "description": "A stair climbing machine, a cardio exercise that strongly works the glutes and quads.",
     "instructions": [
@@ -7561,10 +6789,7 @@
     "name": "Standing Military Press",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "side_delts",
-      "triceps"
-    ],
+    "secondary_muscles": ["side_delts", "triceps"],
     "exercise_type": "weight_reps",
     "description": "A strict standing barbell press from the shoulders to overhead, with no leg drive.",
     "instructions": [
@@ -7583,10 +6808,7 @@
     "name": "Step Up",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "Stepping onto a box or bench one leg at a time, working the quads, glutes and balance.",
     "instructions": [
@@ -7605,10 +6827,7 @@
     "name": "Straight Leg Deadlift",
     "equipment_type": "barbell",
     "primary_muscle": "hamstrings",
-    "secondary_muscles": [
-      "glutes",
-      "lower_back"
-    ],
+    "secondary_muscles": ["glutes", "lower_back"],
     "exercise_type": "weight_reps",
     "description": "A deadlift with nearly straight legs that strongly stretches and works the hamstrings.",
     "instructions": [
@@ -7643,11 +6862,7 @@
     "name": "Sumo Squat (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "adductors"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "adductors"],
     "exercise_type": "weight_reps",
     "description": "A wide-stance squat with the toes turned out, which emphasises the adductors and glutes.",
     "instructions": [
@@ -7666,11 +6881,7 @@
     "name": "Sumo Squat (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "adductors"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "adductors"],
     "exercise_type": "weight_reps",
     "description": "A wide-stance squat with the toes turned out, which emphasises the adductors and glutes.",
     "instructions": [
@@ -7689,11 +6900,7 @@
     "name": "Sumo Squat (Kettlebell)",
     "equipment_type": "kettlebell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "adductors"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "adductors"],
     "exercise_type": "weight_reps",
     "description": "A wide-stance squat with the toes turned out, which emphasises the adductors and glutes.",
     "instructions": [
@@ -7709,11 +6916,7 @@
     "name": "Sumo Squat (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "adductors"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "adductors"],
     "exercise_type": "bodyweight_reps",
     "description": "A wide-stance squat with the toes turned out, which emphasises the adductors and glutes.",
     "instructions": [
@@ -7728,10 +6931,7 @@
     "name": "Superman",
     "equipment_type": "none",
     "primary_muscle": "lower_back",
-    "secondary_muscles": [
-      "glutes",
-      "front_delts"
-    ],
+    "secondary_muscles": ["glutes", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A face-down exercise where the arms and legs are lifted off the floor, strengthening the lower back and glutes.",
     "instructions": [
@@ -7747,9 +6947,7 @@
     "name": "Swimming",
     "equipment_type": "none",
     "primary_muscle": "full_body",
-    "secondary_muscles": [
-      "cardio"
-    ],
+    "secondary_muscles": ["cardio"],
     "exercise_type": "distance_duration",
     "description": "Swimming, a full-body, low-impact cardio activity.",
     "instructions": [
@@ -7765,10 +6963,7 @@
     "name": "Swing",
     "equipment_type": "kettlebell",
     "primary_muscle": "glutes",
-    "secondary_muscles": [
-      "hamstrings",
-      "front_delts"
-    ],
+    "secondary_muscles": ["hamstrings", "front_delts"],
     "exercise_type": "weight_reps",
     "description": "A kettlebell swing driven by the hips, which builds glute and hamstring power and conditioning.",
     "instructions": [
@@ -7787,10 +6982,7 @@
     "name": "T Bar Row",
     "equipment_type": "barbell",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps",
-      "rear_delts"
-    ],
+    "secondary_muscles": ["biceps", "rear_delts"],
     "exercise_type": "weight_reps",
     "description": "A row with a barbell anchored at one end, pulling a handle toward the chest, for the mid back and lats.",
     "instructions": [
@@ -7809,10 +7001,7 @@
     "name": "Toe Touch",
     "equipment_type": "none",
     "primary_muscle": "hamstrings",
-    "secondary_muscles": [
-      "lower_back",
-      "calves"
-    ],
+    "secondary_muscles": ["lower_back", "calves"],
     "exercise_type": "bodyweight_reps",
     "description": "A crunch where the hands reach up toward the raised feet, working the upper abs.",
     "instructions": [
@@ -7827,10 +7016,7 @@
     "name": "Toes to Bar",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs",
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["lower_abs", "hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A hanging exercise where the feet are brought up to touch the bar, working the whole core and grip.",
     "instructions": [
@@ -7849,11 +7035,7 @@
     "name": "Torso Rotation",
     "equipment_type": "none",
     "primary_muscle": "obliques",
-    "secondary_muscles": [
-      "upper_abs",
-      "lower_abs",
-      "lower_back"
-    ],
+    "secondary_muscles": ["upper_abs", "lower_abs", "lower_back"],
     "exercise_type": "bodyweight_reps",
     "description": "A standing or seated torso twist that mobilises the spine and works the obliques.",
     "instructions": [
@@ -7869,12 +7051,7 @@
     "name": "Treadmill - Running",
     "equipment_type": "machine",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "hamstrings",
-      "glutes",
-      "calves",
-      "cardio"
-    ],
+    "secondary_muscles": ["hamstrings", "glutes", "calves", "cardio"],
     "exercise_type": "distance_duration",
     "description": "Running on a treadmill, a cardio exercise with controlled speed and incline.",
     "instructions": [
@@ -7893,11 +7070,7 @@
     "name": "Treadmill - Walking",
     "equipment_type": "machine",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "calves"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "calves"],
     "exercise_type": "distance_duration",
     "description": "Walking on a treadmill, possibly on an incline, a low-intensity cardio exercise.",
     "instructions": [
@@ -7916,10 +7089,7 @@
     "name": "Triceps Dip (Assited)",
     "equipment_type": "machine",
     "primary_muscle": "triceps",
-    "secondary_muscles": [
-      "lower_chest",
-      "front_delts"
-    ],
+    "secondary_muscles": ["lower_chest", "front_delts"],
     "exercise_type": "assisted_bodyweight",
     "description": "A triceps dip on an assisted machine, where a counterweight reduces the load.",
     "instructions": [
@@ -7938,10 +7108,7 @@
     "name": "Triceps Dip",
     "equipment_type": "none",
     "primary_muscle": "triceps",
-    "secondary_muscles": [
-      "lower_chest",
-      "front_delts"
-    ],
+    "secondary_muscles": ["lower_chest", "front_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A dip on parallel bars with an upright torso, emphasising the triceps.",
     "instructions": [
@@ -7960,10 +7127,7 @@
     "name": "Triceps Dip (Weighted)",
     "equipment_type": "none",
     "primary_muscle": "triceps",
-    "secondary_muscles": [
-      "lower_chest",
-      "front_delts"
-    ],
+    "secondary_muscles": ["lower_chest", "front_delts"],
     "exercise_type": "weighted_bodyweight",
     "description": "A triceps dip with extra weight from a dip belt.",
     "instructions": [
@@ -8130,10 +7294,7 @@
     "name": "Upright Row (Barbell)",
     "equipment_type": "barbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "traps",
-      "biceps"
-    ],
+    "secondary_muscles": ["traps", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A vertical pull of the weight up the front of the body to chest height, working the side deltoids and traps.",
     "instructions": [
@@ -8152,10 +7313,7 @@
     "name": "Upright Row (Cable)",
     "equipment_type": "cable",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "traps",
-      "biceps"
-    ],
+    "secondary_muscles": ["traps", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A vertical pull of the weight up the front of the body to chest height, working the side deltoids and traps.",
     "instructions": [
@@ -8174,10 +7332,7 @@
     "name": "Upright Row (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "traps",
-      "biceps"
-    ],
+    "secondary_muscles": ["traps", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A vertical pull of the weight up the front of the body to chest height, working the side deltoids and traps.",
     "instructions": [
@@ -8196,10 +7351,7 @@
     "name": "Upright Row (Smith Machine)",
     "equipment_type": "smith_machine",
     "primary_muscle": "front_delts",
-    "secondary_muscles": [
-      "traps",
-      "biceps"
-    ],
+    "secondary_muscles": ["traps", "biceps"],
     "exercise_type": "weight_reps",
     "description": "A vertical pull of the weight up the front of the body to chest height, working the side deltoids and traps.",
     "instructions": [
@@ -8218,10 +7370,7 @@
     "name": "V Up",
     "equipment_type": "none",
     "primary_muscle": "upper_abs",
-    "secondary_muscles": [
-      "lower_abs",
-      "hip_flexors"
-    ],
+    "secondary_muscles": ["lower_abs", "hip_flexors"],
     "exercise_type": "bodyweight_reps",
     "description": "A core exercise where the arms and legs are raised at the same time to touch, forming a V shape.",
     "instructions": [
@@ -8239,11 +7388,7 @@
     "name": "Walking",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings",
-      "calves"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings", "calves"],
     "exercise_type": "distance_duration",
     "description": "Walking outdoors, a low-intensity cardio activity good for health and active recovery.",
     "instructions": [
@@ -8261,10 +7406,7 @@
     "name": "Walking Lunge (Dumbbell)",
     "equipment_type": "dumbbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "Lunges performed while moving forward, alternating legs, for the quads, glutes and balance.",
     "instructions": [
@@ -8283,10 +7425,7 @@
     "name": "Walking Lunge (Bodyweight)",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "bodyweight_reps",
     "description": "Lunges performed while moving forward, alternating legs, for the quads, glutes and balance.",
     "instructions": [
@@ -8304,11 +7443,7 @@
     "name": "Wall Ball",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "front_delts",
-      "side_delts"
-    ],
+    "secondary_muscles": ["glutes", "front_delts", "side_delts"],
     "exercise_type": "weight_reps",
     "description": "A full-body exercise combining a squat and a throw of a medicine ball to a target on a wall.",
     "instructions": [
@@ -8324,10 +7459,7 @@
     "name": "Wall Sit",
     "equipment_type": "none",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "duration",
     "description": "A static squat with the back against a wall and thighs parallel to the floor, which builds quad endurance.",
     "instructions": [
@@ -8358,10 +7490,7 @@
     "name": "Wide Pull Up",
     "equipment_type": "none",
     "primary_muscle": "lats",
-    "secondary_muscles": [
-      "biceps",
-      "rear_delts"
-    ],
+    "secondary_muscles": ["biceps", "rear_delts"],
     "exercise_type": "bodyweight_reps",
     "description": "A pull-up with a grip much wider than the shoulders, emphasising the upper lats.",
     "instructions": [
@@ -8429,10 +7558,7 @@
     "name": "Zercher Squat",
     "equipment_type": "barbell",
     "primary_muscle": "quads",
-    "secondary_muscles": [
-      "glutes",
-      "hamstrings"
-    ],
+    "secondary_muscles": ["glutes", "hamstrings"],
     "exercise_type": "weight_reps",
     "description": "A squat with the barbell held in the crook of the elbows, which strongly works the quads, upper back and core.",
     "instructions": [

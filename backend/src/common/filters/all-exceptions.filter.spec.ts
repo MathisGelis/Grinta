@@ -37,7 +37,8 @@ describe('AllExceptionsFilter', () => {
     expect(status).toHaveBeenCalledWith(404);
     expect(json).toHaveBeenCalledWith({
       statusCode: 404,
-      message: expect.objectContaining({ message: 'Post not found' }),
+      code: 'NOT_FOUND',
+      message: 'Post not found',
     });
   });
 
@@ -60,6 +61,22 @@ describe('AllExceptionsFilter', () => {
     expect(JSON.stringify(json.mock.calls[0][0])).not.toContain('uuid');
   });
 
+  it('turns a body-parser size error into 413 PAYLOAD_TOO_LARGE', () => {
+    const { host, status, json } = buildHost();
+
+    filter.catch(
+      Object.assign(new Error('request entity too large'), {
+        status: 413,
+        type: 'entity.too.large',
+      }),
+      host,
+    );
+    expect(status).toHaveBeenCalledWith(413);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'PAYLOAD_TOO_LARGE' }),
+    );
+  });
+
   it('hides unexpected error details behind a generic 500 and logs them', () => {
     const { host, status, json } = buildHost();
 
@@ -70,7 +87,8 @@ describe('AllExceptionsFilter', () => {
     expect(status).toHaveBeenCalledWith(500);
     expect(json).toHaveBeenCalledWith({
       statusCode: 500,
-      message: { message: 'Internal server error' },
+      code: 'INTERNAL_ERROR',
+      message: 'Internal server error',
     });
     expect(logError).toHaveBeenCalled();
   });

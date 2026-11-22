@@ -21,7 +21,7 @@ export class Post {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   user: User;
 
   @OneToOne(() => CompletedWorkout, { eager: true })

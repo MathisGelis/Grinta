@@ -16,7 +16,7 @@ export class PostLike {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   user: User;
 
   @ManyToOne(() => Post, (post) => post.likes, {

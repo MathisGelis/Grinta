@@ -1,3 +1,4 @@
+import { visibleToViewerSql as visibleToViewer } from '../common/access/user-content-access';
 import {
   BadRequestException,
   ForbiddenException,
@@ -15,6 +16,8 @@ import { Post } from './entities/post.entity';
 import { ReportReason } from './enums/report-reason.enum';
 import { CompletedWorkout } from '../workouts/entities/completed-workout.entity';
 import { partnersSql, PostPartnersService } from './post-partners.service';
+import { withWorkoutSummaries } from './workout-summary';
+import { StatsService } from '../stats/stats.service';
 
 const AUTO_HIDE_THRESHOLD = 5;
 
@@ -22,6 +25,36 @@ const AUTO_HIDE_THRESHOLD = 5;
 // Written as SQL: given as names, TypeORM keeps only entity properties and
 // silently drops the "postId" foreign key.
 type CommentRow = { isHidden: boolean; postId: string };
+
+/**
+ * The columns of a post card: the author, the workout behind the post, the
+ * counters, the partners and whether the viewer liked it. The post detail and
+ * both feeds select exactly these, so a card holds what the detail holds and
+ * the app has no need to fetch the detail of each card. Expects the aliases
+ * `post`, `author` and `w`, and a `:userId` parameter (the viewer).
+ */
+const POST_CARD_COLUMNS = [
+  'post.id AS id',
+  'post."createdAt" AS "createdAt"',
+  'author.id AS "userId"',
+  'author."displayName" AS "displayName"',
+  'author."uniqueName" AS "uniqueName"',
+  'COALESCE(author."avatarThumbnailUrl", author."avatarUrl") AS "avatarThumbnailUrl"',
+  'w.id AS "workoutId"',
+  'w.title AS "workoutTitle"',
+  'w."photoUrl" AS "workoutPhotoUrl"',
+  'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
+  'w.description AS "workoutDescription"',
+  'w."completionDate" AS "workoutCompletionDate"',
+  'w."totalDurationSeconds" AS "workoutDurationSeconds"',
+  'post."likesCount" AS "likesCount"',
+  'post."commentsCount" AS "commentsCount"',
+  `${partnersSql('post')} AS partners`,
+  `EXISTS (
+    SELECT 1 FROM post_likes ml
+    WHERE ml."postId" = post.id AND ml."userId" = :userId
+  ) AS "isLiked"`,
+];
 
 @Injectable()
 export class PostsService {
@@ -41,6 +74,8 @@ export class PostsService {
     private readonly moderation: ModerationService,
 
     private readonly partners: PostPartnersService,
+
+    private readonly stats: StatsService,
   ) {}
 
   /**
@@ -106,32 +141,11 @@ export class PostsService {
   async getPostById(userId: string, postId: string) {
     const rows = await this.postRepository
       .createQueryBuilder('post')
-      .innerJoin('post.user', 'u')
+      .innerJoin('post.user', 'author')
       .leftJoin('post.workout', 'w')
       .where('post.id = :postId', { postId })
-      .andWhere(this.visibleToViewerSql('u'))
-      .select([
-        'post.id AS id',
-        'post."createdAt" AS "createdAt"',
-        'u.id AS "userId"',
-        'u."displayName" AS "displayName"',
-        'u."uniqueName" AS "uniqueName"',
-        'COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"',
-        'w.id AS "workoutId"',
-        'w.title AS "workoutTitle"',
-        'w."photoUrl" AS "workoutPhotoUrl"',
-        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        'w.description AS "workoutDescription"',
-        'w."completionDate" AS "workoutCompletionDate"',
-        'w."totalDurationSeconds" AS "workoutDurationSeconds"',
-        'post."likesCount" AS "likesCount"',
-        'post."commentsCount" AS "commentsCount"',
-        `${partnersSql('post')} AS partners`,
-        `EXISTS (
-          SELECT 1 FROM post_likes ml
-          WHERE ml."postId" = post.id AND ml."userId" = :userId
-        ) AS "isLiked"`,
-      ])
+      .andWhere(this.visibleToViewerSql('author'))
+      .select(POST_CARD_COLUMNS)
       .setParameter('userId', userId)
       .setParameter('viewerId', userId)
       .getRawOne();
@@ -140,8 +154,73 @@ export class PostsService {
     return rows;
   }
 
+  /**
+   * The exercises, sets and totals of the workout behind a post, for whoever
+   * may see the post, the author included. Reached through the post only: a
+   * workout that was not published cannot be read here. Exercises have the
+   * shape of GET /workouts/completed/:id. Nothing private to the author is
+   * returned: no badges, and other people get calories computed for the
+   * default body weight rather than the author's.
+   */
+  async getPostWorkout(viewerId: string, postId: string) {
+    const post = await this.visibleWorkoutOf(viewerId, postId);
+    const workout = await this.postRepository.manager.findOne(
+      CompletedWorkout,
+      { where: { id: post.workoutId }, relations: ['exercises'] },
+    );
+
+    if (!workout) throw new NotFoundException('Post not found');
+    return {
+      workoutId: workout.id,
+      totalExercises: workout.exercises.length,
+      exercises: workout.exercises,
+      stats: await this.stats.publishedWorkoutStats(
+        workout,
+        post.authorId,
+        viewerId,
+      ),
+    };
+  }
+
+  /**
+   * The workout of a post the viewer may see, and its author. 404 for a post
+   * that is missing or out of reach, the same answer in both cases. The API
+   * never leaves a post without its workout; one made by hand has nothing to
+   * show and reads as missing too.
+   */
+  async visibleWorkoutOf(viewerId: string, postId: string) {
+    const post = await this.postRepository
+      .createQueryBuilder('post')
+      .innerJoin('post.user', 'author')
+      .where('post.id = :postId', { postId })
+      .andWhere(this.visibleToViewerSql('author'))
+      .select(['post."workoutId" AS "workoutId"', 'author.id AS "authorId"'])
+      .setParameter('viewerId', viewerId)
+      .getRawOne<{ workoutId: string | null; authorId: string }>();
+
+    if (!post?.workoutId) throw new NotFoundException('Post not found');
+    return { workoutId: post.workoutId, authorId: post.authorId };
+  }
+
+  /**
+   * Identifiers of my published workouts, nothing else: the Stats screen only
+   * needs to know which workouts are public, not their cards.
+   */
+  async getMyPublishedIds(userId: string) {
+    const rows = await this.postRepository
+      .createQueryBuilder('post')
+      .where('post."userId" = :userId', { userId })
+      .andWhere('post."workoutId" IS NOT NULL')
+      .select(['post.id AS "postId"', 'post."workoutId" AS "workoutId"'])
+      .orderBy('post."createdAt"', 'DESC')
+      .limit(1000)
+      .getRawMany<{ postId: string; workoutId: string }>();
+
+    return rows;
+  }
+
   async getMyPosts(userId: string, limit?: number) {
-    return this.postRepository
+    const rows = await this.postRepository
       .createQueryBuilder('post')
       .innerJoin('post.workout', 'w')
       .where('post."userId" = :userId', { userId })
@@ -159,7 +238,9 @@ export class PostsService {
       ])
       .orderBy('post."createdAt"', 'DESC')
       .limit(clampLimit(limit))
-      .getRawMany();
+      .getRawMany<{ workoutId: string }>();
+
+    return withWorkoutSummaries(this.postRepository.manager, rows);
   }
 
   /**
@@ -329,56 +410,47 @@ export class PostsService {
   }
 
   async getFollowingFeed(userId: string, limit?: number) {
-    return this.postRepository
+    const rows = await this.postRepository
       .createQueryBuilder('post')
-      .innerJoin('post.user', 'postUser')
+      .innerJoin('post.user', 'author')
       .leftJoin('post.workout', 'w')
       .innerJoin(
         'connections',
         'c',
-        'c."followingId" = postUser.id AND c."followerId" = :userId',
-        {
-          userId,
-        },
+        'c."followingId" = author.id AND c."followerId" = :userId',
+        { userId },
       )
-      .select([
-        'post.id AS id',
-        'post.createdAt AS "createdAt"',
-        'postUser.displayName AS "displayName"',
-        'COALESCE(postUser.avatarThumbnailUrl, postUser.avatarUrl) AS "avatarThumbnailUrl"',
-        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        'post."likesCount" AS "likesCount"',
-        'post."commentsCount" AS "commentsCount"',
-        `${partnersSql('post')} AS partners`,
-        `EXISTS (
-          SELECT 1 FROM post_likes ml
-          WHERE ml."postId" = post.id
-          AND ml."userId" = :userId
-        ) AS "isLiked"`,
-      ])
-      .orderBy('post.createdAt', 'DESC')
+      .select(POST_CARD_COLUMNS)
+      .orderBy('post."createdAt"', 'DESC')
       .limit(clampLimit(limit))
       .setParameter('userId', userId)
-      .getRawMany();
+      .getRawMany<{ workoutId: string }>();
+
+    return withWorkoutSummaries(this.postRepository.manager, rows);
   }
 
+  /**
+   * The month's most liked and commented posts the user can see, without
+   * their own: the feed is there to discover other people's sessions.
+   */
   async getTopPostsThisMonth(userId: string, limit?: number) {
     const startOfMonth = new Date();
 
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-    return this.postRepository
+    const rows = await this.postRepository
       .createQueryBuilder('post')
-      .innerJoin('post.user', 'u')
+      .innerJoin('post.user', 'author')
       .leftJoin('post.workout', 'w')
       .where(
         `
           post."createdAt" >= :startOfMonth
+          AND post."userId" <> :userId
           AND (
-            u."isPublic" = true
+            author."isPublic" = true
             OR EXISTS (
               SELECT 1 FROM connections c
-              WHERE c."followingId" = u."id"
+              WHERE c."followingId" = author."id"
               AND c."followerId" = :userId
             )
           )
@@ -386,26 +458,16 @@ export class PostsService {
         { startOfMonth, userId },
       )
       .select([
-        'post.id AS id',
-        'post."createdAt" AS "createdAt"',
-        'u."displayName" AS "displayName"',
-        'COALESCE(u."avatarThumbnailUrl", u."avatarUrl") AS "avatarThumbnailUrl"',
-        'w."photoThumbnailUrl" AS "workoutPhotoThumbnailUrl"',
-        'post."likesCount" AS "likesCount"',
-        'post."commentsCount" AS "commentsCount"',
-        `${partnersSql('post')} AS partners`,
+        ...POST_CARD_COLUMNS,
         '(post."likesCount" + post."commentsCount") AS score',
-        `EXISTS (
-          SELECT 1 FROM post_likes ml
-          WHERE ml."postId" = post.id
-          AND ml."userId" = :userId
-        ) AS "isLiked"`,
       ])
       .orderBy('score', 'DESC')
       .addOrderBy('post."createdAt"', 'DESC')
       .limit(clampLimit(limit))
       .setParameter('userId', userId)
-      .getRawMany();
+      .getRawMany<{ workoutId: string }>();
+
+    return withWorkoutSummaries(this.postRepository.manager, rows);
   }
 
   // Hides a visible comment and takes it off its post's counter; a comment
@@ -447,15 +509,7 @@ export class PostsService {
    * profile, or the viewer follows them. Expects a `:viewerId` parameter.
    */
   private visibleToViewerSql(authorAlias: string): string {
-    return `(
-      ${authorAlias}.id = :viewerId
-      OR ${authorAlias}."isPublic" = true
-      OR EXISTS (
-        SELECT 1 FROM connections vc
-        WHERE vc."followingId" = ${authorAlias}.id
-        AND vc."followerId" = :viewerId
-      )
-    )`;
+    return visibleToViewer(authorAlias, ':viewerId');
   }
 
   /**

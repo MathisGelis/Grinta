@@ -19,9 +19,13 @@ import {
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { ListCompletedWorkoutsQueryDto } from './dto/list-completed-workouts-query.dto';
+import { CompletedWorkoutListDto } from './dto/list-completed-workout.dto';
 import { omitUndefined } from 'src/common/utils/omit-undefined';
 import { PhotosService } from 'src/photos/photos.service';
 import { PostPartnersService } from 'src/posts/post-partners.service';
+import { PostsService } from 'src/posts/posts.service';
+import { UserContentAccess } from '../common/access/user-content-access';
+import { StatsService } from 'src/stats/stats.service';
 
 type WorkoutPhotoUrls<T = string> = { photoUrl: T; photoThumbnailUrl: T };
 
@@ -44,6 +48,9 @@ export class WorkoutService {
     private readonly badges: BadgesService,
     private readonly photos: PhotosService,
     private readonly postPartners: PostPartnersService,
+    private readonly posts: PostsService,
+    private readonly stats: StatsService,
+    private readonly access: UserContentAccess,
   ) {}
 
   async createPlannedWorkout(user: AuthUser, dto: CreatePlannedWorkoutDto) {
@@ -51,17 +58,19 @@ export class WorkoutService {
       user: { id: user.id },
       title: dto.title,
       description: dto.description,
+      estimatedDurationMinutes: dto.estimatedDurationMinutes ?? null,
     });
 
     const byId = await this.resolveExercises(
       dto.exercises.map((exDto) => exDto.exerciseId),
     );
 
-    workout.exercises = dto.exercises.map((exDto) =>
+    workout.exercises = dto.exercises.map((exDto, position) =>
       this.plannedExRepo.create({
         exercise: byId.get(exDto.exerciseId),
         sets: exDto.sets,
         plannedRestSeconds: exDto.plannedRestSeconds,
+        position,
       }),
     );
     return this.plannedRepo.save(workout);
@@ -136,11 +145,12 @@ export class WorkoutService {
       );
 
       await this.plannedExRepo.remove(workout.exercises);
-      workout.exercises = exercises.map((exDto) =>
+      workout.exercises = exercises.map((exDto, position) =>
         this.plannedExRepo.create({
           exercise: byId.get(exDto.exerciseId),
           sets: exDto.sets,
           plannedRestSeconds: exDto.plannedRestSeconds,
+          position,
         }),
       );
     }
@@ -211,21 +221,32 @@ export class WorkoutService {
   // SQL. Loading every exercise row (with its eager Exercise join and the sets
   // JSON) just to read `.length` made this the heaviest read for active users.
   async getPlannedWorkouts(user: AuthUser) {
-    return this.plannedRepo
-      .createQueryBuilder('w')
-      .select([
-        'w.id AS id',
-        'w.title AS title',
-        'w.description AS description',
-      ])
-      .addSelect(
-        '(SELECT COUNT(*)::int FROM planned_workout_exercises e WHERE e."workoutId" = w.id)',
-        'totalExercises',
-      )
-      .where('w."userId" = :userId', { userId: user.id })
-      .orderBy('w."createdAt"', 'DESC')
-      .addOrderBy('w.id', 'DESC')
-      .getRawMany();
+    return (
+      this.plannedRepo
+        .createQueryBuilder('w')
+        .select([
+          'w.id AS id',
+          'w.title AS title',
+          'w.description AS description',
+        ])
+        .addSelect('w."estimatedDurationMinutes"', 'estimatedDurationMinutes')
+        .addSelect(
+          '(SELECT COUNT(*)::int FROM planned_workout_exercises e WHERE e."workoutId" = w.id)',
+          'totalExercises',
+        )
+        // Planned sets of every exercise; an exercise planned without sets
+        // counts none.
+        .addSelect(
+          `(SELECT COALESCE(SUM(CASE WHEN jsonb_typeof(e.sets) = 'array'
+                                   THEN jsonb_array_length(e.sets) ELSE 0 END), 0)::int
+            FROM planned_workout_exercises e WHERE e."workoutId" = w.id)`,
+          'totalSets',
+        )
+        .where('w."userId" = :userId', { userId: user.id })
+        .orderBy('w."createdAt"', 'DESC')
+        .addOrderBy('w.id', 'DESC')
+        .getRawMany()
+    );
   }
 
   /**
@@ -268,10 +289,23 @@ export class WorkoutService {
         { before: page.before },
       );
     if (page.limit) qb.limit(page.limit);
-    return qb.getRawMany();
+    const rows =
+      await qb.getRawMany<Omit<CompletedWorkoutListDto, 'calories'>>();
+    const calories = await this.stats.caloriesOf(
+      user.id,
+      rows.map((r) => r.id),
+    );
+
+    return rows.map((row) => ({ ...row, calories: calories.get(row.id) ?? 0 }));
   }
 
-  async getPlannedWorkoutById(workoutId: string) {
+  /** A planned workout is a private draft: only its owner reads it. */
+  async getPlannedWorkoutById(viewerId: string, workoutId: string) {
+    await this.access.assertCanViewPlannedWorkout(viewerId, workoutId);
+    return this.loadPlannedWorkout(workoutId);
+  }
+
+  private async loadPlannedWorkout(workoutId: string) {
     const workout = await this.plannedRepo.findOne({
       where: { id: workoutId },
       relations: ['exercises'],
@@ -284,7 +318,65 @@ export class WorkoutService {
     };
   }
 
-  async getCompletedWorkoutById(workoutId: string) {
+  /**
+   * Copies the workout of a post the user can see into their planned
+   * workouts: the same exercises in the same order, without the author's
+   * sets, weights or description.
+   */
+  async duplicatePostWorkout(user: AuthUser, postId: string) {
+    const { workoutId } = await this.posts.visibleWorkoutOf(user.id, postId);
+
+    return this.plannedCopyOf(user, workoutId);
+  }
+
+  /** Copies one of the user's own completed workouts, as above. */
+  async duplicateCompletedWorkout(user: AuthUser, workoutId: string) {
+    const owned = await this.completedRepo.exists({
+      where: { id: workoutId, user: { id: user.id } },
+    });
+
+    if (!owned) throw new NotFoundException('Completed workout not found');
+    return this.plannedCopyOf(user, workoutId);
+  }
+
+  private async plannedCopyOf(user: AuthUser, workoutId: string) {
+    const source = await this.completedRepo.findOne({
+      where: { id: workoutId },
+      relations: ['exercises'],
+    });
+
+    if (!source) throw new NotFoundException('Completed workout not found');
+    // Positions follow the source order. Completed workouts have no
+    // position column: their exercises are copied in the order they load.
+    const copy = await this.dataSource.transaction(async (manager) => {
+      const workout = await manager.save(
+        manager.create(PlannedWorkout, {
+          user: { id: user.id },
+          title: source.title,
+        }),
+      );
+
+      if (source.exercises.length)
+        await manager.insert(
+          PlannedWorkoutExercise,
+          source.exercises.map((e, position) => ({
+            workout: { id: workout.id },
+            exercise: { id: e.exercise.id },
+            position,
+          })),
+        );
+      return workout;
+    });
+
+    return this.loadPlannedWorkout(copy.id);
+  }
+
+  /**
+   * Its owner, their followers, and anyone for a public account once the
+   * workout is published; 404 otherwise (see UserContentAccess).
+   */
+  async getCompletedWorkoutById(viewerId: string, workoutId: string) {
+    await this.access.assertCanViewCompletedWorkout(viewerId, workoutId);
     const workout = await this.completedRepo.findOne({
       where: { id: workoutId },
       relations: ['exercises'],
