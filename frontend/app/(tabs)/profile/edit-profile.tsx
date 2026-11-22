@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, Alert, ActivityIndicator } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { UserService, CurrentUser } from "@/services/user.service";
@@ -134,7 +135,7 @@ export default function EditProfileScreen() {
   return (
     <View className="flex-1">
       <ScreenHeader floating title={t.editProfile} />
-      <ScrollView {...chromeScrollProps}
+      <KeyboardAwareScrollView bottomOffset={24} {...chromeScrollProps}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
         contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 60 }}
@@ -238,7 +239,7 @@ export default function EditProfileScreen() {
         >
           <Text className="text-ink text-base font-bold">{saving ? t.saving : t.save}</Text>
         </PressableScale>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }

@@ -1,7 +1,7 @@
+import Reanimated from "react-native-reanimated";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
-  Animated,
   ScrollView,
   Text,
   TextInput,
@@ -50,7 +50,7 @@ export function usePostInteractions(
 ) {
   const { t } = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
-  const { keyboardY, bottomOffset } = useKeyboardOffset(-30);
+  const { keyboardStyle, bottomOffset } = useKeyboardOffset(-30);
   const [postModalVisible, setPostModalVisible] = useState(false);
   const [postModalTitle, setPostModalTitle] = useState("");
   const [postModalType, setPostModalType] = useState<
@@ -478,12 +478,9 @@ export function usePostInteractions(
                 )}
               </ScrollView>
 
-              <Animated.View
+              <Reanimated.View
                 className="absolute left-0 right-0"
-                style={{
-                  bottom: bottomOffset,
-                  transform: [{ translateY: keyboardY }],
-                }}
+                style={[{ bottom: bottomOffset }, keyboardStyle]}
               >
                 {commentDraft.length >= COMMENT_COUNTER_FROM ? (
                   <Text
@@ -523,7 +520,7 @@ export function usePostInteractions(
                     <Ionicons name="send-outline" size={22} color={WorkoutTheme.accent.purple} />
                   </PressableScale>
                 </Glass>
-              </Animated.View>
+              </Reanimated.View>
             </View>
           ) : (
             <EmptyState plain icon="albums-outline" title={t.noContentAvailable} />

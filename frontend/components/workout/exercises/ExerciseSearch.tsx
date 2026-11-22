@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } from "react";
+import Reanimated from "react-native-reanimated";
+import { useKeyboardSheet } from "@/hooks/useKeyboardOffset";
 import {
   View,
   Text,
   Alert,
   FlatList,
-  Keyboard,
-  Platform,
   useWindowDimensions,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -18,7 +18,7 @@ import GlassSearchBar from "@/components/GlassSearchBar";
 import BottomBlur from "@/components/ui/BottomBlur";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { normalizeText } from "@/utils/text";
-import { ExerciseListSkeleton } from "@/components/ui/skeletons";
+import { ExercisePickListSkeleton } from "@/components/ui/skeletons";
 import EmptyState from "@/components/ui/EmptyState";
 
 interface ExerciseSearchProps {
@@ -42,22 +42,7 @@ export default function ExerciseSearch({
   const deferredQuery = useDeferredValue(searchQuery);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [loadingExercises, setLoadingExercises] = useState(false);
-  const [keyboard, setKeyboard] = useState(0);
-
-  useEffect(() => {
-    const show = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => setKeyboard(e.endCoordinates.height),
-    );
-    const hide = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setKeyboard(0),
-    );
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
+  const { keyboard, sheetStyle } = useKeyboardSheet();
 
   const loadExercises = useCallback(async () => {
     setLoadingExercises(true);
@@ -108,9 +93,9 @@ export default function ExerciseSearch({
       animationIn="slideInUp"
       style={{ justifyContent: "flex-end", margin: 0 }}
     >
-      <View
+      <Reanimated.View
         className="rounded-t-hero bg-background pt-3"
-        style={{ height: windowHeight * 0.85, marginBottom: keyboard }}
+        style={[{ height: windowHeight * 0.85 }, sheetStyle]}
       >
         <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
         <View className="flex-row items-center justify-between px-5 pb-5">
@@ -127,8 +112,8 @@ export default function ExerciseSearch({
         </View>
 
         {loadingExercises ? (
-          <View className="flex-1 px-4 pt-2">
-            <ExerciseListSkeleton count={8} />
+          <View className="flex-1 px-5 pt-2">
+            <ExercisePickListSkeleton count={8} />
           </View>
         ) : (
           <FlatList
@@ -185,7 +170,7 @@ export default function ExerciseSearch({
             placeholder={t.searchExercise}
           />
         </View>
-      </View>
+      </Reanimated.View>
     </Modal>
   );
 }

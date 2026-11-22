@@ -1,6 +1,8 @@
 import { useUnits } from "@/contexts/UnitsContext";
+import Reanimated from "react-native-reanimated";
+import { useKeyboardSheet } from "@/hooks/useKeyboardOffset";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, ScrollView, Alert, Pressable, Keyboard, Platform, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, Alert, Pressable, useWindowDimensions } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -29,7 +31,7 @@ import Button from "@/components/ui/Button";
 import MuscleMap from "@/components/ui/MuscleMap";
 import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
 import { getExercisesById, type Exercise } from "@/services/exercises.service";
-import { DetailSkeleton, ExerciseListSkeleton } from "@/components/ui/skeletons";
+import { CurrentWorkoutSkeleton, WorkoutPreviewSkeleton } from "@/components/ui/skeletons";
 import EmptyState from "@/components/ui/EmptyState";
 import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 
@@ -77,22 +79,7 @@ export default function CurrentWorkoutScreen() {
   }, [selectedWorkout]);
 
   const [pickerVisible, setPickerVisible] = useState(false);
-  const [keyboard, setKeyboard] = useState(0);
-  useEffect(() => {
-    const show = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => setKeyboard(e.endCoordinates.height),
-    );
-    const hide = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setKeyboard(0),
-    );
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-  const [loading, setLoading] = useState(true);
+  const { keyboard, sheetStyle } = useKeyboardSheet();  const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [today, setToday] = useState<ProgrammeToday | null>(null);
   const [suggestion, setSuggestion] = useState<WorkoutSuggestion | null>(null);
@@ -220,15 +207,9 @@ export default function CurrentWorkoutScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView
-        className="flex-1"
-      >
-      <ScreenBackground flat />
-        <View
-          className="flex-1 justify-center items-center"
-        >
-          <View className="w-full px-4"><DetailSkeleton rows={3} /></View>
-        </View>
+      <SafeAreaView edges={["top"]} className="flex-1">
+        <ScreenBackground flat />
+        <CurrentWorkoutSkeleton cardHeight={cardHeight} mapWidth={bodyScale * 200 + 24} />
       </SafeAreaView>
     );
   }
@@ -289,7 +270,7 @@ export default function CurrentWorkoutScreen() {
             ) : null}
 
             {loadingDetail ? (
-              <ExerciseListSkeleton count={4} />
+              <WorkoutPreviewSkeleton cardHeight={cardHeight} mapWidth={bodyScale * 200 + 24} />
             ) : selectedWorkout ? (
               <>
                 <View className="flex-row gap-3" style={{ height: cardHeight }}>
@@ -444,9 +425,9 @@ export default function CurrentWorkoutScreen() {
             swipeDirection="down"
             style={{ justifyContent: "flex-end", margin: 0 }}
           >
-            <View
+            <Reanimated.View
               className="rounded-t-hero bg-background px-5 pt-3"
-              style={{ maxHeight: windowHeight * 0.82, marginBottom: keyboard }}
+              style={[{ height: windowHeight * 0.82 }, sheetStyle]}
             >
               <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
 
@@ -559,7 +540,7 @@ export default function CurrentWorkoutScreen() {
                   placeholder={t.searchWorkout}
                 />
               </View>
-            </View>
+            </Reanimated.View>
           </Modal>
 
           <View

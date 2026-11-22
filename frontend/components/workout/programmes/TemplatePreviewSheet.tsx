@@ -2,7 +2,7 @@ import React from "react";
 import { ScrollView, Text, View } from "react-native";
 import Modal from "@/components/ui/AppModal";
 import Button from "@/components/ui/Button";
-import { ListSkeleton } from "@/components/ui/skeletons";
+import { TemplatePreviewListSkeleton } from "@/components/ui/skeletons";
 import ErrorState from "@/components/ui/ErrorState";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
@@ -46,7 +46,7 @@ export default function TemplatePreviewSheet({
         {failed ? (
           <ErrorState onRetry={onRetry} />
         ) : !preview ? (
-          <ListSkeleton count={3} gap={12} />
+          <TemplatePreviewListSkeleton count={3} />
         ) : (
           <>
             {preview.programme.description ? (

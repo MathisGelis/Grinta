@@ -2,7 +2,7 @@ import type { Exercise } from "@/services/exercises.service";
 import type { Strings } from "@/i18n/translations";
 import { normalizeText } from "@/utils/text";
 import { MUSCLE_GROUP_ORDER, MuscleGroup, muscleGroupOf } from "./muscleGroups";
-import type { ExerciseFilters } from "./ExerciseFilterSheet";
+import type { ExerciseFilters } from "./ExerciseFilterPanel";
 
 export type ExerciseListRow =
   | { kind: "header"; key: string; title: string; count: number }
@@ -20,9 +20,9 @@ export function buildExerciseRows(
   const byGroup = new Map<MuscleGroup, ExerciseListRow[]>();
 
   for (const { exercise, lowerName } of indexed) {
-    if (filters.equipment && exercise.equipment_type !== filters.equipment) continue;
-    if (filters.muscle && exercise.primary_muscle !== filters.muscle) continue;
-    if (filters.type && exercise.exercise_type !== filters.type) continue;
+    if (filters.equipment.length && !filters.equipment.includes(exercise.equipment_type)) continue;
+    if (filters.muscle.length && !filters.muscle.includes(exercise.primary_muscle)) continue;
+    if (filters.type.length && !filters.type.includes(exercise.exercise_type)) continue;
     if (needle && !lowerName.includes(needle)) continue;
 
     const canDelete = createdSet.has(exercise.id);

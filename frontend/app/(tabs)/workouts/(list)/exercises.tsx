@@ -69,7 +69,7 @@ export default function ExercisesScreen() {
   const indexed = useMemo(() => indexExercises(exercises), [exercises]);
   const createdSet = useMemo(() => new Set(userCreatedIds), [userCreatedIds]);
   const rows = useMemo(
-    () => buildExerciseRows(indexed, createdSet, { equipment: null, muscle: null, type: null }, "", t),
+    () => buildExerciseRows(indexed, createdSet, { equipment: [], muscle: [], type: [] }, "", t),
     [indexed, createdSet, t],
   );
 

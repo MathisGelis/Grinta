@@ -15,7 +15,7 @@ import {
 } from "@/services/workouts.service";
 import { localDate } from "@/utils/date";
 import { normalizeText } from "@/utils/text";
-import { ListSkeleton } from "@/components/ui/skeletons";
+import { TemplateListSkeleton } from "@/components/ui/skeletons";
 import EmptyState from "@/components/ui/EmptyState";
 import { toast } from "@/components/ui/Toast";
 import TemplatePreviewSheet from "./TemplatePreviewSheet";
@@ -78,7 +78,7 @@ export default function TemplatePicker({ onUsed, query = "" }: Props) {
   };
 
   if (failed) return <ErrorState onRetry={load} />;
-  if (!templates) return <ListSkeleton count={4} gap={12} />;
+  if (!templates) return <TemplateListSkeleton count={3} />;
   const needle = normalizeText(query.trim());
   const visible = needle
     ? templates.filter((tpl) => normalizeText(`${tpl.title} ${tpl.description}`).includes(needle))

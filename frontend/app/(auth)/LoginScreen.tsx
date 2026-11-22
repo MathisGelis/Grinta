@@ -4,7 +4,8 @@ import { AuthService } from "@/services/auth.service";
 import { ApiError } from "@/services/api";
 import { TokenService } from "@/services/token.service";
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { router } from "expo-router";
 
 import ScreenBackground from "@/components/ui/ScreenBackground";
@@ -59,7 +60,7 @@ export default function LoginScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground />
-      <ScrollView
+      <KeyboardAwareScrollView bottomOffset={24}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -103,7 +104,7 @@ export default function LoginScreen() {
             onPress={handleLogin}
           />
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }

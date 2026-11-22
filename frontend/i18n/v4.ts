@@ -94,6 +94,8 @@ export interface V4Strings {
   stPeriod1y: string;
   stPeriodAll: string;
   stNoProgression: string;
+  stProgressionExercise: string;
+  stProgressionHint: string;
   stNoPracticed: string;
   stComparisonTitle: string;
   stComparisonElapsed: string;
@@ -103,6 +105,7 @@ export interface V4Strings {
   insights: Record<string, string>;
 
   // Import depuis des notes
+  workoutIntro: string;
   imTitle: string;
   imIntro: string;
   imPlaceholder: string;
@@ -209,7 +212,9 @@ const en: V4Strings = {
   stPeriod6m: "6M",
   stPeriod1y: "1Y",
   stPeriodAll: "All",
-  stNoProgression: "Not enough data for this exercise (bodyweight exercises have no curve).",
+  stNoProgression: "Not enough data for this exercise",
+  stProgressionExercise: "Exercise",
+  stProgressionHint: "Stats for your 12 favorite exercises.",
   stNoPracticed: "Complete a workout to see your progression.",
   stComparisonTitle: "Versus your usual",
   stComparisonElapsed: "{pct}% of the period elapsed",
@@ -233,6 +238,7 @@ const en: V4Strings = {
     VOLUME_BELOW_USUAL: "Your volume is below your usual.",
   },
 
+  workoutIntro: "Name your session, add its exercises and set the sets, reps and rest.",
   imTitle: "Import from notes",
   imIntro: "Paste a programme written in your notes (French or English). Nothing is saved until you confirm.",
   imPlaceholder: "Monday: Push\nBench press 4x8 60kg\nDips 3x10\n\nTuesday: rest",
@@ -339,7 +345,9 @@ const fr: V4Strings = {
   stPeriod6m: "6M",
   stPeriod1y: "1A",
   stPeriodAll: "Tout",
-  stNoProgression: "Pas assez de données pour cet exercice (les exercices au poids du corps n'ont pas de courbe).",
+  stNoProgression: "Pas assez de données pour cet exercice",
+  stProgressionExercise: "Exercice",
+  stProgressionHint: "Statistiques de vos 12 exercices favoris.",
   stNoPracticed: "Terminez une séance pour voir votre progression.",
   stComparisonTitle: "Par rapport à d'habitude",
   stComparisonElapsed: "{pct} % de la période écoulée",
@@ -363,6 +371,7 @@ const fr: V4Strings = {
     VOLUME_BELOW_USUAL: "Votre volume est en dessous de d'habitude.",
   },
 
+  workoutIntro: "Nommez votre séance, ajoutez ses exercices et réglez les séries, répétitions et le repos.",
   imTitle: "Importer depuis des notes",
   imIntro: "Collez un programme écrit dans vos notes (français ou anglais). Rien n'est enregistré avant votre confirmation.",
   imPlaceholder: "Lundi : Push\nDéveloppé couché 4x8 60kg\nDips 3x10\n\nMardi : repos",
