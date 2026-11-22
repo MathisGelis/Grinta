@@ -3,6 +3,7 @@ import "@/components/ui/interop";
 import { ThemeProvider, DarkTheme } from "expo-router/react-navigation";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
@@ -30,6 +31,7 @@ export default function RootLayout() {
     <GestureHandlerRootView
       style={{ flex: 1, backgroundColor: WorkoutTheme.background }}
     >
+      <KeyboardProvider>
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <LanguageProvider>
           <UnitsProvider>
@@ -52,6 +54,7 @@ export default function RootLayout() {
           </UnitsProvider>
         </LanguageProvider>
       </SafeAreaProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

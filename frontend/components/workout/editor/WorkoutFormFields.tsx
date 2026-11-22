@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-import { FormField, TextField } from "@/components/ui/FormField";
+import { OutlinedField } from "@/components/ui/OutlinedField";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LIMITS } from "@/utils/validation";
@@ -20,24 +20,23 @@ export default function WorkoutFormFields({
   const { t } = useTranslation();
   return (
     <View className="gap-5">
-      <FormField label={t.workoutNameLabel} required>
-        <TextField
-          placeholder={t.workoutNamePlaceholder}
-          value={name}
-          maxLength={LIMITS.title}
-          onChangeText={onNameChange}
-        />
-      </FormField>
+      <OutlinedField
+        label={t.workoutNameLabel}
+        required
+        placeholder={t.workoutNamePlaceholder}
+        value={name}
+        maxLength={LIMITS.title}
+        onChangeText={onNameChange}
+      />
 
-      <FormField label={t.descriptionLabel}>
-        <TextField
-          multiline
-          placeholder={t.descriptionPlaceholder}
-          value={description}
-          maxLength={LIMITS.description}
-          onChangeText={onDescriptionChange}
-        />
-      </FormField>
+      <OutlinedField
+        label={t.descriptionLabel}
+        multiline
+        placeholder={t.descriptionPlaceholder}
+        value={description}
+        maxLength={LIMITS.description}
+        onChangeText={onDescriptionChange}
+      />
     </View>
   );
 }

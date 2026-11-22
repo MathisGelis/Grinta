@@ -49,7 +49,7 @@ export default function PlannedWorkoutDetailScreen() {
             <IconButton
               icon="checkmark"
               label={t.save}
-              variant="glass"
+              variant="accent"
               className={isSaving ? "opacity-50" : ""}
               onPress={isSaving ? undefined : () => bodyRef.current?.save()}
             />

@@ -5,7 +5,8 @@ import { saveItem } from "@/core/services/storage";
 import { UserService } from "@/services/user.service";
 import { takeOnboardingDraft } from "@/utils/onboardingDraft";
 import React, { useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { ApiError } from "@/services/api";
 import { router } from "expo-router";
 
@@ -69,7 +70,7 @@ export default function RegisterScreen() {
   return (
     <View className="flex-1">
       <ScreenBackground />
-      <ScrollView
+      <KeyboardAwareScrollView bottomOffset={24}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -142,7 +143,7 @@ export default function RegisterScreen() {
             onPress={handleRegister}
           />
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }

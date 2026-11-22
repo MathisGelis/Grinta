@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import Reanimated from "react-native-reanimated";
+import { useKeyboardSheet } from "@/hooks/useKeyboardOffset";
 import { ApiError } from "@/services/api";
 import {
   View,
   ScrollView,
   StatusBar,
   Alert,
-  Keyboard,
-  Platform,
   Text,
   useWindowDimensions,
 } from "react-native";
@@ -96,22 +96,7 @@ export default function ActiveWorkoutScreen() {
     Record<string, LiveExerciseStats | null>
   >({});
   const { height: windowHeight } = useWindowDimensions();
-  const [keyboard, setKeyboard] = useState(0);
-  useEffect(() => {
-    const show = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => setKeyboard(e.endCoordinates.height),
-    );
-    const hide = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setKeyboard(0),
-    );
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-
+  const { sheetStyle } = useKeyboardSheet();
   useEffect(() => {
     totalTimeRef.current = totalWorkoutTime;
   }, [totalWorkoutTime]);
@@ -609,9 +594,9 @@ export default function ActiveWorkoutScreen() {
         swipeDirection="down"
         style={{ justifyContent: "flex-end", margin: 0 }}
       >
-        <View
+        <Reanimated.View
           className="rounded-t-hero bg-background px-5 pb-8 pt-3"
-          style={{ maxHeight: windowHeight * 0.9, marginBottom: keyboard }}
+          style={[{ maxHeight: windowHeight * 0.9 }, sheetStyle]}
         >
           <View className="mb-3 h-1.5 w-12 self-center rounded-full bg-raised" />
           <View className="mb-2 flex-row justify-end">
@@ -695,7 +680,7 @@ export default function ActiveWorkoutScreen() {
                   </View>
                 </View>
               </ScrollView>
-        </View>
+        </Reanimated.View>
       </Modal>
       <NewRecordsSheet
         badges={newBadges}
