@@ -3,6 +3,7 @@ import { Exercise } from '../entities/exercise.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { renameLegacyVariants } from './variant-renames';
+import { fixExerciseNames } from './name-fixes';
 
 export async function seedExercises(dataSource: DataSource) {
   const repo = dataSource.getRepository(Exercise);
@@ -17,6 +18,11 @@ export async function seedExercises(dataSource: DataSource) {
 
   if (renamed.length)
     console.log(`Renamed ${renamed.length} exercises to their variant name`);
+  // Same fix as the FixExerciseNames migration, after the variant renames
+  // that produce the misspelled names on an old database.
+  const fixed = await fixExerciseNames(dataSource);
+
+  if (fixed.length) console.log(`Fixed the name of ${fixed.length} exercises`);
 
   let created = 0;
   let updated = 0;

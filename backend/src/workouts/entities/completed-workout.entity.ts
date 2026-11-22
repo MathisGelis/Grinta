@@ -20,7 +20,7 @@ export class CompletedWorkout {
   @ApiProperty()
   id: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @ApiProperty({ type: () => User })
   user: User;
 

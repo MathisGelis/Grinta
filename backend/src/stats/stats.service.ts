@@ -4,7 +4,9 @@ import {
   Between,
   FindOptionsSelect,
   MoreThanOrEqual,
+  Raw,
   Repository,
+  In,
 } from 'typeorm';
 import { CompletedWorkout } from '../workouts/entities/completed-workout.entity';
 import { PlannedWorkout } from '../workouts/entities/planned-workout.entity';
@@ -23,7 +25,12 @@ import {
 } from './constants/muscle-groups';
 import { AdherenceQueryDto } from './dto/adherence-query.dto';
 import { HeatmapQueryDto } from './dto/heatmap-query.dto';
-import { PeriodQueryDto } from './dto/period-query.dto';
+import {
+  PeriodQueryDto,
+  StatsSubjectQueryDto,
+  SubjectPeriodQueryDto,
+} from './dto/period-query.dto';
+import { StatsSubject } from './stats-subject';
 import {
   ProgressionPeriod,
   ProgressionQueryDto,
@@ -37,7 +44,11 @@ import {
   WorkoutRecordDto,
   WorkoutTypeBreakdownDto,
 } from './dto/stats-response.dto';
+import { UserContentAccess } from '../common/access/user-content-access';
 import { StatsCalculatorService } from './stats-calculator.service';
+import { compareToRealLife } from '../common/utils/real-life-comparison';
+import { rankByNeglectedMuscles } from './utils/workout-suggestion';
+import { StatsPeriod } from './dto/period-query.dto';
 import {
   BestSetRow,
   BreakdownRow,
@@ -61,6 +72,11 @@ import {
   startOfWeek,
   sum,
 } from './utils/stats.util';
+import {
+  roundCalories,
+  roundEstimate,
+  roundVolume,
+} from '../common/utils/numbers';
 
 /**
  * Columns the calculator reads. The workouts are loaded with one join row per
@@ -100,6 +116,7 @@ export class StatsService {
     @InjectRepository(Exercise)
     private readonly exerciseRepo: Repository<Exercise>,
     private readonly calculator: StatsCalculatorService,
+    private readonly access: UserContentAccess,
   ) {}
 
   async getWorkoutStats(
@@ -123,23 +140,15 @@ export class StatsService {
         select: { id: true, exercises: { id: true, sets: true } },
       }),
     ]);
-    const durations = this.calculator.distributeDuration(workout);
-    const exercises = workout.exercises.map((cwe, i) =>
-      this.calculator.computeExerciseStats(cwe, durations[i], weightKg),
-    );
-
-    const totalSets = sum(exercises, (e) => e.sets);
-    const totalReps = sum(exercises, (e) => e.reps);
-    const totalVolume = sum(exercises, (e) => e.volume);
-    const estimatedCalories = sum(exercises, (e) => e.estimatedCalories);
-
-    const fullDayLoad = round(
+    const { exercises, totalSets, totalReps, totalVolume, estimatedCalories } =
+      this.workoutTotals(workout, weightKg);
+    const fullDayLoad = roundVolume(
       dayWorkouts.reduce((acc, w) => acc + this.calculator.workoutVolume(w), 0),
     );
 
     const allSets = workout.exercises.flatMap((e) => e.sets ?? []);
     const averageWeightPerSet = allSets.length
-      ? round(sum(allSets, (s) => s.weight) / allSets.length)
+      ? roundEstimate(sum(allSets, (s) => s.weight) / allSets.length)
       : 0;
 
     return {
@@ -147,23 +156,173 @@ export class StatsService {
       title: workout.title,
       completionDate: workout.completionDate,
       totalDurationSeconds: workout.totalDurationSeconds,
-      estimatedCalories: round(estimatedCalories),
+      estimatedCalories,
       totalSets,
       totalReps,
-      totalVolume: round(totalVolume),
+      totalVolume,
+      realLifeComparison: compareToRealLife(totalVolume),
       fullDayLoad,
       workoutsCompletedThatDay: dayWorkouts.length,
       numberOfExercises: workout.exercises.length,
       averageWeightPerSet,
-      averageVolumePerSet: totalSets ? round(totalVolume / totalSets) : 0,
+      averageVolumePerSet: totalSets
+        ? roundEstimate(totalVolume / totalSets)
+        : 0,
       musclesWorked: this.calculator.collectMuscles(workout.exercises),
       exercises,
     };
   }
 
-  async getMuscleDistribution(user: AuthUser, query: PeriodQueryDto) {
+  /**
+   * Totals of a workout loaded with its exercises. The body weight only
+   * changes the calories. Shared by the owner's stats and by a workout read
+   * through a post.
+   */
+  workoutTotals(workout: CompletedWorkout, bodyWeightKg: number) {
+    const durations = this.calculator.distributeDuration(workout);
+    const exercises = workout.exercises.map((cwe, i) =>
+      this.calculator.computeExerciseStats(cwe, durations[i], bodyWeightKg),
+    );
+    // Totals from the exact values, not from the rounded ones of each
+    // exercise, so a workout has the same calories wherever they show.
+    const totalVolume = roundVolume(this.calculator.workoutVolume(workout));
+
+    return {
+      exercises,
+      totalSets: sum(exercises, (e) => e.sets),
+      totalReps: sum(exercises, (e) => e.reps),
+      totalVolume,
+      estimatedCalories: roundCalories(
+        this.calculator.workoutCalories(workout, bodyWeightKg),
+      ),
+    };
+  }
+
+  /**
+   * Calories of some of the user's workouts, by id, computed exactly as
+   * GET /stats/workout/:id does: same formula, the user's body weight (or
+   * the default), same rounding. Lets lists show the figure instead of the
+   * app computing its own.
+   */
+  async caloriesOf(
+    userId: string,
+    workoutIds: string[],
+  ): Promise<Map<string, number>> {
+    if (!workoutIds.length) return new Map();
+    const [weightKg, workouts] = await Promise.all([
+      this.resolveBodyWeight(userId),
+      this.completedRepo.find({
+        where: { id: In(workoutIds), user: { id: userId } },
+        relations: ['exercises', 'exercises.exercise'],
+        select: WORKOUT_STATS_SELECT,
+      }),
+    ]);
+
+    return new Map(
+      workouts.map((w) => [
+        w.id,
+        this.workoutTotals(w, weightKg).estimatedCalories,
+      ]),
+    );
+  }
+
+  /**
+   * The totals of a workout shown through a post. Other people see calories
+   * computed for the default body weight: with the author's own, the calories
+   * would give their weight away.
+   */
+  async publishedWorkoutStats(
+    workout: CompletedWorkout,
+    authorId: string,
+    viewerId: string,
+  ) {
+    const weightKg =
+      authorId === viewerId
+        ? await this.resolveBodyWeight(authorId)
+        : DEFAULT_BODY_WEIGHT_KG;
+    const { totalSets, totalReps, totalVolume, estimatedCalories } =
+      this.workoutTotals(workout, weightKg);
+
+    return {
+      estimatedCalories,
+      totalVolume,
+      totalSets,
+      totalReps,
+      realLifeComparison: compareToRealLife(totalVolume),
+    };
+  }
+
+  /**
+   * Picks, among the user's planned workouts, the one that works best the
+   * muscles left aside over the period (this week by default). The muscles
+   * trained so far are counted in effective sets, as in
+   * GET /stats/muscle-distribution; a planned workout counts its planned
+   * sets the same way, one per exercise when it plans none. Comes with two
+   * alternatives and the reasons: each muscle the workout works with what it
+   * already got this period.
+   */
+  async suggestPlannedWorkout(
+    user: AuthUser,
+    period: StatsPeriod = StatsPeriod.WEEK,
+    date?: string,
+  ) {
+    const range = resolvePeriodRange(period, date);
+    const [workouts, planned] = await Promise.all([
+      this.fetchWorkoutsInRange(ownStats(user.id), range),
+      this.plannedRepo.find({
+        where: { user: { id: user.id } },
+        relations: ['exercises'],
+      }),
+    ]);
+    const { perMuscle } = this.calculator.effectiveSetsByMuscle(workouts);
+    const ranked = rankByNeglectedMuscles(
+      perMuscle,
+      planned.map((workout) => {
+        const targets = new Map<DetailedMuscleGroup, number>();
+
+        for (const pwe of workout.exercises ?? []) {
+          const sets = Math.max(1, pwe.sets?.length ?? 0);
+
+          for (const { muscle, weight } of this.calculator.muscleContributions(
+            pwe,
+          ))
+            targets.set(muscle, (targets.get(muscle) ?? 0) + sets * weight);
+        }
+        return { id: workout.id, targets };
+      }),
+    );
+    const byId = new Map(planned.map((w) => [w.id, w]));
+    const withWorkout = (r: (typeof ranked)[number]) => {
+      const workout = byId.get(r.id)!;
+
+      return {
+        workout: {
+          id: workout.id,
+          title: workout.title,
+          description: workout.description ?? null,
+          totalExercises: workout.exercises.length,
+        },
+        score: r.score,
+        muscles: r.muscles,
+      };
+    };
+
+    return {
+      period,
+      rangeStart: range.start,
+      rangeEnd: range.end,
+      workedMuscles: [...perMuscle.entries()]
+        .map(([muscle, sets]) => ({ muscle, effectiveSets: round(sets) }))
+        .sort((a, b) => b.effectiveSets - a.effectiveSets),
+      suggestion: ranked.length ? withWorkout(ranked[0]) : null,
+      alternatives: ranked.slice(1, 3).map(withWorkout),
+    };
+  }
+
+  async getMuscleDistribution(user: AuthUser, query: SubjectPeriodQueryDto) {
+    const subject = await this.resolveSubject(user, query.userId);
     const range = resolvePeriodRange(query.period, query.date);
-    const workouts = await this.fetchWorkoutsInRange(user.id, range);
+    const workouts = await this.fetchWorkoutsInRange(subject, range);
     const { perMuscle, total } =
       this.calculator.effectiveSetsByMuscle(workouts);
     const distribution = [...perMuscle.entries()]
@@ -184,13 +343,14 @@ export class StatsService {
     };
   }
 
-  async getPeriodSummary(user: AuthUser, query: PeriodQueryDto) {
+  async getPeriodSummary(user: AuthUser, query: SubjectPeriodQueryDto) {
+    const subject = await this.resolveSubject(user, query.userId);
     const current = resolvePeriodRange(query.period, query.date);
     const previous = previousPeriodRange(query.period, query.date);
     const [weightKg, currentWorkouts, previousWorkouts] = await Promise.all([
-      this.resolveBodyWeight(user.id),
-      this.fetchWorkoutsInRange(user.id, current),
-      this.fetchWorkoutsInRange(user.id, previous),
+      this.subjectBodyWeight(subject),
+      this.fetchWorkoutsInRange(subject, current),
+      this.fetchWorkoutsInRange(subject, previous),
     ]);
 
     const currentTotals = this.calculator.aggregateTotals(
@@ -231,11 +391,12 @@ export class StatsService {
     };
   }
 
-  async getConsistency(user: AuthUser) {
+  async getConsistency(user: AuthUser, query: StatsSubjectQueryDto = {}) {
+    const subject = await this.resolveSubject(user, query.userId);
     const since = startOfDay(addDays(new Date(), -365));
     const workouts = await this.completedRepo.find({
       where: {
-        user: { id: user.id },
+        ...this.subjectWhere(subject),
         completionDate: MoreThanOrEqual(since),
       },
       select: ['id', 'completionDate'],
@@ -277,9 +438,8 @@ export class StatsService {
 
       weeklyActivity.push({ weekStart, workoutCount: count });
     }
-    const averageWorkoutsPerWeek = round(
+    const averageWorkoutsPerWeek = roundEstimate(
       sum(weeklyActivity, (w) => w.workoutCount) / 12,
-      1,
     );
 
     return {
@@ -292,14 +452,15 @@ export class StatsService {
     };
   }
 
-  async getMuscleFrequency(user: AuthUser) {
+  async getMuscleFrequency(user: AuthUser, query: StatsSubjectQueryDto = {}) {
+    const subject = await this.resolveSubject(user, query.userId);
     const now = new Date();
     const since = startOfDay(addDays(now, -90));
     const sevenDaysAgo = addDays(now, -7);
     const thirtyDaysAgo = addDays(now, -30);
     const workouts = await this.completedRepo.find({
       where: {
-        user: { id: user.id },
+        ...this.subjectWhere(subject),
         completionDate: MoreThanOrEqual(since),
       },
       relations: ['exercises', 'exercises.exercise'],
@@ -369,9 +530,10 @@ export class StatsService {
     return { generatedAt: now, muscles };
   }
 
-  async getTrainingBalance(user: AuthUser, query: PeriodQueryDto) {
+  async getTrainingBalance(user: AuthUser, query: SubjectPeriodQueryDto) {
+    const subject = await this.resolveSubject(user, query.userId);
     const range = resolvePeriodRange(query.period, query.date);
-    const workouts = await this.fetchWorkoutsInRange(user.id, range);
+    const workouts = await this.fetchWorkoutsInRange(subject, range);
     const { perMuscle, total } =
       this.calculator.effectiveSetsByMuscle(workouts);
     const categoryTotals = new Map<MuscleCategory, number>();
@@ -548,7 +710,10 @@ export class StatsService {
         longestWorkout: longest[0] ?? null,
         highestVolumeWorkout:
           volumeRecord && Number(volumeRecord.value) > 0
-            ? { ...volumeRecord, value: round(Number(volumeRecord.value)) }
+            ? {
+                ...volumeRecord,
+                value: roundVolume(Number(volumeRecord.value)),
+              }
             : null,
         longestStreakDays: this.calculator.longestStreak(dayKeys),
         totalTrainingDays: dayKeys.length,
@@ -572,7 +737,7 @@ export class StatsService {
         relations: ['exercises', 'exercises.exercise'],
       }),
       this.plannedRepo.findOne({
-        where: { id: query.plannedWorkoutId },
+        where: { id: query.plannedWorkoutId, user: { id: user.id } },
         relations: ['exercises', 'exercises.exercise'],
       }),
     ]);
@@ -600,8 +765,8 @@ export class StatsService {
     const [weightKg, currentWorkouts, windowWorkouts, first] =
       await Promise.all([
         this.resolveBodyWeight(user.id),
-        this.fetchWorkoutsInRange(user.id, current),
-        this.fetchWorkoutsInRange(user.id, window),
+        this.fetchWorkoutsInRange(ownStats(user.id), current),
+        this.fetchWorkoutsInRange(ownStats(user.id), window),
         this.completedRepo
           .createQueryBuilder('w')
           .select('MIN(w."completionDate")', 'first')
@@ -660,12 +825,7 @@ export class StatsService {
           }
         : null,
       comparison,
-      insights: this.calculator.comparisonInsights(
-        comparison,
-        usable.length,
-        query.period,
-        elapsed,
-      ),
+      insights: this.calculator.comparisonInsights(comparison, usable.length),
     };
   }
 
@@ -706,18 +866,49 @@ export class StatsService {
         ORDER BY 1`,
       [user.id, `${year}-01-01`, `${year + 1}-01-01`],
     );
-    const days = this.calculator.heatmapDays(rows);
+    const caloriesByDay = await this.caloriesByDay(user.id, year);
+    const days = this.calculator.heatmapDays(rows, caloriesByDay);
 
     return {
       year,
       totalWorkouts: rows.reduce((acc, r) => acc + r.workouts, 0),
       activeDays: rows.length,
       totalDurationSeconds: rows.reduce((acc, r) => acc + r.durationSeconds, 0),
+      totalCalories: roundCalories(sum(days, (d) => d.calories)),
       maxWorkoutsInDay: Math.max(0, ...rows.map((r) => r.workouts)),
       longestStreakDays: this.calculator.longestStreak(rows.map((r) => r.day)),
       maxLevel: HEATMAP_MAX_LEVEL,
       days,
     };
+  }
+
+  /**
+   * Calories of each training day of the year, workout by workout as in
+   * caloriesOf. Days are keyed like the heatmap SQL (to_char of the stored
+   * timestamp), which the driver reads back as local time.
+   */
+  private async caloriesByDay(userId: string, year: number) {
+    const [weightKg, workouts] = await Promise.all([
+      this.resolveBodyWeight(userId),
+      this.fetchWorkoutsInRange(ownStats(userId), {
+        start: new Date(year, 0, 1),
+        end: new Date(year, 11, 31, 23, 59, 59, 999),
+      }),
+    ]);
+    const byDay = new Map<string, number>();
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    for (const workout of workouts) {
+      const d = workout.completionDate;
+      const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+      byDay.set(
+        day,
+        (byDay.get(day) ?? 0) +
+          this.workoutTotals(workout, weightKg).estimatedCalories,
+      );
+    }
+    return byDay;
   }
 
   /** Runs a read-only SQL reduction and types its rows. */
@@ -764,13 +955,47 @@ export class StatsService {
     return user?.weight ?? DEFAULT_BODY_WEIGHT_KG;
   }
 
+  /**
+   * Whose stats the caller reads: their own, or those of `targetId` when the
+   * caller may see that profile's posts (public profile, or followed). Any
+   * other case answers 404, like a private profile's posts, so an id cannot
+   * be probed.
+   */
+  async resolveSubject(
+    viewer: AuthUser,
+    targetId?: string,
+  ): Promise<StatsSubject> {
+    if (!targetId || targetId === viewer.id) return ownStats(viewer.id);
+
+    await this.access.assertCanViewUserContent(viewer.id, targetId);
+    return { userId: targetId, publishedOnly: true };
+  }
+
+  private subjectWhere(subject: StatsSubject) {
+    return {
+      user: { id: subject.userId },
+      ...(subject.publishedOnly && {
+        id: Raw(
+          (id) => `EXISTS (SELECT 1 FROM posts p WHERE p."workoutId" = ${id})`,
+        ),
+      }),
+    };
+  }
+
+  // Another user's body weight is private: their calories use the default.
+  private subjectBodyWeight(subject: StatsSubject): Promise<number> {
+    return subject.publishedOnly
+      ? Promise.resolve(DEFAULT_BODY_WEIGHT_KG)
+      : this.resolveBodyWeight(subject.userId);
+  }
+
   private fetchWorkoutsInRange(
-    userId: string,
+    subject: StatsSubject,
     range: DateRange,
   ): Promise<CompletedWorkout[]> {
     return this.completedRepo.find({
       where: {
-        user: { id: userId },
+        ...this.subjectWhere(subject),
         completionDate: Between(range.start, range.end),
       },
       relations: ['exercises', 'exercises.exercise'],
@@ -778,6 +1003,11 @@ export class StatsService {
     });
   }
 }
+
+const ownStats = (userId: string): StatsSubject => ({
+  userId,
+  publishedOnly: false,
+});
 
 const BREAKDOWN_COLUMNS = {
   exercise_type: 'ex.exercise_type',

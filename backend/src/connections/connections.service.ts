@@ -1,9 +1,11 @@
+import { clampLimit, clampOffset } from '../common/utils/limit';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { UserContentAccess } from '../common/access/user-content-access';
 import { Connection } from './entities/connections.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,6 +23,8 @@ export class ConnectionsService {
 
     @InjectRepository(FollowRequest)
     private readonly followRequestRepository: Repository<FollowRequest>,
+
+    private readonly access: UserContentAccess,
   ) {}
 
   async followUser(followerId: string, followingId: string) {
@@ -144,7 +148,27 @@ export class ConnectionsService {
       .getRawMany();
   }
 
-  async getFollowers(userId: string) {
+  /** The followers of an account the viewer may see, else 404. */
+  async getFollowersOf(
+    viewerId: string,
+    userId: string,
+    page?: { limit?: number; offset?: number },
+  ) {
+    await this.access.assertCanViewUserContent(viewerId, userId);
+    return this.getFollowers(userId, toPage(page));
+  }
+
+  /** Who an account follows, if the viewer may see it, else 404. */
+  async getFollowingOf(
+    viewerId: string,
+    userId: string,
+    page?: { limit?: number; offset?: number },
+  ) {
+    await this.access.assertCanViewUserContent(viewerId, userId);
+    return this.getFollowing(userId, toPage(page));
+  }
+
+  async getFollowers(userId: string, page?: Page) {
     return (
       this.connectionRepository
         .createQueryBuilder('connection')
@@ -156,11 +180,15 @@ export class ConnectionsService {
           'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         ])
         .where('connection.followingId = :userId', { userId })
+        .orderBy('connection.createdAt', 'DESC')
+        .addOrderBy('user.id')
+        .limit(page?.limit)
+        .offset(page?.offset)
         .getRawMany() ?? []
     );
   }
 
-  async getFollowing(userId: string) {
+  async getFollowing(userId: string, page?: Page) {
     return (
       this.connectionRepository
         .createQueryBuilder('connection')
@@ -172,6 +200,10 @@ export class ConnectionsService {
           'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         ])
         .where('connection.followerId = :userId', { userId })
+        .orderBy('connection.createdAt', 'DESC')
+        .addOrderBy('user.id')
+        .limit(page?.limit)
+        .offset(page?.offset)
         .getRawMany() ?? []
     );
   }
@@ -265,4 +297,17 @@ export class ConnectionsService {
       recommended = await this.getRandomUsers(10, excludeIds);
     return recommended;
   }
+}
+
+interface Page {
+  limit: number;
+  offset: number;
+}
+
+/** Same cap as every other list (100); a list is never returned unbounded. */
+function toPage(page?: { limit?: number; offset?: number }): Page {
+  return {
+    limit: clampLimit(page?.limit, 100),
+    offset: clampOffset(page?.offset),
+  };
 }

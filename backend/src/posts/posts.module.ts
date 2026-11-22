@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ModerationModule } from '../moderation/moderation.module';
+import { StatsModule } from '../stats/stats.module';
 import { PostPartner } from './entities/post-partner.entity';
 import { PostPartnersService } from './post-partners.service';
 import { CommentReport } from './entities/comment-report.entity';
@@ -20,6 +21,7 @@ import { PostsService } from './posts.service';
       PostPartner,
     ]),
     ModerationModule,
+    StatsModule,
   ],
   providers: [PostsService, PostPartnersService],
   controllers: [PostsController],

@@ -1,57 +1,8 @@
-import { api } from "./api";
+import { api, isNotFound, API_BASE_URL } from "./api";
+import { TokenService } from "./token.service";
 import { getItem, saveItem, removeItem } from "@/core/services/storage";
-
-export const EQUIPMENT_LABELS: Record<string, string> = {
-  barbell: "Barre",
-  dumbbell: "Haltères",
-  machine: "Machine",
-  plate_loaded: "Disque de poids",
-  smith_machine: "Smith machine",
-  cable: "Câble",
-  kettlebell: "Kettlebell",
-  band: "Bande élastique",
-  none: "Sans équipement",
-};
-
-export const MUSCLE_LABELS: Record<string, string> = {
-  biceps: "Biceps",
-  triceps: "Triceps",
-  forearms: "Avant-bras",
-  front_delts: "Deltoïdes antérieurs",
-  side_delts: "Deltoïdes latéraux",
-  rear_delts: "Deltoïdes postérieurs",
-  upper_chest: "Haut des pectoraux",
-  middle_chest: "Pectoraux moyens",
-  lower_chest: "Bas des pectoraux",
-  lats: "Grand dorsal",
-  rhomboids: "Rhomboïdes",
-  traps: "Trapèzes",
-  lower_back: "Bas du dos",
-  upper_abs: "Abdominaux supérieurs",
-  lower_abs: "Abdominaux inférieurs",
-  obliques: "Obliques",
-  glutes: "Fessiers",
-  hip_flexors: "Fléchisseurs de hanche",
-  abductors: "Abducteurs",
-  adductors: "Adducteurs",
-  quads: "Quadriceps",
-  hamstrings: "Ischio-jambiers",
-  calves: "Mollets",
-  neck: "Cou",
-  full_body: "Corps entier",
-  cardio: "Cardio",
-};
-
-export const EXERCISE_TYPE_LABELS: Record<string, string> = {
-  weight_reps: "Poids libres",
-  bodyweight_reps: "Poids du corps",
-  weighted_bodyweight: "Poids du corps lesté",
-  assisted_bodyweight: "Poids du corps assisté",
-  duration: "Durée",
-  duration_weight: "Durée + poids",
-  distance_duration: "Distance / durée",
-  weight_distance: "Poids / distance",
-};
+import { onSessionCleared } from "@/core/services/sessionReset";
+import { getCurrentLang } from "@/i18n/current";
 
 export interface Exercise {
   id: string;
@@ -64,34 +15,121 @@ export interface Exercise {
   createdAt: string;
 }
 
-const EXERCISES_STORAGE_KEY = "exercises_cache";
+/** `GET /exercises/:id` : en plus de la liste, description, consignes et photos. */
+export interface ExerciseDetail extends Exercise {
+  description?: string | null;
+  instructions?: string[] | null;
+  image_urls?: string[] | null;
+}
+
+// v2 : le catalogue a été renommé (équipement dans le nom) et étendu côté serveur.
+// Le cache est propre à chaque serveur : les identifiants d'exercices diffèrent d'une
+// base à l'autre (prod, local…), les mélanger casse les noms et la carte musculaire.
+const SERVER_TAG = API_BASE_URL.replace(/[^a-z0-9]+/gi, "_");
+// Les noms sont traduits par le serveur selon `Accept-Language` : un cache par langue.
+const storageKey = () => `exercises_cache_v3:${SERVER_TAG}:${getCurrentLang()}`;
+const cachedAtKey = () => `exercises_cache_v3_at:${SERVER_TAG}:${getCurrentLang()}`;
+const LEGACY_CACHE_KEYS = [
+  "exercises_cache",
+  "exercises_cache_at",
+  "exercises_cache_v2",
+  "exercises_cache_v2_at",
+  `exercises_cache_v2:${SERVER_TAG}`,
+  `exercises_cache_v2_at:${SERVER_TAG}`,
+];
 const USER_CREATED_EXERCISES_KEY = "user_created_exercises";
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+let memoryCache: Exercise[] | null = null;
+let memoryLang = getCurrentLang();
+let memoryCachedAt = 0;
+let refreshing: Promise<Exercise[]> | null = null;
+let createdIdsCache: string[] | null = null;
+
+onSessionCleared(() => {
+  createdIdsCache = null;
+});
+
+/** Langue changée depuis le dernier chargement : le catalogue en mémoire est dans une autre langue. */
+const syncLang = () => {
+  const lang = getCurrentLang();
+  if (lang === memoryLang) return;
+  memoryLang = lang;
+  memoryCache = null;
+  memoryCachedAt = 0;
+};
+
+export const peekExercises = (): Exercise[] | null => {
+  syncLang();
+  return memoryCache;
+};
+
+const fetchAndStoreExercises = (): Promise<Exercise[]> => {
+  if (!refreshing) {
+    refreshing = api
+      .get<Exercise[]>("/exercises")
+      .then(async (exercises) => {
+        memoryCache = exercises;
+        memoryCachedAt = Date.now();
+        await saveItem(storageKey(), JSON.stringify(exercises));
+        await saveItem(cachedAtKey(), String(memoryCachedAt));
+        return exercises;
+      })
+      .finally(() => {
+        refreshing = null;
+      });
+  }
+  return refreshing;
+};
 
 export const getAllExercises = async (): Promise<Exercise[]> => {
+  const isFresh = () => Date.now() - memoryCachedAt < CACHE_TTL_MS;
+  syncLang();
   try {
-    const cached = await getItem(EXERCISES_STORAGE_KEY);
-    if (cached) {
-      return JSON.parse(cached);
+    void Promise.all(LEGACY_CACHE_KEYS.map(removeItem));
+    if (!memoryCache) {
+      const [cached, cachedAt] = await Promise.all([
+        getItem(storageKey()),
+        getItem(cachedAtKey()),
+      ]);
+      if (cached) {
+        memoryCache = JSON.parse(cached);
+        memoryCachedAt = Number(cachedAt) || 0;
+      }
     }
 
-    const exercises = await api.get<Exercise[]>("/exercises");
-    await saveItem(EXERCISES_STORAGE_KEY, JSON.stringify(exercises));
-    return exercises;
+    if (memoryCache) {
+      if (!isFresh()) fetchAndStoreExercises().catch(() => {});
+      return memoryCache;
+    }
+
+    return await fetchAndStoreExercises();
   } catch (error) {
     console.error("Erreur récupération exercices:", error);
-    const cached = await getItem(EXERCISES_STORAGE_KEY);
-    return cached ? JSON.parse(cached) : [];
+    return memoryCache ?? [];
   }
 };
 
-export const refreshExercises = async (): Promise<Exercise[]> => {
-  const exercises = await api.get<Exercise[]>("/exercises");
-  await saveItem(EXERCISES_STORAGE_KEY, JSON.stringify(exercises));
-  return exercises;
+/** Recharge le catalogue depuis le serveur (ignore le cache). */
+export const refreshExercises = (): Promise<Exercise[]> => fetchAndStoreExercises();
+
+let byIdCache: Map<string, Exercise> | null = null;
+let byIdSource: Exercise[] | null = null;
+
+export const getExercisesById = async (): Promise<Map<string, Exercise>> => {
+  const list = await getAllExercises();
+  if (!byIdCache || byIdSource !== list) {
+    byIdCache = new Map(list.map((exercise) => [exercise.id, exercise]));
+    byIdSource = list;
+  }
+  return byIdCache;
 };
 
-export const clearExercisesCache = async (): Promise<void> => {
-  await removeItem(EXERCISES_STORAGE_KEY);
+const clearExercisesCache = async (): Promise<void> => {
+  memoryCache = null;
+  memoryCachedAt = 0;
+  await removeItem(storageKey());
+  await removeItem(cachedAtKey());
 };
 
 export interface CreateExerciseDTO {
@@ -104,28 +142,26 @@ export interface CreateExerciseDTO {
 }
 
 export const getUserCreatedExerciseIds = async (): Promise<string[]> => {
+  if (createdIdsCache) return createdIdsCache;
   const stored = await getItem(USER_CREATED_EXERCISES_KEY);
-  return stored ? JSON.parse(stored) : [];
+  createdIdsCache = stored ? JSON.parse(stored) : [];
+  return createdIdsCache as string[];
 };
 
-export const addUserCreatedExerciseId = async (exerciseId: string): Promise<void> => {
+const addUserCreatedExerciseId = async (exerciseId: string): Promise<void> => {
   const current = await getUserCreatedExerciseIds();
   if (!current.includes(exerciseId)) {
-    await saveItem(
-      USER_CREATED_EXERCISES_KEY,
-      JSON.stringify([...current, exerciseId]),
-    );
+    createdIdsCache = [...current, exerciseId];
+    await saveItem(USER_CREATED_EXERCISES_KEY, JSON.stringify(createdIdsCache));
   }
 };
 
-export const removeUserCreatedExerciseId = async (
+const removeUserCreatedExerciseId = async (
   exerciseId: string,
 ): Promise<void> => {
   const current = await getUserCreatedExerciseIds();
-  await saveItem(
-    USER_CREATED_EXERCISES_KEY,
-    JSON.stringify(current.filter((id) => id !== exerciseId)),
-  );
+  createdIdsCache = current.filter((id) => id !== exerciseId);
+  await saveItem(USER_CREATED_EXERCISES_KEY, JSON.stringify(createdIdsCache));
 };
 
 export const createExercise = async (
@@ -155,4 +191,124 @@ export const deleteExercise = async (
     console.error("Erreur suppression exercice:", error);
     throw error;
   }
+};
+
+export const getExerciseById = async (exerciseId: string): Promise<ExerciseDetail> => {
+  const token = await TokenService.get();
+  return api.get<ExerciseDetail>(`/exercises/${exerciseId}`, token ?? undefined);
+};
+
+export const updateExercise = async (
+  exerciseId: string,
+  data: Partial<CreateExerciseDTO>,
+  token?: string,
+): Promise<Exercise> => {
+  try {
+    const exercise = await api.patch<Exercise>(`/exercises/${exerciseId}`, data, token);
+    await clearExercisesCache();
+    return exercise;
+  } catch (error) {
+    console.error("Erreur modification exercice:", error);
+    throw error;
+  }
+};
+
+/**
+ * Stats calculées par le serveur à partir des séances terminées.
+ * `GET /exercises/:id/stats` répond 404 tant que l'exercice n'a jamais été pratiqué.
+ */
+export interface ExerciseStats {
+  exerciseId: string;
+  exerciseName: string;
+  primaryMuscle: string;
+  lastPerformedAt: string | null;
+  lastWeight: number | null;
+  lastReps: number | null;
+  lastSets: { reps: number; weight: number }[];
+  prWeight: number | null;
+  prReps: number | null;
+  bestEstimatedOneRepMax: number | null;
+  bestSessionVolume: number | null;
+  maxReps: number | null;
+  totalSessions: number;
+  totalSets: number;
+  totalReps: number;
+  totalVolume: number;
+  updatedAt: string;
+}
+
+/** Ce qu'affiche la séance en cours : dernière performance et record de charge. */
+export type LiveExerciseStats = Partial<
+  Pick<ExerciseStats, "lastWeight" | "lastReps" | "prWeight">
+>;
+
+export const getExerciseStats = async (
+  exerciseId: string,
+): Promise<ExerciseStats | null> => {
+  const token = await TokenService.get();
+  try {
+    return await api.get<ExerciseStats>(
+      `/exercises/${exerciseId}/stats`,
+      token ?? undefined,
+    );
+  } catch (error) {
+    if (isNotFound(error)) return null;
+    throw error;
+  }
+};
+
+export const EXERCISE_STATS_PAGE_SIZE = 50;
+
+export interface ExerciseStatsPage {
+  items: ExerciseStats[];
+  /** Curseur de la page suivante ; `null` = fin de la liste. */
+  nextBefore: string | null;
+}
+
+/** Une page des exercices pratiqués, du plus récent au plus ancien (B-13). */
+export const getExerciseStatsPage = async (
+  limit = EXERCISE_STATS_PAGE_SIZE,
+  before?: string | null,
+): Promise<ExerciseStatsPage> => {
+  const token = await TokenService.get();
+  const qs = `limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ""}`;
+  const response = await api.get<ExerciseStatsPage | ExerciseStats[]>(`/exercises/stats?${qs}`, token ?? undefined);
+  // Ancien format (tableau complet) : tout est déjà là.
+  return Array.isArray(response) ? { items: response, nextBefore: null } : response;
+};
+
+export interface CompareStats {
+  heaviestWeight: number | null;
+  estimatedOneRepMax: number | null;
+  bestSessionVolume: number | null;
+  maxReps: number | null;
+  totalSessions: number;
+  lastPerformedAt: string | null;
+}
+
+export interface ExerciseComparison {
+  exercise: { id: string; name: string };
+  /** `null` si je n'ai jamais fait cet exercice. */
+  me: CompareStats | null;
+  user: {
+    id: string;
+    uniqueName: string;
+    displayName: string;
+    avatarThumbnailUrl?: string | null;
+  };
+  /** Uniquement les séances publiées par la personne. */
+  /** `null` si la personne n'a publié aucune séance avec cet exercice. */
+  them: CompareStats | null;
+}
+
+/** `403` si je ne suis pas cette personne, `400` si c'est moi, `404` pour un exercice inconnu. */
+export const compareExerciseStats = async (
+  exerciseId: string,
+  userId: string,
+): Promise<ExerciseComparison> => {
+  const token = await TokenService.get();
+  return api.get<ExerciseComparison>(
+    `/exercises/${exerciseId}/stats/compare/${userId}`,
+    token ?? undefined,
+  );
 };

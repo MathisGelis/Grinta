@@ -1,14 +1,69 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, Alert, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SearchUser } from "@/services/user.service";
+import { ConnectionsService } from "@/services/connections.service";
 
+import { WorkoutTheme } from "@/constants/Colors";
+import Avatar from "@/components/ui/Avatar";
+import PressableScale from "@/components/ui/PressableScale";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { queryCache } from "@/services/queryCache";
 interface SearchUserCardProps {
   user: SearchUser;
 }
 
+type FollowStatus =
+  | "SELF"
+  | "FOLLOWING"
+  | "REQUEST_SENT"
+  | "FOLLOW"
+  | "FOLLOW_BACK";
+
 export default function SearchUserCard({ user }: SearchUserCardProps) {
+  const { t } = useTranslation();
+  const [status, setStatus] = useState<FollowStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    ConnectionsService.getFollowStatus(user.id)
+      .then((res) => {
+        const raw = res as unknown;
+        const value =
+          typeof raw === "string"
+            ? raw
+            : ((raw as { status?: string; followStatus?: string })?.status ??
+              (raw as { followStatus?: string })?.followStatus);
+        if (!cancelled) setStatus((value as FollowStatus) ?? "FOLLOW");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("FOLLOW");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id]);
+
+  const toggleFollow = async () => {
+    setBusy(true);
+    try {
+      if (status === "FOLLOWING") {
+        await ConnectionsService.unfollow(user.id);
+        queryCache.invalidate("profile");
+        setStatus("FOLLOW");
+      } else {
+        const result = await ConnectionsService.follow(user.id);
+        queryCache.invalidate("profile");
+        setStatus(result.status === "FOLLOWING" ? "FOLLOWING" : "REQUEST_SENT");
+      }
+    } catch (err: any) {
+      Alert.alert(t.error, err.message || t.error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handlePress = () => {
     router.push({
       pathname: "/(tabs)/explore/user-profile",
@@ -17,33 +72,54 @@ export default function SearchUserCard({ user }: SearchUserCardProps) {
   };
 
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={handlePress}
-      className="flex-row items-center justify-between bg-[#2a2a2a] rounded-lg p-4 mb-3"
+      accessibilityRole="button"
+      accessibilityLabel={`${user.displayName} @${user.uniqueName}`}
+      className="flex-row items-center gap-3 rounded-card bg-surface p-3 pr-4"
     >
-      <View className="flex-row items-center flex-1">
-        {/* User Avatar */}
-        <View className="w-14 h-14 rounded-full bg-[#404040] overflow-hidden mr-4">
-          {user.image_url ? (
-            <Image source={{ uri: user.image_url }} className="w-full h-full" />
-          ) : (
-            <View className="w-full h-full items-center justify-center">
-              <Ionicons name="person" size={28} color="#888" />
-            </View>
-          )}
-        </View>
+      <Avatar uri={user.avatarThumbnailUrl} name={user.displayName} size={56} />
 
-        {/* User Info */}
-        <View className="flex-1">
-          <Text className="text-white font-semibold text-[15px]">
-            {user.displayName}
-          </Text>
-          <Text className="text-gray-400 text-[13px]">@{user.uniqueName}</Text>
-        </View>
+      <View className="flex-1">
+        <Text className="text-base font-semibold text-ink" numberOfLines={1}>
+          {user.displayName}
+        </Text>
+        <Text className="mt-0.5 text-sm text-ink-muted" numberOfLines={1}>
+          @{user.uniqueName}
+        </Text>
       </View>
 
-      {/* Arrow */}
-      <Ionicons name="chevron-forward-outline" size={20} color="#888" />
-    </TouchableOpacity>
+      {status === null ? (
+        <View className="h-10 w-10 items-center justify-center">
+          <ActivityIndicator size="small" color={WorkoutTheme.text.tertiary} />
+        </View>
+      ) : status === "SELF" ? null : status === "REQUEST_SENT" ? (
+        <View className="h-10 items-center justify-center rounded-full bg-raised px-4">
+          <Text className="text-sm font-semibold text-ink-muted">
+            {t.requestSent}
+          </Text>
+        </View>
+      ) : (
+        <PressableScale
+          onPress={toggleFollow}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel={
+            status === "FOLLOWING" ? t.unfollowAction : t.followAction
+          }
+          className={`h-10 min-w-[84px] items-center justify-center rounded-full px-4 ${
+            status === "FOLLOWING" ? "bg-raised" : "bg-accent"
+          } ${busy ? "opacity-60" : ""}`}
+        >
+          <Text className="text-sm font-semibold text-ink">
+            {status === "FOLLOWING"
+              ? t.followingStatus
+              : status === "FOLLOW_BACK"
+                ? t.followBackAction
+                : t.followAction}
+          </Text>
+        </PressableScale>
+      )}
+    </PressableScale>
   );
 }

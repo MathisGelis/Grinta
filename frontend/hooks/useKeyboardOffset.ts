@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Keyboard, Animated, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export function useKeyboardOffset(navbarHeight = 60) {
+export function useKeyboardOffset(navbarHeight = 76) {
   const insets = useSafeAreaInsets();
   const bottomOffset = insets.bottom + navbarHeight;
   const keyboardY = useRef(new Animated.Value(0)).current;
@@ -32,4 +32,9 @@ export function useKeyboardOffset(navbarHeight = 60) {
   }, [bottomOffset, keyboardY]);
 
   return { keyboardY, bottomOffset };
+}
+
+export function useBottomOffset(navbarHeight = 76) {
+  const insets = useSafeAreaInsets();
+  return insets.bottom + navbarHeight;
 }

@@ -1,0 +1,9 @@
+# Keeps secrets and build output out of the image (and the build context small).
+node_modules
+dist
+coverage
+.git
+.env
+.env.*
+*.log
+test

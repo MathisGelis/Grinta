@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { AttemptLimitOptions } from '../common/throttling/attempt-limit';
 
 /**
  * Lifetime of an access token. Kept short because there is no revocation list
@@ -18,8 +19,91 @@ export const JWT_ALGORITHM = 'HS256';
  */
 export const BCRYPT_ROUNDS = 10;
 
-/** Login attempts allowed per client address and per window. */
+/** Login attempts allowed per account and client address, per window. */
 export const LOGIN_THROTTLE = { limit: 5, ttl: 15 * 60_000 };
+
+/**
+ * Login attempts allowed per client address across all accounts, per
+ * window: high enough for many people behind one NAT, low enough to stop
+ * one machine from trying passwords on account after account.
+ */
+export const LOGIN_IP_THROTTLE = { limit: 50, ttl: 15 * 60_000 };
+
+/** Login: per account and address, then per address. */
+export const LOGIN_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'login',
+  account: { bodyField: 'identifier' },
+  perAccount: LOGIN_THROTTLE,
+  perAddress: LOGIN_IP_THROTTLE,
+  code: 'TOO_MANY_LOGIN_ATTEMPTS',
+  message: (minutes) =>
+    `Trop de tentatives de connexion. Réessayez dans ${minutes} min.`,
+};
+
+const HOUR = 60 * 60_000;
+
+/** Reset emails: few per address, so the route cannot be used to spam. */
+export const FORGOT_PASSWORD_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'forgot-password',
+  account: { bodyField: 'email' },
+  perAccount: { limit: 3, ttl: HOUR },
+  perAddress: { limit: 10, ttl: HOUR },
+  code: 'TOO_MANY_ATTEMPTS',
+  message: (minutes) =>
+    `Trop de demandes de réinitialisation. Réessayez dans ${minutes} min.`,
+};
+
+/**
+ * Sign-ups: the "email already in use" answer tells whether an address is
+ * registered, so probing a list of addresses is capped per address.
+ */
+export const REGISTER_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'register',
+  account: { bodyField: 'email' },
+  perAccount: { limit: 5, ttl: HOUR },
+  perAddress: { limit: 100, ttl: HOUR },
+  code: 'TOO_MANY_ATTEMPTS',
+  message: (minutes) =>
+    `Trop de tentatives d'inscription. Réessayez dans ${minutes} min.`,
+};
+
+/**
+ * "Email already in use" answers per address and hour, before they turn into
+ * a 429: the one answer of the API that tells whether an address has an
+ * account. Kept (rather than a neutral answer) for the UX of a user who
+ * forgot they had signed up.
+ */
+export const EMAIL_PROBE = { limit: 10, ttl: HOUR };
+
+/** Reset links: a token cannot be guessed, this only caps the noise. */
+export const RESET_PASSWORD_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'reset-password',
+  account: { bodyField: 'token' },
+  perAccount: { limit: 5, ttl: 15 * 60_000 },
+  perAddress: { limit: 20, ttl: 15 * 60_000 },
+  code: 'TOO_MANY_ATTEMPTS',
+  message: (minutes) => `Trop de tentatives. Réessayez dans ${minutes} min.`,
+};
+
+/** Changing the e-mail checks the current password and sends two e-mails. */
+export const CHANGE_EMAIL_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'change-email',
+  account: 'user',
+  perAccount: { limit: 5, ttl: HOUR },
+  perAddress: { limit: 20, ttl: HOUR },
+  code: 'TOO_MANY_ATTEMPTS',
+  message: (minutes) => `Trop de tentatives. Réessayez dans ${minutes} min.`,
+};
+
+/** Changing the password checks the current one: same care as a login. */
+export const CHANGE_PASSWORD_ATTEMPTS: AttemptLimitOptions = {
+  scope: 'change-password',
+  account: 'user',
+  perAccount: { limit: 5, ttl: 15 * 60_000 },
+  perAddress: { limit: 20, ttl: 15 * 60_000 },
+  code: 'TOO_MANY_ATTEMPTS',
+  message: (minutes) => `Trop de tentatives. Réessayez dans ${minutes} min.`,
+};
 
 const MIN_JWT_SECRET_LENGTH = 32;
 

@@ -12,4 +12,10 @@ export class PlannedWorkoutListDto {
 
   @ApiProperty()
   totalExercises: number;
+
+  @ApiProperty({ description: 'Planned sets of all its exercises' })
+  totalSets: number;
+
+  @ApiProperty({ nullable: true, description: 'Expected duration, minutes' })
+  estimatedDurationMinutes: number | null;
 }

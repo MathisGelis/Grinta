@@ -1,9 +1,15 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, TextInput, Alert } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 
+import type { LiveExerciseStats } from "@/services/exercises.service";
+import PressableScale from "@/components/ui/PressableScale";
+import Button from "@/components/ui/Button";
+import { LIMITS } from "@/utils/validation";
 export interface CompletedSet {
   reps: number;
   weight: number;
@@ -18,10 +24,10 @@ interface CurrentExerciseSectionProps {
   onCompleteSet: (reps: number, weight: number) => void;
   onAddSet: () => void;
   onRemoveSet: () => void;
-  onSkipExercise: () => void;
   onDeleteExercise?: () => void;
   isLastExercise: boolean;
   isLastSet: boolean;
+  lastStats?: LiveExerciseStats | null;
 }
 
 export default function CurrentExerciseSection({
@@ -33,35 +39,80 @@ export default function CurrentExerciseSection({
   onCompleteSet,
   onAddSet,
   onRemoveSet,
-  onSkipExercise,
   onDeleteExercise,
   isLastExercise,
   isLastSet,
+  lastStats,
 }: CurrentExerciseSectionProps) {
   const { t } = useTranslation();
-  const [weight, setWeight] = useState(
-    plannedSetData[currentSetIndex]?.weight.toString() || "0",
-  );
-  const [reps, setReps] = useState(
-    plannedSetData[currentSetIndex]?.reps.toString() || "0",
-  );
+  const { fromKg, toKg, weightUnit } = useUnits();
+  const { formatWeight } = useUnits();
+  const initialValues = (index: number) => {
+    const planned = plannedSetData[index];
+    return {
+      weight: planned?.weight || lastStats?.lastWeight || 0,
+      reps: planned?.reps || lastStats?.lastReps || 0,
+    };
+  };
+  const [weight, setWeight] = useState(initialValues(currentSetIndex).weight.toString());
+  const [reps, setReps] = useState(initialValues(currentSetIndex).reps.toString());
 
-  // Update weight and reps when currentSetIndex changes
+  const lastWeight = lastStats?.lastWeight;
+  const lastReps = lastStats?.lastReps;
+
   useEffect(() => {
-    setWeight(plannedSetData[currentSetIndex]?.weight.toString() || "0");
-    setReps(plannedSetData[currentSetIndex]?.reps.toString() || "0");
-  }, [currentSetIndex, plannedSetData]);
+    const planned = plannedSetData[currentSetIndex];
+    setWeight(String(fromKg(planned?.weight || lastWeight || 0)));
+    setReps(String(planned?.reps || lastReps || 1));
+  }, [currentSetIndex, plannedSetData, lastWeight, lastReps, fromKg]);
+
+  const adjustWeight = (delta: number) => {
+    const next = Math.max(0, Math.round(((parseFloat(weight) || 0) + delta) * 100) / 100);
+    setWeight(String(next));
+  };
+  const adjustReps = (delta: number) => {
+    setReps(String(Math.min(999, Math.max(1, (parseInt(reps, 10) || 1) + delta))));
+  };
+
+  const stepButton = (
+    icon: "add" | "remove",
+    label: string,
+    onPress: () => void,
+    color: string,
+  ) => (
+    <PressableScale
+      bounce={false}
+      onPress={onPress}
+      halo={false}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <MaterialCommunityIcons
+        name={icon === "add" ? "plus-thick" : "minus-thick"}
+        size={22}
+        color={color}
+      />
+    </PressableScale>
+  );
 
   const handleCompleteSet = () => {
-    const w = parseFloat(weight) || 0;
-    const r = parseInt(reps) || 0;
+    const w = toKg(parseFloat(weight) || 0);
+    const r = Math.max(1, parseInt(reps) || 1);
+    if (w === 0 && ((lastWeight ?? 0) > 0 || (lastStats?.prWeight ?? 0) > 0)) {
+      Alert.alert(t.zeroWeightTitle, t.zeroWeightMessage, [
+        { text: t.cancel, style: "cancel" },
+        { text: t.zeroWeightConfirm, onPress: () => onCompleteSet(r, w) },
+      ]);
+      return;
+    }
     onCompleteSet(r, w);
   };
 
   const handleDeleteExercise = () => {
     Alert.alert(
       t.deleteExercise,
-      `Êtes-vous sûr de vouloir supprimer "${exerciseName}" de la séance?`,
+      t.deleteExerciseConfirm,
       [
         { text: t.cancel, style: "cancel" },
         {
@@ -74,349 +125,160 @@ export default function CurrentExerciseSection({
   };
 
   return (
-    <View
-      style={{
-        backgroundColor: WorkoutTheme.backgroundTertiary,
-        borderRadius: 12,
-        padding: 16,
-        marginHorizontal: 16,
-        marginVertical: 16,
-        borderWidth: 1,
-        borderColor: WorkoutTheme.border,
-      }}
-    >
-      {/* Exercise Name */}
-      <View style={{ alignItems: "center", marginBottom: 24 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-            color: WorkoutTheme.text.secondary,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
-            marginBottom: 8,
-          }}
-        >
-          {t.currentExercise}
-        </Text>
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "700",
-            color: WorkoutTheme.text.primary,
-            textAlign: "center",
-          }}
-        >
+    <View className="mx-5 my-3 gap-6 rounded-hero bg-surface p-5">
+      <View className="items-center">
+        <Text className="mb-1 text-sm text-ink-muted">{t.currentExercise}</Text>
+        <Text className="text-center text-2xl font-semibold text-ink">
           {exerciseName}
         </Text>
       </View>
 
-      {/* Weight and Reps Display */}
-      <View
-        style={{
-          backgroundColor: WorkoutTheme.accent.purple + "15",
-          borderRadius: 12,
-          paddingVertical: 20,
-          paddingHorizontal: 16,
-          marginBottom: 20,
-          borderWidth: 2,
-          borderColor: WorkoutTheme.accent.purple,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-            alignItems: "center",
-          }}
-        >
-          {/* Weight Input */}
-          <View style={{ alignItems: "center" }}>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: WorkoutTheme.text.secondary,
-                marginBottom: 8,
-                textTransform: "uppercase",
-              }}
-            >
-              {t.weightLabel}
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: WorkoutTheme.background,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: WorkoutTheme.border,
-                paddingHorizontal: 8,
-              }}
-            >
-              <TextInput
-                style={{
-                  fontSize: 24,
-                  fontWeight: "700",
-                  color: WorkoutTheme.accent.purple,
-                  paddingVertical: 8,
-                  paddingHorizontal: 4,
-                  width: 60,
-                  textAlign: "center",
-                }}
-                value={weight}
-                onChangeText={setWeight}
-                keyboardType="decimal-pad"
-                maxLength={5}
-              />
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: WorkoutTheme.text.secondary,
-                }}
-              >
-                kg
+      {lastStats && (lastStats.lastWeight != null || lastStats.prWeight != null) ? (
+        <View className="flex-row gap-3">
+          {lastStats.lastWeight != null ? (
+            <View className="flex-1 rounded-tile bg-raised px-4 py-3">
+              <Text className="text-xs text-ink-muted">{t.lastPerformanceLabel}</Text>
+              <Text className="mt-0.5 text-base font-semibold text-ink">
+                {formatWeight(lastStats.lastWeight)}
+                {lastStats.lastReps != null ? ` × ${lastStats.lastReps}` : ""}
               </Text>
             </View>
-          </View>
+          ) : null}
+          {lastStats.prWeight != null ? (
+            <View className="flex-1 rounded-tile bg-accent-tint px-4 py-3">
+              <Text className="text-xs text-accent-text">{t.personalRecordLabel}</Text>
+              <Text className="mt-0.5 text-base font-semibold text-ink">
+                {formatWeight(lastStats.prWeight)}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
-          {/* Separator */}
-          <View
-            style={{
-              width: 1,
-              height: 60,
-              backgroundColor: WorkoutTheme.border,
-              marginHorizontal: 16,
-            }}
+      <View className="flex-row gap-3">
+        <View className="flex-1 items-center rounded-card bg-raised px-3 py-5">
+          <Text className="mb-2 text-xs text-ink-muted">{t.weightLabel}</Text>
+          <View className="w-full flex-row items-center">
+          {stepButton("remove", t.weightLabel, () => adjustWeight(-1), WorkoutTheme.text.secondary)}
+          <TextInput
+            className="flex-1 py-0 text-center text-[40px] font-semibold text-ink"
+            style={{ fontVariant: ["tabular-nums"], height: 52 }}
+            value={weight}
+            onChangeText={(input) =>
+              setWeight(input.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1").replace(/(\.\d{2})\d+/, "$1"))
+            }
+            onBlur={() =>
+              setWeight(!weight.trim() ? "0" : String(Math.min(LIMITS.maxWeightKg, parseFloat(weight) || 0)))
+            }
+            selectTextOnFocus
+            keyboardType="decimal-pad"
+            maxLength={5}
           />
-
-          {/* Reps Input */}
-          <View style={{ alignItems: "center" }}>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: WorkoutTheme.text.secondary,
-                marginBottom: 8,
-                textTransform: "uppercase",
-              }}
-            >
-              {t.repsLabel}
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: WorkoutTheme.background,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: WorkoutTheme.border,
-                paddingHorizontal: 8,
-              }}
-            >
-              <TextInput
-                style={{
-                  fontSize: 24,
-                  fontWeight: "700",
-                  color: WorkoutTheme.status.success,
-                  paddingVertical: 8,
-                  paddingHorizontal: 4,
-                  width: 60,
-                  textAlign: "center",
-                }}
-                value={reps}
-                onChangeText={setReps}
-                keyboardType="number-pad"
-                maxLength={3}
-              />
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: WorkoutTheme.text.secondary,
-                }}
-              >
-                reps
-              </Text>
-            </View>
+          {stepButton("add", t.weightLabel, () => adjustWeight(1), WorkoutTheme.text.secondary)}
           </View>
+          <Text className="mt-1 text-sm text-ink-muted">{weightUnit}</Text>
+        </View>
+        <View className="flex-1 items-center rounded-card bg-accent-tint px-3 py-5">
+          <Text className="mb-2 text-xs text-accent-text">{t.repsLabel}</Text>
+          <View className="w-full flex-row items-center">
+          {stepButton("remove", t.repsLabel, () => adjustReps(-1), WorkoutTheme.accent.purple)}
+          <TextInput
+            className="flex-1 py-0 text-center text-[40px] font-semibold text-ink"
+            style={{ fontVariant: ["tabular-nums"], height: 52 }}
+            value={reps}
+            onChangeText={setReps}
+            onBlur={() => !(parseInt(reps, 10) >= 1) && setReps("1")}
+            selectTextOnFocus
+            keyboardType="number-pad"
+            maxLength={3}
+          />
+          {stepButton("add", t.repsLabel, () => adjustReps(1), WorkoutTheme.accent.purple)}
+          </View>
+          <Text className="mt-1 text-sm text-accent-text">{t.repsUnit}</Text>
         </View>
       </View>
 
-      {/* Series Progress Bar */}
-      <View style={{ marginBottom: 20 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: "600",
-              color: WorkoutTheme.text.secondary,
-              textTransform: "uppercase",
-            }}
-          >
-            Série {currentSetIndex + 1} / {totalSets}
+      <View className="gap-3">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-base font-semibold text-ink">
+            {t.setLabel} {currentSetIndex + 1}
+            <Text className="font-normal text-ink-muted"> / {totalSets}</Text>
           </Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={onAddSet}
-              style={{
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                backgroundColor: WorkoutTheme.accent.purple,
-                borderRadius: 6,
-              }}
-            >
-              <Ionicons name="add" size={16} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity
+          <View className="flex-row gap-2">
+            <PressableScale
+              bounce={false}
               onPress={onRemoveSet}
               disabled={totalSets <= 1}
-              style={{
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                backgroundColor:
-                  totalSets <= 1
-                    ? WorkoutTheme.border
-                    : WorkoutTheme.status.danger,
-                borderRadius: 6,
-                opacity: totalSets <= 1 ? 0.5 : 1,
-              }}
+              accessibilityRole="button"
+              accessibilityLabel={t.removeASet}
+              className={`h-10 w-10 items-center justify-center rounded-full bg-raised ${totalSets <= 1 ? "opacity-40" : ""}`}
             >
-              <Ionicons name="remove" size={16} color="white" />
-            </TouchableOpacity>
+              <Ionicons
+                name="remove"
+                size={18}
+                color={WorkoutTheme.text.primary}
+              />
+            </PressableScale>
+            <PressableScale
+              bounce={false}
+              onPress={onAddSet}
+              accessibilityRole="button"
+              accessibilityLabel={t.addSet}
+              className="h-10 w-10 items-center justify-center rounded-full bg-accent"
+            >
+              <Ionicons
+                name="add"
+                size={18}
+                color={WorkoutTheme.text.primary}
+              />
+            </PressableScale>
           </View>
         </View>
 
-        {/* Progress Bars */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 6,
-            backgroundColor: WorkoutTheme.background,
-            borderRadius: 8,
-            padding: 8,
-          }}
-        >
+        <View className="flex-row gap-1.5">
           {Array.from({ length: totalSets }).map((_, index) => (
             <View
               key={index}
-              style={{
-                flex: 1,
-                height: 8,
-                backgroundColor:
-                  index < currentSetIndex
-                    ? WorkoutTheme.status.success
-                    : index === currentSetIndex
-                      ? WorkoutTheme.accent.purple
-                      : WorkoutTheme.border,
-                borderRadius: 4,
-              }}
+              className={`h-2 flex-1 rounded-full ${
+                index < currentSetIndex
+                  ? "bg-accent"
+                  : index === currentSetIndex
+                    ? "bg-accent/40"
+                    : "bg-raised"
+              }`}
             />
           ))}
         </View>
       </View>
 
-      {/* Action Buttons */}
-      <View style={{ gap: 10 }}>
-        {/* Complete Set Button */}
-        <TouchableOpacity
-          onPress={handleCompleteSet}
-          style={{
-            backgroundColor: WorkoutTheme.accent.purple,
-            borderRadius: 10,
-            paddingVertical: 14,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
-          <Ionicons name="checkmark" size={18} color="white" />
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "700",
-              color: "white",
-            }}
-          >
-            {isLastSet && isLastExercise
-              ? "Terminer la séance"
+      <View className="flex-row items-center gap-3">
+        <Button
+          bounce={false}
+          className="flex-1"
+          icon="checkmark"
+          label={
+            isLastSet && isLastExercise
+              ? t.finishWorkout
               : isLastSet
-                ? "Exercice suivant"
-                : "Série suivante"}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Skip Exercise Button */}
-        <TouchableOpacity
-          onPress={onSkipExercise}
-          style={{
-            backgroundColor: WorkoutTheme.backgroundSecondary,
-            borderRadius: 10,
-            paddingVertical: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            borderWidth: 1,
-            borderColor: WorkoutTheme.border,
-          }}
-        >
-          <Ionicons
-            name="arrow-forward"
-            size={16}
-            color={WorkoutTheme.text.secondary}
-          />
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: WorkoutTheme.text.secondary,
-            }}
-          >
-            {t.skipExercise}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Delete Exercise Button */}
+                ? t.nextExercise
+                : t.nextSet
+          }
+          onPress={handleCompleteSet}
+        />
         {onDeleteExercise && (
-          <TouchableOpacity
+          <PressableScale
+            bounce={false}
             onPress={handleDeleteExercise}
-            style={{
-              backgroundColor: WorkoutTheme.status.danger + "20",
-              borderRadius: 10,
-              paddingVertical: 12,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              borderWidth: 1,
-              borderColor: WorkoutTheme.status.danger,
-            }}
+            accessibilityRole="button"
+            accessibilityLabel={t.deleteExercise}
+            className="h-[52px] w-[52px] items-center justify-center rounded-full bg-danger-tint"
           >
             <Ionicons
-              name="trash"
-              size={16}
+              name="trash-outline"
+              size={20}
               color={WorkoutTheme.status.danger}
             />
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: WorkoutTheme.status.danger,
-              }}
-            >
-              {t.deleteExercise}
-            </Text>
-          </TouchableOpacity>
+          </PressableScale>
         )}
       </View>
     </View>

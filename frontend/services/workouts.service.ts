@@ -1,11 +1,16 @@
 import { api } from "./api";
-import { saveItem, getItem } from "@/core/services/storage";
+import { saveItem, getItem, removeItem } from "@/core/services/storage";
+import { TokenService } from "./token.service";
+import { createListCache } from "./listCache";
+import { limitExercises, sanitizeDescription, sanitizeSeconds, sanitizeSets, sanitizeTitle } from "@/utils/sanitizeWorkout";
 
 export interface PlannedWorkout {
   id: string;
   title: string;
   description: string;
   totalExercises: number;
+  totalSets?: number;
+  estimatedDurationMinutes?: number | null;
   workout?: {
     id?: string;
     title?: string;
@@ -49,12 +54,14 @@ interface APIWorkoutResponse {
 export interface CreateWorkoutRequest {
   title: string;
   description: string;
+  estimatedDurationMinutes?: number;
   exercises: WorkoutExercise[];
 }
 
 export interface UpdateWorkoutRequest {
   title?: string;
   description?: string;
+  estimatedDurationMinutes?: number | null;
   exercises?: WorkoutExercise[];
 }
 
@@ -73,12 +80,13 @@ export async function getPlannedWorkouts(
       title: item.title ?? item.workout?.title ?? "",
       description: item.description ?? item.workout?.description ?? "",
       totalExercises: item.totalExercises,
+      totalSets: item.totalSets,
+      estimatedDurationMinutes: item.estimatedDurationMinutes,
       workout: item.workout,
     }));
     await saveItem(PLANNED_WORKOUTS_CACHE_KEY, JSON.stringify(normalized));
     return normalized;
-  } catch (error) {
-    console.log("Erreur lors de la récupération des workouts planifiés:", error);
+  } catch {
     const cachedData = await getItem(PLANNED_WORKOUTS_CACHE_KEY);
     if (cachedData) {
       const parsed = JSON.parse(cachedData) as PlannedWorkout[];
@@ -92,15 +100,6 @@ export async function getPlannedWorkouts(
     }
 
     return [];
-  }
-}
-
-export async function clearPlannedWorkoutsCache(): Promise<void> {
-  try {
-    const { removeItem } = await import("@/core/services/storage");
-    await removeItem(PLANNED_WORKOUTS_CACHE_KEY);
-  } catch (error) {
-    console.error("Erreur lors du nettoyage du cache:", error);
   }
 }
 
@@ -126,6 +125,18 @@ export async function deletePlannedWorkout(
   }
 }
 
+/** Bornes de l'API (B-02) : 40 exercices, 30 séries, `sets` omis (jamais `[]`) pour un exercice sans série. */
+function sanitizePlannedExercises(exercises: WorkoutExercise[]) {
+  return limitExercises(exercises).map((exercise) => {
+    const sets = sanitizeSets(exercise.sets);
+    return {
+      exerciseId: exercise.exerciseId,
+      ...(sets ? { sets } : {}),
+      plannedRestSeconds: sanitizeSeconds(exercise.plannedRestSeconds),
+    };
+  });
+}
+
 export async function createPlannedWorkout(
   workoutData: CreateWorkoutRequest,
   token?: string
@@ -133,7 +144,12 @@ export async function createPlannedWorkout(
   try {
     const response = await api.post<PlannedWorkout>(
       "/workouts/planned",
-      workoutData,
+      {
+        ...workoutData,
+        title: sanitizeTitle(workoutData.title),
+        description: sanitizeDescription(workoutData.description),
+        exercises: sanitizePlannedExercises(workoutData.exercises),
+      },
       token
     );
 
@@ -167,7 +183,14 @@ export async function updatePlannedWorkout(
   try {
     const response = await api.patch<PlannedWorkout>(
       `/workouts/planned/${id}`,
-      workoutData,
+      {
+        ...workoutData,
+        ...(workoutData.title !== undefined ? { title: sanitizeTitle(workoutData.title) } : {}),
+        ...(workoutData.description !== undefined
+          ? { description: sanitizeDescription(workoutData.description) }
+          : {}),
+        ...(workoutData.exercises ? { exercises: sanitizePlannedExercises(workoutData.exercises) } : {}),
+      },
       token
     );
 
@@ -201,7 +224,7 @@ export async function getWorkoutById(id: string, token?: string): Promise<fullPl
       exerciseId: ex.exercise.id,
       exerciseName: ex.exercise.name,
       sets: ex.sets || [],
-      plannedRestSeconds: ex.plannedRestSeconds || 90,
+      plannedRestSeconds: ex.plannedRestSeconds ?? 90,
     }));
 
     return {
@@ -215,4 +238,145 @@ export async function getWorkoutById(id: string, token?: string): Promise<fullPl
     console.error("Erreur lors de la récupération du workout:", error);
     throw error;
   }
+}
+
+export const plannedWorkoutsList = createListCache<PlannedWorkout>(async () =>
+  getPlannedWorkouts((await TokenService.get()) || undefined),
+);
+
+/**
+ * Crée une séance planifiée à partir d'un post visible ou d'une de ses séances
+ * terminées : même titre, mêmes exercices, sans séries ni charges.
+ */
+async function duplicate(endpoint: string): Promise<string> {
+  const token = await TokenService.get();
+  const response = await api.post<APIWorkoutResponse>(endpoint, undefined, token ?? undefined);
+  await removeItem(PLANNED_WORKOUTS_CACHE_KEY);
+  return response.workout.id;
+}
+
+export const duplicateWorkoutFromPost = (postId: string) =>
+  duplicate(`/workouts/planned/from-post/${encodeURIComponent(postId)}`);
+
+export const duplicateWorkoutFromCompleted = (completedId: string) =>
+  duplicate(`/workouts/planned/from-completed/${encodeURIComponent(completedId)}`);
+
+export interface SuggestedWorkout {
+  workout: { id: string; title: string; description: string | null; totalExercises: number };
+  score: number;
+  muscles: { muscle: string; plannedSets: number; workedSets: number }[];
+}
+
+export interface WorkoutSuggestion {
+  period: "week" | "month";
+  workedMuscles: { muscle: string; effectiveSets: number }[];
+  suggestion: SuggestedWorkout | null;
+  alternatives: SuggestedWorkout[];
+}
+
+export async function getWorkoutSuggestion(date: string): Promise<WorkoutSuggestion> {
+  const token = await TokenService.get();
+  return api.get<WorkoutSuggestion>(
+    `/workouts/planned/suggestion?period=week&date=${date}`,
+    token ?? undefined,
+  );
+}
+
+// ---- Modèles de séances (9.3) et import depuis des notes (9.4) ----
+
+export interface TemplateCriteria {
+  goal?: string;
+  level?: string;
+  daysPerWeek?: number;
+  location?: string;
+}
+
+export interface TemplateExercise {
+  exerciseId: string;
+  name: string;
+  sets: { reps: number; weight: number }[];
+  plannedRestSeconds: number | null;
+  durationSeconds: number | null;
+}
+
+export interface WorkoutTemplate {
+  key: string;
+  title: string;
+  description: string;
+  goals: string[];
+  levels: string[];
+  daysPerWeek: number;
+  location: string;
+  recommended: boolean;
+  workouts: { key: string; title: string; estimatedDurationMinutes: number | null; exercises: TemplateExercise[] }[];
+  week: { dayNumber: number; workoutKey: string | null }[];
+}
+
+/** Modèles classés du plus adapté au moins adapté. Les critères forcent ceux du profil (onboarding). */
+export async function getWorkoutTemplates(criteria: TemplateCriteria = {}) {
+  const token = await TokenService.get();
+  const qs = Object.entries(criteria)
+    .filter(([, v]) => v !== undefined && v !== "")
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+    .join("&");
+  return api.get<{ criteria: TemplateCriteria; templates: WorkoutTemplate[] }>(
+    `/workouts/templates${qs ? `?${qs}` : ""}`,
+    token ?? undefined,
+  );
+}
+
+export interface TemplatePreview {
+  key: string;
+  saved: false;
+  workouts: {
+    key: string;
+    title: string;
+    description: string | null;
+    estimatedDurationMinutes: number | null;
+    exercises: TemplateExercise[];
+  }[];
+  programme: {
+    title: string;
+    description: string;
+    weekNumber: number;
+    difficulty: string;
+    locationType: string;
+    days: { dayNumber: number; workoutIndex: number | null }[];
+  };
+}
+
+/** Proposition de programme à partir d'un modèle : rien n'est enregistré côté serveur. */
+export async function previewWorkoutTemplate(key: string) {
+  const token = await TokenService.get();
+  return api.get<TemplatePreview>(`/workouts/templates/${encodeURIComponent(key)}`, token ?? undefined);
+}
+
+/** Copie le modèle : séances planifiées + programme de 7 jours non démarré. */
+export async function applyWorkoutTemplate(key: string) {
+  const token = await TokenService.get();
+  const programme = await api.post<{ id: string; [k: string]: unknown }>(
+    `/workouts/templates/${encodeURIComponent(key)}/use`,
+    undefined,
+    token ?? undefined,
+  );
+  await removeItem(PLANNED_WORKOUTS_CACHE_KEY);
+  return programme;
+}
+
+export interface ImportDraft {
+  workouts: {
+    title: string;
+    exercises: (TemplateExercise & { line: number })[];
+  }[];
+  programme: {
+    title: string;
+    days: { dayNumber: number; label: string; workoutIndex: number | null }[];
+  } | null;
+  unrecognized: { line: number; text: string; reason: "unknown_exercise" | "no_exercise" }[];
+}
+
+/** Brouillon uniquement : rien n'est enregistré côté serveur. */
+export async function importWorkoutsFromText(text: string) {
+  const token = await TokenService.get();
+  return api.post<ImportDraft>("/workouts/import", { text }, token ?? undefined);
 }

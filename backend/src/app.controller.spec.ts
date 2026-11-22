@@ -1,22 +1,29 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { ServiceUnavailableException } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
 describe('AppController', () => {
-  let appController: AppController;
+  const withDatabase = (query: () => Promise<unknown>) =>
+    new AppController({ query } as unknown as DataSource);
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
-      providers: [AppService],
-    }).compile();
-
-    appController = app.get<AppController>(AppController);
+  it('answers on /', () => {
+    expect(withDatabase(() => Promise.resolve([])).root()).toEqual({
+      status: 'ok',
+    });
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  it('reports the database up', async () => {
+    await expect(
+      withDatabase(() => Promise.resolve([{ '?column?': 1 }])).health(),
+    ).resolves.toEqual({
+      status: 'ok',
+      database: 'ok',
     });
+  });
+
+  it('answers 503 when the database is unreachable', async () => {
+    await expect(
+      withDatabase(() => Promise.reject(new Error('ECONNREFUSED'))).health(),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 });

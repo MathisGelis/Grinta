@@ -1,47 +1,33 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import { View, ScrollView, Alert } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   createExercise,
-  EQUIPMENT_LABELS,
-  MUSCLE_LABELS,
-  EXERCISE_TYPE_LABELS,
+  getExerciseById,
+  updateExercise,
 } from "@/services/exercises.service";
 import { TokenService } from "@/services/token.service";
-import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  SelectList,
-  MultipleSelectList,
-} from "react-native-dropdown-select-list";
+import { SelectList } from "react-native-dropdown-select-list";
 
-const sharedBoxStyles = {
-  backgroundColor: "#1A1A1A",
-  borderColor: "#333333",
-  borderRadius: 8,
-  paddingHorizontal: 12,
-  paddingVertical: 10,
-};
-
-const sharedDropdownStyles = {
-  backgroundColor: "#1A1A1A",
-  borderColor: "#333333",
-  borderRadius: 8,
-};
-
-const sharedDropdownItemStyles = {
-  backgroundColor: "#1A1A1A",
-  borderBottomColor: "#333333",
-};
-
+import Button from "@/components/ui/Button";
+import Chip from "@/components/ui/Chip";
+import { TAB_BAR_SPACE } from "@/components/ui/Screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import { FormField, TextField } from "@/components/ui/FormField";
+import { selectStyles } from "@/components/ui/selectStyles";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { FormSkeleton } from "@/components/ui/skeletons";
+import { LIMITS } from "@/utils/validation";
 export default function CreateExerciseScreen() {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
+  const { exerciseId } = useLocalSearchParams<{ exerciseId?: string }>();
+  const isEditing = !!exerciseId;
+  const [ready, setReady] = useState(!exerciseId);
   const [name, setName] = useState("");
   const [equipmentType, setEquipmentType] = useState<string | null>(null);
   const [primaryMuscle, setPrimaryMuscle] = useState<string | null>(null);
@@ -49,22 +35,46 @@ export default function CreateExerciseScreen() {
   const [exerciseType, setExerciseType] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!exerciseId) return;
+    getExerciseById(exerciseId)
+      .then((exercise) => {
+        setName(exercise.name);
+        setEquipmentType(exercise.equipment_type);
+        setPrimaryMuscle(exercise.primary_muscle);
+        setSecondaryMuscles(exercise.secondary_muscles ?? []);
+        setExerciseType(exercise.exercise_type);
+        setReady(true);
+      })
+      .catch((error) => {
+        Alert.alert(
+          t.error,
+          error instanceof Error ? error.message : t.loadingError,
+          [{ text: "OK", onPress: () => router.back() }],
+        );
+      });
+  }, [exerciseId, t]);
+
+  const toggleSecondaryMuscle = (key: string) =>
+    setSecondaryMuscles((prev) =>
+      prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key],
+    );
+
   const handleCreateExercise = async () => {
-    // Validation
     if (!name.trim()) {
-      Alert.alert("Erreur", "Le nom de l'exercice est requis");
+      Alert.alert(t.error, t.exerciseNameRequired);
       return;
     }
     if (!equipmentType) {
-      Alert.alert("Erreur", "Le type d'équipement est requis");
+      Alert.alert(t.error, t.equipmentRequired);
       return;
     }
     if (!primaryMuscle) {
-      Alert.alert("Erreur", "Le muscle primaire est requis");
+      Alert.alert(t.error, t.primaryMuscleRequired);
       return;
     }
     if (!exerciseType) {
-      Alert.alert("Erreur", "Le type d'exercice est requis");
+      Alert.alert(t.error, t.exerciseTypeRequired);
       return;
     }
 
@@ -72,164 +82,150 @@ export default function CreateExerciseScreen() {
     try {
       const token = await TokenService.get();
       if (!token) {
-        Alert.alert("Erreur", "Authentification requise");
+        Alert.alert(t.error, t.authRequired);
         return;
       }
 
+      const secondary = secondaryMuscles.filter((m) => m !== primaryMuscle);
       const exerciseData = {
         name: name.trim(),
         equipment_type: equipmentType,
         primary_muscle: primaryMuscle,
         secondary_muscles:
-          secondaryMuscles.length > 0 ? secondaryMuscles : undefined,
+          secondary.length > 0 || isEditing ? secondary : undefined,
         exercise_type: exerciseType,
       };
 
-      await createExercise(exerciseData, token);
-      Alert.alert("Succès", "Exercice créé avec succès", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
+      if (exerciseId) {
+        await updateExercise(exerciseId, exerciseData, token);
+      } else {
+        await createExercise(exerciseData, token);
+      }
+      Alert.alert(
+        t.success,
+        isEditing ? t.exerciseUpdated : t.exerciseCreated,
+        [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ],
+      );
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Erreur lors de la création";
-      Alert.alert("Erreur", errorMessage);
+        error instanceof Error ? error.message : t.creationError;
+      Alert.alert(t.error, errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <SafeAreaView className="flex-1 bg-[#0F0F0F]">
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
-      >
-        <View className="px-4 py-6">
-          {/* Name Input */}
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-              Nom <Text className="text-red-500">*</Text>
-            </Text>
-            <TextInput
-              placeholder="Ex: Barbell Bench Press"
-              placeholderTextColor="#808080"
-              value={name}
-              onChangeText={setName}
-              className="rounded-lg border border-[#333333] bg-[#1A1A1A] px-3 py-2.5 text-white"
-            />
-          </View>
+  const options = (labels: Record<string, string>) =>
+    Object.entries(labels).map(([key, label]) => ({ key, value: label }));
 
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-              Type d&apos;équipement <Text className="text-red-500">*</Text>
-            </Text>
+  return (
+    <View className="flex-1">
+      <ScreenBackground flat />
+      <ScreenHeader floating title={isEditing ? t.editExercise : t.newExercise} />
+      {!ready ? (
+        <View className="flex-1 px-5" style={{ paddingTop: headerHeight }}><FormSkeleton fields={6} /></View>
+      ) : (
+        <ScrollView {...chromeScrollProps}
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="gap-5 px-5"
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <FormField label={t.name} required>
+            <TextField
+              placeholder={t.exerciseNamePlaceholder}
+              value={name}
+              maxLength={LIMITS.title}
+              onChangeText={setName}
+            />
+          </FormField>
+
+          <FormField label={t.equipmentType} required style={{ zIndex: 30 }}>
             <SelectList
               setSelected={(val: string) => setEquipmentType(val)}
-              data={Object.entries(EQUIPMENT_LABELS).map(([key, label]) => ({
-                key,
-                value: label,
-              }))}
+              data={options(t.equipmentNames)}
               save="key"
               search={false}
-              placeholder="Sélectionnez un équipement"
-              inputStyles={{ color: "#FFFFFF" }}
-              boxStyles={sharedBoxStyles}
-              dropdownStyles={sharedDropdownStyles}
-              dropdownItemStyles={sharedDropdownItemStyles}
-              dropdownTextStyles={{ color: "#FFFFFF" }}
+              defaultOption={
+                equipmentType
+                  ? {
+                      key: equipmentType,
+                      value: t.equipmentNames[equipmentType] ?? equipmentType,
+                    }
+                  : undefined
+              }
+              placeholder={t.selectEquipment}
+              {...selectStyles}
             />
-          </View>
+          </FormField>
 
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-              Muscle primaire <Text className="text-red-500">*</Text>
-            </Text>
+          <FormField label={t.primaryMuscle} required style={{ zIndex: 20 }}>
             <SelectList
               setSelected={(val: string) => setPrimaryMuscle(val)}
-              data={Object.entries(MUSCLE_LABELS).map(([key, label]) => ({
-                key,
-                value: label,
-              }))}
+              data={options(t.muscleNames)}
               save="key"
               search={false}
-              placeholder="Sélectionnez un muscle"
-              inputStyles={{ color: "#FFFFFF" }}
-              boxStyles={sharedBoxStyles}
-              dropdownStyles={sharedDropdownStyles}
-              dropdownItemStyles={sharedDropdownItemStyles}
-              dropdownTextStyles={{ color: "#FFFFFF" }}
+              defaultOption={
+                primaryMuscle
+                  ? {
+                      key: primaryMuscle,
+                      value: t.muscleNames[primaryMuscle] ?? primaryMuscle,
+                    }
+                  : undefined
+              }
+              placeholder={t.selectMuscle}
+              {...selectStyles}
             />
-          </View>
+          </FormField>
 
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-              Muscles secondaires
-            </Text>
-            <MultipleSelectList
-              setSelected={setSecondaryMuscles}
-              data={Object.entries(MUSCLE_LABELS).map(([key, label]) => ({
-                key,
-                value: label,
-              }))}
-              save="key"
-              search={false}
-              placeholder="Sélectionnez des muscles"
-              label="Sélectionnés"
-              inputStyles={{ color: "#FFFFFF" }}
-              boxStyles={sharedBoxStyles}
-              dropdownStyles={sharedDropdownStyles}
-              dropdownItemStyles={sharedDropdownItemStyles}
-              dropdownTextStyles={{ color: "#FFFFFF" }}
-              badgeStyles={{ backgroundColor: "#7C5DB7" }}
-              labelStyles={{ color: "#B8B8B8" }}
-              checkBoxStyles={{ borderColor: "#333333" }}
-              disabledCheckBoxStyles={{ borderColor: "#555555" }}
-            />
-          </View>
+          <FormField label={t.secondaryMuscles}>
+            <View className="flex-row flex-wrap gap-2">
+              {Object.entries(t.muscleNames)
+                .filter(([key]) => key !== primaryMuscle)
+                .map(([key, label]) => (
+                  <Chip
+                    key={key}
+                    label={label}
+                    active={secondaryMuscles.includes(key)}
+                    onPress={() => toggleSecondaryMuscle(key)}
+                  />
+                ))}
+            </View>
+          </FormField>
 
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-[#B8B8B8]">
-              Type d&apos;exercice <Text className="text-red-500">*</Text>
-            </Text>
+          <FormField label={t.exerciseType} required style={{ zIndex: 10 }}>
             <SelectList
               setSelected={(val: string) => setExerciseType(val)}
-              data={Object.entries(EXERCISE_TYPE_LABELS).map(
-                ([key, label]) => ({ key, value: label }),
-              )}
+              data={options(t.exerciseTypeNames)}
               save="key"
               search={false}
-              placeholder="Sélectionnez un type"
-              inputStyles={{ color: "#FFFFFF" }}
-              boxStyles={sharedBoxStyles}
-              dropdownStyles={sharedDropdownStyles}
-              dropdownItemStyles={sharedDropdownItemStyles}
-              dropdownTextStyles={{ color: "#FFFFFF" }}
+              defaultOption={
+                exerciseType
+                  ? {
+                      key: exerciseType,
+                      value: t.exerciseTypeNames[exerciseType] ?? exerciseType,
+                    }
+                  : undefined
+              }
+              placeholder={t.selectType}
+              {...selectStyles}
             />
-          </View>
+          </FormField>
 
-          {/* Action Buttons */}
-          <View className="mt-8 flex-row gap-3">
-            <TouchableOpacity
-              onPress={handleCreateExercise}
-              disabled={loading}
-              className="flex-1 rounded-lg bg-[#7C5DB7] py-4"
-              style={{ opacity: loading ? 0.6 : 1 }}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text className="text-center font-semibold text-white">
-                  Créer l&apos;exercice
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <Button
+            className="mt-3"
+            label={isEditing ? t.save : t.createExercise}
+            loading={loading}
+            onPress={handleCreateExercise}
+          />
+        </ScrollView>
+      )}
+    </View>
   );
 }

@@ -1,17 +1,25 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  ActivityIndicator,
   Alert,
   FlatList,
+  Keyboard,
+  Platform,
+  useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { getAllExercises, Exercise } from "@/services/exercises.service";
+import Modal from "@/components/ui/AppModal";
+import PressableScale from "@/components/ui/PressableScale";
+import GlassSearchBar from "@/components/GlassSearchBar";
+import BottomBlur from "@/components/ui/BottomBlur";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { normalizeText } from "@/utils/text";
+import { ExerciseListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface ExerciseSearchProps {
   visible: boolean;
@@ -20,30 +28,48 @@ interface ExerciseSearchProps {
   existingExerciseIds?: string[];
 }
 
+/** Slider d'ajout d'exercice : même design que la liste des exercices, se ferme en glissant vers le bas. */
 export default function ExerciseSearch({
   visible,
   onClose,
   onSelectExercise,
   existingExerciseIds = [],
 }: ExerciseSearchProps) {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredQuery = useDeferredValue(searchQuery);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
-  const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [loadingExercises, setLoadingExercises] = useState(false);
+  const [keyboard, setKeyboard] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboard(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboard(0),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const loadExercises = useCallback(async () => {
     setLoadingExercises(true);
     try {
-      const allExercises = await getAllExercises();
-      setAvailableExercises(allExercises);
-      setFilteredExercises(allExercises);
+      setAvailableExercises(await getAllExercises());
     } catch (error) {
-      Alert.alert("Erreur", "Impossible de charger les exercices");
+      Alert.alert(t.error, t.cannotLoadExercises);
       console.error("Erreur:", error);
     } finally {
       setLoadingExercises(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (visible && availableExercises.length === 0) {
@@ -51,237 +77,113 @@ export default function ExerciseSearch({
     }
   }, [visible, availableExercises.length, loadExercises]);
 
-  const handleSearch = (text: string) => {
-    setSearchQuery(text);
-    const filtered = availableExercises.filter((ex) =>
-      ex.name.toLowerCase().includes(text.toLowerCase()),
-    );
-    setFilteredExercises(filtered);
-  };
+  useEffect(() => {
+    if (!visible) setSearchQuery("");
+  }, [visible]);
+
+  const existingIds = useMemo(() => new Set(existingExerciseIds), [existingExerciseIds]);
+
+  const filteredExercises = useMemo(() => {
+    const q = normalizeText(deferredQuery.trim());
+    return q
+      ? availableExercises.filter((ex) => normalizeText(ex.name).includes(q))
+      : availableExercises;
+  }, [availableExercises, deferredQuery]);
 
   const handleSelect = (exercise: Exercise) => {
     onSelectExercise(exercise);
-    setSearchQuery("");
     onClose();
   };
 
+  // La barre de recherche flotte sur la liste : l'espace réservé évite qu'elle cache le dernier exercice.
+  const bottomPad = keyboard ? 6 : Math.max(insets.bottom - 10, 6);
+  const barSpace = 48 + bottomPad + 10;
+
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackdropPress={onClose}
+      onSwipeComplete={onClose}
+      swipeDirection="down"
+      animationIn="slideInUp"
+      style={{ justifyContent: "flex-end", margin: 0 }}
     >
       <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          justifyContent: "flex-end",
-        }}
+        className="rounded-t-hero bg-background pt-3"
+        style={{ height: windowHeight * 0.85, marginBottom: keyboard }}
       >
-        <View
-          style={{
-            backgroundColor: WorkoutTheme.backgroundSecondary,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            height: "80%",
-            maxHeight: "90%",
-            minHeight: "50%",
-            paddingTop: 16,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingHorizontal: 16,
-              paddingBottom: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: WorkoutTheme.border,
-            }}
+        <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
+        <View className="flex-row items-center justify-between px-5 pb-5">
+          <Text className="text-xl font-semibold text-ink">{t.addExerciseTitle}</Text>
+          <PressableScale
+            onPress={onClose}
+            halo={false}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t.closeLabel}
           >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: WorkoutTheme.text.primary,
-              }}
-            >
-              Ajouter un exercice
-            </Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons
-                name="close"
-                size={24}
-                color={WorkoutTheme.text.primary}
-              />
-            </TouchableOpacity>
+            <Ionicons name="close" size={26} color={WorkoutTheme.text.primary} />
+          </PressableScale>
+        </View>
+
+        {loadingExercises ? (
+          <View className="flex-1 px-4 pt-2">
+            <ExerciseListSkeleton count={8} />
           </View>
-
-          <View
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: WorkoutTheme.border,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: WorkoutTheme.backgroundTertiary,
-                borderRadius: 10,
-                paddingHorizontal: 12,
-                borderWidth: 1,
-                borderColor: WorkoutTheme.border,
-              }}
-            >
-              <Ionicons
-                name="search"
-                size={18}
-                color={WorkoutTheme.text.secondary}
-              />
-              <TextInput
-                style={{
-                  flex: 1,
-                  paddingVertical: 10,
-                  paddingHorizontal: 10,
-                  fontSize: 14,
-                  color: WorkoutTheme.text.primary,
-                }}
-                placeholder="Rechercher un exercice..."
-                placeholderTextColor={WorkoutTheme.text.tertiary}
-                value={searchQuery}
-                onChangeText={handleSearch}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => handleSearch("")}>
-                  <Ionicons
-                    name="close-circle"
-                    size={18}
-                    color={WorkoutTheme.text.secondary}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-
-          {loadingExercises ? (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                paddingVertical: 40,
-              }}
-            >
-              <ActivityIndicator
-                size="large"
-                color={WorkoutTheme.accent.purple}
-              />
-            </View>
-          ) : (
-            <FlatList
-              data={filteredExercises}
-              keyExtractor={(item) => item.id}
-              style={{ flex: 1 }}
-              contentContainerStyle={{
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                flexGrow: 1,
-              }}
-              renderItem={({ item }) => {
-                const isDuplicate = existingExerciseIds.includes(item.id);
-
-                return (
-                  <TouchableOpacity
-                    onPress={() =>
-                      isDuplicate
-                        ? Alert.alert(
-                            "Exercice en doublon",
-                            `"${item.name}" est déjà ajouté à la séance.`,
-                          )
-                        : handleSelect(item)
-                    }
-                    disabled={isDuplicate}
-                    style={{
-                      backgroundColor: isDuplicate
-                        ? WorkoutTheme.backgroundTertiary + "80"
-                        : WorkoutTheme.backgroundTertiary,
-                      borderRadius: 10,
-                      padding: 12,
-                      marginBottom: 8,
-                      borderWidth: 1,
-                      borderColor: isDuplicate
-                        ? WorkoutTheme.border
-                        : WorkoutTheme.border,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      opacity: isDuplicate ? 0.6 : 1,
-                    }}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontWeight: "600",
-                          color: WorkoutTheme.text.primary,
-                        }}
-                      >
-                        {item.name}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          color: WorkoutTheme.text.secondary,
-                          marginTop: 4,
-                          textTransform: "capitalize",
-                        }}
-                      >
-                        {item.primary_muscle}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name={isDuplicate ? "checkmark-circle" : "add-circle"}
-                      size={24}
-                      color={
-                        isDuplicate
-                          ? WorkoutTheme.status.success
-                          : WorkoutTheme.accent.purple
-                      }
-                    />
-                  </TouchableOpacity>
-                );
-              }}
-              ListEmptyComponent={
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
+        ) : (
+          <FlatList
+            data={filteredExercises}
+            keyExtractor={(item) => item.id}
+            className="flex-1"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={12}
+            maxToRenderPerBatch={12}
+            windowSize={7}
+            removeClippedSubviews
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace, flexGrow: 1 }}
+            renderItem={({ item }) => {
+              const isDuplicate = existingIds.has(item.id);
+              return (
+                <PressableScale
+                  onPress={() =>
+                    isDuplicate
+                      ? Alert.alert(t.duplicateExercise, `"${item.name}" ${t.alreadyAdded}`)
+                      : handleSelect(item)
+                  }
+                  className={`mb-2 flex-row items-center justify-between rounded-tile bg-surface p-4 ${isDuplicate ? "opacity-60" : ""}`}
                 >
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-ink">{item.name}</Text>
+                    <Text className="mt-0.5 text-xs capitalize text-ink-muted">
+                      {t.muscleNames[item.primary_muscle] ??
+                        item.primary_muscle.replace(/_/g, " ")}
+                    </Text>
+                  </View>
                   <Ionicons
-                    name="search"
-                    size={40}
-                    color={WorkoutTheme.text.tertiary}
+                    name={isDuplicate ? "checkmark-circle" : "add-circle"}
+                    size={24}
+                    color={
+                      isDuplicate ? WorkoutTheme.status.success : WorkoutTheme.accent.purple
+                    }
                   />
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: WorkoutTheme.text.secondary,
-                      marginTop: 16,
-                    }}
-                  >
-                    Aucun exercice trouvé
-                  </Text>
-                </View>
-              }
-            />
-          )}
+                </PressableScale>
+              );
+            }}
+            ListEmptyComponent={
+              <EmptyState plain icon="barbell-outline" title={t.noExerciseFound} />
+            }
+          />
+        )}
+
+        <BottomBlur height={barSpace + 20} />
+        <View className="absolute inset-x-0 bottom-0 px-5" style={{ paddingBottom: bottomPad }}>
+          <GlassSearchBar
+            blur
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder={t.searchExercise}
+          />
         </View>
       </View>
     </Modal>

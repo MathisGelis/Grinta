@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { RealLifeComparisonDto } from '../../common/dto/real-life-comparison.dto';
 import { BadgeType } from '../enums/badge-type.enum';
 
 export class BadgeExerciseDto {
@@ -28,4 +29,11 @@ export class BadgeDto {
   @ApiProperty({ nullable: true }) reps: number | null;
   @ApiProperty({ description: 'Completion date of the workout' })
   achievedAt: Date;
+  @ApiProperty({
+    type: () => RealLifeComparisonDto,
+    nullable: true,
+    description:
+      'The weight lifted told as everyday objects: the heaviest weight for heaviest_weight, the session volume for best_session_volume. Null for the other records, which are not a weight actually lifted (estimated 1RM, reps), and under 7 kg',
+  })
+  realLifeComparison: RealLifeComparisonDto | null;
 }
