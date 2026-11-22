@@ -136,6 +136,7 @@ export default function AppModal({
       transparent
       animationType="none"
       statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onBackdropPress}
     >
       {swipeable ? (

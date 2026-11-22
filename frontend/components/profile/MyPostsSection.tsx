@@ -1,24 +1,21 @@
 import React, { useCallback, useState } from "react";
 import { Alert, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Post, PostsService } from "@/services/posts.service";
+import type { ProfilePost } from "@/services/user.service";
 import PressableScale from "@/components/ui/PressableScale";
 import PostCard from "@/components/explorePage/PostCard";
-
-export type MyPost = {
-  id: string;
-  createdAt: string;
-  likesCount?: string | number;
-  commentsCount?: string | number;
-};
+import EmptyState from "@/components/ui/EmptyState";
 
 type Props = {
-  posts: MyPost[];
+  posts: ProfilePost[];
   authorName: string;
   authorId?: string;
-  onDeleted: (postId: string) => void;
+  onDeleted?: (postId: string) => void;
+  /** Profil d'un autre utilisateur : ni ajout, ni suppression. */
+  readOnly?: boolean;
   onOpenPost?: (post: Post) => void;
   onShowLikes?: (postId: string) => void;
   onShowComments?: (postId: string) => void;
@@ -29,6 +26,7 @@ export default function MyPostsSection({
   authorName,
   authorId,
   onDeleted,
+  readOnly = false,
   onOpenPost,
   onShowLikes,
   onShowComments,
@@ -47,7 +45,7 @@ export default function MyPostsSection({
             try {
               setDeletingId(postId);
               await PostsService.deletePost(postId);
-              onDeleted(postId);
+              onDeleted?.(postId);
             } catch {
               Alert.alert(t.error, t.cannotDeletePost);
             } finally {
@@ -60,13 +58,18 @@ export default function MyPostsSection({
     [t, onDeleted],
   );
 
-  const toPost = (post: MyPost): Post => ({
+  const toPost = (post: ProfilePost): Post => ({
     id: post.id,
     createdAt: post.createdAt,
     displayName: authorName,
     userId: authorId,
-    likesCount: String(Number(post.likesCount ?? 0)),
-    commentsCount: String(Number(post.commentsCount ?? 0)),
+    likesCount: post.likesCount ?? 0,
+    commentsCount: post.commentsCount ?? 0,
+    isLiked: post.isLiked,
+    workoutPhotoThumbnailUrl: post.workoutPhotoThumbnailUrl,
+    partners: post.partners,
+    exercises: post.exercises,
+    stats: post.stats,
   });
 
   return (
@@ -75,24 +78,20 @@ export default function MyPostsSection({
         <Text className="text-xl font-semibold text-ink">
           {`${t.myPostsTitle} (${posts.length})`}
         </Text>
-        <PressableScale
-          onPress={() => {}}
-          accessibilityRole="button"
-          accessibilityLabel={t.add}
-          className="h-10 w-10 items-center justify-center rounded-full bg-accent"
-        >
-          <Ionicons name="add" size={22} color={WorkoutTheme.text.primary} />
-        </PressableScale>
+        {readOnly ? null : (
+          <PressableScale
+            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel={t.add}
+            className="h-10 w-10 items-center justify-center rounded-full bg-accent"
+          >
+            <Ionicons name="add" size={22} color={WorkoutTheme.text.primary} />
+          </PressableScale>
+        )}
       </View>
 
       {posts.length === 0 ? (
-        <View className="items-center gap-2 rounded-card bg-surface p-8">
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-raised">
-            <Ionicons name="images-outline" size={26} color={WorkoutTheme.text.tertiary} />
-          </View>
-          <Text className="text-base font-semibold text-ink-soft">{t.noPostsYet}</Text>
-          <Text className="text-center text-sm text-ink-muted">{t.noPostsHint}</Text>
-        </View>
+        <EmptyState icon="images-outline" title={t.noPostsYet} message={t.noPostsHint} />
       ) : (
         <View className="gap-3">
           {posts.map((post) => {
@@ -103,7 +102,7 @@ export default function MyPostsSection({
                 post={asPost}
                 authorPressable={false}
                 deleting={deletingId === post.id}
-                onDelete={() => confirmDelete(post.id)}
+                onDelete={readOnly ? undefined : () => confirmDelete(post.id)}
                 onPress={onOpenPost ? () => onOpenPost(asPost) : undefined}
                 onShowLikes={onShowLikes ? () => onShowLikes(post.id) : undefined}
                 onShowComments={onShowComments ? () => onShowComments(post.id) : undefined}

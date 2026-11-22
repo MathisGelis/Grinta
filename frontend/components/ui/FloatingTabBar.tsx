@@ -6,11 +6,12 @@ import {
   type ViewStyle,
 } from "react-native";
 import type { BottomTabBarProps } from "expo-router/build/layouts/Tabs";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  useReducedMotion,
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
@@ -20,6 +21,9 @@ import Glass from "./Glass";
 import PressableScale from "./PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { usePathname } from "expo-router";
+import DumbbellIcon from "./DumbbellIcon";
+import { resetChrome } from "./chromeScroll";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -39,7 +43,9 @@ function TabIcon({
   name,
   label,
   focused,
+  dumbbell = false,
 }: {
+  dumbbell?: boolean;
   name: IconName;
   label: string;
   focused: boolean;
@@ -63,11 +69,19 @@ function TabIcon({
   return (
     <View className="h-full w-full items-center justify-center">
       <Animated.View style={iconStyle}>
-        <Ionicons
-          name={name}
-          size={24}
-          color={focused ? WorkoutTheme.text.primary : WorkoutTheme.text.tertiary}
-        />
+        {dumbbell ? (
+          <DumbbellIcon
+            size={24}
+            filled={focused}
+            color={focused ? WorkoutTheme.text.primary : WorkoutTheme.text.tertiary}
+          />
+        ) : (
+          <Ionicons
+            name={name}
+            size={24}
+            color={focused ? WorkoutTheme.text.primary : WorkoutTheme.text.tertiary}
+          />
+        )}
       </Animated.View>
       <Animated.Text
         numberOfLines={1}
@@ -104,12 +118,18 @@ export default function FloatingTabBar({
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const labels: Record<string, string> = {
+    "workout-trigger": t.startWorkout,
     explore: t.tabExplore,
-    workouts: t.sessions,
+    workouts: t.tabTraining,
     stats: t.tabStats,
     profile: t.profile,
   };
   const [width, setWidth] = useState(0);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    resetChrome();
+  }, [pathname]);
 
   const routes = state.routes.filter(
     (r) =>
@@ -136,11 +156,13 @@ export default function FloatingTabBar({
   }));
 
   const pulse = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
-    pulse.value = sessionActive
-      ? withRepeat(withTiming(1, { duration: 1100, easing: Easing.out(Easing.quad) }), -1)
+    pulse.value = sessionActive && !reduceMotion
+      ? // Quelques pulsations puis repos : pas d'animation permanente pendant toute la séance.
+        withRepeat(withTiming(1, { duration: 1100, easing: Easing.out(Easing.quad) }), 4)
       : 0;
-  }, [sessionActive, pulse]);
+  }, [sessionActive, reduceMotion, pulse]);
   const haloStyle = useAnimatedStyle(() => ({
     opacity: 0.5 * (1 - pulse.value),
     transform: [{ scale: 1 + 0.6 * pulse.value }],
@@ -149,7 +171,7 @@ export default function FloatingTabBar({
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
-    <View
+    <Animated.View
       pointerEvents="box-none"
       className="absolute inset-x-0 bottom-0 px-5"
       style={{ paddingBottom: insets.bottom + 8 }}
@@ -193,6 +215,7 @@ export default function FloatingTabBar({
                 target: route.key,
                 canPreventDefault: true,
               });
+              resetChrome();
               if (process.env.EXPO_OS === "ios") Haptics.selectionAsync();
               if (!focused && !event.defaultPrevented) {
                 navigateToTab(route.key);
@@ -229,6 +252,7 @@ export default function FloatingTabBar({
                     name={icon}
                     label={labels[route.name] ?? route.name}
                     focused={focused}
+                    dumbbell={route.name === "workouts"}
                   />
                 )}
               </PressableScale>
@@ -236,6 +260,6 @@ export default function FloatingTabBar({
           })}
         </View>
       </Glass>
-    </View>
+    </Animated.View>
   );
 }

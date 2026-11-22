@@ -7,10 +7,11 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { View, Text, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchProvider, useSearch } from "@/contexts/SearchContext";
 import { WorkoutTheme } from "@/constants/Colors";
+import TopBlur from "@/components/ui/TopBlur";
 import IconButton from "@/components/ui/IconButton";
 import PressableScale from "@/components/ui/PressableScale";
 import Glass from "@/components/ui/Glass";
@@ -18,7 +19,6 @@ import ScreenBackground from "@/components/ui/ScreenBackground";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 const RIGHT_GROUP_WIDTH = 56;
-
 function ExploreHeader() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -46,11 +46,14 @@ function ExploreHeader() {
     opacity: 1 - progress.get(),
   }));
 
+  const fadeHeight = insets.top + 12 + 44 + 12;
+
   return (
     <View
       className="absolute inset-x-0 top-0 z-10 px-5"
-      style={{ paddingTop: insets.top + 12 }}
+      style={{ paddingTop: insets.top + 12, paddingBottom: 12 }}
     >
+      <TopBlur height={fadeHeight} />
       <View className="flex-row items-center" style={{ height: 44 }}>
         <IconButton
           icon={isSearchPage ? "chevron-back" : "notifications-outline"}
@@ -113,7 +116,7 @@ function ExploreHeader() {
               icon="people-outline"
               label={t.chatLabel}
               variant="glass"
-              onPress={() => router.push("/(tabs)/explore/chat")}
+              onPress={() => router.push("/(tabs)/explore/groups")}
             />
           </View>
         </Animated.View>
@@ -127,7 +130,11 @@ export default function ExploreLayout() {
 
   const hideHeader =
     pathname.endsWith("/notification") ||
-    pathname.endsWith("/chat") ||
+    pathname.endsWith("/groups") ||
+    pathname.endsWith("/followers") ||
+    pathname.includes("/group-detail") ||
+    pathname.includes("/group-settings") ||
+    pathname.includes("/group-add-member") ||
     pathname.endsWith("/userPost") ||
     pathname.includes("/user-profile");
 
@@ -140,19 +147,30 @@ export default function ExploreLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: "transparent" },
+            contentStyle: { backgroundColor: WorkoutTheme.background },
           }}
         >
-          <Stack.Screen name="index" />
+          <Stack.Screen
+            name="index"
+            options={{ contentStyle: { backgroundColor: "transparent" } }}
+          />
           <Stack.Screen
             name="search"
-            options={{ animation: "none", gestureEnabled: false }}
+            options={{
+              animation: "none",
+              gestureEnabled: false,
+              contentStyle: { backgroundColor: "transparent" },
+            }}
           />
           <Stack.Screen
             name="notification"
             options={{ animation: "slide_from_left", gestureEnabled: false }}
           />
-          <Stack.Screen name="chat" />
+          <Stack.Screen name="groups" />
+          <Stack.Screen name="followers" />
+          <Stack.Screen name="group-detail" />
+          <Stack.Screen name="group-settings" />
+          <Stack.Screen name="group-add-member" />
           <Stack.Screen name="userPost" />
         </Stack>
       </View>

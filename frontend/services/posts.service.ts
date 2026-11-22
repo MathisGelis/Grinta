@@ -1,27 +1,84 @@
 import { api } from "./api";
 import { TokenService } from "./token.service";
-import { UserService } from "./user.service";
+import { type PostPartner } from "./user.service";
+import type { RealLifeComparison } from "@/utils/realLife";
+import type { CompletedWorkoutDetail } from "./completed-workouts.service";
+
+export type { PostPartner };
+
+/** Résumé d'un exercice dans les fils ; les séries complètes sont dans `getPostWorkout`. */
+export interface FeedExercise {
+  exerciseId: string,
+  name: string,
+  sets: number,
+  bestSet: { reps: number, weight: number } | null,
+}
+
+export interface FeedStats {
+  durationSeconds: number,
+  totalVolume: number,
+  totalSets: number,
+  totalReps: number,
+  recordsCount: number,
+}
+
+export interface PostWorkout {
+  workoutId: string,
+  totalExercises: number,
+  exercises: CompletedWorkoutDetail["workout"]["exercises"],
+  stats: {
+    estimatedCalories: number,
+    totalVolume: number,
+    totalSets: number,
+    totalReps: number,
+    realLifeComparison?: RealLifeComparison | null,
+  },
+}
 
 export interface Post {
   id: string,
   createdAt: string,
   userId?: string,
   displayName: string,
-  likesCount?: string,
-  commentsCount?: string,
-  score?: string,
+  uniqueName?: string,
+  avatarThumbnailUrl?: string | null,
+  likesCount?: number,
+  commentsCount?: number,
+  score?: number,
   isLiked?: boolean,
   workoutId?: string,
   workoutTitle?: string,
   workoutDescription?: string,
   workoutDurationSeconds?: number,
   workoutCompletionDate?: string,
+  workoutPhotoUrl?: string | null,
+  workoutPhotoThumbnailUrl?: string | null,
+  /** Nombre d'exercices (flux et `/posts/mine`). */
+  totalExercises?: number,
+  partners?: PostPartner[],
+  exercises?: FeedExercise[],
+  stats?: FeedStats,
   workout?: {
     id?: string,
     title?: string,
     description?: string,
     totalExercises?: number,
   },
+}
+
+export interface MyPost {
+  id: string,
+  createdAt: string,
+  workoutId: string,
+  workoutTitle?: string,
+  workoutCompletionDate?: string,
+  workoutPhotoUrl?: string | null,
+  workoutPhotoThumbnailUrl?: string | null,
+  likesCount?: number,
+  commentsCount?: number,
+  partners?: PostPartner[],
+  exercises?: FeedExercise[],
+  stats?: FeedStats,
 }
 
 export type ReportReason =
@@ -35,18 +92,46 @@ interface PostLike {
   id: string;
   displayName: string;
   uniqueName: string;
+  avatarThumbnailUrl?: string | null;
   createdAt: string;
 }
 
+export interface PostComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  userId: string;
+  displayName: string;
+  avatarThumbnailUrl?: string | null;
+}
+
 export const PostsService = {
-  async createPost(workoutId: string): Promise<{ id: string }> {
+  async createPost(workoutId: string): Promise<{ id: string; partners?: PostPartner[] }> {
     const token = await TokenService.get();
-    return api.post<{ id: string }>("/posts", { workoutId }, token ?? undefined);
+    return api.post<{ id: string; partners?: PostPartner[] }>("/posts", { workoutId }, token ?? undefined);
+  },
+
+  /** Posts de l'utilisateur connecté, avec l'id de la séance publiée. */
+  async getMyPosts(limit = 100): Promise<MyPost[]> {
+    const token = await TokenService.get();
+    return api.get<MyPost[]>(`/posts/mine?limit=${limit}`, token ?? undefined);
+  },
+
+  /** L'utilisateur connecté se retire des partenaires d'un post (définitif). */
+  async declinePartner(postId: string): Promise<{ declined: boolean }> {
+    const token = await TokenService.get();
+    return api.delete<{ declined: boolean }>(`/posts/${postId}/partners/me`, token ?? undefined);
   },
 
   async deletePost(postId: string): Promise<void> {
     const token = await TokenService.get();
     return api.delete(`/posts/${postId}`, token ?? undefined);
+  },
+
+  /** Séance d'un post : mêmes règles de visibilité que le post (`404` sinon). */
+  async getPostWorkout(postId: string): Promise<PostWorkout> {
+    const token = await TokenService.get();
+    return api.get<PostWorkout>(`/posts/${encodeURIComponent(postId)}/workout`, token ?? undefined);
   },
 
   async getPostById(postId: string): Promise<Post | null> {
@@ -86,7 +171,7 @@ export const PostsService = {
     const token = await TokenService.get();
     return api.get(`/posts/${postId}/likes`, token ?? undefined);
   },
-  async getPostComments(postId: string): Promise<any[]> {
+  async getPostComments(postId: string): Promise<PostComment[]> {
     const token = await TokenService.get();
     return api.get(`/posts/${postId}/comments`, token ?? undefined);
   },
@@ -108,20 +193,11 @@ export const PostsService = {
   },
 
   async getPublishedWorkoutMap(): Promise<Record<string, string>> {
-    const me = await UserService.getMe();
-    const profile = await UserService.getProfile(me.id);
-    const posts = (profile.posts ?? []).slice(0, 50);
-    const entries = await Promise.all(
-      posts.map((post: { id: string }) =>
-        PostsService.getPostById(post.id)
-          .then((detail) => [detail?.workoutId, post.id] as const)
-          .catch(() => [undefined, post.id] as const),
-      ),
-    );
+    // Route légère : seulement { postId, workoutId } (1000 au plus).
+    const token = await TokenService.get();
+    const rows = await api.get<{ postId: string; workoutId: string }[]>("/posts/mine/ids", token ?? undefined);
     const map: Record<string, string> = {};
-    for (const [workoutId, postId] of entries) {
-      if (workoutId) map[workoutId] = postId;
-    }
+    for (const row of rows) map[row.workoutId] = row.postId;
     return map;
   },
 };

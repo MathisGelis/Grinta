@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import ExerciseSetupItem, {
   ExerciseSetupData,
@@ -8,18 +8,23 @@ import ExerciseSetupItem, {
 
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import EmptyState from "@/components/ui/EmptyState";
 interface ExerciseSectionProps {
   exercises: ExerciseSetupData[];
   onAdd: () => void;
+  onImport?: () => void;
   onUpdate: (updated: ExerciseSetupData) => void;
   onRemove: (id: string) => void;
+  defaultRestSeconds?: number;
 }
 
 export default function ExerciseSection({
   exercises,
   onAdd,
+  onImport,
   onUpdate,
   onRemove,
+  defaultRestSeconds,
 }: ExerciseSectionProps) {
   const { t } = useTranslation();
   return (
@@ -31,6 +36,17 @@ export default function ExerciseSection({
             {exercises.length}
           </Text>
         </Text>
+        <View className="flex-row items-center gap-2">
+          {onImport && (
+            <PressableScale
+              onPress={onImport}
+              accessibilityRole="button"
+              accessibilityLabel={t.chooseWorkout}
+              className="h-11 w-11 items-center justify-center rounded-full bg-raised"
+            >
+              <Ionicons name="albums-outline" size={22} color={WorkoutTheme.text.primary} />
+            </PressableScale>
+          )}
         <PressableScale
           onPress={onAdd}
           accessibilityRole="button"
@@ -39,6 +55,7 @@ export default function ExerciseSection({
         >
           <Ionicons name="add" size={24} color={WorkoutTheme.text.primary} />
         </PressableScale>
+        </View>
       </View>
 
       {exercises.length > 0 ? (
@@ -49,25 +66,12 @@ export default function ExerciseSection({
               exercise={exercise}
               onUpdate={onUpdate}
               onRemove={() => onRemove(exercise.id)}
+              defaultRestSeconds={defaultRestSeconds}
             />
           ))}
         </View>
       ) : (
-        <View className="items-center gap-3 rounded-card bg-surface p-8">
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-raised">
-            <Ionicons
-              name="barbell"
-              size={26}
-              color={WorkoutTheme.text.tertiary}
-            />
-          </View>
-          <Text className="text-base font-semibold text-ink-soft">
-            {t.noExercisesAdded}
-          </Text>
-          <Text className="text-center text-sm text-ink-muted">
-            {t.tapToAddExercise}
-          </Text>
-        </View>
+        <EmptyState plain icon="barbell-outline" title={t.noExercisesAdded} message={t.tapToAddExercise} />
       )}
     </View>
   );

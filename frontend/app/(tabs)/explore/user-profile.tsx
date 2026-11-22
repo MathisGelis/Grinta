@@ -1,21 +1,39 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, ActivityIndicator, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import { View, Text, ScrollView, Alert } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { UserService, UserProfile } from "@/services/user.service";
 import { ConnectionsService } from "@/services/connections.service";
 
 import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
+import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
+import GlobalStatsSection from "@/components/profile/GlobalStatsSection";
+import MyPostsSection from "@/components/profile/MyPostsSection";
+import { usePostInteractions } from "@/components/explorePage/PostInteractions";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import ErrorState from "@/components/ui/ErrorState";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { ProfileSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
 export default function UserProfileScreen() {
   const { t } = useTranslation();
+  const headerHeight = useFloatingHeaderHeight();
   const params = useLocalSearchParams<{ userId: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [tab, setTab] = useState<"stats" | "posts">("stats");
   const [followStatus, setFollowStatus] = useState<string>("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [myId, setMyId] = useState("");
+  const { openLikes, openComments, modals } = usePostInteractions(myId);
+
+  useEffect(() => {
+    UserService.getMyId().then((id) => setMyId(id ?? "")).catch(() => {});
+  }, []);
 
   const fetchProfile = useCallback(async () => {
     if (!params.userId) {
@@ -43,6 +61,7 @@ export default function UserProfileScreen() {
     setActionLoading(true);
     try {
       const result = await ConnectionsService.follow(params.userId);
+      queryCache.invalidate("profile");
       setFollowStatus(result.status === "FOLLOWING" ? "FOLLOWING" : "REQUEST_SENT");
       if (result.status === "FOLLOWING" && profile) {
         setProfile({ ...profile, followersCount: profile.followersCount + 1 });
@@ -59,6 +78,7 @@ export default function UserProfileScreen() {
     setActionLoading(true);
     try {
       await ConnectionsService.unfollow(params.userId);
+      queryCache.invalidate("profile");
       setFollowStatus("FOLLOW");
       if (profile) {
         setProfile({ ...profile, followersCount: Math.max(0, profile.followersCount - 1) });
@@ -69,13 +89,6 @@ export default function UserProfileScreen() {
       setActionLoading(false);
     }
   };
-
-  const initials = profile?.displayName
-    ?.split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) ?? "?";
 
   const renderFollowButton = () => {
     if (followStatus === "SELF") return null;
@@ -104,32 +117,25 @@ export default function UserProfileScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
-      <View className="flex-row items-center px-4 pt-16 pb-4 justify-between">
-        <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
-          <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
-        </PressableScale>
-        <Text className="text-ink text-lg font-bold flex-1 text-center" numberOfLines={1}>
-          {profile?.uniqueName ? `@${profile.uniqueName}` : "Profil"}
-        </Text>
-        <View className="w-10" />
-      </View>
+      <ScreenBackground flat />
+      <ScreenHeader
+        floating
+        title={profile?.uniqueName ? `@${profile.uniqueName}` : "Profil"}
+      />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} style={{ marginTop: 60 }} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><ProfileSkeleton /></View>
       ) : profile ? (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 120 }}
         >
           <View className="items-center py-5">
-            <View className="w-[88px] h-[88px] rounded-full p-[3px] bg-accent mb-3">
-              <View className="flex-1 rounded-[44px] bg-accent-tint items-center justify-center">
-                <Text className="text-ink text-[26px] font-bold">{initials}</Text>
-              </View>
+            <View className="mb-3 rounded-full bg-accent p-[3px]">
+              <Avatar uri={profile.avatarUrl} name={profile.displayName} size={88} />
             </View>
             <Text className="text-ink text-xl font-bold mb-0.5">{profile.displayName}</Text>
-            <Text className="text-accent text-sm font-medium">@{profile.uniqueName}</Text>
+            <Text className="text-accent-light text-sm font-medium">@{profile.uniqueName}</Text>
           </View>
 
           <View className="items-center mb-5">
@@ -139,7 +145,9 @@ export default function UserProfileScreen() {
           <View className="flex-row bg-surface rounded-card mx-5 p-5 mb-4">
             <PressableScale
               className="flex-1 items-center"
-              onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: params.userId, tab: "followers" } } as any)}
+              // Compte privé non suivi : le serveur répond 404 sur les listes d'abonnés.
+              disabled={profile.isPrivate}
+              onPress={() => router.push({ pathname: "/(tabs)/explore/followers", params: { userId: params.userId, tab: "followers" } } as any)}
             >
               <Text className="text-ink text-lg font-bold mb-1">{profile.followersCount}</Text>
               <Text className="text-ink-muted text-xs">{t.followersLabel}</Text>
@@ -147,7 +155,9 @@ export default function UserProfileScreen() {
             <View className="w-[1px] bg-raised" />
             <PressableScale
               className="flex-1 items-center"
-              onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: params.userId, tab: "following" } } as any)}
+              // Compte privé non suivi : le serveur répond 404 sur les listes d'abonnés.
+              disabled={profile.isPrivate}
+              onPress={() => router.push({ pathname: "/(tabs)/explore/followers", params: { userId: params.userId, tab: "following" } } as any)}
             >
               <Text className="text-ink text-lg font-bold mb-1">{profile.followingCount}</Text>
               <Text className="text-ink-muted text-xs">{t.followingLabel}</Text>
@@ -159,14 +169,49 @@ export default function UserProfileScreen() {
             </View>
           </View>
 
-          {profile.isPrivate && (
+          {profile.isPrivate ? (
             <View className="flex-row items-center justify-center bg-surface rounded-tile mx-4 p-5 gap-2">
               <Ionicons name="lock-closed" size={20} color={WorkoutTheme.text.tertiary} />
               <Text className="text-ink-muted text-sm">{t.privateProfile}</Text>
             </View>
+          ) : (
+            <View className="gap-6 px-5">
+              <SegmentedControl
+                id="user-profile-tab"
+                options={[
+                  { value: "stats", label: t.profileTabStats },
+                  { value: "posts", label: t.profileTabPosts },
+                ]}
+                value={tab}
+                onChange={setTab}
+              />
+              {tab === "stats" ? (
+                <GlobalStatsSection userId={profile.id} />
+              ) : (
+                <MyPostsSection
+                  readOnly
+                  posts={profile.posts ?? []}
+                  authorName={profile.displayName}
+                  authorId={profile.id}
+                  onOpenPost={(post) =>
+                    router.push({
+                      pathname: "/(tabs)/explore/userPost",
+                      params: { postId: post.id },
+                    } as any)
+                  }
+                  onShowLikes={openLikes}
+                  onShowComments={openComments}
+                />
+              )}
+            </View>
           )}
         </ScrollView>
-      ) : null}
+      ) : (
+        <View style={{ paddingTop: headerHeight }}>
+          <ErrorState className="mx-5" onRetry={fetchProfile} />
+        </View>
+      )}
+      {modals}
     </View>
   );
 }

@@ -1,6 +1,6 @@
 import React from "react";
 import { ActivityIndicator, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import PressableScale from "./PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";
 
@@ -13,7 +13,7 @@ const BG: Record<Variant, string> = {
   danger: "bg-danger-tint",
 };
 const FG: Record<Variant, string> = {
-  primary: "text-ink",
+  primary: "text-on-accent",
   secondary: "text-ink",
   dark: "text-ink",
   danger: "text-danger",
@@ -27,6 +27,7 @@ type ButtonProps = {
   loading?: boolean;
   disabled?: boolean;
   className?: string;
+  bounce?: boolean;
 };
 
 export default function Button({
@@ -37,10 +38,12 @@ export default function Button({
   loading,
   disabled,
   className = "",
+  bounce = false,
 }: ButtonProps) {
   const off = disabled || loading;
   return (
     <PressableScale
+      bounce={bounce}
       haptic
       onPress={off ? undefined : onPress}
       accessibilityRole="button"
@@ -59,7 +62,9 @@ export default function Button({
               color={
                 variant === "danger"
                   ? WorkoutTheme.status.danger
-                  : WorkoutTheme.text.primary
+                  : variant === "primary"
+                    ? WorkoutTheme.text.onAccent
+                    : WorkoutTheme.text.primary
               }
             />
           )}

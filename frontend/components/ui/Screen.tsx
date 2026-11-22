@@ -1,6 +1,7 @@
 import React from "react";
 import { ScrollView, View, type ScrollViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { armChrome, onChromeScroll } from "./chromeScroll";
 
 export const FLOATING_HEADER_OFFSET = 12 + 44 + 12;
 
@@ -31,7 +32,16 @@ export default function Screen({
       {scroll ? (
         <ScrollView
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
           {...rest}
+          onScrollBeginDrag={(e) => {
+            armChrome();
+            rest.onScrollBeginDrag?.(e);
+          }}
+          onScroll={(e) => {
+            onChromeScroll(e.nativeEvent.contentOffset.y);
+            rest.onScroll?.(e);
+          }}
           contentContainerStyle={[
             { paddingTop, paddingBottom },
             contentContainerStyle,

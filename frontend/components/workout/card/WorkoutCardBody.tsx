@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, Alert, ActivityIndicator } from "react-native";
-import { WorkoutTheme } from "@/constants/Colors";
+import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
+import { View, Text, Alert } from "react-native";
 import { TokenService } from "@/services/token.service";
 import {
   getWorkoutById,
@@ -11,12 +10,18 @@ import {
 } from "@/services/workouts.service";
 import { getExercisesById, Exercise } from "@/services/exercises.service";
 import { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
+import { FormField, TextField } from "@/components/ui/FormField";
 import WorkoutTabs from "@/components/workout/card/WorkoutTabs";
 import WorkoutInfosTab from "@/components/workout/card/WorkoutInfosTab";
 import WorkoutStatsTab from "@/components/workout/card/WorkoutStatsTab";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
+import { toast } from "@/components/ui/Toast";
+import { LIMITS } from "@/utils/validation";
+import { MAX_EXERCISES } from "@/utils/sanitizeWorkout";
 
 export type WorkoutStatsTotals = {
   totalSets: number;
@@ -54,16 +59,29 @@ interface WorkoutCardBodyProps {
   onLoaded: (workout: fullPlannedWorkout) => void;
   onDelete?: (id: string) => void;
   onUpdate?: (updatedWorkout: fullPlannedWorkout) => void;
+  /** État d'édition, pour les boutons de l'en-tête de la page. */
+  onEditState?: (state: WorkoutEditState) => void;
 }
 
-export default function WorkoutCardBody({
+export type WorkoutEditState = { isEditing: boolean; hasChanges: boolean; isSaving: boolean };
+
+/** Actions pilotées depuis l'en-tête de la page. */
+export type WorkoutCardBodyHandle = {
+  edit: () => void;
+  cancel: () => void;
+  save: () => void;
+  remove: () => void;
+};
+
+const WorkoutCardBody = forwardRef<WorkoutCardBodyHandle, WorkoutCardBodyProps>(function WorkoutCardBody({
   workout,
   editedTitle,
   onEditedTitleChange,
   onLoaded,
   onDelete,
   onUpdate,
-}: WorkoutCardBodyProps) {
+  onEditState,
+}, ref) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"infos" | "stats">("infos");
   const [isEditing, setIsEditing] = useState(false);
@@ -103,6 +121,7 @@ export default function WorkoutCardBody({
             exercisesMap.get(ex.exerciseId)?.name ||
             ex.exerciseId,
           sets: ex.sets,
+          plannedRestSeconds: ex.plannedRestSeconds,
         })),
       );
 
@@ -132,6 +151,7 @@ export default function WorkoutCardBody({
           id: ex.exerciseId,
           name: exercisesMapRef.current.get(ex.exerciseId)?.name || ex.exerciseId,
           sets: ex.sets,
+          plannedRestSeconds: ex.plannedRestSeconds,
         })),
       );
     }
@@ -151,6 +171,10 @@ export default function WorkoutCardBody({
   };
 
   const handleAddExercise = (exercise: ExerciseSetupData) => {
+    if (editedExercises.length >= MAX_EXERCISES) {
+      toast.info(t.maxExercisesReached);
+      return;
+    }
     setEditedExercises((prev) => [...prev, exercise]);
     setHasChanges(true);
   };
@@ -161,6 +185,11 @@ export default function WorkoutCardBody({
   };
 
   const handleSave = async () => {
+    // Rien n'a changé : on quitte simplement le mode édition, sans appel au backend.
+    if (!hasChanges) {
+      setIsEditing(false);
+      return;
+    }
     setIsSaving(true);
     try {
       const token = await TokenService.get();
@@ -174,8 +203,9 @@ export default function WorkoutCardBody({
         exercises: editedExercises.map((ex) => ({
           exerciseId: ex.id,
           sets: ex.sets,
-          plannedRestSeconds: 90,
+          plannedRestSeconds: ex.plannedRestSeconds ?? 90,
         })),
+        estimatedDurationMinutes: estimateWorkoutMinutes(editedExercises, 90) || undefined,
       };
 
       Object.keys(updateData).forEach(
@@ -192,7 +222,7 @@ export default function WorkoutCardBody({
 
       if (onUpdate && updatedWorkout) onUpdate(updatedWorkout);
 
-      Alert.alert(t.success, t.workoutUpdated);
+      toast.success(t.workoutUpdated);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t.cannotSaveProfile;
@@ -216,7 +246,7 @@ export default function WorkoutCardBody({
               const token = await TokenService.get();
               await deletePlannedWorkout(workout.id, token || undefined);
               onDelete?.(workout.id);
-              Alert.alert(t.success, t.workoutDeleted);
+              toast.success(t.workoutDeleted);
             } catch {
               Alert.alert(t.error, t.cannotDeleteWorkout);
             }
@@ -227,38 +257,71 @@ export default function WorkoutCardBody({
     );
   };
 
+  useEffect(() => {
+    onEditState?.({ isEditing, hasChanges, isSaving });
+  }, [isEditing, hasChanges, isSaving, onEditState]);
+
+  const saveRef = useRef(handleSave);
+  saveRef.current = handleSave;
+  useImperativeHandle(ref, () => ({
+    edit: handleEdit,
+    cancel: handleCancel,
+    save: () => saveRef.current(),
+    remove: handleDelete,
+  }));
+
   if (isLoading && !fullWorkout) {
     return (
-      <View className="h-[300px] items-center justify-center">
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      <View className="h-[300px] justify-center">
+        <DetailSkeleton rows={1} />
       </View>
     );
   }
 
   return (
-    <>
+    <View className="gap-4">
+      <View className="gap-1 px-5">
+        {isEditing ? (
+          <View className="gap-4">
+            <FormField label={t.titleLabel}>
+              <TextField
+                value={editedTitle}
+                maxLength={LIMITS.title}
+                onChangeText={(text) => {
+                  onEditedTitleChange(text);
+                  setHasChanges(true);
+                }}
+              />
+            </FormField>
+            <FormField label={t.descriptionLabel}>
+              <TextField
+                multiline
+                value={editedDescription}
+                maxLength={LIMITS.description}
+                onChangeText={(text) => {
+                  setEditedDescription(text);
+                  setHasChanges(true);
+                }}
+                placeholder={t.addDescriptionPlaceholder}
+              />
+            </FormField>
+          </View>
+        ) : (
+          <>
+            <Text className="text-xl font-semibold text-ink">{editedTitle}</Text>
+            <Text className={`text-sm ${editedDescription ? "text-ink-soft" : "text-ink-muted"}`}>
+              {editedDescription || t.noDescription}
+            </Text>
+          </>
+        )}
+      </View>
+
       <WorkoutTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === "infos" && (
         <WorkoutInfosTab
           isEditing={isEditing}
-          hasChanges={hasChanges}
-          isSaving={isSaving}
-          editedTitle={editedTitle}
-          editedDescription={editedDescription}
           editedExercises={editedExercises}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onSave={handleSave}
-          onCancel={handleCancel}
-          onTitleChange={(text) => {
-            onEditedTitleChange(text);
-            setHasChanges(true);
-          }}
-          onDescriptionChange={(text) => {
-            setEditedDescription(text);
-            setHasChanges(true);
-          }}
           onExerciseUpdate={handleExerciseUpdate}
           onRemoveExercise={handleRemoveExercise}
           onAddExercise={handleAddExercise}
@@ -271,6 +334,8 @@ export default function WorkoutCardBody({
           stats={computeWorkoutStats(fullWorkout)}
         />
       )}
-    </>
+    </View>
   );
-}
+});
+
+export default WorkoutCardBody;

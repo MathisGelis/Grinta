@@ -1,12 +1,15 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 
-import type { ExerciseStats } from "@/services/exercises.service";
+import type { LiveExerciseStats } from "@/services/exercises.service";
 import PressableScale from "@/components/ui/PressableScale";
 import Button from "@/components/ui/Button";
+import { LIMITS } from "@/utils/validation";
 export interface CompletedSet {
   reps: number;
   weight: number;
@@ -21,11 +24,10 @@ interface CurrentExerciseSectionProps {
   onCompleteSet: (reps: number, weight: number) => void;
   onAddSet: () => void;
   onRemoveSet: () => void;
-  onSkipExercise: () => void;
   onDeleteExercise?: () => void;
   isLastExercise: boolean;
   isLastSet: boolean;
-  lastStats?: ExerciseStats | null;
+  lastStats?: LiveExerciseStats | null;
 }
 
 export default function CurrentExerciseSection({
@@ -37,35 +39,73 @@ export default function CurrentExerciseSection({
   onCompleteSet,
   onAddSet,
   onRemoveSet,
-  onSkipExercise,
   onDeleteExercise,
   isLastExercise,
   isLastSet,
   lastStats,
 }: CurrentExerciseSectionProps) {
   const { t } = useTranslation();
+  const { fromKg, toKg, weightUnit } = useUnits();
+  const { formatWeight } = useUnits();
   const initialValues = (index: number) => {
     const planned = plannedSetData[index];
     return {
-      weight: planned?.weight || lastStats?.last_weight || 0,
-      reps: planned?.reps || lastStats?.last_reps || 0,
+      weight: planned?.weight || lastStats?.lastWeight || 0,
+      reps: planned?.reps || lastStats?.lastReps || 0,
     };
   };
   const [weight, setWeight] = useState(initialValues(currentSetIndex).weight.toString());
   const [reps, setReps] = useState(initialValues(currentSetIndex).reps.toString());
 
-  const lastWeight = lastStats?.last_weight;
-  const lastReps = lastStats?.last_reps;
+  const lastWeight = lastStats?.lastWeight;
+  const lastReps = lastStats?.lastReps;
 
   useEffect(() => {
     const planned = plannedSetData[currentSetIndex];
-    setWeight(String(planned?.weight || lastWeight || 0));
+    setWeight(String(fromKg(planned?.weight || lastWeight || 0)));
     setReps(String(planned?.reps || lastReps || 1));
-  }, [currentSetIndex, plannedSetData, lastWeight, lastReps]);
+  }, [currentSetIndex, plannedSetData, lastWeight, lastReps, fromKg]);
+
+  const adjustWeight = (delta: number) => {
+    const next = Math.max(0, Math.round(((parseFloat(weight) || 0) + delta) * 100) / 100);
+    setWeight(String(next));
+  };
+  const adjustReps = (delta: number) => {
+    setReps(String(Math.min(999, Math.max(1, (parseInt(reps, 10) || 1) + delta))));
+  };
+
+  const stepButton = (
+    icon: "add" | "remove",
+    label: string,
+    onPress: () => void,
+    color: string,
+  ) => (
+    <PressableScale
+      bounce={false}
+      onPress={onPress}
+      halo={false}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <MaterialCommunityIcons
+        name={icon === "add" ? "plus-thick" : "minus-thick"}
+        size={22}
+        color={color}
+      />
+    </PressableScale>
+  );
 
   const handleCompleteSet = () => {
-    const w = parseFloat(weight) || 0;
+    const w = toKg(parseFloat(weight) || 0);
     const r = Math.max(1, parseInt(reps) || 1);
+    if (w === 0 && ((lastWeight ?? 0) > 0 || (lastStats?.prWeight ?? 0) > 0)) {
+      Alert.alert(t.zeroWeightTitle, t.zeroWeightMessage, [
+        { text: t.cancel, style: "cancel" },
+        { text: t.zeroWeightConfirm, onPress: () => onCompleteSet(r, w) },
+      ]);
+      return;
+    }
     onCompleteSet(r, w);
   };
 
@@ -93,22 +133,22 @@ export default function CurrentExerciseSection({
         </Text>
       </View>
 
-      {lastStats && (lastStats.last_weight != null || lastStats.PR != null) ? (
+      {lastStats && (lastStats.lastWeight != null || lastStats.prWeight != null) ? (
         <View className="flex-row gap-3">
-          {lastStats.last_weight != null ? (
+          {lastStats.lastWeight != null ? (
             <View className="flex-1 rounded-tile bg-raised px-4 py-3">
               <Text className="text-xs text-ink-muted">{t.lastPerformanceLabel}</Text>
               <Text className="mt-0.5 text-base font-semibold text-ink">
-                {lastStats.last_weight} kg
-                {lastStats.last_reps != null ? ` × ${lastStats.last_reps}` : ""}
+                {formatWeight(lastStats.lastWeight)}
+                {lastStats.lastReps != null ? ` × ${lastStats.lastReps}` : ""}
               </Text>
             </View>
           ) : null}
-          {lastStats.PR != null ? (
+          {lastStats.prWeight != null ? (
             <View className="flex-1 rounded-tile bg-accent-tint px-4 py-3">
               <Text className="text-xs text-accent-text">{t.personalRecordLabel}</Text>
               <Text className="mt-0.5 text-base font-semibold text-ink">
-                {lastStats.PR} kg
+                {formatWeight(lastStats.prWeight)}
               </Text>
             </View>
           ) : null}
@@ -118,22 +158,32 @@ export default function CurrentExerciseSection({
       <View className="flex-row gap-3">
         <View className="flex-1 items-center rounded-card bg-raised px-3 py-5">
           <Text className="mb-2 text-xs text-ink-muted">{t.weightLabel}</Text>
+          <View className="w-full flex-row items-center">
+          {stepButton("remove", t.weightLabel, () => adjustWeight(-1), WorkoutTheme.text.secondary)}
           <TextInput
-            className="w-full py-0 text-center text-[40px] font-semibold text-ink"
+            className="flex-1 py-0 text-center text-[40px] font-semibold text-ink"
             style={{ fontVariant: ["tabular-nums"], height: 52 }}
             value={weight}
-            onChangeText={setWeight}
-            onBlur={() => !weight.trim() && setWeight("0")}
+            onChangeText={(input) =>
+              setWeight(input.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1").replace(/(\.\d{2})\d+/, "$1"))
+            }
+            onBlur={() =>
+              setWeight(!weight.trim() ? "0" : String(Math.min(LIMITS.maxWeightKg, parseFloat(weight) || 0)))
+            }
             selectTextOnFocus
             keyboardType="decimal-pad"
             maxLength={5}
           />
-          <Text className="mt-1 text-sm text-ink-muted">kg</Text>
+          {stepButton("add", t.weightLabel, () => adjustWeight(1), WorkoutTheme.text.secondary)}
+          </View>
+          <Text className="mt-1 text-sm text-ink-muted">{weightUnit}</Text>
         </View>
         <View className="flex-1 items-center rounded-card bg-accent-tint px-3 py-5">
           <Text className="mb-2 text-xs text-accent-text">{t.repsLabel}</Text>
+          <View className="w-full flex-row items-center">
+          {stepButton("remove", t.repsLabel, () => adjustReps(-1), WorkoutTheme.accent.purple)}
           <TextInput
-            className="w-full py-0 text-center text-[40px] font-semibold text-ink"
+            className="flex-1 py-0 text-center text-[40px] font-semibold text-ink"
             style={{ fontVariant: ["tabular-nums"], height: 52 }}
             value={reps}
             onChangeText={setReps}
@@ -142,6 +192,8 @@ export default function CurrentExerciseSection({
             keyboardType="number-pad"
             maxLength={3}
           />
+          {stepButton("add", t.repsLabel, () => adjustReps(1), WorkoutTheme.accent.purple)}
+          </View>
           <Text className="mt-1 text-sm text-accent-text">{t.repsUnit}</Text>
         </View>
       </View>
@@ -154,6 +206,7 @@ export default function CurrentExerciseSection({
           </Text>
           <View className="flex-row gap-2">
             <PressableScale
+              bounce={false}
               onPress={onRemoveSet}
               disabled={totalSets <= 1}
               accessibilityRole="button"
@@ -167,6 +220,7 @@ export default function CurrentExerciseSection({
               />
             </PressableScale>
             <PressableScale
+              bounce={false}
               onPress={onAddSet}
               accessibilityRole="button"
               accessibilityLabel={t.addSet}
@@ -197,8 +251,10 @@ export default function CurrentExerciseSection({
         </View>
       </View>
 
-      <View className="gap-3">
+      <View className="flex-row items-center gap-3">
         <Button
+          bounce={false}
+          className="flex-1"
           icon="checkmark"
           label={
             isLastSet && isLastExercise
@@ -209,29 +265,21 @@ export default function CurrentExerciseSection({
           }
           onPress={handleCompleteSet}
         />
-        <View className="flex-row gap-3">
-          <Button
-            className="flex-1"
-            variant="secondary"
-            icon="arrow-forward"
-            label={t.skipExercise}
-            onPress={onSkipExercise}
-          />
-          {onDeleteExercise && (
-            <PressableScale
-              onPress={handleDeleteExercise}
-              accessibilityRole="button"
-              accessibilityLabel={t.deleteExercise}
-              className="h-[52px] w-[52px] items-center justify-center rounded-full bg-danger-tint"
-            >
-              <Ionicons
-                name="trash-outline"
-                size={20}
-                color={WorkoutTheme.status.danger}
-              />
-            </PressableScale>
-          )}
-        </View>
+        {onDeleteExercise && (
+          <PressableScale
+            bounce={false}
+            onPress={handleDeleteExercise}
+            accessibilityRole="button"
+            accessibilityLabel={t.deleteExercise}
+            className="h-[52px] w-[52px] items-center justify-center rounded-full bg-danger-tint"
+          >
+            <Ionicons
+              name="trash-outline"
+              size={20}
+              color={WorkoutTheme.status.danger}
+            />
+          </PressableScale>
+        )}
       </View>
     </View>
   );

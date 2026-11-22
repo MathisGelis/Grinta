@@ -29,12 +29,12 @@ export default function WorkoutStatsTab({
   ];
 
   return (
-    <View className="gap-4 px-4 pb-4 pt-1">
+    <View className="gap-4 px-5">
       <View className="flex-row flex-wrap gap-3">
         {tiles.map((tile) => (
           <View
             key={tile.label}
-            className="rounded-tile bg-raised p-4"
+            className="rounded-tile bg-surface p-4"
             style={{ width: "47.5%", flexGrow: 1 }}
           >
             <Stat size="md" value={tile.value} label={tile.label} />
@@ -43,7 +43,7 @@ export default function WorkoutStatsTab({
       </View>
 
       {muscleData.length > 0 ? (
-        <View className="gap-3 rounded-tile bg-raised p-4">
+        <View className="gap-3 rounded-card bg-surface p-5">
           <Text className="text-base font-semibold text-ink">
             {t.musclesWorkedTitle}
           </Text>

@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { UserService, CurrentUser } from "@/services/user.service";
 import { saveItem } from "@/core/services/storage";
+import { PhotoService, pickImage } from "@/services/photo.service";
+import { LIMITS, isValidUniqueName, sanitizeUniqueName } from "@/utils/validation";
+import { ApiError } from "@/services/api";
+import Avatar from "@/components/ui/Avatar";
 
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { WorkoutTheme } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { FormSkeleton } from "@/components/ui/skeletons";
+import { toast } from "@/components/ui/Toast";
+import { queryCache } from "@/services/queryCache";
+import { format } from "@/i18n/translations";
 export default function EditProfileScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -17,6 +27,9 @@ export default function EditProfileScreen() {
   const [displayName, setDisplayName] = useState("");
   const [uniqueName, setUniqueName] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"displayName" | "uniqueName", string>>>({});
 
   useEffect(() => {
     UserService.getMe()
@@ -25,28 +38,29 @@ export default function EditProfileScreen() {
         setDisplayName(me.displayName);
         setUniqueName(me.uniqueName);
         setEmail(me.email);
+        setAvatarUrl(me.avatarUrl ?? null);
       })
       .catch(() => Alert.alert(t.error, t.cannotLoadProfile))
       .finally(() => setLoading(false));
   }, [t]);
 
   const handleSave = async () => {
-    if (!displayName.trim()) {
-      Alert.alert(t.error, t.nameEmptyError);
-      return;
-    }
-    if (!uniqueName.trim() || uniqueName.trim().length < 3) {
-      Alert.alert(t.error, t.usernameTooShort);
-      return;
-    }
     if (!user) return;
+    const errors: typeof fieldErrors = {};
+    if (!displayName.trim()) errors.displayName = t.nameEmptyError;
+    // Un ancien pseudo non conforme reste valable tant qu'il n'est pas modifié.
+    const uniqueNameChanged = uniqueName.trim() !== user.uniqueName;
+    if (uniqueNameChanged && !isValidUniqueName(uniqueName)) {
+      errors.uniqueName = uniqueName.trim().length < LIMITS.uniqueNameMin ? t.usernameTooShort : t.usernameInvalid;
+    }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     setSaving(true);
     try {
       const updates: Record<string, string> = {};
       if (displayName.trim() !== user.displayName) updates.displayName = displayName.trim();
       if (uniqueName.trim() !== user.uniqueName) updates.uniqueName = uniqueName.trim().toLowerCase();
-      if (email.trim() !== user.email) updates.email = email.trim().toLowerCase();
 
       if (Object.keys(updates).length === 0) {
         router.back();
@@ -54,93 +68,165 @@ export default function EditProfileScreen() {
       }
 
       await UserService.updateProfile(user.id, updates);
+      queryCache.invalidate("profile");
       await saveItem("user_name", displayName.trim());
-      Alert.alert(t.success, t.profileUpdatedMsg, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.profileUpdatedMsg);
+      router.back();
     } catch (err: any) {
-      Alert.alert(t.error, err.message || t.cannotSaveProfile);
+      const server = err instanceof ApiError ? err.fieldErrors : undefined;
+      if (err instanceof ApiError && err.code === "USERNAME_TAKEN") {
+        const suggestion = typeof err.body?.suggestion === "string" ? err.body.suggestion : null;
+        setFieldErrors({
+          uniqueName: suggestion ? `${t.usernameTaken} ${format(t.usernameSuggestion, { name: suggestion })}` : t.usernameTaken,
+        });
+      } else if (server && (server.displayName || server.uniqueName)) {
+        setFieldErrors({ displayName: server.displayName, uniqueName: server.uniqueName });
+      } else {
+        Alert.alert(t.error, err.message || t.cannotSaveProfile);
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "?";
+  const changePhoto = async () => {
+    try {
+      const uri = await pickImage([1, 1]);
+      if (!uri) return;
+      setPhotoBusy(true);
+      const result = await PhotoService.uploadAvatar(uri);
+      queryCache.invalidate("profile");
+      setAvatarUrl(result.avatarUrl);
+    } catch (err: any) {
+      Alert.alert(t.error, err.message || t.cannotUploadPhoto);
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    try {
+      setPhotoBusy(true);
+      await PhotoService.removeAvatar();
+      queryCache.invalidate("profile");
+      setAvatarUrl(null);
+    } catch (err: any) {
+      Alert.alert(t.error, err.message || t.cannotUploadPhoto);
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const uniqueNameError =
+    !!user &&
+    uniqueName.trim() !== user.uniqueName &&
+    uniqueName.trim().length > 0 &&
+    !isValidUniqueName(uniqueName);
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+      <View className="flex-1 px-5" style={{ paddingTop: headerHeight }}>
+        <FormSkeleton fields={6} />
       </View>
     );
   }
 
   return (
     <View className="flex-1">
-      <ScrollView
+      <ScreenHeader floating title={t.editProfile} />
+      <ScrollView {...chromeScrollProps}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
-        contentContainerStyle={{ paddingBottom: 60 }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 60 }}
       >
-        <ScreenHeader title={t.editProfile} />
-
-        <View className="items-center mb-10">
-          <View className="w-24 h-24 rounded-[48px] p-[3px] bg-accent">
-            <View className="flex-1 rounded-[48px] bg-accent-tint items-center justify-center">
-              <Text className="text-ink text-[28px] font-bold">{initials}</Text>
+        <View className="items-center mb-10 gap-4">
+          <PressableScale
+            onPress={photoBusy ? undefined : changePhoto}
+            accessibilityRole="button"
+            accessibilityLabel={t.changePhoto}
+          >
+            <View className="rounded-full bg-accent p-[3px]">
+              <Avatar uri={avatarUrl} name={displayName} size={96} />
+              {photoBusy ? (
+                <View className="absolute inset-[3px] items-center justify-center rounded-full bg-overlay">
+                  <ActivityIndicator color={WorkoutTheme.text.primary} />
+                </View>
+              ) : null}
             </View>
-          </View>
-          <View className="w-8 h-8 rounded-full bg-accent items-center justify-center -mt-4">
-            <Ionicons name="camera" size={16} color={WorkoutTheme.text.primary} />
+            <View className="absolute bottom-0 right-0 h-8 w-8 items-center justify-center rounded-full bg-accent">
+              <Ionicons name="camera" size={16} color={WorkoutTheme.text.primary} />
+            </View>
+          </PressableScale>
+          <View className="flex-row gap-2">
+            <PressableScale
+              onPress={photoBusy ? undefined : changePhoto}
+              accessibilityRole="button"
+              className="h-10 justify-center rounded-full bg-raised px-5"
+            >
+              <Text className="text-sm font-medium text-ink">{t.changePhoto}</Text>
+            </PressableScale>
+            {avatarUrl ? (
+              <PressableScale
+                onPress={photoBusy ? undefined : removePhoto}
+                accessibilityRole="button"
+                className="h-10 justify-center rounded-full bg-danger-tint px-5"
+              >
+                <Text className="text-sm font-medium text-danger">{t.removePhoto}</Text>
+              </PressableScale>
+            ) : null}
           </View>
         </View>
 
         <View className="px-6">
           <View className="mb-7">
-            <Text className="text-accent text-xs mb-2.5">{t.name}</Text>
+            <Text className="text-accent-light text-xs mb-2.5">{t.name}</Text>
             <TextInput
               className="text-ink text-base py-1.5"
               value={displayName}
+              maxLength={LIMITS.displayName}
               onChangeText={setDisplayName}
               placeholder={t.yourName}
               placeholderTextColor={WorkoutTheme.text.disabled}
             />
             <View className="h-[1px] bg-raised mt-1.5" />
+            {fieldErrors.displayName ? <Text className="text-[11px] mt-1.5 text-danger">{fieldErrors.displayName}</Text> : null}
           </View>
 
           <View className="mb-7">
-            <Text className="text-accent text-xs mb-2.5">{t.usernameLabel}</Text>
+            <Text className="text-accent-light text-xs mb-2.5">{t.usernameLabel}</Text>
             <View className="flex-row items-center">
-              <Text className="text-accent text-base font-bold mr-1">@</Text>
+              <Text className="text-accent-light text-base font-bold mr-1">@</Text>
               <TextInput
                 className="text-ink text-base py-1.5 flex-1"
                 value={uniqueName}
-                onChangeText={(text) => setUniqueName(text.replace(/[^a-zA-Z0-9_]/g, ""))}
+                maxLength={LIMITS.uniqueName}
+                onChangeText={(text) => setUniqueName(sanitizeUniqueName(text))}
                 placeholder={t.usernamePlaceholder}
                 placeholderTextColor={WorkoutTheme.text.disabled}
                 autoCapitalize="none"
               />
             </View>
             <View className="h-[1px] bg-raised mt-1.5" />
-            <Text className="text-ink-faint text-[11px] mt-1.5">{t.usernameHint}</Text>
+            <Text className={`text-[11px] mt-1.5 ${uniqueNameError || fieldErrors.uniqueName ? "text-danger" : "text-ink-faint"}`}>
+              {fieldErrors.uniqueName ?? (uniqueNameError ? t.usernameInvalid : t.usernameHint)}
+            </Text>
           </View>
 
           <View className="mb-7">
-            <Text className="text-accent text-xs mb-2.5">{t.email}</Text>
-            <TextInput
-              className="text-ink text-base py-1.5"
-              value={email}
-              onChangeText={setEmail}
-              placeholder={t.emailPlaceholder}
-              placeholderTextColor={WorkoutTheme.text.disabled}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
+            <Text className="text-accent-light text-xs mb-2.5">{t.email}</Text>
+            <View className="flex-row items-center justify-between gap-3 py-1.5">
+              <Text className="flex-1 text-base text-ink" numberOfLines={1}>
+                {email}
+              </Text>
+              <PressableScale
+                onPress={() => router.push("/(tabs)/profile/change-email" as any)}
+                accessibilityRole="button"
+                halo={false}
+                hitSlop={10}
+              >
+                <Text className="text-sm font-semibold text-accent-light">{t.emailChangeLink}</Text>
+              </PressableScale>
+            </View>
             <View className="h-[1px] bg-raised mt-1.5" />
           </View>
         </View>

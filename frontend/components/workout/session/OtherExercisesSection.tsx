@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { WorkoutExercise } from "@/services/workouts.service";
 import { Exercise } from "@/services/exercises.service";
@@ -9,6 +9,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 
 import PressableScale from "@/components/ui/PressableScale";
 import { format } from "@/i18n/translations";
+import EmptyState from "@/components/ui/EmptyState";
 interface OtherExercisesSectionProps {
   exercises: WorkoutExercise[];
   currentExerciseIndex: number;
@@ -54,6 +55,7 @@ export default function OtherExercisesSection({
             </Text>
           </Text>
           <PressableScale
+            bounce={false}
             onPress={() => setShowAddModal(true)}
             accessibilityRole="button"
             accessibilityLabel={t.add}
@@ -79,6 +81,7 @@ export default function OtherExercisesSection({
 
               return (
                 <PressableScale
+                  bounce={false}
                   key={exercise.exerciseId}
                   onPress={() => onSelectExercise(realIndex)}
                   accessibilityRole="button"
@@ -114,9 +117,7 @@ export default function OtherExercisesSection({
             })}
           </ScrollView>
         ) : (
-          <View className="mx-5 items-center rounded-card bg-surface p-6">
-            <Text className="text-sm text-ink-muted">{t.noOtherExercise}</Text>
-          </View>
+          <EmptyState icon="barbell-outline" title={t.noOtherExercise} className="mx-5" />
         )}
       </View>
 

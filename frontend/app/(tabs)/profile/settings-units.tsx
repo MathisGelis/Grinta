@@ -1,30 +1,25 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text } from "react-native";
 
-
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useUnits, type UnitSystem } from "@/contexts/UnitsContext";
 
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 
 import PressableScale from "@/components/ui/PressableScale";
 export default function SettingsUnitsScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
-  const [selected, setSelected] = useState<"metric" | "imperial">("metric");
+  const { system: selected, setSystem: choose } = useUnits();
 
-  const choose = async (val: "metric" | "imperial") => {
-    setSelected(val);
-    await AsyncStorage.setItem("units", val);
-  };
-
-  const options = [
-    { value: "metric" as const, label: t.metric },
-    { value: "imperial" as const, label: t.imperial },
+  const options: { value: UnitSystem; label: string }[] = [
+    { value: "metric", label: t.metric },
+    { value: "imperial", label: t.imperial },
   ];
 
   return (
-    <View className="flex-1">
-      <ScreenHeader title={t.unitsOfMeasure} />
+    <View className="flex-1" style={{ paddingTop: headerHeight }}>
+      <ScreenHeader floating title={t.unitsOfMeasure} />
 
       <View className="mx-5 bg-surface rounded-card overflow-hidden">
         {options.map((opt, i) => (

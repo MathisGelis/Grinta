@@ -31,12 +31,15 @@ type Props = PressableProps & {
   haptic?: boolean;
   halo?: "circle" | "fill" | false;
   haloSize?: number;
+  /** `true` : petit ressort à l'appui. Par défaut, simple atténuation. */
+  bounce?: boolean;
 };
 
 export default function PressableScale({
   haptic = false,
   halo,
   haloSize = 36,
+  bounce = false,
   className,
   children,
   onPressIn,
@@ -47,8 +50,10 @@ export default function PressableScale({
   const scale = useSharedValue(1);
   const pressed = useSharedValue(0);
   const haloStyle = useAnimatedStyle(() => ({ opacity: pressed.get() }));
+  const fade = useSharedValue(1);
   const animated = useAnimatedStyle(() => ({
     transform: [{ scale: scale.get() }],
+    opacity: fade.get(),
   }));
 
   const radius =
@@ -63,7 +68,8 @@ export default function PressableScale({
       {...rest}
       className={className}
       onPressIn={(e) => {
-        scale.set(withSpring(0.97, { damping: 18, stiffness: 400 }));
+        if (bounce) scale.set(withSpring(0.97, { damping: 18, stiffness: 400 }));
+        else fade.set(withTiming(0.7, { duration: 80 }));
         if (haptic && process.env.EXPO_OS === "ios") {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
@@ -75,7 +81,8 @@ export default function PressableScale({
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        scale.set(withSpring(1, { damping: 18, stiffness: 400 }));
+        if (bounce) scale.set(withSpring(1, { damping: 18, stiffness: 400 }));
+        else fade.set(withTiming(1, { duration: 160 }));
         if (radius !== null) {
           pressed.set(
             withTiming(0, { duration: 180, easing: Easing.out(Easing.quad) }),

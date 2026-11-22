@@ -1,25 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { ApiError } from "@/services/api";
 import {
   View,
   ScrollView,
   StatusBar,
   Alert,
-  ActivityIndicator,
-  Modal,
+  Keyboard,
+  Platform,
   Text,
+  useWindowDimensions,
 } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { TokenService } from "@/services/token.service";
@@ -41,16 +33,43 @@ import {
 } from "@/services/active-session.service";
 
 import {
-  ExerciseStats,
+  LiveExerciseStats,
   getExerciseStats,
-  updateExerciseStats,
 } from "@/services/exercises.service";
+import type { Badge } from "@/services/badges.service";
+import Modal from "@/components/ui/AppModal";
 import ScreenBackground from "@/components/ui/ScreenBackground";
+import TopBlur from "@/components/ui/TopBlur";
+import { chromeScrollProps, resetChrome } from "@/components/ui/chromeScroll";
 import Button from "@/components/ui/Button";
 import PressableScale from "@/components/ui/PressableScale";
 import { FormField, TextField } from "@/components/ui/FormField";
+import WorkoutImagePicker from "@/components/workout/editor/WorkoutImagePicker";
+import NewRecordsSheet from "@/components/workout/badges/NewRecordsSheet";
+import { PhotoService } from "@/services/photo.service";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
+import { LIMITS } from "@/utils/validation";
+const dedupeCompletedSets = (state: ExerciseState): ExerciseState => {
+  const seen = new Set<number>();
+  const completedSetIndices: number[] = [];
+  const completedSets: ExerciseState["completedSets"] = [];
+  state.completedSetIndices.forEach((index, position) => {
+    if (seen.has(index)) return;
+    seen.add(index);
+    completedSetIndices.push(index);
+    if (state.completedSets[position]) completedSets.push(state.completedSets[position]);
+  });
+  return { ...state, completedSetIndices, completedSets };
+};
+
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const [headerHeight, setHeaderHeight] = useState(180);
+  useEffect(() => {
+    resetChrome();
+  }, []);
   const params = useLocalSearchParams();
   const workoutId = params.workoutId as string;
   const workoutName = params.workoutName as string;
@@ -65,41 +84,33 @@ export default function ActiveWorkoutScreen() {
   const [restTimeTotal, setRestTimeTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [completionTitle, setCompletionTitle] = useState("");
+  const [completionTitle, setCompletionTitle] = useState(workoutName);
   const [completionDescription, setCompletionDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completionPhoto, setCompletionPhoto] = useState<string | null>(null);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
+  const photoFailedRef = useRef(false);
   const [completedExercises, setCompletedExercises] = useState<number[]>([]);
-  const setTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const totalTimeRef = useRef(0);
   const [exerciseStats, setExerciseStats] = useState<
-    Record<string, ExerciseStats | null>
+    Record<string, LiveExerciseStats | null>
   >({});
-  const pendingStatsRef = useRef<Record<string, ExerciseStats>>({});
-  const sheetTranslateY = useSharedValue(0);
-
+  const { height: windowHeight } = useWindowDimensions();
+  const [keyboard, setKeyboard] = useState(0);
   useEffect(() => {
-    if (showCompletionModal) sheetTranslateY.set(0);
-  }, [showCompletionModal, sheetTranslateY]);
-
-  const sheetPan = Gesture.Pan()
-    .runOnJS(true)
-    .enabled(!isSubmitting)
-    .activeOffsetY(10)
-    .failOffsetX([-20, 20])
-    .onUpdate((e) => {
-      sheetTranslateY.set(Math.max(0, e.translationY));
-    })
-    .onEnd((e) => {
-      if (e.translationY > 100 || e.velocityY > 800) {
-        setShowCompletionModal(false);
-      } else {
-        sheetTranslateY.set(withSpring(0));
-      }
-    });
-
-  const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: sheetTranslateY.get() }],
-  }));
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboard(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboard(0),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   useEffect(() => {
     totalTimeRef.current = totalWorkoutTime;
@@ -113,7 +124,7 @@ export default function ActiveWorkoutScreen() {
         const stored = await getActiveSession();
 
         if (stored) {
-          setExercisesState(stored.exercisesState);
+          setExercisesState(stored.exercisesState.map(dedupeCompletedSets));
           setCurrentExerciseIndex(stored.currentExerciseIndex);
           setCurrentSetIndex(stored.currentSetIndex);
           setCompletedExercises(stored.completedExercises);
@@ -129,7 +140,7 @@ export default function ActiveWorkoutScreen() {
         exerciseData: ex,
         completedSetIndices: [],
         completedSets: [],
-        restTimeSeconds: ex.plannedRestSeconds || 90,
+        restTimeSeconds: ex.plannedRestSeconds ?? 90,
       }));
       setExercisesState(initialState);
     } catch (error) {
@@ -144,12 +155,6 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     loadWorkout();
-
-    return () => {
-      if (setTimeoutRef.current) {
-        clearTimeout(setTimeoutRef.current);
-      }
-    };
   }, [loadWorkout]);
 
   useEffect(() => {
@@ -228,93 +233,67 @@ export default function ActiveWorkoutScreen() {
     };
   }, [currentExerciseId, exerciseStats]);
 
-  const pushExerciseStats = (exerciseId: string, data: ExerciseStats) => {
-    pendingStatsRef.current[exerciseId] = {
-      ...pendingStatsRef.current[exerciseId],
-      ...data,
-    };
-    const payload = pendingStatsRef.current[exerciseId];
-    updateExerciseStats(exerciseId, payload)
-      .then(() => {
-        delete pendingStatsRef.current[exerciseId];
-      })
-      .catch(() => {});
-  };
-
-  const flushPendingStats = async () => {
-    await Promise.all(
-      Object.entries(pendingStatsRef.current).map(([id, data]) =>
-        updateExerciseStats(id, data)
-          .then(() => {
-            delete pendingStatsRef.current[id];
-          })
-          .catch(() => {}),
-      ),
-    );
-  };
-
   const isLastSet = currentSetIndex === (currentExercise?.sets.length || 1) - 1;
 
   const handleCompleteSet = (reps: number, weight: number) => {
-    const newState = [...exercisesState];
-    const exState = newState[currentExerciseIndex];
+    const exState = exercisesState[currentExerciseIndex];
+    if (exState.completedSetIndices.includes(currentSetIndex)) return;
 
-    exState.completedSetIndices.push(currentSetIndex);
-    exState.completedSets.push({ reps, weight });
+    const newState = exercisesState.map((state, index) =>
+      index === currentExerciseIndex
+        ? {
+            ...state,
+            completedSetIndices: [...state.completedSetIndices, currentSetIndex],
+            completedSets: [...state.completedSets, { reps, weight }],
+          }
+        : state,
+    );
 
     if (currentExerciseId && (weight > 0 || reps > 0)) {
+      // Affichage uniquement : le serveur recalcule les stats à l'enregistrement de la séance.
       const previous = exerciseStats[currentExerciseId];
-      const update: ExerciseStats = { last_weight: weight, last_reps: reps };
-      if (previous !== undefined && weight > (previous?.PR ?? 0)) {
-        update.PR = weight;
+      const update: LiveExerciseStats = { lastWeight: weight, lastReps: reps };
+      if (previous !== undefined && weight > (previous?.prWeight ?? 0)) {
+        update.prWeight = weight;
       }
       setExerciseStats((prev) => ({
         ...prev,
         [currentExerciseId]: { ...prev[currentExerciseId], ...update },
       }));
-      pushExerciseStats(currentExerciseId, update);
     }
 
-    const restTime = exState.restTimeSeconds || 90;
-    setRestTimeRemaining(restTime);
-    setRestTimeTotal(restTime);
-    setShowRestScreen(true);
     setExercisesState(newState);
 
-    if (setTimeoutRef.current) {
-      clearTimeout(setTimeoutRef.current);
-    }
-
-    setTimeoutRef.current = setTimeout(
-      () => {
-        executeSetTransition(isLastSet, isLastExercise, newState);
-      },
-      restTime * 1000 + 500,
-    );
-  };
-
-  const executeSetTransition = (
-    isLastSet: boolean,
-    isLastExercise: boolean,
-    newState: ExerciseState[],
-  ) => {
     if (isLastSet) {
-      setCompletedExercises([...completedExercises, currentExerciseIndex]);
-
-      if (isLastExercise) {
+      const nowCompleted = completedExercises.includes(currentExerciseIndex)
+        ? completedExercises
+        : [...completedExercises, currentExerciseIndex];
+      setCompletedExercises(nowCompleted);
+      const remaining = exercisesState.map((_, i) => i).filter((i) => !nowCompleted.includes(i));
+      // Plus aucun exercice à faire : la séance est terminée, pas de repos.
+      if (remaining.length === 0) {
+        setShowRestScreen(false);
         setShowCompletionModal(true);
-      } else {
-        setCurrentExerciseIndex(currentExerciseIndex + 1);
-        setCurrentSetIndex(0);
+        return;
       }
+      const next = remaining.find((i) => i > currentExerciseIndex) ?? remaining[0];
+      setCurrentExerciseIndex(next);
+      setCurrentSetIndex(0);
     } else {
       setCurrentSetIndex(currentSetIndex + 1);
     }
+
+    const restTime = exState.restTimeSeconds ?? 90;
+    if (restTime <= 0) return;
+    setRestTimeRemaining(restTime);
+    setRestTimeTotal(restTime);
+    setShowRestScreen(true);
   };
 
   const handleAddSet = () => {
     const newState = [...exercisesState];
     const exState = newState[currentExerciseIndex];
+    if (exState.exerciseData.sets.length >= LIMITS.maxSets) return;
     const lastSet =
       exState.exerciseData.sets[exState.exerciseData.sets.length - 1];
     exState.exerciseData.sets.push({ ...lastSet });
@@ -330,32 +309,6 @@ export default function ActiveWorkoutScreen() {
         setCurrentSetIndex(exState.exerciseData.sets.length - 1);
       }
       setExercisesState(newState);
-    }
-  };
-
-  const handleSkipExercise = () => {
-    const newCompletedExercises = Array.isArray(completedExercises)
-      ? [...completedExercises]
-      : [];
-    if (!newCompletedExercises.includes(currentExerciseIndex)) {
-      newCompletedExercises.push(currentExerciseIndex);
-    }
-
-    let nextExerciseIndex = -1;
-    for (let i = currentExerciseIndex + 1; i < exercisesState.length; i++) {
-      if (!newCompletedExercises.includes(i)) {
-        nextExerciseIndex = i;
-        break;
-      }
-    }
-
-    if (nextExerciseIndex === -1) {
-      setCompletedExercises(newCompletedExercises);
-      setShowCompletionModal(true);
-    } else {
-      setCompletedExercises(newCompletedExercises);
-      setCurrentExerciseIndex(nextExerciseIndex);
-      setCurrentSetIndex(0);
     }
   };
 
@@ -382,7 +335,7 @@ export default function ActiveWorkoutScreen() {
       exerciseData: exercise,
       completedSetIndices: [],
       completedSets: [],
-      restTimeSeconds: exercise.plannedRestSeconds || 90,
+      restTimeSeconds: exercise.plannedRestSeconds ?? 90,
     });
     setExercisesState(newState);
   };
@@ -423,13 +376,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleSkipRest = () => {
-    if (setTimeoutRef.current) {
-      clearTimeout(setTimeoutRef.current);
-    }
-
     setShowRestScreen(false);
-
-    executeSetTransition(isLastSet, isLastExercise, exercisesState);
   };
 
   const handleEndWorkout = () => {
@@ -441,6 +388,13 @@ export default function ActiveWorkoutScreen() {
         style: "destructive",
       },
     ]);
+  };
+
+  // Ferme tout le groupe (workout) (choix de séance + séance en direct) et revient
+  // sur l'onglet stats sans rien laisser dans la pile.
+  const leaveWorkout = () => {
+    if (router.canDismiss()) router.dismissAll();
+    router.navigate("/(tabs)/stats");
   };
 
   const handleMinimize = async () => {
@@ -469,6 +423,12 @@ export default function ActiveWorkoutScreen() {
       return;
     }
 
+    // Une séance sans aucune série validée n'a rien à enregistrer.
+    if (!exercisesState.some((state) => state.completedSets.length > 0)) {
+      Alert.alert(t.error, t.noValidatedSet);
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const token = await TokenService.get();
@@ -492,18 +452,39 @@ export default function ActiveWorkoutScreen() {
         exercises: completedData,
       };
 
-      await createCompletedWorkout(request, token || undefined);
-      await flushPendingStats();
+      const saved = await createCompletedWorkout(request, token || undefined);
+
+      // La séance est déjà enregistrée : un échec d'envoi de photo ne doit pas la faire perdre.
+      let photoError: string | null = null;
+      if (completionPhoto) {
+        try {
+          await PhotoService.uploadWorkoutPhoto(saved.id, completionPhoto);
+        } catch (err) {
+          photoError = err instanceof Error ? err.message : t.cannotUploadPhoto;
+        }
+      }
       await clearActiveSession();
-      Alert.alert(t.success, t.workoutSavedSuccess, [
-        {
-          text: "OK",
-          onPress: () => router.replace("/(tabs)/stats"),
-        },
-      ]);
+      queryCache.invalidate("stats", "records", "profile");
+
+      const goToStats = leaveWorkout;
+      const records = saved.badges ?? [];
+      setShowCompletionModal(false);
+      if (records.length > 0) {
+        photoFailedRef.current = !!photoError;
+        setNewBadges(records);
+      } else {
+        Alert.alert(
+          t.success,
+          photoError ? `${t.workoutSavedSuccess}\n${t.photoNotSent}` : t.workoutSavedSuccess,
+          [{ text: "OK", onPress: goToStats }],
+        );
+      }
     } catch (error) {
       console.error("Erreur:", error);
-      Alert.alert(t.error, t.cannotSaveWorkout);
+      Alert.alert(
+        t.error,
+        error instanceof ApiError && error.status === 400 ? error.message : t.cannotSaveWorkout,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -512,9 +493,9 @@ export default function ActiveWorkoutScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1">
-        <ScreenBackground />
+        <ScreenBackground flat />
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <View className="w-full px-4"><DetailSkeleton rows={3} /></View>
         </View>
       </SafeAreaView>
     );
@@ -522,20 +503,14 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <StatusBar barStyle="light-content" />
 
-      <WorkoutSessionHeader
-        workoutTitle={workoutName}
-        totalTime={totalWorkoutTime}
-        onMinimize={handleMinimize}
-        onEndWorkout={handleEndWorkout}
-      />
-
       <ScrollView
+        {...chromeScrollProps}
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingTop: headerHeight + 8, paddingBottom: 24 }}
       >
         {currentExercise && (
           <>
@@ -571,7 +546,7 @@ export default function ActiveWorkoutScreen() {
                   />
                 </View>
 
-                <Button
+                <Button bounce={false}
                   icon="play-forward"
                   label={t.skipRest}
                   onPress={handleSkipRest}
@@ -587,7 +562,6 @@ export default function ActiveWorkoutScreen() {
                 onCompleteSet={handleCompleteSet}
                 onAddSet={handleAddSet}
                 onRemoveSet={handleRemoveSet}
-                onSkipExercise={handleSkipExercise}
                 onDeleteExercise={handleDeleteExercise}
                 isLastExercise={isLastExercise}
                 isLastSet={isLastSet}
@@ -608,35 +582,61 @@ export default function ActiveWorkoutScreen() {
         <View className="h-8" />
       </ScrollView>
 
-      <Modal
-        visible={showCompletionModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCompletionModal(false)}
+      <View
+        pointerEvents="box-none"
+        className="absolute inset-x-0 z-10"
+        style={{ top: insets.top }}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
       >
-        <GestureHandlerRootView className="flex-1 justify-end bg-overlay">
-          <Animated.View style={[{ maxHeight: "90%" }, sheetStyle]}>
-            <View className="rounded-t-hero bg-surface px-5 pb-8 pt-3">
-              <GestureDetector gesture={sheetPan}>
-                <View collapsable={false}>
-                  <View className="mb-5 h-6 w-full items-center justify-start">
-                    <View className="h-1.5 w-12 rounded-full bg-raised" />
-                  </View>
+        <View
+          pointerEvents="none"
+          style={{ position: "absolute", top: -insets.top, left: 0, right: 0 }}
+        >
+          <TopBlur height={headerHeight + insets.top + 12} />
+        </View>
+        <WorkoutSessionHeader
+          workoutTitle={workoutName}
+          totalTime={totalWorkoutTime}
+          onMinimize={handleMinimize}
+          onEndWorkout={handleEndWorkout}
+        />
+      </View>
 
-                  <View className="mb-6 items-center">
-                    <View className="h-20 w-20 items-center justify-center rounded-full bg-success-tint">
-                      <Ionicons
-                        name="checkmark"
-                        size={40}
-                        color={WorkoutTheme.status.success}
-                      />
-                    </View>
-                    <Text className="mt-4 text-2xl font-semibold text-ink">
-                      {t.workoutCompleted}
-                    </Text>
-                  </View>
-                </View>
-              </GestureDetector>
+      <Modal
+        isVisible={showCompletionModal}
+        onBackdropPress={() => !isSubmitting && setShowCompletionModal(false)}
+        onSwipeComplete={() => !isSubmitting && setShowCompletionModal(false)}
+        swipeDirection="down"
+        style={{ justifyContent: "flex-end", margin: 0 }}
+      >
+        <View
+          className="rounded-t-hero bg-background px-5 pb-8 pt-3"
+          style={{ maxHeight: windowHeight * 0.9, marginBottom: keyboard }}
+        >
+          <View className="mb-3 h-1.5 w-12 self-center rounded-full bg-raised" />
+          <View className="mb-2 flex-row justify-end">
+            <PressableScale
+              bounce={false}
+              halo={false}
+              hitSlop={12}
+              disabled={isSubmitting}
+              onPress={() => setShowCompletionModal(false)}
+              accessibilityRole="button"
+              accessibilityLabel={t.closeLabel}
+              className={isSubmitting ? "opacity-50" : ""}
+            >
+              <Ionicons name="close" size={26} color={WorkoutTheme.text.primary} />
+            </PressableScale>
+          </View>
+
+          <View className="mb-6 items-center">
+            <View className="h-20 w-20 items-center justify-center rounded-full bg-success-tint">
+              <Ionicons name="checkmark" size={40} color={WorkoutTheme.status.success} />
+            </View>
+            <Text className="mt-4 text-2xl font-semibold text-ink">
+              {t.workoutCompleted}
+            </Text>
+          </View>
 
               <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -647,6 +647,7 @@ export default function ActiveWorkoutScreen() {
                   <TextField
                     placeholder={t.workoutNameLabel}
                     value={completionTitle}
+                    maxLength={LIMITS.title}
                     onChangeText={setCompletionTitle}
                     editable={!isSubmitting}
                   />
@@ -657,15 +658,21 @@ export default function ActiveWorkoutScreen() {
                     multiline
                     placeholder={t.addDescriptionPlaceholder}
                     value={completionDescription}
+                    maxLength={LIMITS.description}
                     onChangeText={setCompletionDescription}
                     editable={!isSubmitting}
                   />
                 </FormField>
 
+                <WorkoutImagePicker
+                  image={completionPhoto}
+                  onImageChange={setCompletionPhoto}
+                />
+
                 <View className="gap-3">
                   <View className="flex-row items-center gap-3">
                     <View className="flex-1">
-                      <Button
+                      <Button bounce={false}
                         icon="checkmark"
                         label={t.save}
                         loading={isSubmitting}
@@ -673,6 +680,7 @@ export default function ActiveWorkoutScreen() {
                       />
                     </View>
                     <PressableScale
+                      bounce={false}
                       onPress={isSubmitting ? undefined : handleDiscardWorkout}
                       accessibilityRole="button"
                       accessibilityLabel={t.dontSave}
@@ -685,18 +693,19 @@ export default function ActiveWorkoutScreen() {
                       />
                     </PressableScale>
                   </View>
-                  <Button
-                    variant="secondary"
-                    label={t.back}
-                    disabled={isSubmitting}
-                    onPress={() => setShowCompletionModal(false)}
-                  />
                 </View>
               </ScrollView>
-            </View>
-          </Animated.View>
-        </GestureHandlerRootView>
+        </View>
       </Modal>
+      <NewRecordsSheet
+        badges={newBadges}
+        visible={newBadges.length > 0}
+        onClose={() => {
+          setNewBadges([]);
+          if (photoFailedRef.current) Alert.alert(t.error, t.photoNotSent);
+          leaveWorkout();
+        }}
+      />
     </SafeAreaView>
   );
 }

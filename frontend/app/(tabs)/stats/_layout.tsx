@@ -11,6 +11,10 @@ export default function StatsStack() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen
+        name="records"
+        options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
+      />
+      <Stack.Screen
         name="workout-detail"
         options={{ contentStyle: { backgroundColor: WorkoutTheme.background } }}
       />

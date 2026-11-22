@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import { View, ScrollView, Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   createExercise,
@@ -9,19 +10,21 @@ import {
 import { TokenService } from "@/services/token.service";
 import { SelectList } from "react-native-dropdown-select-list";
 
-import { WorkoutTheme } from "@/constants/Colors";
 import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import { FormField, TextField } from "@/components/ui/FormField";
 import { selectStyles } from "@/components/ui/selectStyles";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { FormSkeleton } from "@/components/ui/skeletons";
+import { LIMITS } from "@/utils/validation";
 export default function CreateExerciseScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
   const { exerciseId } = useLocalSearchParams<{ exerciseId?: string }>();
   const isEditing = !!exerciseId;
   const [ready, setReady] = useState(!exerciseId);
@@ -122,27 +125,28 @@ export default function CreateExerciseScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
-      <ScreenHeader title={isEditing ? t.editExercise : t.newExercise} />
+      <ScreenBackground flat />
+      <ScreenHeader floating title={isEditing ? t.editExercise : t.newExercise} />
       {!ready ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <View className="flex-1 px-5" style={{ paddingTop: headerHeight }}><FormSkeleton fields={6} /></View>
       ) : (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           className="flex-1"
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-5 px-5"
-        contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
           keyboardShouldPersistTaps="handled"
         >
           <FormField label={t.name} required>
             <TextField
               placeholder={t.exerciseNamePlaceholder}
               value={name}
+              maxLength={LIMITS.title}
               onChangeText={setName}
             />
           </FormField>
 
-          <FormField label={t.equipmentType} required>
+          <FormField label={t.equipmentType} required style={{ zIndex: 30 }}>
             <SelectList
               setSelected={(val: string) => setEquipmentType(val)}
               data={options(t.equipmentNames)}
@@ -161,7 +165,7 @@ export default function CreateExerciseScreen() {
             />
           </FormField>
 
-          <FormField label={t.primaryMuscle} required>
+          <FormField label={t.primaryMuscle} required style={{ zIndex: 20 }}>
             <SelectList
               setSelected={(val: string) => setPrimaryMuscle(val)}
               data={options(t.muscleNames)}
@@ -195,7 +199,7 @@ export default function CreateExerciseScreen() {
             </View>
           </FormField>
 
-          <FormField label={t.exerciseType} required>
+          <FormField label={t.exerciseType} required style={{ zIndex: 10 }}>
             <SelectList
               setSelected={(val: string) => setExerciseType(val)}
               data={options(t.exerciseTypeNames)}

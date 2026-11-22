@@ -1,14 +1,13 @@
 import React, {
   useCallback,
-  useDeferredValue,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
-import { useSectionQuery } from "@/contexts/WorkoutsSearchContext";
-import { normalizeText } from "@/utils/text";
 import {
   Exercise,
   deleteExercise,
@@ -19,15 +18,17 @@ import {
 import { TokenService } from "@/services/token.service";
 import { useFocusEffect, router } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
-import ExerciseCard from "@/components/workout/exercises/ExerciseCard";
-import ExerciseFilterSheet, {
-  ExerciseFilters,
-  NO_FILTERS,
-} from "@/components/workout/exercises/ExerciseFilterSheet";
+import ErrorState from "@/components/ui/ErrorState";
+import EmptyState from "@/components/ui/EmptyState";
+import IconButton from "@/components/ui/IconButton";
+import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
+import ExerciseRow from "@/components/workout/exercises/ExerciseRow";
+import ExercisesListSheet from "@/components/workout/exercises/ExercisesListSheet";
+import { buildExerciseRows, indexExercises, type ExerciseListRow } from "@/components/workout/exercises/exerciseRows";
+import { ExerciseListSkeleton } from "@/components/ui/skeletons";
 
-type Row =
-  | { kind: "header"; key: string; title: string }
-  | { kind: "exercise"; key: string; exercise: Exercise; canDelete: boolean };
+
+type Row = ExerciseListRow;
 
 export default function ExercisesScreen() {
   const { t } = useTranslation();
@@ -36,11 +37,9 @@ export default function ExercisesScreen() {
     () => peekExercises() ?? [],
   );
   const [userCreatedIds, setUserCreatedIds] = useState<string[]>([]);
-  const [filters, setFilters] = useState<ExerciseFilters>(NO_FILTERS);
-  const [filterVisible, setFilterVisible] = useState(false);
-  const openFilters = useCallback(() => setFilterVisible(true), []);
-  const query = useSectionQuery("exercises", openFilters);
-  const deferredQuery = useDeferredValue(query);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const openSheet = useCallback(() => setSheetVisible(true), []);
+  const closeSheet = useCallback(() => setSheetVisible(false), []);
   const [loading, setLoading] = useState(() => peekExercises() === null);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,44 +66,12 @@ export default function ExercisesScreen() {
     }, [loadExercises]),
   );
 
-  const indexed = useMemo(
-    () => exercises.map((exercise) => ({
-      exercise,
-      lowerName: normalizeText(exercise.name),
-    })),
-    [exercises],
-  );
+  const indexed = useMemo(() => indexExercises(exercises), [exercises]);
   const createdSet = useMemo(() => new Set(userCreatedIds), [userCreatedIds]);
-
-  const rows = useMemo<Row[]>(() => {
-    const needle = normalizeText(deferredQuery.trim());
-    const mine: Row[] = [];
-    const shared: Row[] = [];
-
-    for (const { exercise, lowerName } of indexed) {
-      if (filters.equipment && exercise.equipment_type !== filters.equipment) continue;
-      if (filters.muscle && exercise.primary_muscle !== filters.muscle) continue;
-      if (filters.type && exercise.exercise_type !== filters.type) continue;
-      if (needle && !lowerName.includes(needle)) continue;
-
-      const canDelete = createdSet.has(exercise.id);
-      (canDelete ? mine : shared).push({
-        kind: "exercise",
-        key: exercise.id,
-        exercise,
-        canDelete,
-      });
-    }
-
-    return [
-      ...(mine.length > 0
-        ? [{ kind: "header", key: "mine", title: t.yourExercises } as Row, ...mine]
-        : []),
-      ...(shared.length > 0
-        ? [{ kind: "header", key: "shared", title: t.sharedExercises } as Row, ...shared]
-        : []),
-    ];
-  }, [indexed, createdSet, filters, deferredQuery, t]);
+  const rows = useMemo(
+    () => buildExerciseRows(indexed, createdSet, { equipment: null, muscle: null, type: null }, "", t),
+    [indexed, createdSet, t],
+  );
 
   const handleOpen = useCallback((exerciseId: string) => {
     router.push({
@@ -146,21 +113,48 @@ export default function ExercisesScreen() {
     [t, loadExercises],
   );
 
-  const handleApplyFilters = useCallback((next: ExerciseFilters) => {
-    setFilters(next);
-    setFilterVisible(false);
-  }, []);
+  // La barre fixe affiche le groupe de la première ligne visible ; les titres restent dans la liste.
+  const { sectionOf, counts } = useMemo(() => {
+    const sectionOf: string[] = [];
+    const counts = new Map<string, number>();
+    let current = "";
+    for (const row of rows) {
+      if (row.kind === "header") {
+        current = row.title;
+        counts.set(row.title, row.count);
+      }
+      sectionOf.push(current);
+    }
+    return { sectionOf, counts };
+  }, [rows]);
 
-  const closeFilters = useCallback(() => setFilterVisible(false), []);
+  const sectionOfRef = useRef(sectionOf);
+  sectionOfRef.current = sectionOf;
+  const [currentSection, setCurrentSection] = useState<string | null>(null);
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: { index?: number | null; isViewable: boolean }[] }) => {
+      const first = viewableItems
+        .filter((v) => v.isViewable && v.index != null)
+        .reduce<number | null>((min, v) => (min === null || v.index! < min ? v.index! : min), null);
+      if (first !== null) setCurrentSection(sectionOfRef.current[first] ?? null);
+    },
+  ).current;
+
+  const title = (currentSection && counts.has(currentSection) ? currentSection : sectionOf[0]) ?? t.exercises;
 
   const renderItem = useCallback(
-    ({ item }: { item: Row }) =>
+    ({ item, index }: { item: Row; index: number }) =>
       item.kind === "header" ? (
-        <Text className="mb-3 pt-1 text-lg font-semibold text-ink">
-          {item.title}
-        </Text>
+        index === 0 ? null : (
+        <View
+          className="flex-row items-baseline justify-between px-1 pb-2 pt-4"
+        >
+          <Text className="text-xl font-semibold text-ink">{item.title}</Text>
+          <Text className="text-sm text-ink-muted">{item.count}</Text>
+        </View>
+        )
       ) : (
-        <ExerciseCard
+        <ExerciseRow
           exercise={item.exercise}
           canDelete={item.canDelete}
           onOpen={handleOpen}
@@ -171,22 +165,54 @@ export default function ExercisesScreen() {
   );
 
   return (
-    <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 px-4">
+    <SafeAreaView edges={["left", "right"]} className="flex-1 px-4">
+      <View className="-mx-4">
+        <WorkoutsNavBar compact />
+      </View>
+      <View className="flex-row items-center justify-between px-1 pb-4">
+        <Text className="flex-1 text-xl font-semibold text-ink" numberOfLines={1}>
+          {title}
+        </Text>
+        <View className="flex-row items-center gap-3">
+          <Text className="text-sm text-ink-muted">{counts.get(title) ?? 0}</Text>
+          <IconButton
+            icon="add"
+            size={40}
+            variant="accent"
+            label={t.createExercise}
+            onPress={() => router.push("/(tabs)/workouts/create/exercise" as any)}
+          />
+          <IconButton icon="search-outline" size={40} label={t.searchLabel} onPress={openSheet} />
+        </View>
+      </View>
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-ink-muted">{t.loadingExercises}</Text>
+        <View className="flex-1 px-4 pt-2">
+          <ExerciseListSkeleton count={9} />
         </View>
       ) : error ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-danger">{error}</Text>
+        <View className="flex-1 justify-center px-4">
+          <ErrorState
+            message={error}
+            onRetry={() => {
+              setLoading(true);
+              loadExercises();
+            }}
+          />
         </View>
       ) : rows.length === 0 ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-ink-muted">{t.noExerciseFound}</Text>
+        <View className="flex-1 justify-center px-4">
+          <EmptyState
+            icon="barbell-outline"
+            title={t.noExerciseFound}
+            actionLabel={t.createExercise}
+            onAction={() => router.push("/(tabs)/workouts/create/exercise" as any)}
+          />
         </View>
       ) : (
-        <FlatList
+        <FlatList {...chromeScrollProps}
           data={rows}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
           keyExtractor={(row) => row.key}
           renderItem={renderItem}
           initialNumToRender={10}
@@ -199,13 +225,14 @@ export default function ExercisesScreen() {
         />
       )}
 
-      <ExerciseFilterSheet
-        visible={filterVisible}
-        value={filters}
-        onClose={closeFilters}
-        onApply={handleApplyFilters}
+      <ExercisesListSheet
+        visible={sheetVisible}
+        onClose={closeSheet}
+        exercises={exercises}
+        createdIds={createdSet}
+        onOpen={handleOpen}
+        onDelete={handleDelete}
       />
-
     </SafeAreaView>
   );
 }

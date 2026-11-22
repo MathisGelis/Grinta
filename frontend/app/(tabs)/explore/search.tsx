@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, ActivityIndicator } from "react-native";
-import { WorkoutTheme } from "@/constants/Colors";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import { View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FLOATING_HEADER_OFFSET } from "@/components/ui/Screen";
 import { ConnectionsService } from "@/services/connections.service";
@@ -10,6 +10,8 @@ import SearchUserCard from "@/components/explorePage/SearchUserCard";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { UserListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 export default function SearchScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -26,7 +28,7 @@ export default function SearchScreen() {
     <View
       className="flex-1"
     >
-      <ScrollView
+      <ScrollView {...chromeScrollProps}
         className="flex-1 px-5"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -35,15 +37,9 @@ export default function SearchScreen() {
         }}
       >
         {loading ? (
-          <View className="items-center justify-center py-8">
-            <ActivityIndicator size="large" color={WorkoutTheme.text.primary} />
-          </View>
+          <UserListSkeleton count={6} action />
         ) : searchAttempted && results.length === 0 && query.trim() ? (
-          <View className="items-center justify-center py-8">
-            <Text className="text-ink-muted text-base">
-              {format(t.noUsersFound, { query })}
-            </Text>
-          </View>
+          <EmptyState icon="search-outline" title={format(t.noUsersFound, { query })} />
         ) : results.length > 0 ? (
           <View className="gap-3">
             {results.map((user) => (

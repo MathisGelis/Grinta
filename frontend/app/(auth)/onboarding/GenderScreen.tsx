@@ -1,17 +1,32 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
+import * as Haptics from "expo-haptics";
 
 import { WorkoutTheme } from "@/constants/Colors";
+import SkipLink from "@/components/ui/SkipLink";
+import OnboardingNav, { useNavLock } from "@/components/ui/OnboardingNav";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useBlockHardwareBack } from "@/hooks/useBlockHardwareBack";
+import { clearOnboardingDraft } from "@/utils/onboardingDraft";
 const CIRCLE = 140;
 
 export default function GenderScreen() {
   const { t } = useTranslation();
+  // Première page du questionnaire: un retour sortirait de l'onboarding.
+  useBlockHardwareBack();
+  // Nouveau passage dans le questionnaire : on repart de zéro.
+  useEffect(() => clearOnboardingDraft(), []);
+  const once = useNavLock();
   const [selected, setSelected] = useState<"male" | "female" | null>(null);
+
+  const choose = (gender: "male" | "female") => {
+    if (gender !== selected) Haptics.selectionAsync();
+    setSelected(gender);
+  };
 
   const handleNext = () => {
     if (!selected) return;
@@ -32,7 +47,7 @@ export default function GenderScreen() {
       <View className="items-center gap-6 flex-1 justify-center -mt-10">
         <PressableScale
           style={[styles.circle, selected === "male" && styles.circleActive]}
-          onPress={() => setSelected("male")}
+          onPress={() => choose("male")}
         >
           <MaterialCommunityIcons
             name="gender-male"
@@ -48,7 +63,7 @@ export default function GenderScreen() {
 
         <PressableScale
           style={[styles.circle, selected === "female" && styles.circleActive]}
-          onPress={() => setSelected("female")}
+          onPress={() => choose("female")}
         >
           <MaterialCommunityIcons
             name="gender-female"
@@ -61,18 +76,21 @@ export default function GenderScreen() {
             {t.female}
           </Text>
         </PressableScale>
+
+        <SkipLink
+          className="mt-4"
+          textClassName="text-accent-light"
+          label={t.preferNotToSay}
+          onPress={() => once(() => router.push("/(auth)/onboarding/AgeScreen"))}
+        />
       </View>
 
-      <View className="flex-row items-center pb-12 pt-4">
-        <View className="flex-1" />
-        <PressableScale
-          className={`bg-accent py-4 px-10 rounded-full ${!selected ? "opacity-[0.4]" : ""}`}
-          onPress={handleNext}
-          disabled={!selected}
-        >
-          <Text className="text-ink text-base font-bold">{t.nextBtn}</Text>
-        </PressableScale>
-      </View>
+      <OnboardingNav
+        hideBack
+        onNext={handleNext}
+        nextLabel={t.nextBtn}
+        nextDisabled={!selected}
+      />
     </View>
   );
 }

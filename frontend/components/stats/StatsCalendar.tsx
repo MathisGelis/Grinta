@@ -1,3 +1,4 @@
+import { formatDate } from "@/utils/formatDate";
 import React, { useEffect } from "react";
 import { Text, View } from "react-native";
 import Animated, {
@@ -6,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import Glass from "@/components/ui/Glass";
@@ -64,11 +65,11 @@ export default function StatsCalendar({
   onShift,
   workoutDays,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const todayKey = dayKey(new Date());
   const selectedKey = dayKey(selected);
   const labelDate = view === "week" ? weekOf(anchor)[3] : anchor;
-  const monthLabel = `${t.months[labelDate.getMonth()]} ${labelDate.getFullYear()}`;
+  const monthLabel = formatDate(labelDate, lang, "month");
 
   const rows = monthRows(anchor).length;
   const targetHeight =

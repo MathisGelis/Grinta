@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { View } from "react-native";
-import { fullPlannedWorkout } from "@/services/workouts.service";
+import { router } from "expo-router";
 import WorkoutCardHeader from "@/components/workout/card/WorkoutCardHeader";
-import WorkoutCardBody, {
-  computeWorkoutStats,
-} from "@/components/workout/card/WorkoutCardBody";
 
 interface WorkoutCardProps {
   workout: {
@@ -12,57 +9,31 @@ interface WorkoutCardProps {
     title: string;
     description?: string;
     totalExercises?: number;
+    totalSets?: number;
   };
-  onDelete?: (id: string) => void;
-  onUpdate?: (updatedWorkout: fullPlannedWorkout) => void;
+  /** Appelé juste avant l'ouverture de la page (ex. pour fermer une feuille). */
+  onOpen?: () => void;
 }
 
-function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [hasExpanded, setHasExpanded] = useState(false);
-  const [fullWorkout, setFullWorkout] = useState<fullPlannedWorkout | null>(null);
-  const [editedTitle, setEditedTitle] = useState(workout.title);
-
-  useEffect(() => {
-    setEditedTitle(workout.title);
-  }, [workout.title]);
-
-  const toggleExpand = useCallback(() => {
-    setHasExpanded(true);
-    setIsExpanded((prev) => !prev);
-  }, []);
-
-  const stats = useMemo(() => computeWorkoutStats(fullWorkout), [fullWorkout]);
+/** Card d'une séance : ouvre la page de détail de la séance. */
+function WorkoutCard({ workout, onOpen }: WorkoutCardProps) {
+  const open = useCallback(() => {
+    onOpen?.();
+    router.push({
+      pathname: "/(tabs)/workouts/workout-detail",
+      params: { workoutId: workout.id, title: workout.title },
+    } as any);
+  }, [onOpen, workout.id, workout.title]);
 
   return (
     <View className="w-full pb-3">
       <View className="overflow-hidden rounded-card bg-surface">
         <WorkoutCardHeader
-          title={editedTitle}
-          isExpanded={isExpanded}
-          onToggleExpand={toggleExpand}
-          totalExercises={
-            fullWorkout?.exercises?.length ?? workout.totalExercises ?? 0
-          }
-          stats={{
-            totalSets: stats.totalSets,
-            totalWeight: stats.totalWeight,
-          }}
-          hasWorkout={!!fullWorkout}
+          title={workout.title}
+          onPress={open}
+          totalExercises={workout.totalExercises ?? 0}
+          totalSets={workout.totalSets}
         />
-
-        {hasExpanded && (
-          <View className="bg-surface" style={isExpanded ? undefined : { display: "none" }}>
-            <WorkoutCardBody
-              workout={workout}
-              editedTitle={editedTitle}
-              onEditedTitleChange={setEditedTitle}
-              onLoaded={setFullWorkout}
-              onDelete={onDelete}
-              onUpdate={onUpdate}
-            />
-          </View>
-        )}
       </View>
     </View>
   );

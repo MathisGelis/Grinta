@@ -10,6 +10,8 @@ import {
 } from "react-native-safe-area-context";
 import { WorkoutTheme } from "@/constants/Colors";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { UnitsProvider } from "@/contexts/UnitsContext";
+import { ToastHost } from "@/components/ui/Toast";
 
 const AppTheme = {
   ...DarkTheme,
@@ -30,6 +32,7 @@ export default function RootLayout() {
     >
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <LanguageProvider>
+          <UnitsProvider>
           <ThemeProvider value={AppTheme}>
             <Stack
               screenOptions={{
@@ -44,7 +47,9 @@ export default function RootLayout() {
               <Stack.Screen name="+not-found" />
             </Stack>
             <StatusBar style="light" />
+            <ToastHost />
           </ThemeProvider>
+          </UnitsProvider>
         </LanguageProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

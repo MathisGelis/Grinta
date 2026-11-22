@@ -1,70 +1,66 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
   IsArray,
   ValidateNested,
-  IsUUID,
   IsInt,
-  Min,
   IsDateString,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-
-export class SetPairDto {
-  @ApiProperty()
-  @IsInt()
-  @Min(1)
-  reps: number;
-
-  @ApiProperty()
-  @IsInt()
-  @Min(0)
-  weight: number;
-}
-
-export class CompletedWorkoutExerciseDto {
-  @ApiProperty()
-  @IsUUID()
-  exerciseId: string;
-
-  @ApiProperty({ type: [SetPairDto], required: false })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SetPairDto)
-  sets?: SetPairDto[];
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  timerSeconds?: number;
-}
+import { Transform, Type } from 'class-transformer';
+import { CompletedWorkoutExerciseDto } from './create-completed-workout.dto';
+import {
+  IsNotFarInFuture,
+  trimmed,
+  WORKOUT_LIMITS as LIMITS,
+} from './workout-limits';
 
 export class UpdateCompletedWorkoutDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ minLength: 1, maxLength: LIMITS.titleMax })
   @IsOptional()
+  @Transform(trimmed)
   @IsString()
+  @MinLength(1)
+  @MaxLength(LIMITS.titleMax)
   title?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: `ISO date, at most ${LIMITS.completionMaxHoursAhead} h ahead of now`,
+  })
   @IsOptional()
   @IsDateString()
+  @IsNotFarInFuture(LIMITS.completionMaxHoursAhead)
   completionDate?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ minimum: 1, maximum: LIMITS.durationMaxSeconds })
   @IsOptional()
   @IsInt()
+  @Min(1)
+  @Max(LIMITS.durationMaxSeconds)
   totalDurationSeconds?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ maxLength: LIMITS.descriptionMax })
   @IsOptional()
+  @Transform(trimmed)
   @IsString()
+  @MaxLength(LIMITS.descriptionMax)
   description?: string;
 
-  @ApiPropertyOptional({ type: [CompletedWorkoutExerciseDto] })
+  @ApiPropertyOptional({
+    type: [CompletedWorkoutExerciseDto],
+    minItems: 1,
+    maxItems: LIMITS.exercisesMax,
+  })
   @IsOptional()
   @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(LIMITS.exercisesMax)
   @ValidateNested({ each: true })
   @Type(() => CompletedWorkoutExerciseDto)
   exercises?: CompletedWorkoutExerciseDto[];

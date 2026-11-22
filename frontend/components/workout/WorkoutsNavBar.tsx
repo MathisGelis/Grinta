@@ -5,29 +5,30 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "@/contexts/LanguageContext";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 
-type Route = "/workouts" | "/workouts/programms" | "/workouts/exercises";
+type Route = "/workouts" | "/workouts/exercises";
 
-export function WorkoutsNavBar() {
+/** Menu Création / Exercices : un élément normal du haut de chaque page, sans animation liée au défilement. */
+export function WorkoutsNavBar({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
 
   const active: Route = pathname.includes("exercises")
     ? "/workouts/exercises"
-    : pathname.includes("programms")
-      ? "/workouts/programms"
-      : "/workouts";
+    : "/workouts";
 
   return (
-    <View style={{ paddingTop: insets.top + 12 }} className="px-5 pb-4">
+    <View
+      style={{ paddingTop: insets.top + 12, paddingBottom: compact ? 8 : 16 }}
+      className="px-5"
+    >
       <SegmentedControl<Route>
         variant="glass"
         id="workouts-nav"
         value={active}
         onChange={(route) => router.navigate(route)}
         options={[
-          { value: "/workouts", label: t.sessions },
-          { value: "/workouts/programms", label: t.programmes },
+          { value: "/workouts", label: t.creation },
           { value: "/workouts/exercises", label: t.exercises },
         ]}
       />

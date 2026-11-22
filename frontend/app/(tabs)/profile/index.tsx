@@ -1,11 +1,14 @@
-import React, { useCallback, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import React, { useState } from "react";
+import { View, Text } from "react-native";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { router } from "expo-router";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { WorkoutTheme } from "@/constants/Colors";
 import Screen from "@/components/ui/Screen";
+import { FEATURES } from "@/constants/features";
+import Avatar from "@/components/ui/Avatar";
 import Stat from "@/components/ui/Stat";
 import Glass from "@/components/ui/Glass";
 import IconButton from "@/components/ui/IconButton";
@@ -14,6 +17,8 @@ import MyPostsSection from "@/components/profile/MyPostsSection";
 import { usePostInteractions } from "@/components/explorePage/PostInteractions";
 import GlobalStatsSection from "@/components/profile/GlobalStatsSection";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import ErrorState from "@/components/ui/ErrorState";
+import { ProfileSkeleton } from "@/components/ui/skeletons";
 
 function formatJoinDate(dateStr: string, months: string[]): string {
   const d = new Date(dateStr);
@@ -23,52 +28,39 @@ function formatJoinDate(dateStr: string, months: string[]): string {
 export default function ProfileScreen() {
   const { t } = useTranslation();
 
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [tab, setTab] = useState<"stats" | "posts">("stats");
+  const { data, loading, error, reload, mutate } = useCachedQuery("profile:me", async () => {
+    const id = await UserService.getMyId();
+    if (!id) throw new Error(t.loadingError);
+    const [user, profile] = await Promise.all([UserService.getMe(), UserService.getProfile(id)]);
+    return { user, profile };
+  });
+  const user: CurrentUser | null = data?.user ?? null;
+  const profile: UserProfile | null = data?.profile ?? null;
   const { openLikes, openComments, modals } = usePostInteractions(
     user?.id ?? "",
     { userProfilePath: "/(tabs)/profile/user-profile" },
   );
 
-  const fetchData = useCallback(async () => {
-    try {
-      const me = await UserService.getMe();
-      setUser(me);
-      setProfile(await UserService.getProfile(me.id));
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [fetchData]),
-  );
-
   const handlePostDeleted = (postId: string) => {
-    setProfile((prev) =>
-      prev
-        ? {
-            ...prev,
-            posts: (prev.posts ?? []).filter((p) => p.id !== postId),
-            postsCount: Math.max(0, prev.postsCount - 1),
-          }
-        : prev,
-    );
+    mutate((current) => ({
+      ...current,
+      profile: {
+        ...current.profile,
+        posts: (current.profile.posts ?? []).filter((p) => p.id !== postId),
+        postsCount: Math.max(0, current.profile.postsCount - 1),
+      },
+    }));
   };
 
-  const userName = user?.displayName ?? t.athlete;
-  const initials = userName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
+  const goalLabels = {
+    gain_weight: t.goalGainWeight,
+    lose_weight: t.goalLoseWeight,
+    get_fitter: t.goalGetFitter,
+    flexibility: t.goalFlexibility,
+    learn_basics: t.goalLearnBasics,
+  };
+  const userName = user?.displayName ?? "";
   const joinedDate = user?.createdAt
     ? formatJoinDate(user.createdAt, t.months)
     : "";
@@ -80,6 +72,7 @@ export default function ProfileScreen() {
     <>
       <Screen>
         <View className="flex-row items-center justify-between">
+          {FEATURES.premium ? (
           <PressableScale
             onPress={() => router.push("/(tabs)/profile/premium" as any)}
             accessibilityRole="button"
@@ -97,6 +90,9 @@ export default function ProfileScreen() {
               />
             </Glass>
           </PressableScale>
+          ) : (
+            <View />
+          )}
 
           <IconButton
             icon="settings-outline"
@@ -107,20 +103,26 @@ export default function ProfileScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+          <ProfileSkeleton />
+        ) : error || !user ? (
+          <ErrorState
+            message={error ?? undefined}
+            onRetry={reload}
+          />
         ) : (
           <>
             <View className="-mt-4 items-center gap-1">
-              <View className="mb-2 h-24 w-24 items-center justify-center rounded-full bg-accent">
-                <Text className="text-3xl font-semibold text-ink">
-                  {initials}
-                </Text>
+              <View className="mb-2 rounded-full bg-accent p-[3px]">
+                <Avatar uri={user?.avatarUrl} name={userName} size={96} />
               </View>
               <Text className="text-xl font-semibold text-ink">{userName}</Text>
               {user?.uniqueName ? (
-                <Text className="text-sm font-medium text-accent">
+                <Text className="text-sm font-medium text-accent-light">
                   @{user.uniqueName}
                 </Text>
+              ) : null}
+              {user.goal ? (
+                <Text className="text-xs text-ink-soft">{goalLabels[user.goal]}</Text>
               ) : null}
               {joinedDate ? (
                 <Text className="text-xs text-ink-muted">
@@ -162,13 +164,17 @@ export default function ProfileScreen() {
                   className="items-center"
                 />
               </PressableScale>
-              <View className="flex-1 items-center rounded-tile bg-surface p-4">
+              <PressableScale
+                className="flex-1 items-center rounded-tile bg-surface p-4"
+                accessibilityRole="button"
+                onPress={() => router.push("/(tabs)/profile/completed-workouts" as any)}
+              >
                 <Stat
                   value={workoutsCount}
                   label={t.workoutsLabel}
                   className="items-center"
                 />
-              </View>
+              </PressableScale>
             </View>
 
             <SegmentedControl
@@ -192,7 +198,7 @@ export default function ProfileScreen() {
                 onOpenPost={(post) =>
                   router.push({
                     pathname: "/(tabs)/profile/userPost",
-                    params: { postId: post.id, post: JSON.stringify(post) },
+                    params: { postId: post.id },
                   } as any)
                 }
                 onShowLikes={openLikes}

@@ -1,31 +1,11 @@
-module.exports = {
-  background: "#19191B",
-  surface: "#212124",
-  raised: "#2B2B2F",
-  line: "#343438",
-  ink: "#FFFFFF",
-  inkSoft: "#B8B8B8",
-  inkMuted: "#888888",
-  inkFaint: "#6B6B70",
-  accent: "#7B5CF0",
-  accentLight: "#A56BFF",
-  accentDark: "#5A3F8F",
-  accentTint: "#35295E",
-  success: "#34D399",
-  warning: "#F59E0B",
-  danger: "#FF6B6B",
-  info: "#3B82F6",
-  successTint: "#1F3A2B",
-  dangerTint: "#3A2427",
-  dangerBorder: "#52302F",
-  infoTint: "#242A44",
-  inkLight: "#E5E7EB",
-  accentText: "#CFC6FF",
-  dangerLight: "#FCA5A5",
-  overlay: "rgba(0,0,0,0.5)",
-  scrim: "rgba(0,0,0,0.7)",
-  glassFill: "rgba(255,255,255,0.1)",
-  glassBorder: "rgba(255,255,255,0.2)",
-  glassText: "rgba(255,255,255,0.5)",
-  glassStrong: "rgba(255,255,255,0.9)",
+// Palette active. Pour revenir à l'ancienne : "classic".
+//   classic : #19191B / #7B5CF0 (palette d'origine, gardée dans palettes/classic.js)
+//   violet  : #08080B / #7C5CB4 (palette à tester, palettes/violet.js)
+const ACTIVE = "violet";
+
+const palettes = {
+  classic: require("./palettes/classic"),
+  violet: require("./palettes/violet"),
 };
+
+module.exports = palettes[ACTIVE];

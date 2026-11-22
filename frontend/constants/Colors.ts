@@ -11,6 +11,7 @@ export const WorkoutTheme = {
     tertiary: palette.inkMuted,
     disabled: palette.inkFaint,
     light: palette.inkLight,
+    onAccent: palette.onAccent,
   },
 
   accent: {
@@ -27,6 +28,7 @@ export const WorkoutTheme = {
     danger: palette.danger,
     info: palette.info,
     successTint: palette.successTint,
+    warningTint: palette.warningTint,
     dangerTint: palette.dangerTint,
     dangerBorder: palette.dangerBorder,
     dangerLight: palette.dangerLight,

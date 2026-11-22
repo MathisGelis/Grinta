@@ -1,14 +1,16 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Dimensions, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Dimensions, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { api } from "@/services/api";
-import { TokenService } from "@/services/token.service";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { getAllExercises } from "@/services/exercises.service";
 
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { ExerciseListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface Exercise {
@@ -41,9 +43,8 @@ export default function WorkoutDetailScreen() {
   useEffect(() => {
     async function fetchExercises() {
       try {
-        const token = await TokenService.get();
-        const data = await api.get<Exercise[]>("/exercises", token ?? undefined);
-        setExercises(data);
+        // Catalogue en cache local : évite de retélécharger tout `/exercises` à chaque ouverture.
+        setExercises(await getAllExercises());
       } catch {
       } finally {
         setLoading(false);
@@ -73,13 +74,13 @@ export default function WorkoutDetailScreen() {
         </SafeAreaView>
       </View>
 
-      <ScrollView
+      <ScrollView {...chromeScrollProps}
         className="flex-1 bg-surface rounded-tl-[24px] rounded-tr-[24px] -mt-6"
         contentContainerStyle={styles.sheetContent}
         showsVerticalScrollIndicator={false}
       >
         <Text className="text-2xl font-bold text-ink mb-1.5">{title}</Text>
-        {category ? <Text className="text-sm text-accent font-semibold mb-4">{t.workoutsLabel} · {category}</Text> : null}
+        {category ? <Text className="text-sm text-accent-light font-semibold mb-4">{t.workoutsLabel} · {category}</Text> : null}
 
         {(duration || calories) && (
           <View className="flex-row gap-2.5 mb-4">
@@ -90,7 +91,7 @@ export default function WorkoutDetailScreen() {
             ) : null}
             {calories ? (
               <View className="bg-raised rounded-tile px-4 py-2">
-                <Text className="text-ink text-[13px] font-semibold">🔥 {calories} {t.calShort}</Text>
+                <Text className="text-ink text-[13px] font-semibold">{calories} {t.calShort}</Text>
               </View>
             ) : null}
           </View>
@@ -100,11 +101,9 @@ export default function WorkoutDetailScreen() {
 
         <Text className="text-lg font-bold text-ink mb-3">{t.exercises}</Text>
         {loading ? (
-          <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} style={{ marginTop: 16 }} />
+          <ExerciseListSkeleton count={3} />
         ) : exercises.length === 0 ? (
-          <View className="bg-raised rounded-tile p-5 items-center">
-            <Text className="text-ink-faint text-sm">{t.noExerciseAvailable}</Text>
-          </View>
+          <EmptyState plain icon="barbell-outline" title={t.noExerciseAvailable} />
         ) : (
           exercises.map((ex) => (
             <View key={ex.id} className="flex-row items-center bg-raised rounded-tile p-3.5 mb-2.5">
@@ -114,7 +113,7 @@ export default function WorkoutDetailScreen() {
               <View className="flex-1">
                 <Text className="text-ink text-sm font-semibold mb-1">{ex.name}</Text>
                 {ex.muscleGroup && (
-                  <Text className="text-accent text-[13px] font-medium">{ex.muscleGroup}</Text>
+                  <Text className="text-accent-light text-[13px] font-medium">{ex.muscleGroup}</Text>
                 )}
               </View>
               <Text className="text-ink-muted text-[22px] pl-2">›</Text>

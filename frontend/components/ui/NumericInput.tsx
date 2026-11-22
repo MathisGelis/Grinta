@@ -7,6 +7,7 @@ type Props = Omit<TextInputProps, "value" | "onChangeText" | "keyboardType"> & {
   onValueChange: (value: number) => void;
   decimal?: boolean;
   min?: number;
+  max?: number;
 };
 
 const format = (value: number) => (Number.isFinite(value) ? String(value) : "0");
@@ -16,6 +17,7 @@ export default function NumericInput({
   onValueChange,
   decimal = false,
   min = 0,
+  max = Number.POSITIVE_INFINITY,
   onBlur,
   onSubmitEditing,
   ...rest
@@ -29,16 +31,16 @@ export default function NumericInput({
 
   const handleChange = (input: string) => {
     const cleaned = decimal
-      ? input.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1")
+      ? input.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1").replace(/(\.\d{2})\d+/, "$1")
       : input.replace(/[^0-9]/g, "");
     setText(cleaned);
     const parsed = decimal ? parseFloat(cleaned) : parseInt(cleaned, 10);
-    onValueChange(Number.isNaN(parsed) ? min : Math.max(min, parsed));
+    onValueChange(Number.isNaN(parsed) ? min : Math.min(max, Math.max(min, parsed)));
   };
 
   const commit = () => {
     const parsed = decimal ? parseFloat(text) : parseInt(text, 10);
-    const next = Number.isNaN(parsed) ? min : Math.max(min, parsed);
+    const next = Number.isNaN(parsed) ? min : Math.min(max, Math.max(min, parsed));
     setText(format(next));
     onValueChange(next);
   };

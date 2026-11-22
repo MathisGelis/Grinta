@@ -1,18 +1,20 @@
 import React from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
 import { View, Text, ScrollView } from "react-native";
 import { useTranslation } from "@/contexts/LanguageContext";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 
 export default function PrivacyPolicyScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
 
   return (
     <View className="flex-1">
-      <ScreenHeader title={t.privacyPolicy} />
+      <ScreenHeader floating title={t.privacyPolicy} />
 
-      <ScrollView
+      <ScrollView {...chromeScrollProps}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 80 }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingHorizontal: 24, paddingBottom: 80 }}
       >
         <Text className="text-ink-faint text-[13px] mb-4">{t.privacyLastUpdated}</Text>
 

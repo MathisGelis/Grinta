@@ -2,16 +2,18 @@ import React from "react";
 import { Alert, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Directions, Gesture, GestureDetector } from "react-native-gesture-handler";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { WorkoutTheme, withAlpha } from "@/constants/Colors";
+import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
 import Screen from "@/components/ui/Screen";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 
 export default function PremiumScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const benefits = [
     t.premiumBenefit1,
@@ -28,14 +30,13 @@ export default function PremiumScreen() {
   return (
     <GestureDetector gesture={swipeLeftToClose}>
     <View className="flex-1">
-      <ScreenBackground />
-      <ScreenHeader title={t.premiumTitle} />
+      <ScreenBackground flat />
+      <ScreenHeader floating title={t.premiumTitle} />
 
-      <Screen topInset={false}>
+      <Screen topInset={false} contentContainerStyle={{ paddingTop: headerHeight }}>
         <Card size="hero" className="items-center gap-3 py-8">
           <View
-            className="h-24 w-24 items-center justify-center rounded-full"
-            style={{ backgroundColor: withAlpha(WorkoutTheme.status.warning, 0.15) }}
+            className="h-24 w-24 items-center justify-center rounded-full bg-warning-tint"
           >
             <MaterialCommunityIcons
               name="crown"
@@ -58,8 +59,7 @@ export default function PremiumScreen() {
               className="flex-row items-center gap-3 rounded-card bg-surface p-4"
             >
               <View
-                className="h-10 w-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: withAlpha(WorkoutTheme.status.warning, 0.15) }}
+                className="h-10 w-10 items-center justify-center rounded-full bg-warning-tint"
               >
                 <Ionicons
                   name="checkmark"

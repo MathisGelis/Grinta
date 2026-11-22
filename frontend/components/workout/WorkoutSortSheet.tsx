@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Modal from "@/components/ui/AppModal";
 import PressableScale from "@/components/ui/PressableScale";
 import { WorkoutTheme } from "@/constants/Colors";

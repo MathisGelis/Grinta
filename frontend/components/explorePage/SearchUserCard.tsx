@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Alert, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { SearchUser } from "@/services/user.service";
 import { ConnectionsService } from "@/services/connections.service";
 
 import { WorkoutTheme } from "@/constants/Colors";
+import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { queryCache } from "@/services/queryCache";
 interface SearchUserCardProps {
   user: SearchUser;
 }
@@ -48,9 +50,11 @@ export default function SearchUserCard({ user }: SearchUserCardProps) {
     try {
       if (status === "FOLLOWING") {
         await ConnectionsService.unfollow(user.id);
+        queryCache.invalidate("profile");
         setStatus("FOLLOW");
       } else {
         const result = await ConnectionsService.follow(user.id);
+        queryCache.invalidate("profile");
         setStatus(result.status === "FOLLOWING" ? "FOLLOWING" : "REQUEST_SENT");
       }
     } catch (err: any) {
@@ -74,15 +78,7 @@ export default function SearchUserCard({ user }: SearchUserCardProps) {
       accessibilityLabel={`${user.displayName} @${user.uniqueName}`}
       className="flex-row items-center gap-3 rounded-card bg-surface p-3 pr-4"
     >
-      <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-accent-tint">
-        {user.image_url ? (
-          <Image source={{ uri: user.image_url }} className="h-full w-full" />
-        ) : (
-          <Text className="text-xl font-semibold text-accent">
-            {user.displayName?.[0]?.toUpperCase() ?? "?"}
-          </Text>
-        )}
-      </View>
+      <Avatar uri={user.avatarThumbnailUrl} name={user.displayName} size={56} />
 
       <View className="flex-1">
         <Text className="text-base font-semibold text-ink" numberOfLines={1}>

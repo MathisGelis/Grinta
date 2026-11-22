@@ -1,5 +1,7 @@
+import { useUnits } from "@/contexts/UnitsContext";
+import ErrorState from "@/components/ui/ErrorState";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
@@ -14,22 +16,21 @@ import {
   MuscleRecoveryStatus,
 } from "@/services/stats.service";
 import MuscleMap from "@/components/ui/MuscleMap";
+import ComparisonCard from "@/components/stats/ComparisonCard";
+import ProgressionCard from "@/components/stats/ProgressionCard";
+import HeatmapCard from "@/components/stats/HeatmapCard";
 import type { MuscleValue } from "@/utils/muscles";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Stat from "@/components/ui/Stat";
+import { StatsSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
+import { formatDuration } from "@/utils/formatDuration";
 
 const TOP_MUSCLES = 6;
+/** Délai avant de charger les blocs secondaires, pour laisser le résumé s'afficher d'abord. */
+const SECONDARY_DELAY_MS = 400;
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
-}
-
-function formatVolume(volume: number): string {
-  return volume >= 1000 ? `${(volume / 1000).toFixed(1)}t` : `${Math.round(volume)}kg`;
-}
 
 function Bar({ percent, color }: { percent: number; color: string }) {
   return (
@@ -56,10 +57,18 @@ function Delta({ pct }: { pct: number | null | undefined }) {
   );
 }
 
-export default function GlobalStatsSection() {
+type Props = {
+  /** Statistiques d'un autre utilisateur (publiées uniquement). Sans lui : les siennes. */
+  userId?: string;
+};
+
+export default function GlobalStatsSection({ userId }: Props) {
   const { t } = useTranslation();
+  const { formatVolume } = useUnits();
   const [period, setPeriod] = useState<StatsPeriod>("week");
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [summary, setSummary] = useState<PeriodSummary | null>(null);
   const [distribution, setDistribution] = useState<MuscleDistribution | null>(null);
   const muscleData = useMemo<MuscleValue[]>(
@@ -74,18 +83,26 @@ export default function GlobalStatsSection() {
   const [consistency, setConsistency] = useState<Consistency | null>(null);
   const [frequency, setFrequency] = useState<MuscleFrequency | null>(null);
 
+  // Régularité et récupération sont plus bas dans la page : on les charge une fois l'écran affiché.
   useEffect(() => {
-    StatsService.getConsistency().then(setConsistency).catch(() => {});
-    StatsService.getMuscleFrequency().then(setFrequency).catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      StatsService.getConsistency(userId).then(setConsistency).catch(() => {});
+      StatsService.getMuscleFrequency(userId).then(setFrequency).catch(() => {});
+    }, SECONDARY_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [reloadKey, userId]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     Promise.all([
-      StatsService.getSummary(period).catch(() => null),
-      StatsService.getMuscleDistribution(period).catch(() => null),
-      StatsService.getBalance(period).catch(() => null),
+      StatsService.getSummary(period, userId).catch(() => {
+        if (!cancelled) setFailed(true);
+        return null;
+      }),
+      StatsService.getMuscleDistribution(period, userId).catch(() => null),
+      StatsService.getBalance(period, userId).catch(() => null),
     ]).then(([sum, dist, bal]) => {
       if (cancelled) return;
       setSummary(sum);
@@ -96,7 +113,7 @@ export default function GlobalStatsSection() {
     return () => {
       cancelled = true;
     };
-  }, [period]);
+  }, [period, reloadKey, userId]);
 
   const statusColor: Record<MuscleRecoveryStatus, string> = {
     recovering: WorkoutTheme.status.danger,
@@ -149,12 +166,12 @@ export default function GlobalStatsSection() {
   const weekly = consistency?.weeklyActivity.slice(-12) ?? [];
   const weeklyMax = Math.max(1, ...weekly.map((w) => w.workoutCount));
 
-  const empty = !loading && !summary && !consistency && !frequency;
+  const empty = !loading && !failed && !summary && !consistency && !frequency;
 
   return (
     <View className="gap-4">
       <View className="flex-row items-center justify-between">
-        <Text className="text-xl font-semibold text-ink">{t.periodSummaryTitle}</Text>
+        <Text className="text-xl font-semibold text-ink">{period === "week" ? t.periodSummaryWeek : t.periodSummaryMonth}</Text>
         <SegmentedControl<StatsPeriod>
           id="profile-stats-period"
           className="w-[96px]"
@@ -167,14 +184,18 @@ export default function GlobalStatsSection() {
         />
       </View>
 
-      {empty ? (
-        <View className="items-center rounded-card bg-surface p-8">
-          <Text className="text-base text-ink-muted">{t.noStatsYet}</Text>
-        </View>
+      {failed && !loading ? (
+        <ErrorState onRetry={() => setReloadKey((key) => key + 1)} />
       ) : null}
 
-      {loading ? (
-        <ActivityIndicator size="small" color={WorkoutTheme.accent.purple} />
+      {empty ? (
+        <EmptyState icon="stats-chart-outline" title={t.noStatsYet} />
+      ) : null}
+
+      {!userId ? <ComparisonCard period={period} /> : null}
+
+      {failed && !loading ? null : loading ? (
+        <StatsSkeleton />
       ) : (
         <>
           {summary ? (
@@ -187,7 +208,12 @@ export default function GlobalStatsSection() {
                     style={{ width: "47.5%", flexGrow: 1 }}
                   >
                     <Stat value={item.value} label={item.label} size="md" />
-                    <Delta pct={summary.delta[item.key]?.changePct} />
+                    {/* Pas de % sans période précédente à comparer (sinon « +100 % » dès la première séance). */}
+                    <Delta
+                      pct={
+                        (summary.delta[item.key]?.previous ?? 0) > 0 ? summary.delta[item.key]?.changePct : null
+                      }
+                    />
                   </View>
                 ))}
               </View>
@@ -196,7 +222,7 @@ export default function GlobalStatsSection() {
 
           {distribution && distribution.distribution.length > 0 ? (
             <View className="gap-3">
-              <SectionHeader title={t.muscleDistributionTitle} />
+              <SectionHeader title={t.muscleDistributionTitle} help={t.helpMuscleDistribution} />
               <View className="gap-6 rounded-card bg-surface p-5">
                 <MuscleMap data={muscleData} unit={t.sets.toLowerCase()} />
                 {distribution.distribution.slice(0, TOP_MUSCLES).map((m) => (
@@ -214,7 +240,7 @@ export default function GlobalStatsSection() {
 
           {balance && balance.totalEffectiveSets > 0 ? (
             <View className="gap-3">
-              <SectionHeader title={t.trainingBalanceTitle} />
+              <SectionHeader title={t.trainingBalanceTitle} help={t.helpTrainingBalance} />
               <View className="gap-4 rounded-card bg-surface p-5">
                 <View className="flex-row gap-3">
                   <View className="flex-1 items-center rounded-tile bg-raised p-4">
@@ -245,7 +271,7 @@ export default function GlobalStatsSection() {
                 ))}
                 {balance.insights.map((line) => (
                   <Text key={line} className="text-xs text-ink-muted">
-                    {line}
+                    {t.insights[line] ?? line}
                   </Text>
                 ))}
               </View>
@@ -256,7 +282,7 @@ export default function GlobalStatsSection() {
 
       {consistency ? (
         <View className="gap-3">
-          <SectionHeader title={t.consistencyTitle} />
+          <SectionHeader title={t.consistencyTitle} help={t.helpConsistency} />
           <View className="gap-5 rounded-card bg-surface p-5">
             <View className="flex-row flex-wrap gap-y-4">
               {[
@@ -293,11 +319,18 @@ export default function GlobalStatsSection() {
 
       {recoveryData.length > 0 ? (
         <View className="gap-3">
-          <SectionHeader title={t.muscleRecoveryTitle} />
+          <SectionHeader title={t.muscleRecoveryTitle} help={t.helpMuscleRecovery} />
           <View className="rounded-card bg-surface p-5">
             <MuscleMap data={recoveryData} legend={recoveryLegend} />
           </View>
         </View>
+      ) : null}
+
+      {!userId ? (
+        <>
+          <ProgressionCard />
+          <HeatmapCard />
+        </>
       ) : null}
     </View>
   );

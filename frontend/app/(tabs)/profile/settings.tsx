@@ -2,15 +2,15 @@ import React, { useCallback, useState } from "react";
 import { Alert, Switch, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { clearAll } from "@/core/services/storage";
-import { TokenService } from "@/services/token.service";
+import { clearUserSession } from "@/services/session.service";
 import { UserService } from "@/services/user.service";
 import { WorkoutTheme } from "@/constants/Colors";
 import Screen from "@/components/ui/Screen";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import SettingsRow, { SettingsSection } from "@/components/profile/SettingsRow";
 
 export default function SettingsScreen() {
+  const headerHeight = useFloatingHeaderHeight();
   const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
   const [isPublic, setIsPublic] = useState<boolean | null>(null);
@@ -47,7 +47,7 @@ export default function SettingsScreen() {
         text: t.signOut,
         style: "destructive",
         onPress: async () => {
-          await TokenService.remove();
+          await clearUserSession();
           router.replace("/(auth)/LoginScreen");
         },
       },
@@ -58,11 +58,14 @@ export default function SettingsScreen() {
     try {
       setDeleting(true);
       await UserService.deleteAccount();
-      await TokenService.remove();
-      await clearAll();
-      router.replace("/(auth)/LandingScreen");
+      await clearUserSession();
+      router.replace("/(auth)/LoginScreen");
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.error);
+      // Le compte n'est vidé localement qu'après la réussite : on peut réessayer sans rien perdre.
+      Alert.alert(t.deleteAccountFailed, error instanceof Error ? error.message : t.genericError, [
+        { text: t.cancel, style: "cancel" },
+        { text: t.retryBtn, onPress: deleteAccount },
+      ]);
     } finally {
       setDeleting(false);
     }
@@ -89,14 +92,19 @@ export default function SettingsScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenHeader title={t.settings} />
+      <ScreenHeader floating title={t.settings} />
 
-      <Screen topInset={false}>
+      <Screen topInset={false} contentContainerStyle={{ paddingTop: headerHeight }}>
         <SettingsSection title={t.settingsSectionAccount}>
           <SettingsRow
             icon="person-outline"
             label={t.editProfile}
             onPress={() => router.push("/(tabs)/profile/edit-profile")}
+          />
+          <SettingsRow
+            icon="key-outline"
+            label={t.pwChange}
+            onPress={() => router.push("/(tabs)/profile/change-password" as any)}
           />
           <SettingsRow
             icon={isPublic === false ? "lock-closed-outline" : "eye-outline"}
@@ -123,11 +131,6 @@ export default function SettingsScreen() {
             icon="scale-outline"
             label={t.unitsOfMeasure}
             onPress={() => router.push("/(tabs)/profile/settings-units")}
-          />
-          <SettingsRow
-            icon="notifications-outline"
-            label={t.notificationsSettings}
-            onPress={() => router.push("/(tabs)/profile/settings-notifications")}
           />
           <SettingsRow
             icon="language-outline"

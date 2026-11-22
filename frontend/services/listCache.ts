@@ -1,5 +1,10 @@
+import { onSessionCleared } from "@/core/services/sessionReset";
+
 export function createListCache<T>(fetcher: () => Promise<T[]>) {
   let data: T[] | null = null;
+  onSessionCleared(() => {
+    data = null;
+  });
 
   return {
     peek: (): T[] | null => data,

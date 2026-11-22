@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   ScrollView,
@@ -9,19 +8,29 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { PostsService, ReportReason } from "@/services/posts.service";
+import { isNotFound } from "@/services/api";
 import Modal from "@/components/ui/AppModal";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { WorkoutTheme } from "@/constants/Colors";
+import Avatar from "@/components/ui/Avatar";
 import PressableScale from "@/components/ui/PressableScale";
 import Button from "@/components/ui/Button";
 import IconButton from "@/components/ui/IconButton";
+import Glass from "@/components/ui/Glass";
 import { TextField } from "@/components/ui/FormField";
 import Chip from "@/components/ui/Chip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { format } from "@/i18n/translations";
+import { UserListSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
+import { toast } from "@/components/ui/Toast";
+
+const COMMENT_MAX_LENGTH = 500;
+/** Le compteur n'apparaît qu'à l'approche de la limite. */
+const COMMENT_COUNTER_FROM = 400;
 
 const REPORT_REASONS: ReportReason[] = [
   "spam",
@@ -179,7 +188,7 @@ export function usePostInteractions(
     try {
       await PostsService.reportComment(reportCommentId, reportReason);
       closeReport();
-      Alert.alert(t.reportTitle, t.reportSentMsg);
+      toast.success(t.reportSentMsg);
     } catch (error: any) {
       Alert.alert(t.error, error?.message || t.cannotReportComment);
     }
@@ -228,15 +237,20 @@ export function usePostInteractions(
             .then((post) => setPostOwnerId(post?.userId ?? null))
             .catch(() => {});
         }
-      } catch {
+      } catch (error) {
         setPostModalData([]);
+        // Post d'un compte privé (ou supprimé) : le serveur répond 404.
+        if (isNotFound(error)) {
+          closePostModal();
+          Alert.alert(t.error, t.postUnavailable);
+        }
       } finally {
         setPostModalLoading(false);
       }
     };
 
     fetchPostModalData();
-  }, [postModalVisible, postModalType, postModalPostId]);
+  }, [postModalVisible, postModalType, postModalPostId, closePostModal, t]);
 
 
   const openLikes = useCallback(
@@ -272,18 +286,21 @@ export function usePostInteractions(
         >
           <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
           <View className="mb-5 flex-row items-center justify-between">
-            <Text className="text-2xl font-semibold text-ink">
-              {postModalTitle}
-            </Text>
+            <View className="flex-1">
+              <Text className="text-2xl font-semibold text-ink">
+                {postModalTitle}
+              </Text>
+              {postModalType === "comments" && !postModalLoading ? (
+                <Text className="mt-0.5 text-sm text-ink-muted">
+                  {format(t.commentsCount, { n: postModalData.length })}
+                </Text>
+              ) : null}
+            </View>
             <IconButton icon="close" label={t.back} onPress={closePostModal} />
           </View>
 
           {postModalLoading ? (
-            <ActivityIndicator
-              size="small"
-              color={WorkoutTheme.accent.purple}
-              style={{ marginTop: 24 }}
-            />
+            <UserListSkeleton count={5} />
           ) : postModalType === "likes" ? (
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -306,11 +323,11 @@ export function usePostInteractions(
                         });
                       }}
                     >
-                      <View className="h-11 w-11 items-center justify-center rounded-full bg-accent-tint">
-                        <Text className="text-base font-semibold text-ink">
-                          {(like.displayName ?? t.userLabel)[0]?.toUpperCase()}
-                        </Text>
-                      </View>
+                      <Avatar
+                        uri={like.avatarThumbnailUrl}
+                        name={like.displayName ?? t.userLabel}
+                        size={44}
+                      />
                       <View className="flex-1">
                         <Text className="text-base font-semibold text-ink" numberOfLines={1}>
                           {like.displayName ?? t.userLabel}
@@ -324,25 +341,20 @@ export function usePostInteractions(
                   ))}
                 </View>
               ) : (
-                <View className="items-center gap-2 rounded-card bg-raised p-8">
-                  <Ionicons name="heart-outline" size={28} color={WorkoutTheme.text.tertiary} />
-                  <Text className="text-center text-sm text-ink-muted">
-                    {t.noLikesOnPost}
-                  </Text>
-                </View>
+                <EmptyState plain icon="heart-outline" title={t.noLikesOnPost} />
               )}
             </ScrollView>
           ) : postModalType === "comments" ? (
             <View className="flex-1">
-              <Text className="mb-3 ml-1 text-sm text-ink-muted">
-                {format(t.commentsCount, { n: postModalData.length })}
-              </Text>
-
               <ScrollView
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: 90 }}
+                contentContainerStyle={{
+                  paddingBottom: 90,
+                  flexGrow: 1,
+                  justifyContent: postModalData.length === 0 ? "center" : "flex-start",
+                }}
                 keyboardShouldPersistTaps="handled"
               >
                 {postModalData.length > 0 ? (
@@ -371,11 +383,7 @@ export function usePostInteractions(
                           className="gap-3 rounded-tile bg-raised p-4"
                         >
                           <View className="flex-row items-center gap-3">
-                            <View className="h-9 w-9 items-center justify-center rounded-full bg-accent-tint">
-                              <Text className="text-sm font-semibold text-ink">
-                                {author[0]?.toUpperCase()}
-                              </Text>
-                            </View>
+                            <Avatar uri={comment.avatarThumbnailUrl} name={author} size={36} />
                             <Text className="flex-1 text-sm font-semibold text-ink" numberOfLines={1}>
                               {author}
                             </Text>
@@ -400,11 +408,12 @@ export function usePostInteractions(
                                     onPress={() => openReportComment(comment.id)}
                                     accessibilityRole="button"
                                     accessibilityLabel={t.reportThisComment}
-                                    className="h-9 w-9 items-center justify-center rounded-full bg-surface"
+                                    halo={false}
+                                    hitSlop={10}
                                   >
                                     <Ionicons
                                       name="flag-outline"
-                                      size={16}
+                                      size={20}
                                       color={WorkoutTheme.text.primary}
                                     />
                                   </PressableScale>
@@ -465,12 +474,7 @@ export function usePostInteractions(
                     })}
                   </View>
                 ) : (
-                  <View className="items-center gap-2 rounded-card bg-raised p-8">
-                    <Ionicons name="chatbubble-outline" size={28} color={WorkoutTheme.text.tertiary} />
-                    <Text className="text-center text-sm text-ink-muted">
-                      {t.noCommentsOnPost}
-                    </Text>
-                  </View>
+                  <EmptyState plain icon="chatbubble-outline" title={t.noCommentsOnPost} />
                 )}
               </ScrollView>
 
@@ -481,10 +485,21 @@ export function usePostInteractions(
                   transform: [{ translateY: keyboardY }],
                 }}
               >
-                <View className="flex-row items-end gap-2 rounded-[28px] bg-raised p-2 pl-5">
+                {commentDraft.length >= COMMENT_COUNTER_FROM ? (
+                  <Text
+                    className={`absolute -top-5 right-5 text-xs ${
+                      commentDraft.length >= COMMENT_MAX_LENGTH ? "text-danger" : "text-ink-muted"
+                    }`}
+                    style={{ fontVariant: ["tabular-nums"] }}
+                  >
+                    {commentDraft.length}/{COMMENT_MAX_LENGTH}
+                  </Text>
+                ) : null}
+                <Glass className="flex-row items-end gap-2 rounded-[28px] p-2 pl-5">
                   <TextInput
                     value={commentDraft}
                     onChangeText={setCommentDraft}
+                    maxLength={COMMENT_MAX_LENGTH}
                     placeholder={t.writeComment}
                     placeholderTextColor={WorkoutTheme.text.tertiary}
                     multiline
@@ -499,19 +514,19 @@ export function usePostInteractions(
                     onPress={handleSubmitComment}
                     accessibilityRole="button"
                     accessibilityLabel={t.sendLabel}
-                    className="h-11 w-11 items-center justify-center rounded-full bg-accent"
+                    halo={false}
+                    hitSlop={8}
+                    className="h-11 w-11 items-center justify-center"
                     disabled={!commentDraft.trim()}
                     style={{ opacity: commentDraft.trim() ? 1 : 0.5 }}
                   >
-                    <Ionicons name="send" size={16} color={WorkoutTheme.text.primary} />
+                    <Ionicons name="send-outline" size={22} color={WorkoutTheme.accent.purple} />
                   </PressableScale>
-                </View>
+                </Glass>
               </Animated.View>
             </View>
           ) : (
-            <Text className="text-sm text-ink-muted">
-              {t.noContentAvailable}
-            </Text>
+            <EmptyState plain icon="albums-outline" title={t.noContentAvailable} />
           )}
           {reportCommentId && postModalType === "comments" ? (
             <View className="absolute inset-0 gap-4 rounded-t-hero bg-surface px-5 pb-6 pt-6">

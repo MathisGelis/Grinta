@@ -1,6 +1,8 @@
-import { api } from "./api";
+import { api, isNotFound, API_BASE_URL } from "./api";
 import { TokenService } from "./token.service";
 import { getItem, saveItem, removeItem } from "@/core/services/storage";
+import { onSessionCleared } from "@/core/services/sessionReset";
+import { getCurrentLang } from "@/i18n/current";
 
 export interface Exercise {
   id: string;
@@ -13,17 +15,54 @@ export interface Exercise {
   createdAt: string;
 }
 
-const EXERCISES_STORAGE_KEY = "exercises_cache";
-const EXERCISES_CACHED_AT_KEY = "exercises_cache_at";
+/** `GET /exercises/:id` : en plus de la liste, description, consignes et photos. */
+export interface ExerciseDetail extends Exercise {
+  description?: string | null;
+  instructions?: string[] | null;
+  image_urls?: string[] | null;
+}
+
+// v2 : le catalogue a été renommé (équipement dans le nom) et étendu côté serveur.
+// Le cache est propre à chaque serveur : les identifiants d'exercices diffèrent d'une
+// base à l'autre (prod, local…), les mélanger casse les noms et la carte musculaire.
+const SERVER_TAG = API_BASE_URL.replace(/[^a-z0-9]+/gi, "_");
+// Les noms sont traduits par le serveur selon `Accept-Language` : un cache par langue.
+const storageKey = () => `exercises_cache_v3:${SERVER_TAG}:${getCurrentLang()}`;
+const cachedAtKey = () => `exercises_cache_v3_at:${SERVER_TAG}:${getCurrentLang()}`;
+const LEGACY_CACHE_KEYS = [
+  "exercises_cache",
+  "exercises_cache_at",
+  "exercises_cache_v2",
+  "exercises_cache_v2_at",
+  `exercises_cache_v2:${SERVER_TAG}`,
+  `exercises_cache_v2_at:${SERVER_TAG}`,
+];
 const USER_CREATED_EXERCISES_KEY = "user_created_exercises";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 let memoryCache: Exercise[] | null = null;
+let memoryLang = getCurrentLang();
 let memoryCachedAt = 0;
 let refreshing: Promise<Exercise[]> | null = null;
 let createdIdsCache: string[] | null = null;
 
-export const peekExercises = (): Exercise[] | null => memoryCache;
+onSessionCleared(() => {
+  createdIdsCache = null;
+});
+
+/** Langue changée depuis le dernier chargement : le catalogue en mémoire est dans une autre langue. */
+const syncLang = () => {
+  const lang = getCurrentLang();
+  if (lang === memoryLang) return;
+  memoryLang = lang;
+  memoryCache = null;
+  memoryCachedAt = 0;
+};
+
+export const peekExercises = (): Exercise[] | null => {
+  syncLang();
+  return memoryCache;
+};
 
 const fetchAndStoreExercises = (): Promise<Exercise[]> => {
   if (!refreshing) {
@@ -32,8 +71,8 @@ const fetchAndStoreExercises = (): Promise<Exercise[]> => {
       .then(async (exercises) => {
         memoryCache = exercises;
         memoryCachedAt = Date.now();
-        await saveItem(EXERCISES_STORAGE_KEY, JSON.stringify(exercises));
-        await saveItem(EXERCISES_CACHED_AT_KEY, String(memoryCachedAt));
+        await saveItem(storageKey(), JSON.stringify(exercises));
+        await saveItem(cachedAtKey(), String(memoryCachedAt));
         return exercises;
       })
       .finally(() => {
@@ -45,11 +84,13 @@ const fetchAndStoreExercises = (): Promise<Exercise[]> => {
 
 export const getAllExercises = async (): Promise<Exercise[]> => {
   const isFresh = () => Date.now() - memoryCachedAt < CACHE_TTL_MS;
+  syncLang();
   try {
+    void Promise.all(LEGACY_CACHE_KEYS.map(removeItem));
     if (!memoryCache) {
       const [cached, cachedAt] = await Promise.all([
-        getItem(EXERCISES_STORAGE_KEY),
-        getItem(EXERCISES_CACHED_AT_KEY),
+        getItem(storageKey()),
+        getItem(cachedAtKey()),
       ]);
       if (cached) {
         memoryCache = JSON.parse(cached);
@@ -69,6 +110,9 @@ export const getAllExercises = async (): Promise<Exercise[]> => {
   }
 };
 
+/** Recharge le catalogue depuis le serveur (ignore le cache). */
+export const refreshExercises = (): Promise<Exercise[]> => fetchAndStoreExercises();
+
 let byIdCache: Map<string, Exercise> | null = null;
 let byIdSource: Exercise[] | null = null;
 
@@ -84,8 +128,8 @@ export const getExercisesById = async (): Promise<Map<string, Exercise>> => {
 const clearExercisesCache = async (): Promise<void> => {
   memoryCache = null;
   memoryCachedAt = 0;
-  await removeItem(EXERCISES_STORAGE_KEY);
-  await removeItem(EXERCISES_CACHED_AT_KEY);
+  await removeItem(storageKey());
+  await removeItem(cachedAtKey());
 };
 
 export interface CreateExerciseDTO {
@@ -149,15 +193,9 @@ export const deleteExercise = async (
   }
 };
 
-export interface ExerciseStats {
-  PR?: number | null;
-  last_reps?: number | null;
-  last_weight?: number | null;
-}
-
-export const getExerciseById = async (exerciseId: string): Promise<Exercise> => {
+export const getExerciseById = async (exerciseId: string): Promise<ExerciseDetail> => {
   const token = await TokenService.get();
-  return api.get<Exercise>(`/exercises/${exerciseId}`, token ?? undefined);
+  return api.get<ExerciseDetail>(`/exercises/${exerciseId}`, token ?? undefined);
 };
 
 export const updateExercise = async (
@@ -175,25 +213,102 @@ export const updateExercise = async (
   }
 };
 
+/**
+ * Stats calculées par le serveur à partir des séances terminées.
+ * `GET /exercises/:id/stats` répond 404 tant que l'exercice n'a jamais été pratiqué.
+ */
+export interface ExerciseStats {
+  exerciseId: string;
+  exerciseName: string;
+  primaryMuscle: string;
+  lastPerformedAt: string | null;
+  lastWeight: number | null;
+  lastReps: number | null;
+  lastSets: { reps: number; weight: number }[];
+  prWeight: number | null;
+  prReps: number | null;
+  bestEstimatedOneRepMax: number | null;
+  bestSessionVolume: number | null;
+  maxReps: number | null;
+  totalSessions: number;
+  totalSets: number;
+  totalReps: number;
+  totalVolume: number;
+  updatedAt: string;
+}
+
+/** Ce qu'affiche la séance en cours : dernière performance et record de charge. */
+export type LiveExerciseStats = Partial<
+  Pick<ExerciseStats, "lastWeight" | "lastReps" | "prWeight">
+>;
+
 export const getExerciseStats = async (
   exerciseId: string,
 ): Promise<ExerciseStats | null> => {
   const token = await TokenService.get();
-  const stats = await api.get<ExerciseStats | undefined>(
-    `/exercises/${exerciseId}/stats`,
-    token ?? undefined,
-  );
-  return stats ?? null;
+  try {
+    return await api.get<ExerciseStats>(
+      `/exercises/${exerciseId}/stats`,
+      token ?? undefined,
+    );
+  } catch (error) {
+    if (isNotFound(error)) return null;
+    throw error;
+  }
 };
 
-export const updateExerciseStats = async (
-  exerciseId: string,
-  data: ExerciseStats,
-): Promise<ExerciseStats> => {
+export const EXERCISE_STATS_PAGE_SIZE = 50;
+
+export interface ExerciseStatsPage {
+  items: ExerciseStats[];
+  /** Curseur de la page suivante ; `null` = fin de la liste. */
+  nextBefore: string | null;
+}
+
+/** Une page des exercices pratiqués, du plus récent au plus ancien (B-13). */
+export const getExerciseStatsPage = async (
+  limit = EXERCISE_STATS_PAGE_SIZE,
+  before?: string | null,
+): Promise<ExerciseStatsPage> => {
   const token = await TokenService.get();
-  return api.patch<ExerciseStats>(
-    `/exercises/${exerciseId}/stats`,
-    data,
+  const qs = `limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ""}`;
+  const response = await api.get<ExerciseStatsPage | ExerciseStats[]>(`/exercises/stats?${qs}`, token ?? undefined);
+  // Ancien format (tableau complet) : tout est déjà là.
+  return Array.isArray(response) ? { items: response, nextBefore: null } : response;
+};
+
+export interface CompareStats {
+  heaviestWeight: number | null;
+  estimatedOneRepMax: number | null;
+  bestSessionVolume: number | null;
+  maxReps: number | null;
+  totalSessions: number;
+  lastPerformedAt: string | null;
+}
+
+export interface ExerciseComparison {
+  exercise: { id: string; name: string };
+  /** `null` si je n'ai jamais fait cet exercice. */
+  me: CompareStats | null;
+  user: {
+    id: string;
+    uniqueName: string;
+    displayName: string;
+    avatarThumbnailUrl?: string | null;
+  };
+  /** Uniquement les séances publiées par la personne. */
+  /** `null` si la personne n'a publié aucune séance avec cet exercice. */
+  them: CompareStats | null;
+}
+
+/** `403` si je ne suis pas cette personne, `400` si c'est moi, `404` pour un exercice inconnu. */
+export const compareExerciseStats = async (
+  exerciseId: string,
+  userId: string,
+): Promise<ExerciseComparison> => {
+  const token = await TokenService.get();
+  return api.get<ExerciseComparison>(
+    `/exercises/${exerciseId}/stats/compare/${userId}`,
     token ?? undefined,
   );
 };

@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { SelectList } from "react-native-dropdown-select-list";
 import ProgrammeDayEditor from "@/components/workout/programmes/ProgrammeDayEditor";
 import { createProgramme, ProgrammeDay } from "@/services/programms.service";
 import {
@@ -12,12 +11,14 @@ import {
 import { TokenService } from "@/services/token.service";
 
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
-import { FormField, TextField } from "@/components/ui/FormField";
-import { selectStyles } from "@/components/ui/selectStyles";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import { OutlinedField } from "@/components/ui/OutlinedField";
+import DifficultyPicker from "@/components/ui/DifficultyPicker";
+import LocationPicker from "@/components/ui/LocationPicker";
 import { useTranslation } from "@/contexts/LanguageContext";
 import {
   DIFFICULTY_KEYS,
@@ -25,13 +26,12 @@ import {
   difficultyLabel,
   locationLabel,
 } from "@/i18n/labels";
+import { toast } from "@/components/ui/Toast";
+import { LIMITS } from "@/utils/validation";
 export default function CreateProgrammScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const DIFFICULTY_OPTIONS = DIFFICULTY_KEYS.map((key) => ({
-    key,
-    value: difficultyLabel(t, key),
-  }));
+  const headerHeight = useFloatingHeaderHeight();
   const LOCATION_OPTIONS = LOCATION_KEYS.map((key) => ({
     key,
     value: locationLabel(t, key),
@@ -89,6 +89,11 @@ export default function CreateProgrammScreen() {
       Alert.alert(t.error, t.addAtLeastOneDay);
       return;
     }
+    // Un programme ne peut pas n'être fait que de jours de repos (B-22).
+    if (!days.some((day) => day.workout)) {
+      Alert.alert(t.error, t.apiErrors.PROGRAMME_NEEDS_WORKOUT);
+      return;
+    }
 
     setLoading(true);
 
@@ -105,9 +110,8 @@ export default function CreateProgrammScreen() {
         })),
       });
 
-      Alert.alert(t.success, t.programmeCreated, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success(t.programmeCreated);
+      router.back();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t.creationError;
@@ -119,76 +123,79 @@ export default function CreateProgrammScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
-      <ScreenHeader title={t.newProgramme} />
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerClassName="gap-5 px-5"
-        contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScreenBackground flat />
+      <ScreenHeader
+        floating
+        title={t.newProgramme}
+        right={
+          <IconButton
+            icon={loading ? "hourglass-outline" : "checkmark"}
+            variant="accent"
+            label={t.createProgramme}
+            onPress={loading ? undefined : submitProgramme}
+          />
+        }
+      />
+      <ProgrammeDayEditor
+        days={days}
+        onChangeDays={setDays}
+        availableWorkouts={availableWorkouts}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+        header={
+          <View style={{ gap: 20, marginBottom: 20 }}>
         <Text className="text-sm text-ink-muted">
           {t.programmeIntro}
         </Text>
 
-        <FormField label={t.titleLabel} required>
-          <TextField
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t.programmeTitlePlaceholder}
-          />
-        </FormField>
-
-        <FormField label={t.descriptionLabel}>
-          <TextField
-            multiline
-            value={description}
-            onChangeText={setDescription}
-            placeholder={t.programmeDescPlaceholder}
-          />
-        </FormField>
-
-        <FormField label={t.difficultyLabel} required>
-          <SelectList
-            setSelected={(value: string) => setDifficulty(value)}
-            data={DIFFICULTY_OPTIONS}
-            save="key"
-            search={false}
-            placeholder={t.chooseDifficulty}
-            defaultOption={DIFFICULTY_OPTIONS.find(
-              (option) => option.key === difficulty,
-            )}
-            {...selectStyles}
-          />
-        </FormField>
-
-        <FormField label={t.locationLabel} required>
-          <SelectList
-            setSelected={(value: string) => setLocationType(value)}
-            data={LOCATION_OPTIONS}
-            save="key"
-            search={false}
-            placeholder={t.chooseLocation}
-            defaultOption={LOCATION_OPTIONS.find(
-              (option) => option.key === locationType,
-            )}
-            {...selectStyles}
-          />
-        </FormField>
-
-        <ProgrammeDayEditor
-          days={days}
-          onChangeDays={setDays}
-          availableWorkouts={availableWorkouts}
-        />
-
         <Button
-          label={t.createProgramme}
-          loading={loading}
-          onPress={submitProgramme}
+          label={t.imEntry}
+          variant="secondary"
+          icon="document-text-outline"
+          onPress={() => router.push("/(tabs)/workouts/import" as any)}
         />
-      </ScrollView>
+
+        <OutlinedField
+          label={t.titleLabel}
+          required
+          value={title}
+          maxLength={LIMITS.title}
+          onChangeText={setTitle}
+          placeholder={t.programmeTitlePlaceholder}
+        />
+
+        <OutlinedField
+          label={t.descriptionLabel}
+          multiline
+          value={description}
+          maxLength={LIMITS.description}
+          onChangeText={setDescription}
+          placeholder={t.programmeDescPlaceholder}
+        />
+
+        <View className="flex-row gap-3">
+        <View className="flex-1">
+        <DifficultyPicker
+          label={t.difficultyLabel}
+          level={Math.max(1, DIFFICULTY_KEYS.indexOf(difficulty as any) + 1)}
+          levelLabel={difficultyLabel(t, difficulty)}
+          onChange={(level) => setDifficulty(DIFFICULTY_KEYS[level - 1])}
+        />
+        </View>
+
+        <View className="flex-1">
+        <LocationPicker
+          label={t.locationLabel}
+          required
+          options={LOCATION_OPTIONS.map((o) => ({ key: o.key, label: o.value }))}
+          value={locationType}
+          onChange={setLocationType}
+        />
+        </View>
+        </View>
+
+          </View>
+        }
+      />
     </View>
   );
 }

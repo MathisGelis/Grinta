@@ -1,11 +1,13 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useUnits } from "@/contexts/UnitsContext";
+import React, { useMemo, useState } from "react";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import { ScrollView, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import { WorkoutTheme, withAlpha } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import {
-  Exercise,
+  ExerciseDetail,
   ExerciseStats,
   getExerciseById,
   getExerciseStats,
@@ -14,47 +16,47 @@ import {
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import ScreenHeader from "@/components/ui/ScreenHeader";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
 import IconButton from "@/components/ui/IconButton";
+import ErrorState from "@/components/ui/ErrorState";
 import Card from "@/components/ui/Card";
 import Stat from "@/components/ui/Stat";
 import MuscleMap from "@/components/ui/MuscleMap";
+import ExerciseAnimation from "@/components/workout/exercises/ExerciseAnimation";
+import ProgressionCard from "@/components/stats/ProgressionCard";
+import BadgeList from "@/components/workout/badges/BadgeList";
+import { Badge, BadgesService } from "@/services/badges.service";
 import type { MuscleValue } from "@/utils/muscles";
+import CompareSheet from "@/components/workout/exercises/CompareSheet";
+import { DetailSkeleton } from "@/components/ui/skeletons";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function ExerciseDetailScreen() {
+  const { formatWeight } = useUnits();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const headerHeight = useFloatingHeaderHeight();
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
-  const [exercise, setExercise] = useState<Exercise | null>(null);
-  const [stats, setStats] = useState<ExerciseStats | null>(null);
-  const [canEdit, setCanEdit] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!exerciseId) return;
-    try {
-      setError(null);
-      const [data, userStats, createdIds] = await Promise.all([
+  const { data, loading, error, reload } = useCachedQuery(
+    `exercise:${exerciseId}`,
+    async () => {
+      const [exercise, stats, createdIds, badges] = await Promise.all([
         getExerciseById(exerciseId),
         getExerciseStats(exerciseId).catch(() => null),
         getUserCreatedExerciseIds(),
+        BadgesService.list({ exerciseId, limit: 10 }).catch(() => [] as Badge[]),
       ]);
-      setExercise(data);
-      setStats(userStats);
-      setCanEdit(createdIds.includes(exerciseId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.loadingError);
-    } finally {
-      setLoading(false);
-    }
-  }, [exerciseId, t]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
+      return { exercise, stats, badges, canEdit: createdIds.includes(exerciseId) };
+    },
+    { staleMs: 0 },
   );
+  const exercise: ExerciseDetail | null = data?.exercise ?? null;
+  const stats: ExerciseStats | null = data?.stats ?? null;
+  const badges: Badge[] = data?.badges ?? [];
+  const canEdit = data?.canEdit ?? false;
+  const [compareVisible, setCompareVisible] = useState(false);
+
+
 
   const muscle = (key: string) => t.muscleNames[key] ?? key.replace(/_/g, " ");
   const mapData = useMemo<MuscleValue[]>(() => {
@@ -80,53 +82,63 @@ export default function ExerciseDetailScreen() {
     { color: WorkoutTheme.accent.purple, label: t.primaryMuscle },
     { color: withAlpha(WorkoutTheme.accent.purple, 0.5), label: t.secondaryMuscles },
   ];
-  const hasStats = stats && (stats.PR != null || stats.last_weight != null);
+  const hasStats = !!stats && stats.totalSessions > 0;
+  const kg = (v: number | null | undefined) => (v != null ? formatWeight(v) : "–");
 
   return (
     <View className="flex-1">
-      <ScreenBackground />
+      <ScreenBackground flat />
       <ScreenHeader
+        floating
         title={exercise?.name ?? ""}
         right={
-          canEdit ? (
-            <IconButton
-              icon="create-outline"
-              label={t.editExercise}
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/workouts/create/exercise",
-                  params: { exerciseId },
-                } as any)
-              }
-            />
-          ) : undefined
+          <View className="flex-row items-center gap-2">
+            {exerciseId ? (
+              <IconButton
+                icon="git-compare-outline"
+                variant="glass"
+                label={t.cmpButton}
+                onPress={() => setCompareVisible(true)}
+              />
+            ) : null}
+            {canEdit ? (
+              <IconButton
+                icon="create-outline"
+                variant="glass"
+                label={t.editExercise}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/workouts/create/exercise",
+                    params: { exerciseId },
+                  } as any)
+                }
+              />
+            ) : null}
+          </View>
         }
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={WorkoutTheme.accent.purple} />
+        <View className="px-5" style={{ paddingTop: headerHeight }}><DetailSkeleton rows={3} /></View>
       ) : error || !exercise ? (
-        <View className="items-center px-5">
-          <Text className="text-danger">{error ?? t.noExerciseFound}</Text>
+        <View className="px-5" style={{ paddingTop: headerHeight }}>
+          <ErrorState
+            message={error ?? t.noExerciseFound}
+            onRetry={reload}
+          />
         </View>
       ) : (
-        <ScrollView
+        <ScrollView {...chromeScrollProps}
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-4 px-5"
-          contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE + insets.bottom }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         >
           <Card size="hero" className="gap-4">
-            <View className="h-48 items-center justify-center overflow-hidden rounded-tile bg-accent-tint">
-              {exercise.image_url ? (
-                <Image
-                  source={{ uri: exercise.image_url }}
-                  className="h-full w-full"
-                  resizeMode="cover"
-                />
-              ) : (
-                <Ionicons name="barbell" size={56} color={WorkoutTheme.accent.purple} />
-              )}
-            </View>
+            <ExerciseAnimation
+              imageUrls={exercise.image_urls}
+              fallbackUrl={exercise.image_url}
+              label={exercise.name}
+            />
             <View>
               <Text className="text-sm text-ink-muted">
                 {t.exerciseTypeNames[exercise.exercise_type] ??
@@ -137,6 +149,30 @@ export default function ExerciseDetailScreen() {
               </Text>
             </View>
           </Card>
+
+          {exercise.instructions && exercise.instructions.length > 0 ? (
+            <Card className="gap-4">
+              <Text className="text-lg font-semibold text-ink">{t.exerciseInstructions}</Text>
+              {exercise.description ? (
+                <Text className="text-sm leading-5 text-ink-soft">{exercise.description}</Text>
+              ) : null}
+              <View className="gap-3">
+                {exercise.instructions.map((step, i) => (
+                  <View key={i} className="flex-row items-start gap-3">
+                    <View className="h-7 w-7 items-center justify-center rounded-full bg-accent-tint">
+                      <Text className="text-xs font-semibold text-accent-text">{i + 1}</Text>
+                    </View>
+                    <Text className="flex-1 text-sm leading-5 text-ink">{step}</Text>
+                  </View>
+                ))}
+              </View>
+            </Card>
+          ) : exercise.description ? (
+            <Card className="gap-3">
+              <Text className="text-lg font-semibold text-ink">{t.descriptionLabel}</Text>
+              <Text className="text-sm leading-5 text-ink-soft">{exercise.description}</Text>
+            </Card>
+          ) : null}
 
           <Card className="gap-5">
             <Text className="text-lg font-semibold text-ink">{t.exerciseInfoTitle}</Text>
@@ -181,38 +217,63 @@ export default function ExerciseDetailScreen() {
 
           <Card className="gap-4">
             <Text className="text-lg font-semibold text-ink">{t.personalStatsTitle}</Text>
-            {hasStats ? (
-              <View className="flex-row gap-3">
-                <View className="flex-1 rounded-tile bg-accent-tint p-4">
-                  <Stat
-                    size="md"
-                    value={stats?.PR != null ? `${stats.PR} kg` : "–"}
-                    label={t.personalRecordLabel}
-                  />
+            {hasStats && stats ? (
+              <View className="gap-3">
+                <View className="flex-row gap-3">
+                  <View className="flex-1 rounded-tile bg-accent-tint p-4">
+                    <Stat
+                      size="md"
+                      value={kg(stats.prWeight)}
+                      label={
+                        stats.prReps != null
+                          ? `${t.personalRecordLabel} · ${stats.prReps} ${t.repsUnit}`
+                          : t.personalRecordLabel
+                      }
+                    />
+                  </View>
+                  <View className="flex-1 rounded-tile bg-raised p-4">
+                    <Stat
+                      size="md"
+                      value={
+                        stats.lastWeight != null
+                          ? `${kg(stats.lastWeight)}${stats.lastReps != null ? ` × ${stats.lastReps}` : ""}`
+                          : "–"
+                      }
+                      label={t.lastPerformanceLabel}
+                    />
+                  </View>
                 </View>
-                <View className="flex-1 rounded-tile bg-raised p-4">
-                  <Stat
-                    size="md"
-                    value={
-                      stats?.last_weight != null
-                        ? `${stats.last_weight} kg${stats.last_reps != null ? ` × ${stats.last_reps}` : ""}`
-                        : "–"
-                    }
-                    label={t.lastPerformanceLabel}
-                  />
+                <View className="flex-row gap-3">
+                  <View className="flex-1 rounded-tile bg-raised p-4">
+                    <Stat size="md" value={kg(stats.bestEstimatedOneRepMax)} label={t.recordOneRm} />
+                  </View>
+                  <View className="flex-1 rounded-tile bg-raised p-4">
+                    <Stat size="md" value={stats.totalSessions} label={t.sessions} />
+                  </View>
                 </View>
               </View>
             ) : (
-              <View className="items-center gap-2 rounded-tile bg-raised p-6">
-                <Ionicons name="stats-chart-outline" size={26} color={WorkoutTheme.text.tertiary} />
-                <Text className="text-center text-sm text-ink-muted">
-                  {t.noExerciseStats}
-                </Text>
-              </View>
+              <EmptyState plain icon="stats-chart-outline" title={t.noExerciseStats} />
             )}
           </Card>
+
+          {hasStats && exerciseId ? <ProgressionCard exerciseId={exerciseId} /> : null}
+
+          {badges.length > 0 ? (
+            <Card className="gap-4">
+              <Text className="text-lg font-semibold text-ink">{t.myRecordsTitle}</Text>
+              <BadgeList badges={badges} showDate />
+            </Card>
+          ) : null}
         </ScrollView>
       )}
+      {exerciseId ? (
+        <CompareSheet
+          exerciseId={exerciseId}
+          visible={compareVisible}
+          onClose={() => setCompareVisible(false)}
+        />
+      ) : null}
     </View>
   );
 }

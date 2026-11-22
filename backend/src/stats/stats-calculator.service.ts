@@ -4,14 +4,62 @@ import {
   CompletedWorkoutExercise,
   SetPair,
 } from '../workouts/entities/completed-workout.entity';
+import { PlannedWorkout } from '../workouts/entities/planned-workout.entity';
 import { DetailedMuscleGroup } from '../exercise/enums/detailed-muscle.enum';
+import {
+  COMPARED_METRICS,
+  ON_TRACK_THRESHOLD_PCT,
+} from './constants/comparison';
 import {
   DEFAULT_MET,
   MET_BY_EXERCISE_TYPE,
   SECONDARY_MUSCLE_WEIGHT,
 } from './constants/met-values';
-import { MuscleRecoveryStatus } from './dto/stats-response.dto';
-import { epley1RM, round, sum } from './utils/stats.util';
+import {
+  ADHERENCE_RATING_THRESHOLDS,
+  HEATMAP_MAX_LEVEL,
+  TREND_FLAT_THRESHOLD_PCT,
+  TREND_SAMPLE_SIZE,
+} from './constants/progression';
+import { ProgressionMetric } from './dto/progression-query.dto';
+import {
+  AdherenceDto,
+  AdherenceExerciseDto,
+  AdherenceExtraExerciseDto,
+  AdherenceRating,
+  AdherenceStatus,
+  ComparedTotalsDto,
+  ComparisonVerdict,
+  ExerciseRecordsDto,
+  HeatmapDayDto,
+  MetricComparisonDto,
+  MuscleRecoveryStatus,
+  ProgressionPointDto,
+  ProgressionSummaryDto,
+  TypeSliceDto,
+} from './dto/stats-response.dto';
+import {
+  BestSetRow,
+  BreakdownRow,
+  HeatmapRow,
+  PeriodTotals,
+  ProgressionRow,
+  SessionVolumeRow,
+} from './stats.types';
+import {
+  epley1RM,
+  longestStreak,
+  percentChange,
+  round,
+  sum,
+} from './utils/stats.util';
+import { BalanceInsight, ComparisonInsight } from './constants/insights';
+import {
+  roundCalories,
+  roundEstimate,
+  roundLoad,
+  roundVolume,
+} from '../common/utils/numbers';
 
 export type MuscleContribution = {
   muscle: DetailedMuscleGroup;
@@ -41,10 +89,10 @@ export class StatsCalculatorService {
       primaryMuscle: cwe.exercise?.primary_muscle,
       sets: sets.length,
       reps,
-      volume: round(volume),
-      heaviestWeight,
-      estimatedOneRepMax: round(estimatedOneRepMax),
-      estimatedCalories: round(
+      volume: roundVolume(volume),
+      heaviestWeight: roundLoad(heaviestWeight),
+      estimatedOneRepMax: roundEstimate(estimatedOneRepMax),
+      estimatedCalories: roundCalories(
         this.metFor(cwe) * bodyWeightKg * (durationSeconds / 3600),
       ),
       durationSeconds: Math.round(durationSeconds),
@@ -80,8 +128,8 @@ export class StatsCalculatorService {
       reps: sum(workouts, (w) =>
         sum(w.exercises ?? [], (e) => sum(e.sets ?? [], (s) => s.reps)),
       ),
-      volume: round(sum(workouts, (w) => this.workoutVolume(w))),
-      calories: round(
+      volume: roundVolume(sum(workouts, (w) => this.workoutVolume(w))),
+      calories: roundCalories(
         sum(workouts, (w) => this.workoutCalories(w, bodyWeightKg)),
       ),
       avgWorkoutDurationSeconds: workouts.length
@@ -110,7 +158,10 @@ export class StatsCalculatorService {
     return { perMuscle, total };
   }
 
-  muscleContributions(cwe: CompletedWorkoutExercise): MuscleContribution[] {
+  /** Muscles an exercise works, from a completed or a planned workout. */
+  muscleContributions(
+    cwe: Pick<CompletedWorkoutExercise, 'exercise'>,
+  ): MuscleContribution[] {
     if (!cwe.exercise) return [];
     const contributions: MuscleContribution[] = [
       { muscle: cwe.exercise.primary_muscle, weight: 1 },
@@ -139,36 +190,440 @@ export class StatsCalculatorService {
     return 'overdue';
   }
 
+  /** Codes of the balance insights, see BalanceInsight. */
   balanceInsights(
     pushPull: number | null,
     upperLower: number | null,
     lowerSets: number,
-  ): string[] {
-    const insights: string[] = [];
+  ): BalanceInsight[] {
+    const insights: BalanceInsight[] = [];
 
     if (pushPull === null)
-      insights.push('Not enough pulling volume to assess push/pull balance.');
-    else if (pushPull > 1.3)
-      insights.push(
-        `Push volume is ${pushPull}x your pull volume — consider adding pulling work.`,
-      );
-    else if (pushPull < 0.77)
-      insights.push(
-        `Pull volume outweighs push (ratio ${pushPull}) — consider adding pushing work.`,
-      );
-    else insights.push(`Push/pull balance looks healthy (ratio ${pushPull}).`);
+      insights.push(BalanceInsight.INSUFFICIENT_PULL_VOLUME);
+    else if (pushPull > 1.3) insights.push(BalanceInsight.PUSH_DOMINANT);
+    else if (pushPull < 0.77) insights.push(BalanceInsight.PULL_DOMINANT);
+    else insights.push(BalanceInsight.PUSH_PULL_BALANCED);
 
-    if (lowerSets === 0)
-      insights.push('No lower-body volume logged this period.');
+    if (lowerSets === 0) insights.push(BalanceInsight.NO_LOWER_BODY_VOLUME);
     else if (upperLower !== null && upperLower > 2)
-      insights.push(
-        `Upper-body volume is ${upperLower}x lower-body — consider more leg work.`,
-      );
+      insights.push(BalanceInsight.UPPER_BODY_DOMINANT);
     else if (upperLower !== null && upperLower < 0.5)
-      insights.push(
-        `Lower-body volume dominates (ratio ${upperLower}) — upper body may be undertrained.`,
-      );
+      insights.push(BalanceInsight.LOWER_BODY_DOMINANT);
     return insights;
+  }
+
+  // -------------------------------------------------------------------------
+  // Progression
+  // -------------------------------------------------------------------------
+
+  /**
+   * One point per training day for a single exercise. Only sets with a positive
+   * weight and positive reps count, a bodyweight set has no load to track.
+   */
+  progressionPoints(
+    rows: ProgressionRow[],
+    metric: ProgressionMetric,
+  ): ProgressionPointDto[] {
+    const days = new Map<
+      string,
+      { sets: SetPair[]; workoutIds: Set<string> }
+    >();
+
+    for (const row of rows) {
+      const valid = (row.sets ?? []).filter(isLoadedSet);
+
+      if (!valid.length) continue;
+      const day = days.get(row.day) ?? { sets: [], workoutIds: new Set() };
+
+      day.sets.push(...valid);
+      day.workoutIds.add(row.workoutId);
+      days.set(row.day, day);
+    }
+
+    return [...days.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, { sets, workoutIds }]) => {
+        const best = bestEstimatedSet(sets);
+        const value =
+          metric === ProgressionMetric.VOLUME
+            ? sum(sets, (s) => s.reps * s.weight)
+            : epley1RM(best.weight, best.reps);
+
+        return {
+          date,
+          value:
+            metric === ProgressionMetric.VOLUME
+              ? roundVolume(value)
+              : roundEstimate(value),
+          sets: sets.length,
+          bestSet: { reps: best.reps, weight: best.weight },
+          workoutIds: [...workoutIds],
+        };
+      });
+  }
+
+  summarizeProgression(points: ProgressionPointDto[]): ProgressionSummaryDto {
+    if (!points.length)
+      return {
+        points: 0,
+        first: null,
+        latest: null,
+        best: null,
+        change: 0,
+        changePct: 0,
+        trend: null,
+      };
+    const first = points[0];
+    const latest = points[points.length - 1];
+    const best = points.reduce((a, b) => (b.value > a.value ? b : a));
+
+    return {
+      points: points.length,
+      first,
+      latest,
+      best,
+      change: roundEstimate(latest.value - first.value),
+      changePct: percentChange(latest.value, first.value),
+      trend: this.progressionTrend(points),
+    };
+  }
+
+  /**
+   * Compares the average of the earliest points with the average of the latest
+   * ones rather than two single days, so one bad session does not flip it.
+   */
+  progressionTrend(
+    points: ProgressionPointDto[],
+  ): 'up' | 'down' | 'flat' | null {
+    if (points.length < 2) return null;
+    const window = Math.min(TREND_SAMPLE_SIZE, Math.floor(points.length / 2));
+    const early = sum(points.slice(0, window), (p) => p.value) / window;
+    const late = sum(points.slice(-window), (p) => p.value) / window;
+    const change = percentChange(late, early);
+
+    if (change > TREND_FLAT_THRESHOLD_PCT) return 'up';
+    if (change < -TREND_FLAT_THRESHOLD_PCT) return 'down';
+    return 'flat';
+  }
+
+  // -------------------------------------------------------------------------
+  // Personal records
+  // -------------------------------------------------------------------------
+
+  /**
+   * Builds the per-exercise records from the heaviest set of every rep count
+   * (the SQL keeps one row per exercise and rep count). For a fixed rep count
+   * the estimated 1RM only grows with the weight, so that reduction is enough
+   * to find the best 1RM exactly.
+   */
+  exerciseRecords(
+    bestSets: BestSetRow[],
+    sessionVolumes: SessionVolumeRow[],
+  ): ExerciseRecordsDto[] {
+    const volumeByExercise = new Map(
+      sessionVolumes.map((v) => [v.exerciseId, v]),
+    );
+    const byExercise = new Map<string, BestSetRow[]>();
+
+    for (const row of bestSets) {
+      if (!isLoadedSet(row)) continue;
+      byExercise.set(row.exerciseId, [
+        ...(byExercise.get(row.exerciseId) ?? []),
+        row,
+      ]);
+    }
+
+    return [...byExercise.values()]
+      .map((rows) => {
+        const oneRm = rows.reduce((a, b) => {
+          const ea = epley1RM(a.weight, a.reps);
+          const eb = epley1RM(b.weight, b.reps);
+
+          return eb > ea || (eb === ea && b.achievedAt < a.achievedAt) ? b : a;
+        });
+        const heaviest = rows.reduce((a, b) => {
+          if (b.weight !== a.weight) return b.weight > a.weight ? b : a;
+          if (b.reps !== a.reps) return b.reps > a.reps ? b : a;
+          return b.achievedAt < a.achievedAt ? b : a;
+        });
+        const volume = volumeByExercise.get(oneRm.exerciseId);
+
+        return {
+          exerciseId: oneRm.exerciseId,
+          name: oneRm.name,
+          primaryMuscle: oneRm.primaryMuscle,
+          estimatedOneRepMax: {
+            value: roundEstimate(epley1RM(oneRm.weight, oneRm.reps)),
+            weight: oneRm.weight,
+            reps: oneRm.reps,
+            achievedAt: oneRm.achievedAt,
+          },
+          heaviestWeight: {
+            weight: heaviest.weight,
+            reps: heaviest.reps,
+            achievedAt: heaviest.achievedAt,
+          },
+          bestSessionVolume: volume
+            ? {
+                value: roundVolume(volume.volume),
+                workoutId: volume.workoutId,
+                achievedAt: volume.achievedAt,
+              }
+            : null,
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.estimatedOneRepMax.value - a.estimatedOneRepMax.value ||
+          a.name.localeCompare(b.name),
+      );
+  }
+
+  longestStreak(dayKeys: string[]): number {
+    return longestStreak(dayKeys);
+  }
+
+  // -------------------------------------------------------------------------
+  // Adherence
+  // -------------------------------------------------------------------------
+
+  /** Compares what was done in a session with what its plan prescribed. */
+  computeAdherence(
+    planned: PlannedWorkout,
+    completed: CompletedWorkout,
+  ): AdherenceDto {
+    const plan = groupByExercise(planned.exercises ?? []);
+    const done = groupByExercise(completed.exercises ?? []);
+    const exercises: AdherenceExerciseDto[] = [];
+    const totals = {
+      exercisesPlanned: 0,
+      exercisesCompleted: 0,
+      exercisesPartial: 0,
+      exercisesSkipped: 0,
+      extraExercises: 0,
+      setsPlanned: 0,
+      setsCompleted: 0,
+      volumePlanned: 0,
+      volumeCompleted: 0,
+    };
+
+    for (const [exerciseId, target] of plan) {
+      const actual = done.get(exerciseId);
+      const plannedSets = target.sets.length;
+      const completedSets = actual?.sets.length ?? 0;
+      const plannedVolume = setVolume(target.sets);
+      const completedVolume = setVolume(actual?.sets ?? []);
+      const status = adherenceStatus(plannedSets, completedSets);
+      const setAdherencePct = plannedSets
+        ? round((Math.min(completedSets, plannedSets) / plannedSets) * 100, 1)
+        : status === 'skipped'
+          ? 0
+          : 100;
+
+      exercises.push({
+        exerciseId,
+        name: target.name,
+        status,
+        plannedSets,
+        completedSets,
+        plannedReps: sum(target.sets, (s) => s.reps),
+        completedReps: sum(actual?.sets ?? [], (s) => s.reps),
+        plannedVolume: roundVolume(plannedVolume),
+        completedVolume: roundVolume(completedVolume),
+        setAdherencePct,
+        volumeAdherencePct: plannedVolume
+          ? round((completedVolume / plannedVolume) * 100, 1)
+          : null,
+      });
+
+      totals.exercisesPlanned++;
+      if (status === 'completed' || status === 'exceeded')
+        totals.exercisesCompleted++;
+      else if (status === 'partial') totals.exercisesPartial++;
+      else totals.exercisesSkipped++;
+      totals.setsPlanned += plannedSets;
+      totals.setsCompleted += Math.min(completedSets, plannedSets);
+      totals.volumePlanned += plannedVolume;
+      totals.volumeCompleted += completedVolume;
+    }
+
+    const extras: AdherenceExtraExerciseDto[] = [];
+
+    for (const [exerciseId, actual] of done) {
+      if (plan.has(exerciseId)) continue;
+      extras.push({
+        exerciseId,
+        name: actual.name,
+        sets: actual.sets.length,
+        reps: sum(actual.sets, (s) => s.reps),
+        volume: roundVolume(setVolume(actual.sets)),
+      });
+    }
+    totals.extraExercises = extras.length;
+
+    const score = totals.setsPlanned
+      ? round((totals.setsCompleted / totals.setsPlanned) * 100, 1)
+      : totals.exercisesPlanned
+        ? round((totals.exercisesCompleted / totals.exercisesPlanned) * 100, 1)
+        : null;
+
+    return {
+      completedWorkoutId: completed.id,
+      plannedWorkoutId: planned.id,
+      completedTitle: completed.title,
+      plannedTitle: planned.title,
+      score,
+      rating: score === null ? null : adherenceRating(score),
+      totals: {
+        ...totals,
+        volumePlanned: roundVolume(totals.volumePlanned),
+        volumeCompleted: roundVolume(totals.volumeCompleted),
+      },
+      exercises,
+      extras,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Comparison against the personal baseline
+  // -------------------------------------------------------------------------
+
+  /** Mean of every compared metric over a list of period totals. */
+  averageTotals(totals: PeriodTotals[]): ComparedTotalsDto {
+    const n = totals.length || 1;
+    const mean = (pick: (t: PeriodTotals) => number) =>
+      roundEstimate(sum(totals, pick) / n);
+
+    return {
+      workouts: mean((t) => t.workouts),
+      durationSeconds: mean((t) => t.durationSeconds),
+      sets: mean((t) => t.sets),
+      reps: mean((t) => t.reps),
+      volume: mean((t) => t.volume),
+      calories: mean((t) => t.calories),
+    };
+  }
+
+  /**
+   * Compares the period so far with the user's usual period. The baseline is
+   * pro-rated by `elapsed` (the share of the current period already gone) so a
+   * Tuesday is not judged against a full week. A completed period uses 1.
+   */
+  compareToBaseline(
+    current: PeriodTotals,
+    baseline: ComparedTotalsDto | null,
+    elapsed: number,
+  ): Record<string, MetricComparisonDto> {
+    const result: Record<string, MetricComparisonDto> = {};
+
+    for (const metric of COMPARED_METRICS) {
+      const value = current[metric];
+
+      if (!baseline) {
+        result[metric] = {
+          current: value,
+          baselineAverage: null,
+          expectedByNow: null,
+          changePct: null,
+          verdict: 'unknown',
+        };
+        continue;
+      }
+      const baselineAverage = baseline[metric];
+      const expectedByNow = roundEstimate(baselineAverage * elapsed);
+      const changePct = percentChange(value, expectedByNow);
+
+      result[metric] = {
+        current: value,
+        baselineAverage,
+        expectedByNow,
+        changePct,
+        verdict: comparisonVerdict(changePct),
+      };
+    }
+    return result;
+  }
+
+  /** Codes of the comparison insights, see ComparisonInsight. */
+  comparisonInsights(
+    comparison: Record<string, MetricComparisonDto>,
+    periodsConsidered: number,
+  ): ComparisonInsight[] {
+    if (!periodsConsidered) return [ComparisonInsight.NOT_ENOUGH_HISTORY];
+    const insights: ComparisonInsight[] = [];
+    const codes = {
+      workouts: {
+        on_track: ComparisonInsight.WORKOUTS_ON_TRACK,
+        above: ComparisonInsight.WORKOUTS_ABOVE_USUAL,
+        below: ComparisonInsight.WORKOUTS_BELOW_USUAL,
+      },
+      volume: {
+        on_track: ComparisonInsight.VOLUME_ON_TRACK,
+        above: ComparisonInsight.VOLUME_ABOVE_USUAL,
+        below: ComparisonInsight.VOLUME_BELOW_USUAL,
+      },
+    } as const;
+
+    for (const metric of ['workouts', 'volume'] as const) {
+      const entry = comparison[metric];
+
+      if (entry.verdict === 'unknown' || entry.changePct === null) continue;
+      insights.push(codes[metric][entry.verdict]);
+    }
+    return insights;
+  }
+
+  // -------------------------------------------------------------------------
+  // Workout type breakdown
+  // -------------------------------------------------------------------------
+
+  /** Turns grouped SQL rows into slices with their share of the period's sets. */
+  breakdownSlices(rows: BreakdownRow[]): TypeSliceDto[] {
+    const totalSets = sum(rows, (r) => r.sets);
+
+    return rows
+      .map((r) => ({
+        type: r.type,
+        exercises: r.exercises,
+        sets: r.sets,
+        volume: roundVolume(r.volume),
+        percentageOfSets: totalSets ? round((r.sets / totalSets) * 100, 1) : 0,
+      }))
+      .sort((a, b) => b.sets - a.sets || a.type.localeCompare(b.type));
+  }
+
+  // -------------------------------------------------------------------------
+  // Heatmap
+  // -------------------------------------------------------------------------
+
+  /**
+   * Intensity of each active day from 1 to the maximum level, relative to the
+   * longest day of the year. A day is active as soon as one workout is logged,
+   * so it never gets level 0 (reserved for the days absent from the result).
+   */
+  heatmapDays(
+    rows: HeatmapRow[],
+    caloriesByDay: Map<string, number> = new Map(),
+  ): HeatmapDayDto[] {
+    const longest = Math.max(0, ...rows.map((r) => r.durationSeconds));
+
+    return [...rows]
+      .sort((a, b) => a.day.localeCompare(b.day))
+      .map((r) => ({
+        date: r.day,
+        workouts: r.workouts,
+        durationSeconds: r.durationSeconds,
+        calories: roundCalories(caloriesByDay.get(r.day) ?? 0),
+        level: longest
+          ? Math.min(
+              HEATMAP_MAX_LEVEL,
+              Math.max(
+                1,
+                Math.ceil((r.durationSeconds / longest) * HEATMAP_MAX_LEVEL),
+              ),
+            )
+          : 1,
+      }));
   }
 
   private metFor(cwe: CompletedWorkoutExercise): number {
@@ -179,10 +634,8 @@ export class StatsCalculatorService {
     );
   }
 
-  private workoutCalories(
-    workout: CompletedWorkout,
-    bodyWeightKg: number,
-  ): number {
+  /** Estimated kcal of a workout, unrounded. */
+  workoutCalories(workout: CompletedWorkout, bodyWeightKg: number): number {
     const durations = this.distributeDuration(workout);
 
     return (workout.exercises ?? []).reduce(
@@ -191,4 +644,73 @@ export class StatsCalculatorService {
       0,
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers shared by the methods above
+// ---------------------------------------------------------------------------
+
+function isLoadedSet(set: { reps: number; weight: number }): boolean {
+  return (
+    Number.isFinite(set.reps) &&
+    Number.isFinite(set.weight) &&
+    set.reps > 0 &&
+    set.weight > 0
+  );
+}
+
+/** The set with the highest estimated 1RM, the earliest listed one on a tie. */
+function bestEstimatedSet(sets: SetPair[]): SetPair {
+  return sets.reduce((a, b) =>
+    epley1RM(b.weight, b.reps) > epley1RM(a.weight, a.reps) ? b : a,
+  );
+}
+
+function setVolume(sets: SetPair[]): number {
+  return sum(sets, (s) => s.reps * s.weight);
+}
+
+/** Sets of the same exercise are merged, in order of first appearance. */
+function groupByExercise(
+  entries: Array<{
+    exercise?: { id: string; name: string };
+    sets?: SetPair[];
+  }>,
+): Map<string, { name: string; sets: SetPair[] }> {
+  const groups = new Map<string, { name: string; sets: SetPair[] }>();
+
+  for (const entry of entries) {
+    if (!entry.exercise) continue;
+    const group = groups.get(entry.exercise.id) ?? {
+      name: entry.exercise.name,
+      sets: [],
+    };
+
+    group.sets.push(...(entry.sets ?? []));
+    groups.set(entry.exercise.id, group);
+  }
+  return groups;
+}
+
+function adherenceStatus(
+  plannedSets: number,
+  completedSets: number,
+): AdherenceStatus {
+  if (plannedSets === 0) return completedSets > 0 ? 'completed' : 'skipped';
+  if (completedSets === 0) return 'skipped';
+  if (completedSets < plannedSets) return 'partial';
+  return completedSets > plannedSets ? 'exceeded' : 'completed';
+}
+
+function adherenceRating(score: number): AdherenceRating {
+  if (score >= ADHERENCE_RATING_THRESHOLDS.full) return 'full';
+  if (score >= ADHERENCE_RATING_THRESHOLDS.high) return 'high';
+  if (score >= ADHERENCE_RATING_THRESHOLDS.partial) return 'partial';
+  return 'low';
+}
+
+function comparisonVerdict(changePct: number): ComparisonVerdict {
+  if (changePct > ON_TRACK_THRESHOLD_PCT) return 'above';
+  if (changePct < -ON_TRACK_THRESHOLD_PCT) return 'below';
+  return 'on_track';
 }

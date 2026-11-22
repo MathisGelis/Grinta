@@ -3,7 +3,7 @@ import { Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Glass from "@/components/ui/Glass";
 import PressableScale from "@/components/ui/PressableScale";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 import { resumeSession } from "@/hooks/useActiveSession";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -66,7 +66,7 @@ export default function ActiveSessionBanner({
           </View>
 
           <Text
-            className="mr-2 text-sm font-semibold text-accent"
+            className="mr-2 text-sm font-semibold text-accent-light"
             style={{ fontVariant: ["tabular-nums"] }}
           >
             {formatSessionTime(elapsed)}

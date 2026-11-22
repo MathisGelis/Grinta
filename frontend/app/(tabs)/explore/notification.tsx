@@ -1,15 +1,20 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { View, Text, ScrollView } from "react-native";
+import { Image } from "expo-image";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { router } from "expo-router";
 import { Directions, Gesture, GestureDetector } from "react-native-gesture-handler";
 
-import { WorkoutTheme } from "@/constants/Colors";
 import ScreenBackground from "@/components/ui/ScreenBackground";
-import PressableScale from "@/components/ui/PressableScale";
+import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHeader";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import Card from "@/components/ui/Card";
+import EmptyState from "@/components/ui/EmptyState";
 export default function NotificationsScreen() {
   const { t } = useTranslation();
+  const headerHeight = useFloatingHeaderHeight();
+  const [tab, setTab] = useState<"notifications" | "news">("notifications");
 
   const swipeLeftToClose = Gesture.Fling()
     .direction(Directions.LEFT)
@@ -19,19 +24,42 @@ export default function NotificationsScreen() {
   return (
     <GestureDetector gesture={swipeLeftToClose}>
     <View className="flex-1">
-      <ScreenBackground />
-      <View className="flex-row items-center justify-between px-4 pt-16 pb-4">
-        <PressableScale onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
-          <Ionicons name="chevron-back" size={24} color={WorkoutTheme.text.primary} />
-        </PressableScale>
-        <Text className="text-ink text-lg font-bold">{t.notifications}</Text>
-        <View className="w-10" />
-      </View>
+      <ScreenBackground flat />
+      <ScreenHeader floating title={t.notifications} onBack={() => router.back()} />
 
-      <View className="items-center mt-20 gap-3">
-        <Ionicons name="notifications-off-outline" size={48} color={WorkoutTheme.text.disabled} />
-        <Text className="text-ink-faint text-base">{t.noNotifications}</Text>
-      </View>
+      <ScrollView
+        {...chromeScrollProps}
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="gap-4 px-5 pb-10"
+        contentContainerStyle={{ paddingTop: headerHeight }}
+      >
+        <SegmentedControl
+          id="notification-tab"
+          options={[
+            { value: "notifications", label: t.notifications },
+            { value: "news", label: t.newsTab },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+
+        {tab === "notifications" ? (
+          <EmptyState icon="notifications-off-outline" title={t.noNotifications} className="mt-4" />
+        ) : (
+          <Card size="card" className="gap-3 overflow-hidden p-0">
+            <Image
+              source={require("@/assets/onboarding1.jpg")}
+              contentFit="cover"
+              style={{ width: "100%", height: 180 }}
+            />
+            <View className="gap-2 px-5 pb-5">
+              <Text className="text-xs font-semibold uppercase text-accent-light">{t.newsBetaTag}</Text>
+              <Text className="text-xl font-bold text-ink">{t.newsBetaTitle}</Text>
+              <Text className="text-sm leading-5 text-ink-soft">{t.newsBetaBody}</Text>
+            </View>
+          </Card>
+        )}
+      </ScrollView>
     </View>
     </GestureDetector>
   );

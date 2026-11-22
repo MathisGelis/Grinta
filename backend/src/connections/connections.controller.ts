@@ -1,7 +1,16 @@
-import { Controller, Delete, Get, Param, Post, Req } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ConnectionsService } from './connections.service';
 import { Auth } from 'src/auth/auth.decorators';
+import type { AuthenticatedRequest } from 'src/auth/auth-user.interface';
 import { UserListDto } from 'src/users/dto/users-list.dto';
 
 @ApiTags('connections')
@@ -17,7 +26,7 @@ export class ConnectionsController {
     status: 400,
     description: 'Already following or request already sent',
   })
-  follow(@Param('id') followingId: string, @Req() req) {
+  follow(@Param('id') followingId: string, @Req() req: AuthenticatedRequest) {
     return this.connectionsService.followUser(req.user.id, followingId);
   }
 
@@ -26,7 +35,7 @@ export class ConnectionsController {
   @ApiOperation({ summary: 'Unfollow a user' })
   @ApiResponse({ status: 200, description: 'User successfully unfollowed' })
   @ApiResponse({ status: 404, description: 'Connection not found' })
-  unfollow(@Param('id') followingId: string, @Req() req) {
+  unfollow(@Param('id') followingId: string, @Req() req: AuthenticatedRequest) {
     return this.connectionsService.unfollowUser(req.user.id, followingId);
   }
 
@@ -36,7 +45,10 @@ export class ConnectionsController {
   @ApiResponse({ status: 200, description: 'Follow request accepted' })
   @ApiResponse({ status: 403, description: 'Not allowed' })
   @ApiResponse({ status: 404, description: 'Request not found' })
-  acceptRequest(@Param('requestId') requestId: string, @Req() req) {
+  acceptRequest(
+    @Param('requestId') requestId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.connectionsService.acceptFollowRequest(req.user.id, requestId);
   }
 
@@ -44,7 +56,10 @@ export class ConnectionsController {
   @Delete('requests/:requestId')
   @ApiOperation({ summary: 'Reject or cancel a follow request' })
   @ApiResponse({ status: 200, description: 'Request deleted' })
-  deleteRequest(@Param('requestId') requestId: string, @Req() req) {
+  deleteRequest(
+    @Param('requestId') requestId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.connectionsService.deleteFollowRequest?.(
       req.user.id,
       requestId,
@@ -58,7 +73,7 @@ export class ConnectionsController {
     status: 200,
     description: 'List of incoming follow requests',
   })
-  getIncomingRequests(@Req() req) {
+  getIncomingRequests(@Req() req: AuthenticatedRequest) {
     return this.connectionsService.getIncomingFollowRequests(req.user.id);
   }
 
@@ -68,34 +83,63 @@ export class ConnectionsController {
     summary: 'Get follow status (FOLLOW, FOLLOWING, REQUEST_SENT, FOLLOW_BACK)',
   })
   @ApiResponse({ status: 200, description: 'Follow status returned' })
-  getFollowStatus(@Param('id') targetUserId: string, @Req() req) {
+  getFollowStatus(
+    @Param('id') targetUserId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.connectionsService.getFollowStatus(req.user.id, targetUserId);
   }
 
   @Auth()
   @Get(':id/followers')
-  @ApiOperation({ summary: 'Get followers of a user' })
+  @ApiOperation({
+    summary: 'Get followers of a user',
+    description:
+      'Same visibility as the posts of the account: itself, a public account, or one I follow. Otherwise 404.',
+  })
+  @ApiResponse({ status: 404, description: 'Not found, or not visible to me' })
   @ApiResponse({
     status: 200,
     description: 'List of followers',
     type: UserListDto,
     isArray: true,
   })
-  getFollowers(@Param('id') userId: string) {
-    return this.connectionsService.getFollowers(userId);
+  getFollowers(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') userId: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.connectionsService.getFollowersOf(req.user.id, userId, {
+      limit,
+      offset,
+    });
   }
 
   @Auth()
   @Get(':id/following')
-  @ApiOperation({ summary: 'Get users followed by a user' })
+  @ApiOperation({
+    summary: 'Get users followed by a user',
+    description:
+      'Same visibility as the posts of the account: itself, a public account, or one I follow. Otherwise 404.',
+  })
+  @ApiResponse({ status: 404, description: 'Not found, or not visible to me' })
   @ApiResponse({
     status: 200,
     description: 'List of following users',
     type: UserListDto,
     isArray: true,
   })
-  getFollowing(@Param('id') userId: string) {
-    return this.connectionsService.getFollowing(userId);
+  getFollowing(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') userId: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.connectionsService.getFollowingOf(req.user.id, userId, {
+      limit,
+      offset,
+    });
   }
 
   @Auth()
@@ -107,7 +151,7 @@ export class ConnectionsController {
     type: UserListDto,
     isArray: true,
   })
-  getRecommendations(@Req() req) {
+  getRecommendations(@Req() req: AuthenticatedRequest) {
     return this.connectionsService.recommendUsers(req.user.id);
   }
 }

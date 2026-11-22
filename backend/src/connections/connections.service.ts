@@ -1,9 +1,11 @@
+import { clampLimit, clampOffset } from '../common/utils/limit';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { UserContentAccess } from '../common/access/user-content-access';
 import { Connection } from './entities/connections.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,6 +23,8 @@ export class ConnectionsService {
 
     @InjectRepository(FollowRequest)
     private readonly followRequestRepository: Repository<FollowRequest>,
+
+    private readonly access: UserContentAccess,
   ) {}
 
   async followUser(followerId: string, followingId: string) {
@@ -108,26 +112,14 @@ export class ConnectionsService {
   async getFollowStatus(currentUserId: string, targetUserId: string) {
     if (currentUserId === targetUserId) return 'SELF';
 
-    const [isFollowing, isFollowedBack, requestSent] = await Promise.all([
-      this.connectionRepository.exists({
-        where: {
-          follower: { id: currentUserId },
-          following: { id: targetUserId },
-        },
-      }),
-      this.connectionRepository.exists({
-        where: {
-          follower: { id: targetUserId },
-          following: { id: currentUserId },
-        },
-      }),
-      this.followRequestRepository.exists({
-        where: {
-          follower: { id: currentUserId },
-          following: { id: targetUserId },
-        },
-      }),
-    ]);
+    const [{ isFollowing, isFollowedBack, requestSent }] =
+      await this.connectionRepository.query(
+        `SELECT
+           EXISTS (SELECT 1 FROM connections WHERE "followerId" = $1 AND "followingId" = $2) AS "isFollowing",
+           EXISTS (SELECT 1 FROM connections WHERE "followerId" = $2 AND "followingId" = $1) AS "isFollowedBack",
+           EXISTS (SELECT 1 FROM follow_requests WHERE "followerId" = $1 AND "followingId" = $2) AS "requestSent"`,
+        [currentUserId, targetUserId],
+      );
 
     if (isFollowing) return 'FOLLOWING';
     if (requestSent) return 'REQUEST_SENT';
@@ -148,11 +140,35 @@ export class ConnectionsService {
         'user.displayName',
         'user.uniqueName',
       ])
+      .addSelect(
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl)',
+        'user_avatarThumbnailUrl',
+      )
       .orderBy('request.createdAt', 'DESC')
       .getRawMany();
   }
 
-  async getFollowers(userId: string) {
+  /** The followers of an account the viewer may see, else 404. */
+  async getFollowersOf(
+    viewerId: string,
+    userId: string,
+    page?: { limit?: number; offset?: number },
+  ) {
+    await this.access.assertCanViewUserContent(viewerId, userId);
+    return this.getFollowers(userId, toPage(page));
+  }
+
+  /** Who an account follows, if the viewer may see it, else 404. */
+  async getFollowingOf(
+    viewerId: string,
+    userId: string,
+    page?: { limit?: number; offset?: number },
+  ) {
+    await this.access.assertCanViewUserContent(viewerId, userId);
+    return this.getFollowing(userId, toPage(page));
+  }
+
+  async getFollowers(userId: string, page?: Page) {
     return (
       this.connectionRepository
         .createQueryBuilder('connection')
@@ -161,13 +177,18 @@ export class ConnectionsService {
           'user.id AS id',
           'user.uniqueName AS "uniqueName"',
           'user.displayName AS "displayName"',
+          'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         ])
         .where('connection.followingId = :userId', { userId })
+        .orderBy('connection.createdAt', 'DESC')
+        .addOrderBy('user.id')
+        .limit(page?.limit)
+        .offset(page?.offset)
         .getRawMany() ?? []
     );
   }
 
-  async getFollowing(userId: string) {
+  async getFollowing(userId: string, page?: Page) {
     return (
       this.connectionRepository
         .createQueryBuilder('connection')
@@ -176,8 +197,13 @@ export class ConnectionsService {
           'user.id AS id',
           'user.uniqueName AS "uniqueName"',
           'user.displayName AS "displayName"',
+          'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
         ])
         .where('connection.followerId = :userId', { userId })
+        .orderBy('connection.createdAt', 'DESC')
+        .addOrderBy('user.id')
+        .limit(page?.limit)
+        .offset(page?.offset)
         .getRawMany() ?? []
     );
   }
@@ -192,7 +218,8 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'COUNT(*) AS score',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
+        'COUNT(*)::int AS score',
       ])
       .where('c1.follower = :currentUserId', { currentUserId })
       .andWhere('user.id != :currentUserId', { currentUserId })
@@ -220,7 +247,8 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
-        'COUNT(c.id) AS followersCount',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
+        'COUNT(c.id)::int AS followersCount',
       ])
       .groupBy('user.id')
       .orderBy('followersCount', 'DESC')
@@ -239,6 +267,7 @@ export class ConnectionsService {
         'user.id AS id',
         'user.uniqueName AS "uniqueName"',
         'user.displayName AS "displayName"',
+        'COALESCE(user.avatarThumbnailUrl, user.avatarUrl) AS "avatarThumbnailUrl"',
       ])
       .orderBy('RANDOM()')
       .limit(limit);
@@ -249,10 +278,12 @@ export class ConnectionsService {
   }
 
   async recommendUsers(currentUserId: string) {
-    let recommended =
-      await this.getMutualFollowersRecommendations(currentUserId);
+    const [mutual, following] = await Promise.all([
+      this.getMutualFollowersRecommendations(currentUserId),
+      this.getFollowing(currentUserId),
+    ]);
+    let recommended = mutual;
     const alreadyRecommendedIds = recommended.map((u) => u.id);
-    const following = await this.getFollowing(currentUserId);
     const followingIds = following.map((u) => u.id);
     const excludeIds = [
       currentUserId,
@@ -266,4 +297,17 @@ export class ConnectionsService {
       recommended = await this.getRandomUsers(10, excludeIds);
     return recommended;
   }
+}
+
+interface Page {
+  limit: number;
+  offset: number;
+}
+
+/** Same cap as every other list (100); a list is never returned unbounded. */
+function toPage(page?: { limit?: number; offset?: number }): Page {
+  return {
+    limit: clampLimit(page?.limit, 100),
+    offset: clampOffset(page?.offset),
+  };
 }
