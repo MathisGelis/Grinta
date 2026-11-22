@@ -40,13 +40,21 @@ export class AuthService {
   }
 
   login(user: User): { access_token: string } {
-    const payload: { sub: string; email: string; uniqueName: string } = {
+    // No e-mail in the token: it is readable by anyone who holds it, and
+    // nothing server-side reads it from there.
+    const payload: { sub: string; uniqueName: string } = {
       sub: user.id,
-      email: user.email,
       uniqueName: user.uniqueName,
     };
     const token: string = this.jwtService.sign(payload);
 
     return { access_token: token };
+  }
+
+  /** { id, email } of a valid token's account, as GET /auth/me returns it. */
+  async currentUser(id: string): Promise<{ id: string; email: string }> {
+    const { email } = await this.usersService.findUserById(id);
+
+    return { id, email };
   }
 }

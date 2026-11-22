@@ -19,7 +19,7 @@ export class Programme {
   @ApiProperty()
   id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
   @Column()

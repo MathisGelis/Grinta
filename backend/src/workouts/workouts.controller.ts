@@ -23,12 +23,17 @@ import { UpdateCompletedWorkoutDto } from './dto/update-completed-workout.dto';
 import { UpdatePlannedWorkoutDto } from './dto/update-planned.workout.dto';
 import { WorkoutService } from './workouts.service';
 import { PhotoUpload } from '../photos/photo-upload.decorator';
+import { StatsService } from '../stats/stats.service';
+import { WorkoutSuggestionQueryDto } from './dto/workout-suggestion-query.dto';
 
 @ApiTags('workouts')
 @Auth()
 @Controller('workouts')
 export class WorkoutsController {
-  constructor(private readonly workoutService: WorkoutService) {}
+  constructor(
+    private readonly workoutService: WorkoutService,
+    private readonly statsService: StatsService,
+  ) {}
 
   @Post('planned')
   @ApiOperation({ summary: 'Create a planned workout' })
@@ -48,6 +53,36 @@ export class WorkoutsController {
     @Body() dto: CreateCompletedWorkoutDto,
   ) {
     return this.workoutService.createCompletedWorkout(req.user, dto);
+  }
+
+  @Post('planned/from-post/:postId')
+  @ApiOperation({
+    summary: 'Copy the workout of a post into my planned workouts',
+    description:
+      'For any post the user can see (same rule as GET /posts/:postId). The planned workout gets the title and the exercises, in the same order, without the sets, weights or description of the author. Returned like GET /workouts/planned/:id.',
+  })
+  @ApiResponse({ status: 201, description: '{ workout, totalExercises }' })
+  @ApiResponse({ status: 404, description: 'Post not found' })
+  duplicatePost(
+    @Req() req: AuthenticatedRequest,
+    @Param('postId') postId: string,
+  ) {
+    return this.workoutService.duplicatePostWorkout(req.user, postId);
+  }
+
+  @Post('planned/from-completed/:id')
+  @ApiOperation({
+    summary: 'Copy one of my completed workouts into my planned workouts',
+    description:
+      'Owner only. Same copy as from a post: title and exercises, without the sets.',
+  })
+  @ApiResponse({ status: 201, description: '{ workout, totalExercises }' })
+  @ApiResponse({ status: 404, description: 'Not a workout of the user' })
+  duplicateCompleted(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.workoutService.duplicateCompletedWorkout(req.user, id);
   }
 
   @Patch('planned/:id')
@@ -101,26 +136,59 @@ export class WorkoutsController {
     return this.workoutService.getCompletedWorkouts(req.user, page);
   }
 
+  // Before planned/:id, which would take "suggestion" for an id.
+  @Get('planned/suggestion')
+  @ApiOperation({
+    summary: 'Which of my planned workouts to do, for the muscles left aside',
+    description:
+      'Counts the effective sets each muscle got over the period (this week by default, or this month), as GET /stats/muscle-distribution does, and picks the planned workout that works best the muscles trained least. `score` goes from 0 to 1 (1: none of its muscles was trained). `muscles` lists what the workout works, the least trained first, with `workedSets` over the period. `suggestion` is null without a planned workout; `alternatives` holds the next two.',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      '{ period, rangeStart, rangeEnd, workedMuscles: [{ muscle, effectiveSets }], suggestion: { workout: { id, title, description, totalExercises }, score, muscles: [{ muscle, plannedSets, workedSets }] } | null, alternatives: [same as suggestion] }',
+  })
+  suggestPlanned(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: WorkoutSuggestionQueryDto,
+  ) {
+    return this.statsService.suggestPlannedWorkout(
+      req.user,
+      query.period,
+      query.date,
+    );
+  }
+
   @Get('planned/:id')
-  @ApiOperation({ summary: 'Get a planned workout by ID' })
+  @ApiOperation({
+    summary: 'Get one of my planned workouts by ID',
+    description:
+      'Planned workouts are private: only their owner reads them, anyone else gets 404.',
+  })
+  @ApiResponse({ status: 404, description: 'Not found, or not mine' })
   @ApiResponse({
     status: 200,
     description: 'Workout returned',
     type: PlannedWorkoutListDto,
   })
-  getPlannedById(@Param('id') id: string) {
-    return this.workoutService.getPlannedWorkoutById(id);
+  getPlannedById(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.workoutService.getPlannedWorkoutById(req.user.id, id);
   }
 
   @Get('completed/:id')
-  @ApiOperation({ summary: 'Get a completed workout by ID' })
+  @ApiOperation({
+    summary: 'Get a completed workout by ID',
+    description:
+      'Its owner, the people who follow them and, for a public account, anyone once the workout is published (posted). Anyone else gets 404, as for a post of a private account.',
+  })
+  @ApiResponse({ status: 404, description: 'Not found, or not visible to me' })
   @ApiResponse({
     status: 200,
     description: 'Workout returned',
     type: CompletedWorkoutListDto,
   })
-  getCompletedById(@Param('id') id: string) {
-    return this.workoutService.getCompletedWorkoutById(id);
+  getCompletedById(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.workoutService.getCompletedWorkoutById(req.user.id, id);
   }
 
   @Put('completed/:id/photo')

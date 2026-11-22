@@ -173,3 +173,29 @@ describe('buildExerciseStats', () => {
     });
   });
 });
+
+describe('decimal weights', () => {
+  it('keeps 62.5 kg exact in volume, 1RM and records', () => {
+    expect(summarizeSession([set(7, 62.5), set(5, 65)])).toMatchObject({
+      // 437.5 + 325
+      volume: 762.5,
+      heaviestWeight: 65,
+      // 62.5 x (1 + 7/30) = 77.08 beats 65 x (1 + 5/30) = 75.83
+      bestEstimatedOneRepMax: 77.08,
+      bestSet: set(7, 62.5),
+    });
+
+    const stats = buildExerciseStats([
+      session('w1', '2026-10-28', [set(7, 62.5)]),
+      session('w2', '2026-10-30', [set(5, 61.25)]),
+    ]);
+
+    expect(stats).toMatchObject({
+      prWeight: 62.5,
+      prReps: 7,
+      bestEstimatedOneRepMax: 77.08,
+      totalVolume: 743.75,
+      lastWeight: 61.25,
+    });
+  });
+});

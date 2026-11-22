@@ -5,14 +5,23 @@ import {
   ExerciseHistory,
   ExerciseRecords,
 } from '../exercise/exercise-stats.service';
-import { percentChange, round } from '../stats/utils/stats.util';
+import { compareToRealLife } from '../common/utils/real-life-comparison';
+import { percentChange } from '../stats/utils/stats.util';
 import { BadgeDto } from './dto/badge.dto';
 import { ListBadgesQueryDto } from './dto/list-badges-query.dto';
 import { Badge } from './entities/badge.entity';
-import { BADGE_UNIT } from './enums/badge-type.enum';
+import { BADGE_UNIT, BadgeType } from './enums/badge-type.enum';
 import { detectPersonalRecords } from './utils/personal-records.util';
+import { roundBadgeValue } from './utils/badge-rounding';
 
 const DEFAULT_LIMIT = 50;
+
+// Records that are a weight really lifted, worth telling as everyday objects.
+// An estimated 1RM was never lifted, and reps are not a weight.
+const LIFTED_LOAD = new Set<BadgeType>([
+  BadgeType.HEAVIEST_WEIGHT,
+  BadgeType.BEST_SESSION_VOLUME,
+]);
 
 @Injectable()
 export class BadgesService {
@@ -109,12 +118,15 @@ function toDto(badge: Badge, workoutId: string): BadgeDto {
     exercise: { id: badge.exercise.id, name: badge.exercise.name },
     workoutId,
     unit: BADGE_UNIT[badge.type],
-    value: badge.value,
-    previousValue: badge.previousValue,
-    improvement: round(badge.value - badge.previousValue),
+    value: roundBadgeValue(badge.type, badge.value),
+    previousValue: roundBadgeValue(badge.type, badge.previousValue),
+    improvement: roundBadgeValue(badge.type, badge.value - badge.previousValue),
     improvementPct: percentChange(badge.value, badge.previousValue),
     weight: badge.weight,
     reps: badge.reps,
     achievedAt: badge.achievedAt,
+    realLifeComparison: LIFTED_LOAD.has(badge.type)
+      ? compareToRealLife(badge.value)
+      : null,
   };
 }

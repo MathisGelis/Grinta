@@ -43,7 +43,9 @@ export default function UserProfileScreen() {
     setActionLoading(true);
     try {
       const result = await ConnectionsService.follow(params.userId);
-      setFollowStatus(result.status === "FOLLOWING" ? "FOLLOWING" : "REQUEST_SENT");
+      setFollowStatus(
+        result.status === "FOLLOWING" ? "FOLLOWING" : "REQUEST_SENT",
+      );
       if (result.status === "FOLLOWING" && profile) {
         setProfile({ ...profile, followersCount: profile.followersCount + 1 });
       }
@@ -61,7 +63,10 @@ export default function UserProfileScreen() {
       await ConnectionsService.unfollow(params.userId);
       setFollowStatus("FOLLOW");
       if (profile) {
-        setProfile({ ...profile, followersCount: Math.max(0, profile.followersCount - 1) });
+        setProfile({
+          ...profile,
+          followersCount: Math.max(0, profile.followersCount - 1),
+        });
       }
     } catch (err: any) {
       Alert.alert("Erreur", err.message || "Erreur");
@@ -70,19 +75,26 @@ export default function UserProfileScreen() {
     }
   };
 
-  const initials = profile?.displayName
-    ?.split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) ?? "?";
+  const initials =
+    profile?.displayName
+      ?.split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) ?? "?";
 
   const renderFollowButton = () => {
     if (followStatus === "SELF") return null;
     if (followStatus === "FOLLOWING") {
       return (
-        <TouchableOpacity style={styles.unfollowBtn} onPress={handleUnfollow} disabled={actionLoading}>
-          <Text style={styles.unfollowBtnText}>{actionLoading ? "..." : "Suivi"}</Text>
+        <TouchableOpacity
+          style={styles.unfollowBtn}
+          onPress={handleUnfollow}
+          disabled={actionLoading}
+        >
+          <Text style={styles.unfollowBtnText}>
+            {actionLoading ? "..." : "Suivi"}
+          </Text>
         </TouchableOpacity>
       );
     }
@@ -94,9 +106,17 @@ export default function UserProfileScreen() {
       );
     }
     return (
-      <TouchableOpacity style={styles.followBtn} onPress={handleFollow} disabled={actionLoading}>
+      <TouchableOpacity
+        style={styles.followBtn}
+        onPress={handleFollow}
+        disabled={actionLoading}
+      >
         <Text style={styles.followBtnText}>
-          {actionLoading ? "..." : followStatus === "FOLLOW_BACK" ? "Suivre en retour" : "Suivre"}
+          {actionLoading
+            ? "..."
+            : followStatus === "FOLLOW_BACK"
+              ? "Suivre en retour"
+              : "Suivre"}
         </Text>
       </TouchableOpacity>
     );
@@ -116,7 +136,11 @@ export default function UserProfileScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#7B5CF0" style={{ marginTop: 60 }} />
+        <ActivityIndicator
+          size="large"
+          color="#7B5CF0"
+          style={{ marginTop: 60 }}
+        />
       ) : profile ? (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -134,15 +158,18 @@ export default function UserProfileScreen() {
           </View>
 
           {/* Follow button */}
-          <View style={styles.followSection}>
-            {renderFollowButton()}
-          </View>
+          <View style={styles.followSection}>{renderFollowButton()}</View>
 
           {/* Stats */}
           <View style={styles.statsRow}>
             <TouchableOpacity
               style={styles.statItem}
-              onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: params.userId, tab: "followers" } } as any)}
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/profile/followers",
+                  params: { userId: params.userId, tab: "followers" },
+                } as any)
+              }
             >
               <Text style={styles.statNum}>{profile.followersCount}</Text>
               <Text style={styles.statLabel}>Followers</Text>
@@ -150,7 +177,12 @@ export default function UserProfileScreen() {
             <View style={styles.statDivider} />
             <TouchableOpacity
               style={styles.statItem}
-              onPress={() => router.push({ pathname: "/(tabs)/profile/followers", params: { userId: params.userId, tab: "following" } } as any)}
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/profile/followers",
+                  params: { userId: params.userId, tab: "following" },
+                } as any)
+              }
             >
               <Text style={styles.statNum}>{profile.followingCount}</Text>
               <Text style={styles.statLabel}>Following</Text>
@@ -193,7 +225,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700", flex: 1, textAlign: "center" },
+  headerTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    flex: 1,
+    textAlign: "center",
+  },
 
   avatarSection: { alignItems: "center", paddingVertical: 20 },
   avatarRing: {

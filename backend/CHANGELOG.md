@@ -1,5 +1,210 @@
 # Changelog backend
 
+## Non publié : audit backend v3
+
+- **B-16 (sécurité).** `PATCH /users/:id` n'accepte plus `email` ni `password` : 400 `VALIDATION_ERROR` avec l'erreur `FIELD_NOT_ALLOWED`. Avant, un jeton volé suffisait à changer le mot de passe ou l'e-mail sans aucune vérification, durablement. Le mot de passe se change par `PATCH /users/me/password`. L'e-mail se change par `POST /users/me/email` (mot de passe actuel requis, lien de confirmation envoyé à la **nouvelle** adresse, avis à l'**ancienne**), puis `POST /auth/confirm-email` avec le jeton du lien : l'e-mail ne change qu'à ce moment, et tous les jetons émis avant sont refusés (on réutilise `passwordChangedAt`, donc pas de `tokenVersion` en plus). Migration : table `email_change_tokens`. Nouvelle variable optionnelle `CONFIRM_EMAIL_URL` (lien profond de l'app, défaut `grinta://confirm-email`).
+- **B-13.** `GET /exercises/stats?limit=&before=` : avec `limit` (1 à 100, 50 par défaut s'il manque), la réponse est `{ items, nextBefore }`, triée par `lastPerformedAt` décroissant ; `before` est le curseur opaque `nextBefore` de la page précédente (`null` sur la dernière page, `CURSOR_INVALID` si falsifié). Sans paramètre, le tableau complet reste renvoyé comme avant (compatibilité), avec ETag. Taille : l'audit mesurait 22,8 Ko gzip pour 289 entrées, soit environ 80 octets par entrée, donc environ 4 Ko pour une page de 50 (non mesuré sur serveur réel). `GET /exercises` garde son ETag.
+- **B-14.** Décision prise (à confirmer avec le produit) : on garde le message `EMAIL_IN_USE` (meilleure UX), mais chaque réponse de ce type compte contre l'adresse de l'appelant : à la 11e en une heure, `429 TOO_MANY_ATTEMPTS`. S'ajoutent les limites existantes (5 essais par e-mail et par heure, 100 inscriptions par adresse). Ça freine le test d'une liste d'adresses sans le supprimer. La réponse neutre + e-mail de confirmation reste possible plus tard (il faudrait la vérification d'e-mail, que vous avez refusée).
+- **B-15.** Règle écrite et testée : les compteurs d'un profil (`followersCount`, `followingCount`, `workoutsCount`, `postsCount`) sont publics, même pour un compte privé ; les listes derrière ne le sont pas (404 pour un non-abonné). Le profil porte `isPrivate: true` dans ce cas : l'app affiche les chiffres et masque les lignes. Aucun changement de comportement, c'était déjà le cas ; il manquait la règle.
+- **B-17 (RGPD / App Store 5.1.1(v)).** `DELETE /users/:id` renvoyait 500 dès que le compte avait une séance (clés étrangères sans suppression en cascade). Migration `CascadeUserDeletion` : séances terminées et planifiées, posts, likes, commentaires, signalements, demandes d'abonnement et programmes passent en `ON DELETE CASCADE` (reversible). La suppression se fait en une transaction : les compteurs `likesCount`/`commentsCount` des posts des autres sont corrigés avant, les photos (avatar, séances) sont effacées du stockage après, et le jeton du compte supprimé est refusé immédiatement (401). Le même e-mail peut se réinscrire. Les groupes créés par le compte sont supprimés avec lui (comportement existant).
+- **B-18.** Profil : `height` de 50 à 250 cm, `weight` de 20 à 400 kg (`VALUE_TOO_SMALL` / `VALUE_TOO_LARGE`), `birthDate` de 1900 à aujourd'hui moins 13 ans (`DATE_OUT_OF_RANGE`, nouveau code). L'inscription ne reçoit pas ces champs, l'onboarding passe par `PATCH /users/:id` : la règle est donc au même endroit.
+- **B-22.** Un programme sans aucune séance (que des jours de repos) est refusé à la création et à la modification : `400 PROGRAMME_NEEDS_WORKOUT`.
+- **B-20.** `GET /users/search` échappe `%`, `_` et `\` dans le `LIKE` (`q=%` listait 10 inconnus), exige au moins 2 caractères dont une lettre ou un chiffre (sinon liste vide, pas d'erreur, pour ne pas casser la saisie en direct) et garde le plafond de 10.
+- **B-19 (en-têtes, Swagger, jeton).** `helmet()` ajoute `X-Content-Type-Options`, `Strict-Transport-Security`, `X-Frame-Options`, etc. à toutes les réponses (le CSP est laissé de côté tant que Swagger est servi). Swagger (`/api`, `/api-json`) n'est plus monté quand `NODE_ENV=production` (c'est le cas de l'image Docker), sauf `SWAGGER_ENABLED=true`. **À vérifier sur la VM** : si le processus pm2 n'a pas `NODE_ENV=production`, Swagger y reste ouvert ; l'ajouter à l'environnement de pm2. Le jeton ne contient plus l'e-mail (ni le serveur ni l'app ne le lisaient dedans ; les anciens jetons restent valides). **Pas fait** : durée 1 h + refresh token, car il faut que l'app gère le renouvellement ; les jetons durent toujours 7 jours, mais sont désormais coupés dès un changement de mot de passe ou d'e-mail (B-16) ou la suppression du compte (B-17).
+- **B-21.** Pseudo déjà pris : `400 USERNAME_TAKEN` avec `suggestion`.
+
+## Non publié : audit backend v2
+
+- **B-01 (sécurité, P1) : contrôle d'accès des séances et des listes d'abonnés.** Un utilisateur connecté qui ne suivait pas un compte **privé** pouvait lire ses séances (`GET /workouts/completed/:id`, `GET /workouts/planned/:id`) et la liste de ses abonnés et abonnements. Ces routes répondent désormais 404, comme `/posts/:id`, pour ne pas révéler l'existence d'un id. **Cela remplace la décision antérieure de laisser ces deux lectures ouvertes à tout utilisateur connecté.**
+  - Une seule règle (`src/common/access/user-content-access.ts`, `UserContentAccess` et `visibleToViewerSql`), réutilisée par `workouts`, `connections`, `stats` et `posts`.
+  - **Séance réalisée** : son propriétaire, ses abonnés acceptés, et n'importe qui pour un compte public **une fois la séance publiée** (postée). Une séance jamais postée d'un compte public n'est lisible que du propriétaire et de ses abonnés.
+  - **Séance planifiée** : son propriétaire seulement. `GET /stats/adherence` exige donc que le plan soit celui de l'appelant (il pouvait être celui d'un autre).
+  - `GET /connections/:id/followers` et `/following` : soi, un compte public ou un compte suivi, sinon 404.
+  - La photo d'une séance d'un compte privé n'est plus accessible par l'id de la séance (ses URL restent publiques et imprévisibles, voir plus bas).
+  - Test e2e `access-control` : un étranger ne reçoit que des 404 sur un compte privé, un abonné voit les séances réalisées et les listes, le propriétaire voit tout.
+
+- **B-02 : validation des séances.** `POST` et `PATCH` des séances réalisées et planifiées refusaient très peu de choses : 100 000 répétitions, des séries vides, un titre de 5 000 caractères, une durée négative ou de 10 ans, 1 000 séries par exercice. Ces valeurs faussaient le volume, les calories et les records, et s'affichaient telles quelles dans l'historique. Bornes, partagées par les quatre DTO (`workout-limits.ts`) :
+  - `reps` 1 à 1000 ; `sets` 1 à 30 (omis, jamais `[]`) ; `exercises` 1 à 40 ;
+  - `title` 1 à 100 caractères, espaces retirés ; `description` 0 à 1000 ;
+  - `totalDurationSeconds` 1 à 86 400 ; `timerSeconds` et `plannedRestSeconds` 0 à 3 600 ;
+  - `completionDate` au plus 24 h dans le futur (nouveau code `DATE_TOO_FAR_IN_FUTURE`).
+  - Chaque cas répond 400 `VALIDATION_ERROR` avec le bon `code` (`VALUE_TOO_LARGE`, `ARRAY_TOO_SHORT`, `FIELD_TOO_LONG`…) ; les valeurs limites sont acceptées. Les DTO d'exercice dupliqués entre création et modification sont fusionnés.
+
+- **B-03 : programmes (doublons, taille, dates).** Deux jours `dayNumber: 1` provoquaient un **500** (index unique), 500 jours étaient acceptés, et un `startDate` en 2099 était accepté.
+  - Les jours sont numérotés de 1 à N, dans n'importe quel ordre, sans doublon ni trou : 400 `DAY_NUMBER_DUPLICATE` ou `DAY_NUMBERS_NOT_CONSECUTIVE`. Un jour de repos est un jour sans séance, pas un numéro manquant. Même règle pour `PATCH /programmes/:id`.
+  - 84 jours au plus (`days` : `ARRAY_TOO_LONG` ; `dayNumber` : `VALUE_TOO_LARGE`).
+  - `startDate` à 7 jours au plus d'aujourd'hui, dans un sens ou l'autre : 400 `START_DATE_OUT_OF_RANGE`. Un départ dans quelques jours donne `status: "not_started"` avec `daysUntilStart` dans `GET /programmes/active/today`.
+  - Plus aucun 500. Les tests e2e du démarrage utilisent des dates relatives à aujourd'hui, puisque la fenêtre est glissante.
+
+- **B-04 : import de notes, séances multiples.** Un texte avec deux titres de séance (« Push A » … « Pull B ») donnait **une seule** séance « Séance importée » qui fusionnait tous les exercices, et les titres sortaient dans `unrecognized` (`unknown_exercise`). Une ligne courte (40 caractères au plus), sans séries ni charge, qui n'est pas un exercice et qui est suivie d'une ligne d'exercice est maintenant le **titre d'une séance** : plusieurs titres donnent plusieurs séances et un `programme` proposé, un seul titre nomme l'unique séance. Les vrais inconnus gardent `unknown_exercise`, ainsi qu'une ligne finale ou trop longue. Les en-têtes « Jour 1 », « Day 1 », « Lundi » et « Séance A » continuaient déjà d'être reconnus.
+
+- **B-06 : flux sans appel de détail par carte.** `GET /posts/feed/following` et `/posts/feed/top` obligeaient l'app à appeler `GET /posts/:id` pour chaque carte. Une carte contient maintenant **tout ce que contient le détail** : `userId`, `uniqueName`, `workoutTitle`, `workoutPhotoUrl`, `workoutDescription`, `workoutCompletionDate`, `workoutDurationSeconds`, en plus de `partners`, de la vignette, des compteurs, de `isLiked`, de `exercises` et de `stats`, avec un nouveau `totalExercises`. Le détail et les deux flux partagent la même liste de colonnes (`POST_CARD_COLUMNS`), donc ils ne peuvent plus diverger, et un test compare chaque carte au détail champ par champ. Taille mesurée : 7,5 Ko pour 5 posts de 6 exercices (limite demandée : 10 Ko).
+
+- **B-07 : format d'erreur unique.** Toute erreur renvoie `{ statusCode, code, message }` (`message` est toujours une chaîne, plus d'objet imbriqué). Codes par défaut : `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `PAYLOAD_TOO_LARGE`, `TOO_MANY_REQUESTS`, `INTERNAL_ERROR` ; les erreurs métier gardent leur code propre (`VALIDATION_ERROR`, `EMAIL_IN_USE`, `DAY_NUMBER_DUPLICATE`…). L'inscription avec un e-mail déjà pris répond `400 EMAIL_IN_USE` et la route est limitée (5 essais par e-mail et par heure, 100 par adresse), ce qui freine le test d'une liste d'adresses. Choix assumé : on garde ce message précis pour l'UX plutôt qu'une réponse neutre.
+- **B-08 : corps trop gros.** Les corps JSON sont limités à 100 Ko et répondent `413 PAYLOAD_TOO_LARGE` au lieu d'un 500. Les photos gardent leur limite d'upload dédiée.
+
+- **B-09 : pagination.** `GET /connections/:id/followers` et `/following` prennent `limit` (plafonné à 100, 100 par défaut) et `offset`, triés du plus récent au plus ancien. `GET /posts/mine` est déjà plafonné à 100 (un test le fige). Nouveau `GET /posts/mine/ids` : `[{ postId, workoutId }]` seulement, pour l'écran Stats au lieu de `posts/mine?limit=100`. Les catalogues (`/exercises`, `/exercises/stats`, `/badges`) envoient un `ETag` : l'app peut rejouer la requête avec `If-None-Match` et reçoit `304` sans corps (vérifié par un test), ce qui évite de retélécharger 145 Ko.
+
+- **B-10 : textes serveur par langue.** `GET /workouts/templates`, `GET /workouts/templates/:key` et `POST /workouts/templates/:key/use` lisent `Accept-Language` : titres, descriptions et titres de séances en français (`fr`) ou en anglais (toute autre langue). Sans en-tête, le français reste la valeur par défaut, donc aucun client existant ne change. `use` enregistre les textes dans la langue demandée. Les messages d'insights des stats sont déjà des codes (`INSUFFICIENT_PULL_VOLUME`…), le texte « Not enough pulling volume… » vient de l'app, pas du serveur. Les autres langues de l'app (es, de, it…) lisent l'anglais pour les modèles tant que personne ne les a rédigées.
+
+- **B-11 : échappement.** Constat : les e-mails sont du texte brut (`MailMessage` n'a pas de champ HTML) et aucune route ne sert de HTML, donc rien n'est exécutable aujourd'hui. Choix : l'API stocke et renvoie le texte tel que saisi (le JSON n'est pas un contexte HTML, échapper à l'entrée afficherait `&lt;` dans l'app). Ajout de `escapeHtml` (`src/common/utils/escape-html.ts`), à utiliser dès qu'un gabarit d'e-mail HTML, une page de partage ou une vue web insère un titre, un pseudo ou un commentaire.
+
+## Non publié : deuxième lot de l'audit front
+
+- **Dépendances : audit de sécurité** (`npm audit`). Production : de 13 failles (dont 1 critique) à **0**. Ensemble du projet, outils de développement compris : de 69 à 49.
+  - Critique : `proxy-addr` (usurpation d'adresse IP par un sous-réseau IPv4-mappé), dont dépend la limitation de débit par adresse. `handlebars` aussi.
+  - `multer` et `body-parser` (envoi de fichiers et corps de requête), `qs`, `js-yaml`, `form-data`, `fast-uri` : mises à jour sans rupture (`npm audit fix`).
+  - `nodemailer` 6 → 10 (injection SMTP/CRLF, envoi vers un domaine non voulu, déni de service). Aucune rupture pour notre usage (SMTP, texte brut) ; envoi vérifié contre un serveur SMTP local. Les types sont désormais dans le paquet : `@types/nodemailer` retiré.
+  - `sharp` 0.34 → 0.35 (libvips, libheif, librsvg) : traitement des photos.
+  - `typeorm` → `glob`/`minimatch` : surcharge `overrides` dans `package.json` (`glob` 14.0.6, `minimatch` 11 pour `test-exclude`), TypeORM 1.x étant incompatible avec `@nestjs/typeorm` 11.
+  - **Reste 49 alertes « high », toutes `picomatch`, uniquement dans les outils de développement** (Jest, ts-loader, Nest CLI) : aucune version corrigée n'est publiée (la dernière, 4.0.7, est elle aussi signalée). Rien n'atteint la production, et la faille (ReDoS) suppose un motif de recherche contrôlé par un attaquant. À revoir quand un correctif sortira. Ne pas lancer `npm audit fix --force` : il propose de rétrograder Jest et ts-jest.
+  - ESLint 9 (qui n'est plus supporté) passe en 10 ; NestJS est aligné en 11.2 ; Prettier est mis à jour (reformatages mécaniques).
+  - Node 20.19 ou plus est requis (`engines`). Les `Dockerfile` passent de Node 18 à Node 22 et de `npm install` à `npm ci`, et un `.dockerignore` évite d'embarquer `.env`, `node_modules` et `dist` dans l'image.
+- **Modèles proposés, pas enregistrés** : `GET /workouts/templates/:key` renvoie le programme personnalisé sous forme de proposition, sans rien enregistrer (même forme que le brouillon d'import). `POST /workouts/templates/:key/use` ne sert plus qu'à l'enregistrer quand l'utilisateur accepte.
+- **Programmes** : démarrage à n'importe quel jour (`startDay` sur `POST /programmes/:id/start`, 400 `START_DAY_OUT_OF_RANGE` au-delà du dernier jour) et fin du programme en cours (`DELETE /programmes/active`, 204 ou 404 ; le programme est conservé). Migration réversible `1792605872876-AddActiveProgrammeStartDay` (`startDay`, 1 par défaut pour les programmes déjà en cours).
+- **Catalogue d'exercices traduit** dans les 10 langues de l'app, d'après l'en-tête `Accept-Language`, sur toutes les routes qui renvoient des exercices. Le nom anglais reste la référence en base et est renvoyé dans `englishName`.
+  - Les traductions sont des fichiers JSON versionnés (`src/exercise/data/i18n/`), chargés en mémoire : pas de table ni de migration. Les noms sont composés à partir de la base et des variantes (« Développé couché » + « incliné, haltères »).
+  - Un intercepteur global traduit les réponses sans modifier les valeurs en cache et en gardant les classes des entités, si bien que les champs exclus (mot de passe) restent masqués.
+  - Les tests vérifient que chaque langue couvre tout le catalogue avec des noms distincts.
+  - L'import de notes reconnaît aussi les noms traduits.
+- **Groupe créé avec une liste de personnes** : `POST /groups` accepte `userIds`. Chacune est invitée dès la création, avec les règles habituelles (suivi mutuel, 20 membres au plus). C'est tout ou rien : 403 `GROUP_USERS_NOT_MUTUAL` ou 404 `GROUP_USERS_NOT_FOUND`, avec les ids en cause.
+- **Ordre des exercices d'une séance planifiée** : `GET /programmes/active/today` (et le retour de `POST /programmes/:id/start`) pouvait renvoyer les exercices dans le désordre. L'ordre dépendait de l'ordre physique des lignes en base, que Postgres ne garantit pas, par exemple avec une jointure de hachage sur une table plus grosse.
+  - Nouvelle colonne `position` sur `planned_workout_exercises` (migration réversible `1792605872875-AddPlannedExercisePosition`), qui reprend l'ordre actuel des lignes existantes.
+  - Elle est remplie à chaque écriture : création, modification, duplication, modèles, données de démo. La séance retrie ses exercices à chaque chargement, quelle que soit la route.
+  - Un test e2e force la jointure de hachage pour ne pas passer par chance.
+- **Nombres cohérents** : une règle d'arrondi par type de valeur, appliquée à la sortie seulement (`src/common/utils/numbers.ts`).
+  - Charges telles que saisies (2 décimales au plus).
+  - 1RM et moyennes à 1 décimale.
+  - Volumes et calories entiers.
+  - Les totaux d'une séance (volume, calories) sont calculés sur les valeurs exactes et non sur la somme des exercices arrondis, si bien qu'une séance a les mêmes chiffres partout.
+  - Les badges sont arrondis selon leur type (`roundBadgeValue`), aussi dans le fil des groupes.
+  - Les dates étaient déjà homogènes (ISO 8601 UTC, jours `AAAA-MM-JJ`).
+  - Un test e2e compare une même séance sur neuf routes.
+  - Les erreurs de typage du test `auth-guard` sont corrigées.
+- **Stats d'un autre utilisateur** : `?userId=` sur `/stats/summary`, `/stats/muscle-distribution`, `/stats/balance`, `/stats/consistency` et `/stats/muscle-frequency`.
+  - Sécurité : même visibilité que les posts du profil (public, ou suivi), sinon 404 pour qu'un id ne puisse pas être sondé.
+  - Seules les séances publiées comptent, et les calories utilisent 70 kg : le poids, privé, ne fuit pas par les calories.
+  - Le profil public renvoie `createdAt`.
+- **Onboarding** : champs facultatifs `level`, `trainingDaysPerWeek` (1 à 7) et `trainingLocation` sur l'utilisateur, privés. Migration `1792605872873-AddUserTrainingProfile` (réversible).
+- **Modèles de séances** : `GET /workouts/templates` (7 modèles classés selon l'objectif, le niveau, les jours et le lieu) et `POST /workouts/templates/:key/use` (séances planifiées et programme non démarré).
+- **Import de notes** : `POST /workouts/import` lit des notes FR/EN (« dc 45x8 », « tractions 3x10 », jours « Lundi », « Jour 2 ») et renvoie un brouillon de séances, et de programme s'il y a des jours, avec les lignes non comprises. Rien n'est enregistré ; texte limité à 10 000 caractères et 300 lignes.
+- **Connexion Apple et Google** (sécurité) : `POST /auth/apple` et `POST /auth/google`.
+  - Le jeton est vérifié côté serveur : signature RS256 avec les clés publiées par Apple et Google (JWKS), émetteur, expiration, et audience limitée à nos identifiants client (`APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS`). Sans eux, 503.
+  - Un compte existant n'est relié que si le fournisseur certifie l'e-mail (`email_verified`) ; sinon 401. Les comptes reliés sont identifiés par le `sub` du fournisseur (table `user_identities`, migration réversible `1792605872874-AddUserIdentities`), pas par l'e-mail.
+  - Un nouveau compte reçoit un mot de passe aléatoire haché (bcrypt), inutilisable tant que l'utilisateur n'en définit pas un.
+  - Les jetons ne sont jamais journalisés. Limite : 30 essais par 15 min et par adresse IP.
+  - Les deux routes sont ajoutées à la liste des routes publiques du test `auth-guard`.
+
+## Non publié : corrections de l'audit front
+
+- **B-04** :
+  - `GET /health` vérifie la base (`SELECT 1`), sans authentification ni limite de débit, et répond 503 si la base ne répond pas. `GET /` répond `{ status: "ok" }`. Le contrôleur racine est enregistré.
+  - La configuration HTTP (proxy, compression, validation, format des erreurs) est extraite dans `configureApp` (`src/app.setup.ts`), commune à `main.ts` et aux tests e2e.
+  - Les tests e2e (`npm run test:e2e`) démarrent toute l'API sur une base jetable. Ils refusent de tourner si `DB_NAME` ne contient pas « e2e » ou « test », ce qui empêche un `.env` de prod d'être utilisé par erreur.
+- **B-13 (sécurité)** : le test e2e `auth-guard` découvre toutes les routes par les métadonnées Nest. Il vérifie que la liste des routes publiques est exactement celle attendue (8), puis que chacune des 88 routes protégées répond 401 à un jeton absent, expiré, mal signé, malformé, `alg: none` ou d'un compte supprimé. Une route qui perdrait sa garde ferait échouer le test.
+- **B-05 (sécurité)** : réinitialisation et changement du mot de passe.
+  - `POST /auth/forgot-password` répond toujours 204, que l'e-mail ait un compte ou non, et aussi vite : l'envoi part en arrière-plan.
+  - Le jeton de 256 bits est stocké en SHA-256 dans `password_reset_tokens` (migration réversible `AddPasswordReset`). Il sert une fois, pendant 1 h, et une nouvelle demande supprime les précédents.
+  - `POST /auth/reset-password` change le mot de passe sous verrou de ligne.
+  - `PATCH /users/me/password` exige le mot de passe actuel (400 `CURRENT_PASSWORD_INVALID`, pas 401) et renvoie un nouveau token.
+  - **Invalidation des JWT** : `users.passwordChangedAt` est mis à jour à chaque changement, et `JwtStrategy` refuse les tokens émis avant (seconde du changement exclue). Il refuse aussi désormais les tokens d'un compte supprimé. L'état est mis en cache 30 s par utilisateur et vidé immédiatement sur le process qui fait le changement.
+  - **E-mails** : `MailService` avec SMTP (nodemailer, variables `SMTP_*`, `MAIL_FROM`) ou log. Le transport log n'écrit jamais les liens quand `NODE_ENV=production`.
+  - **Limites dédiées** : le garde de B-08 est généralisé en `@AttemptLimit(...)`.
+  - **Reste à faire** : `PATCH /users/:id` accepte encore `password` sans le mot de passe actuel, par compatibilité avec l'app. À retirer une fois l'app passée à `PATCH /users/me/password`.
+  - Tests unitaires et 7 scénarios e2e.
+- **B-08 (sécurité)** :
+  - Le login est limité par un garde dédié (`LoginThrottleGuard`), dans le stockage du throttler. La limite est de 5 tentatives par 15 min par couple identifiant + adresse, au lieu de 5 par adresse, si bien que les utilisateurs derrière un même NAT ne se bloquent plus entre eux. Une seconde limite, de 50 par 15 min par adresse tous comptes confondus, freine le test de mots de passe sur de nombreux comptes. L'identifiant est haché dans les clés.
+  - Les 429 (login et limite globale, via `AppThrottlerGuard`) portent `Retry-After` et `{ code, message, retryAfterSeconds }`.
+  - Toute erreur dont le corps a un `code` est désormais renvoyée telle quelle au premier niveau par `AllExceptionsFilter`.
+  - Tests unitaires et e2e (même adresse et autre compte, autre adresse, limite par adresse, limite globale).
+- **B-09** : `calories` par séance dans `GET /workouts/completed`, et par jour plus `totalCalories` dans `GET /stats/heatmap`. La valeur est calculée par `StatsService.caloriesOf`, avec le même calcul que `estimatedCalories` de `GET /stats/workout/:id` (MET, poids du profil ou 70 kg, arrondi), pour que l'app n'ait plus de calcul à elle. Le test e2e vérifie l'égalité des trois chiffres.
+- **B-10** : `insights` de `/stats/balance` et `/stats/comparisons` renvoie des codes (`BalanceInsight`, `ComparisonInsight`, dans `src/stats/constants/insights.ts`) au lieu de phrases anglaises. Les chiffres que ces phrases citaient sont déjà des champs de la réponse. Le type reste un tableau de chaînes.
+- **B-12** :
+  - « Baesyan Curl » est renommé « Bayesian Curl » (Cable et Dumbbell) dans `base-exercises.json`.
+  - Les bases existantes sont corrigées sur place, ids conservés, par la migration réversible `FixExerciseNames` et par le seed (`NAME_FIXES_2026_10`, liste figée appliquée avant les upserts).
+  - `GET /exercises` renvoie `Cache-Control: private, no-cache`. Express y ajoutait déjà un ETag et répondait 304 à un `If-None-Match` à jour, mais rien ne disait à l'app de garder la liste et de la revalider.
+  - Tests e2e : migration, retour arrière, seed sur une base à l'ancien nom, 304.
+- **B-06** : `gender` (`male`, `female`, `other`) et `goal` (`gain_weight`, `lose_weight`, `get_fitter`, `flexibility`, `learn_basics`) sur les utilisateurs. Ce sont des enums Postgres nullables, ajoutés par la migration réversible `AddUserGenderAndGoal`, et modifiables par `PATCH /users/:id`. Comme les mensurations, ils ne sont visibles que de leur propriétaire : `GET /users/:id` sur un autre compte ne renvoie que l'identité publique (vérifié en e2e).
+- **B-03** : `GET /workouts/planned` renvoie `totalSets` (séries prévues, calculées en SQL) et `estimatedDurationMinutes`. Ce dernier est saisi en création et en édition (entier de 1 à 600, `null` l'efface). Il est stocké dans la colonne `planned_workouts.estimatedDurationMinutes`, ajoutée par la migration réversible `AddPlannedWorkoutDuration`. Tests e2e.
+- **B-07** : les commentaires sont limités à 500 caractères (`COMMENT_MAX_LENGTH`, création et édition), avec le code `FIELD_TOO_LONG`. La limite existait déjà ; elle est maintenant partagée, documentée dans Swagger et testée en e2e.
+- **B-02** : les erreurs de validation ont un format structuré `{ statusCode: 400, code: 'VALIDATION_ERROR', message, errors: [{ field, code, message }] }`, avec 22 codes stables documentés dans le README. Les messages sont en français et reprennent la limite du décorateur (« 500 caractères »). Un message déjà écrit dans un DTO, comme celui du pseudo, est conservé. Le chemin des champs imbriqués est donné en entier. Un seul `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`, `transform`), déjà le cas sur cette branche. Les autres erreurs ne changent pas de format.
+- **B-01** : les charges acceptent 2 décimales (`@IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Max(1000)`). Les 4 `SetPairDto` dupliqués sont remplacés par une classe partagée (`src/workouts/dto/set-pair.dto.ts`). Volume, 1RM, records et stats étaient déjà calculés en flottants et arrondis à 2 décimales seulement en sortie. Tests unitaires et e2e : 62,5 kg relu à l'identique, volume 762,5, 1RM 77,08, record battu de 2,5 kg.
+
+## Non publié : suivre un programme et suggestions de séance
+
+- **`POST /programmes/:id/start`** commence un de mes programmes (migration réversible `AddActiveProgrammes`, table `active_programmes`). Un seul programme est suivi à la fois : en démarrer un autre le remplace. `startDate` (`AAAA-MM-JJ`) est le jour 1, aujourd'hui en UTC par défaut. Le suivi disparaît avec le programme ou le compte.
+- **`GET /programmes/active/today?date=`** renvoie la séance planifiée du jour.
+  - Le jour se compte en jours calendaires depuis le départ, entraînement ou non, et le programme recommence après son dernier jour (`cycle`).
+  - Un jour absent du programme ou sans séance est un jour de repos.
+  - `status` vaut `workout`, `rest` ou `not_started`.
+  - Les dates sont des dates de calendrier sans heure : l'app envoie la date locale de l'utilisateur, faute de quoi la date UTC s'applique.
+- **`GET /workouts/planned/suggestion?period=week|month&date=`** classe mes séances planifiées selon les muscles qu'elles travaillent et que la période a délaissés.
+  - Séries effectives par muscle comme `/stats/muscle-distribution`.
+  - Chaque muscle d'une séance pèse ses séries prévues × 1 / (1 + séries déjà faites).
+  - `score` entre 0 et 1, deux alternatives, et le détail par muscle.
+  - Une séance planifiée sans séries compte une série par exercice.
+- Vérifié sur le programme Push Pull Legs de la démo, en 22 contrôles HTTP :
+  - jour 3 = Legs, jour 4 = repos, jour 8 = Push du cycle 2, date avant le départ ;
+  - remplacement du programme suivi, arrêt par suppression ;
+  - suggestion identique au calcul de `/stats/muscle-distribution` ;
+  - séance d'un muscle non travaillé classée en tête avec un score de 1 ;
+  - utilisateur sans séance planifiée.
+
+## Non publié : groupes, comparaisons, duplication, séance d'un post
+
+- **Fil populaire** : `GET /posts/feed/top` n'affiche plus les posts de l'utilisateur connecté.
+- **Exercices et stats de la séance dans les fils** : `feed/following`, `feed/top`, `/posts/mine` et les posts du profil renvoient `workoutId`, `exercises[]` (nom, nombre de séries, meilleure série) et `stats` (durée, volume, séries, reps, records battus). Deux requêtes par page, quelle que soit sa taille. Les séries complètes restent dans le détail.
+- **`GET /posts/:postId/workout`** : exercices, séries et totaux de la séance d'un post, avec la même visibilité que le post. L'accès se fait uniquement par le post, donc une séance non publiée reste inaccessible. Pour les autres que l'auteur, les calories sont calculées pour le poids par défaut (70 kg) afin de ne pas révéler le poids de l'auteur. Un post sans séance renvoie 404.
+- **Comparaisons avec la vie réelle** (`realLifeComparison: { object, count }`, clé en anglais traduite par l'app) : sur `GET /stats/workout/:id` et la séance d'un post (volume total), et sur les badges `heaviest_weight` et `best_session_volume`. 12 objets de 7 kg à 225 t, poids typiques arrondis (`src/common/utils/real-life-comparison.ts`).
+- **`GET /exercises/:id/stats/compare/:userId`** : mes stats d'un exercice à côté de celles d'une personne que je suis. Les siennes sont recalculées à partir de ses seules séances publiées. 403 si je ne la suis pas.
+- **Duplication** : `POST /workouts/planned/from-post/:postId` (tout post visible) et `POST /workouts/planned/from-completed/:id` (mes séances) créent une séance planifiée avec le titre et les exercices dans le même ordre, sans les séries ni la description. Les exercices sont insérés en une requête, car un enregistrement en cascade réordonnait parfois les lignes.
+- **Groupes** (`/groups`, migration réversible `AddGroups`) :
+  - invitation par pseudo entre personnes qui se suivent mutuellement, puis acceptation ;
+  - 20 membres au plus, invitations en attente comprises, sous verrou de ligne pour qu'aucune course ne dépasse la limite ;
+  - tout membre peut renommer et inviter, seul le créateur supprime ;
+  - si le créateur part, le membre le plus ancien prend sa place, et le dernier à partir supprime le groupe ;
+  - fil d'activité : séances publiées par les membres depuis leur arrivée, avec les records qu'elles ont battus (`type: "workout"`) ;
+  - envoi d'un post dans le groupe (`POST /groups/:id/shares`, migration réversible `AddGroupShares`) : tout membre, pour tout post qu'il peut voir, une fois par post et par groupe. Dans le fil (`type: "share"`), un post envoyé n'est montré qu'aux membres autorisés à voir ce post, si bien que le post d'un compte privé reste réservé à ses abonnés. Seul l'expéditeur peut le retirer. L'envoi disparaît avec le post, ou quand l'expéditeur quitte le groupe ;
+  - un non-membre reçoit 404.
+- Vérifié sur une base de démo (61 comptes, 2 772 séances) : 57 contrôles HTTP de bout en bout, plus 18 pour l'envoi de posts dans un groupe. Ils couvrent les cas d'erreur, les limites de taille et la passation du créateur. Le contrôle de schéma confirme que la migration correspond aux entités, et le revert de la migration a aussi été testé.
+
+## Non publié : schéma de prod réparé et vérifié à chaque déploiement
+
+**Incident du 29 octobre.** Après le déploiement, l'API renvoyait des 500 : `column User.avatarUrl does not exist`, `stats.pr_reps`, `exercise.description`. Le login était cassé. La table `migrations` de prod indiquait les 10 migrations comme appliquées, mais les colonnes qu'elles ajoutent manquaient. Les trois colonnes de contenu des exercices ont même disparu de nouveau après avoir été restaurées. Rien dans le repo ne lance de migration en arrière ; la cause de ces suppressions n'est pas identifiée. La prod a été réparée à la main avec des `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+
+Correctifs :
+
+- **Migration `RepairSchemaDrift`** : rejoue une fois les changements de schéma de toutes les migrations depuis la baseline. Elles sont toutes idempotentes, donc ce qui existe déjà est laissé tel quel, et les compteurs des posts sont recalculés. Son `down()` ne fait rien : les colonnes appartiennent aux migrations précédentes.
+- **`npm run schema:check:prod`** : compare les entités au schéma réel, en lecture seule.
+  - S'il manque une colonne, une table ou un index utilisé par le code, il les liste et sort en erreur. `deploy.sh` s'arrête alors avant `pm2 restart` et l'ancienne version continue de tourner.
+  - Ce que seule la base contient est signalé sans faire échouer.
+  - Les instructions SQL affichées ne doivent jamais être lancées telles quelles : TypeORM y devine des renommages de colonnes.
+- **Au démarrage, l'API journalise en `ERROR` ce qui manque dans la base.** Une colonne supprimée entre deux déploiements apparaît ainsi dans `pm2 logs` au lieu de 500 sans explication. Ce n'est pas bloquant : une API cassée sur une route vaut mieux qu'une API arrêtée.
+- **`migration:run` affiche enfin sa progression** : migrations déjà en base, en attente, chacune exécutée. Le logger supprimait ces messages, si bien qu'une exécution qui n'appliquait rien ressemblait à une exécution complète. L'API et le contrôle de schéma n'affichent pas ces messages, car une comparaison à blanc y écrit « new columns added » sans rien modifier.
+- **`base-exercises.json` est copié dans `dist/` au build** (asset dans `nest-cli.json`). `node dist/scripts/seed.js`, désormais `npm run seed:prod`, échouait en prod faute de fichier. Le build vide `dist/` à chaque fois (`deleteOutDir`), donc une copie manuelle ne tenait pas.
+
+**Prochain déploiement.** Bash exécute la version de `deploy.sh` qu'il a lue avant le `git pull`, donc le contrôle de schéma ne tournera automatiquement qu'au déploiement suivant. Après le prochain déploiement, lancer une fois `npm run schema:check:prod` sur la VM, qui doit afficher « Schema OK ». Les logs du job montrent maintenant la migration `RepairSchemaDrift` exécutée.
+
+Vérifié sur une copie de l'état de prod : journal complet, six colonnes supprimées, une colonne en trop.
+- Le contrôle échoue (code 1) et liste les six manques.
+- `migration:run:prod` exécute la réparation, avec sa progression affichée.
+- Le contrôle passe ensuite, avec un simple avertissement sur la colonne en trop.
+- Une seconde exécution répond « No migrations are pending ».
+- `seed:prod` trouve son fichier.
+- L'API démarrée sur une base privée de `exercises.description` journalise l'erreur et renvoie 500 sur le détail d'un exercice ; une fois la colonne remise, il y a 200 et aucun log.
+- Sur une base neuve, les 11 migrations passent et le contrôle est propre. Annuler la réparation ne supprime rien.
+
+## Non publié : données de démonstration
+
+- **`npm run demo:seed`** (`demo:seed:prod` sur la VM) remplit la base avec des comptes fictifs et plusieurs mois d'activité pour une démo : 60 personnes par défaut (`-- --users=N`), abonnements, programmes et séances planifiées, séances terminées avec une progression réaliste, posts, likes, commentaires, partenaires tagués par @, avatars générés, stats par exercice et badges calculés avec les mêmes fonctions que l'API.
+- Compte vitrine : `lucas.moreau`, suivi par la plupart des autres comptes.
+- **Sécurité** :
+  - tous les comptes de démo ont une adresse sur le domaine réservé `grinta-demo.example.com`, ce qui empêche d'écrire sur une vraie boîte mail et permet de les retrouver ;
+  - leur mot de passe commun est lu dans `DEMO_PASSWORD` (8 caractères minimum). Il n'est ni généré ni affiché, donc jamais écrit dans un log ;
+  - le script refuse de tourner si des comptes de démo existent déjà.
+- **`npm run demo:clear`** (`demo:clear:prod`) supprime les comptes de démo et tout ce qui en dépend, ainsi que leurs photos dans le stockage. Il recalcule ensuite les compteurs des vrais posts que ces comptes avaient likés ou commentés. Les vrais comptes ne sont pas modifiés, sauf qu'ils perdent leurs likes, commentaires et abonnements liés aux comptes de démo.
+- Les comptes de démo sont visibles par les vrais utilisateurs (recherche, recommandations, feed top) : lancer `demo:clear` après la présentation.
+
 ## Non publié : photos stockées dans Supabase Storage
 
 - **Les photos (avatars, photos de séance et leurs miniatures) sont stockées dans un bucket public de Supabase Storage**, et non plus sur le disque de la VM. L'API envoie et supprime les fichiers avec la clé de service, qui reste sur le serveur. L'app charge les photos directement depuis le CDN de Supabase.
@@ -184,7 +389,7 @@ Optionnel côté nginx :
   - Argument pour garder le disque : sur le plan gratuit de Supabase, c'est l'egress (5 Go/mois) qui serait limitant, avant le stockage et la base. Les photos servies par la VM n'en consomment pas.
   - Seule la classe `PhotoStorage` changerait. Les URL déjà stockées se réécrivent en une requête (`replace` du préfixe) après copie des fichiers.
 - **Les URL des photos sont publiques**, sans jeton : elles sont imprévisibles (UUID v4) mais quiconque obtient l'URL voit la photo. C'est le fonctionnement habituel des applications sociales, et `<Image>` en React Native n'envoie pas d'en-tête d'authentification. L'avatar est visible de tous, compte privé compris.
-- **La photo de séance a la visibilité de la séance**, et `GET /workouts/completed/:id` reste ouvert à tout utilisateur authentifié (règle du projet) : la photo d'une séance d'un compte privé est lisible par qui connaît l'id de la séance. Restreindre cette route aux abonnés réglerait les deux.
+- **La photo de séance a la visibilité de la séance**, et `GET /workouts/completed/:id` reste ouvert à tout utilisateur authentifié (règle du projet) : la photo d'une séance d'un compte privé est lisible par qui connaît l'id de la séance. Restreindre cette route aux abonnés réglerait les deux. **Fait dans l'audit v2 (B-01).**
 
 ### Mesures
 
@@ -305,7 +510,7 @@ Vérification : chaque endpoint a été comparé à un calcul indépendant sur l
 - **Seuil `on_track` de 5 %** (`constants/comparison.ts`). Le seuil de tendance de `progression` est aussi de 5 %, calculé sur la moyenne des trois premiers et des trois derniers points pour qu'une mauvaise séance ne retourne pas la tendance.
 - **Niveaux de la heatmap relatifs à la journée la plus longue de l'année** (4 pour la plus longue, 1 au minimum pour tout jour actif). Simple et déterministe, mais une journée exceptionnelle écrase les autres vers le niveau 1. Des quartiles sont une alternative si le rendu le demande.
 - **`progression` ne compte que les séries avec un poids et des répétitions positifs.** Un exercice au poids du corps ne renvoie donc aucun point. Une métrique `reps` serait nécessaire pour les suivre, non demandée ici.
-- **`adherence` : le workout réalisé doit appartenir à l'appelant, le plan peut être n'importe quel plan lisible**, comme `GET /workouts/planned/:id` qui reste ouvert à tout utilisateur authentifié. Un utilisateur peut donc suivre le programme d'un autre. Les exercices sortent dans l'ordre stocké du plan, non garanti (voir PERFORMANCE.md).
+- **`adherence` : le workout réalisé doit appartenir à l'appelant, le plan peut être n'importe quel plan lisible**, comme `GET /workouts/planned/:id`. **Depuis l'audit v2 (B-01), le plan doit aussi appartenir à l'appelant.** Les exercices sortent dans l'ordre stocké du plan, non garanti (voir PERFORMANCE.md).
 - **Les jours sont en UTC** (calendrier de `progression` et `heatmap`, groupement des records). Identique aux autres endpoints tant que le serveur tourne en UTC.
 
 ## Non publié : Phase 2, optimisation des temps de réponse
@@ -373,7 +578,7 @@ WHERE email <> lower(email) OR "uniqueName" <> lower("uniqueName");
 - **Timing attack sur `validateUser`** : déjà mitigé. Le hash factice existant coûtait autant qu'un vrai (environ 65 ms des deux côtés, mesuré). Il est maintenant généré au démarrage avec le même facteur de coût que les mots de passe réels, au lieu d'être une chaîne codée en dur qui cesserait d'être équivalente si le facteur changeait.
 - **`.env`** est dans `.gitignore` et n'est pas suivi par git.
 - **Ordre des routes** : vérifié dans tous les controllers, `mine`, `search` et les segments statiques précèdent les routes paramétrées.
-- **Routes publiques `getPlannedWorkoutById` et `getCompletedWorkoutById`** : laissées ouvertes, décision explicite du projet. Les routes de modification et de suppression restent réservées au propriétaire.
+- **Routes publiques `getPlannedWorkoutById` et `getCompletedWorkoutById`** : laissées ouvertes, décision explicite du projet. **Remplacée par l'audit v2 (B-01) : ces lectures sont désormais restreintes.** Les routes de modification et de suppression restent réservées au propriétaire.
 - Les lectures de Stats et de Workouts filtraient déjà sur `user.id` : le bug `user.userId` décrit dans le CLAUDE.md n'existe plus dans cette branche.
 
 ### Écarts entre le CLAUDE.md et la branche `backend`
