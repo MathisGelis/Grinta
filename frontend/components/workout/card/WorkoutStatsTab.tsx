@@ -1,9 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { WorkoutTheme } from "@/constants/Colors";
+import { View, Text } from "react-native";
 import { fullPlannedWorkout } from "@/services/workouts.service";
+import MuscleMap from "@/components/ui/MuscleMap";
+import Stat from "@/components/ui/Stat";
+import { usePlannedMuscleData } from "@/hooks/usePlannedMuscleData";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutStatsTabProps {
   workout: fullPlannedWorkout | null;
   stats: {
@@ -17,76 +19,37 @@ export default function WorkoutStatsTab({
   workout,
   stats,
 }: WorkoutStatsTabProps) {
+  const { t } = useTranslation();
+  const muscleData = usePlannedMuscleData(workout?.exercises);
+  const tiles = [
+    { label: t.sets, value: stats.totalSets },
+    { label: t.totalReps, value: stats.totalReps },
+    { label: t.totalKgLabel, value: stats.totalWeight },
+    { label: t.exercises, value: workout?.exercises?.length || 0 },
+  ];
+
   return (
-    <View style={styles.statsContent}>
-      <View style={styles.statsGrid}>
-        <View style={styles.statBox}>
-          <Ionicons
-            name="repeat"
-            size={24}
-            color={WorkoutTheme.accent.purple}
-          />
-          <Text style={styles.statBoxValue}>{stats.totalSets}</Text>
-          <Text style={styles.statBoxLabel}>Séries</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Ionicons name="fitness" size={24} color={WorkoutTheme.status.info} />
-          <Text style={styles.statBoxValue}>{stats.totalReps}</Text>
-          <Text style={styles.statBoxLabel}>Reps total</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Ionicons
-            name="barbell"
-            size={24}
-            color={WorkoutTheme.status.success}
-          />
-          <Text style={styles.statBoxValue}>{stats.totalWeight}</Text>
-          <Text style={styles.statBoxLabel}>kg total</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Ionicons name="list" size={24} color={WorkoutTheme.status.danger} />
-          <Text style={styles.statBoxValue}>
-            {workout?.exercises?.length || 0}
-          </Text>
-          <Text style={styles.statBoxLabel}>Exercices</Text>
-        </View>
+    <View className="gap-4 px-5">
+      <View className="flex-row flex-wrap gap-3">
+        {tiles.map((tile) => (
+          <View
+            key={tile.label}
+            className="rounded-tile bg-surface p-4"
+            style={{ width: "47.5%", flexGrow: 1 }}
+          >
+            <Stat size="md" value={tile.value} label={tile.label} />
+          </View>
+        ))}
       </View>
+
+      {muscleData.length > 0 ? (
+        <View className="gap-3 rounded-card bg-surface p-5">
+          <Text className="text-base font-semibold text-ink">
+            {t.musclesWorkedTitle}
+          </Text>
+          <MuscleMap data={muscleData} unit={t.sets.toLowerCase()} />
+        </View>
+      ) : null}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  statsContent: {
-    paddingBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  statBox: {
-    flex: 1,
-    minWidth: "47%",
-    backgroundColor: WorkoutTheme.backgroundTertiary,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: WorkoutTheme.border,
-  },
-  statBoxValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: WorkoutTheme.accent.purple,
-    marginTop: 6,
-  },
-  statBoxLabel: {
-    fontSize: 11,
-    color: WorkoutTheme.text.secondary,
-    marginTop: 4,
-    textAlign: "center",
-  },
-});

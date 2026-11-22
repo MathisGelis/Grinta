@@ -1,90 +1,127 @@
 import React from "react";
-import { View, TextInput, TouchableOpacity } from "react-native";
-import { BlurView } from "expo-blur";
-import { Ionicons } from "@expo/vector-icons";
+import { View, TextInput } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+
+import { WorkoutTheme, withAlpha } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import Glass from "@/components/ui/Glass";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface GlassSearchBarProps {
-  items: string[];
-  onResults: (filtered: string[]) => void;
-  onAdd: () => void;
+  value: string;
+  onChangeText: (query: string) => void;
+  /** Sans `onAdd`, le bouton + n'est pas affiché. */
+  onAdd?: () => void;
   placeholder?: string;
-  filter?: () => void;
+  onFilter?: () => void;
+  /** Fond verre avec flou (au lieu d'un simple fond translucide). */
+  blur?: boolean;
 }
 
-export default function GlassSearchBar({
-  items,
-  onResults,
+const FILL = withAlpha(WorkoutTheme.backgroundSecondary, 0.92);
+
+function GlassSearchBar({
+  value,
+  onChangeText,
   onAdd,
-  placeholder = "Rechercher…",
-  filter,
+  placeholder,
+  onFilter,
+  blur = false,
 }: GlassSearchBarProps) {
-  const handleSearch = (query: string) => {
-    const filtered = items.filter((item) =>
-      item.toLowerCase().includes(query.toLowerCase()),
+  const { t } = useTranslation();
+
+  if (blur) {
+    return (
+      <View className="flex-row items-center gap-3">
+        {onFilter && (
+          <PressableScale
+            onPress={onFilter}
+            accessibilityRole="button"
+            halo={false}
+            style={{ width: 48, height: 48, borderRadius: 24 }}
+          >
+            <Glass
+              className="items-center justify-center"
+              style={{ width: 48, height: 48, borderRadius: 24 }}
+            >
+              <Ionicons name="options" size={20} color={WorkoutTheme.text.secondary} />
+            </Glass>
+          </PressableScale>
+        )}
+        <Glass className="flex-1 flex-row items-center gap-3 rounded-tile px-4" style={{ height: 48 }}>
+          <Ionicons name="search-outline" size={18} color={WorkoutTheme.overlay.glassText} />
+          <TextInput
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder ?? t.searchEllipsis}
+            placeholderTextColor={WorkoutTheme.overlay.glassText}
+            className="flex-1 py-0 text-[15px] text-ink" style={{ height: 48 }}
+            autoCorrect={false}
+          />
+        </Glass>
+        {onAdd && (
+          <PressableScale
+            onPress={onAdd}
+            accessibilityRole="button"
+            halo={false}
+            style={{ width: 48, height: 48, borderRadius: 24 }}
+          >
+            <Glass
+              className="items-center justify-center"
+              style={{ width: 48, height: 48, borderRadius: 24 }}
+            >
+              <Ionicons name="add" size={24} color={WorkoutTheme.text.secondary} />
+            </Glass>
+          </PressableScale>
+        )}
+      </View>
     );
-    onResults(filtered);
-  };
+  }
 
   return (
-    <View className="flex-row gap-3 items-center">
-      {filter && (
-        <BlurView
-          intensity={60}
-          tint="dark"
-          className="w-12 h-12 rounded-2xl overflow-hidden items-center justify-center"
-          style={{ borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}
+    <View className="flex-row items-center gap-3">
+      {onFilter && (
+        <PressableScale
+          onPress={onFilter}
+          accessibilityRole="button"
+          className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-glass-border"
+          style={{ backgroundColor: FILL }}
         >
-          <View
-            className="absolute inset-0"
-            style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
-          />
-          <TouchableOpacity onPress={filter}>
-            <Ionicons name="options" size={20} color="grey" />
-          </TouchableOpacity>
-        </BlurView>
+          <Ionicons name="options" size={20} color="grey" />
+        </PressableScale>
       )}
-      {/* Search Bar */}
-      <BlurView
-        intensity={60}
-        tint="dark"
-        className="flex-1 flex-row items-center gap-3 px-4 rounded-2xl overflow-hidden"
-        style={{ borderWidth: 1, borderColor: "rgba(255,255,255,0.18)" }}
+
+      <View
+        className="flex-1 flex-row items-center gap-3 overflow-hidden rounded-tile border border-glass-border px-4"
+        style={{ backgroundColor: FILL }}
       >
-        <View
-          className="absolute inset-0"
-          style={{ backgroundColor: "rgba(255,255,255,0.07)" }}
-        />
         <Ionicons
           name="search-outline"
           size={18}
-          color="rgba(255,255,255,0.5)"
+          color={WorkoutTheme.overlay.glassText}
         />
         <TextInput
-          placeholder={placeholder}
-          placeholderTextColor="rgba(255,255,255,0.4)"
-          className="flex-1 py-3 text-white text-[15px]"
-          onChangeText={handleSearch}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder ?? t.searchEllipsis}
+          placeholderTextColor={WorkoutTheme.overlay.glassText}
+          className="flex-1 py-3 text-[15px] text-ink"
+          autoCorrect={false}
         />
-      </BlurView>
+      </View>
 
-      {/* Add Button */}
-      <BlurView
-        intensity={60}
-        tint="dark"
-        className="w-12 h-12 rounded-2xl overflow-hidden items-center justify-center"
-        style={{ borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}
-      >
-        <View
-          className="absolute inset-0"
-          style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
-        />
-        <TouchableOpacity
-          className="w-full h-full items-center justify-center"
+      {onAdd && (
+      <PressableScale
           onPress={onAdd}
+          accessibilityRole="button"
+          className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-glass-border"
+          style={{ backgroundColor: FILL }}
         >
           <Ionicons name="add" size={24} color="grey" />
-        </TouchableOpacity>
-      </BlurView>
+        </PressableScale>
+      )}
     </View>
   );
 }
+
+export default React.memo(GlassSearchBar);

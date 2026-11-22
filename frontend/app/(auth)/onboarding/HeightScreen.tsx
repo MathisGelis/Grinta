@@ -1,23 +1,24 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { DrumRollPicker } from "@/components/DrumRollPicker";
+import WallMeterPicker from "@/components/ui/WallMeterPicker";
 
-const MIN_HEIGHT = 140;
-const MAX_HEIGHT = 220;
-const heights = Array.from(
-  { length: MAX_HEIGHT - MIN_HEIGHT + 1 },
-  (_, i) => MIN_HEIGHT + i
-);
+import OnboardingNav from "@/components/ui/OnboardingNav";
+import ScreenBackground from "@/components/ui/ScreenBackground";
+import { useTranslation } from "@/contexts/LanguageContext";
+// Bornes acceptées par le serveur : 50 à 250 cm.
+const MIN_HEIGHT = 50;
+const MAX_HEIGHT = 250;
 const DEFAULT_HEIGHT = 170;
 
 export default function HeightScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{
     gender: string;
     age: string;
     weight: string;
   }>();
-  const [heightIndex, setHeightIndex] = useState(DEFAULT_HEIGHT - MIN_HEIGHT);
+  const [height, setHeight] = useState(DEFAULT_HEIGHT);
 
   const handleNext = () => {
     router.push({
@@ -26,87 +27,46 @@ export default function HeightScreen() {
         gender: params.gender,
         age: params.age,
         weight: params.weight,
-        height: String(heights[heightIndex]),
+        height: String(height),
       },
     });
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>What&apos;s your height?</Text>
-      <Text style={styles.subtitle}>This helps us create your personalized plan</Text>
+    <View className="flex-1 pt-20 px-8">
+      <ScreenBackground />
+      <Text className="text-[28px] font-bold text-ink mb-3">{t.whatsYourHeight}</Text>
+      <Text className="text-[15px] text-ink-muted mb-10">{t.personalizedPlanHint}</Text>
 
-      <View style={styles.pickerWrapper}>
-        <DrumRollPicker
-          items={heights}
-          selectedIndex={heightIndex}
-          onSelect={setHeightIndex}
-          unit="cm"
+      <View className="flex-1 flex-row items-center justify-center gap-6">
+        {/* Largeur fixe + chiffres tabulaires: le changement de valeur ne décale rien. */}
+        <View className="flex-1 flex-row items-baseline justify-end gap-2">
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            className="text-[56px] font-bold text-ink"
+            style={{ fontVariant: ["tabular-nums"], width: 112, textAlign: "right" }}
+          >
+            {height}
+          </Text>
+          <Text className="text-xl text-ink-muted">cm</Text>
+        </View>
+        <WallMeterPicker
+          value={height}
+          onChange={setHeight}
+          min={MIN_HEIGHT}
+          max={MAX_HEIGHT}
+          width={170}
         />
       </View>
 
-      <View style={styles.nav}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-          <Text style={styles.nextText}>Next  ›</Text>
-        </TouchableOpacity>
-      </View>
+      <OnboardingNav
+        onNext={handleNext}
+        nextLabel={t.nextBtn}
+        onSkip={() => router.push({ pathname: "/(auth)/onboarding/GoalScreen", params: { gender: params.gender, age: params.age, weight: params.weight } })}
+        skipLabel={t.skipBtn}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-    paddingTop: 80,
-    paddingHorizontal: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#888",
-    marginBottom: 40,
-  },
-  pickerWrapper: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  nav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 48,
-    paddingTop: 16,
-  },
-  backBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backArrow: {
-    color: "#fff",
-    fontSize: 20,
-  },
-  nextBtn: {
-    backgroundColor: "#7B5CF0",
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 40,
-  },
-  nextText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});

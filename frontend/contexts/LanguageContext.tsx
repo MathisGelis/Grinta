@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Lang, Strings, translations } from "@/i18n/translations";
+import { setCurrentLang, setCurrentStrings } from "@/i18n/current";
+import { queryCache } from "@/services/queryCache";
 
 interface LanguageContextType {
   lang: Lang;
@@ -16,6 +18,13 @@ const LanguageContext = createContext<LanguageContextType>({
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
+
+  useEffect(() => {
+    setCurrentStrings(translations[lang]);
+    setCurrentLang(lang);
+    // Le serveur traduit les noms d'exercices selon la langue : les écrans en cache sont périmés.
+    queryCache.invalidate("");
+  }, [lang]);
 
   useEffect(() => {
     AsyncStorage.getItem("app_language").then((stored) => {

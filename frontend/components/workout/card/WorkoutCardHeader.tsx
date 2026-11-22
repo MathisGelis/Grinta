@@ -1,139 +1,61 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Pressable } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { WorkoutTheme } from "@/constants/Colors";
 
+import { format } from "@/i18n/translations";
+import { useTranslation } from "@/contexts/LanguageContext";
 interface WorkoutCardHeaderProps {
   title: string;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
+  onPress: () => void;
   totalExercises?: number;
-  stats: {
-    totalSets: number;
-    totalWeight: number;
-  };
-  hasWorkout?: boolean;
+  totalSets?: number;
 }
 
-export default function WorkoutCardHeader({
+function WorkoutCardHeader({
   title,
-  isExpanded,
-  onToggleExpand,
+  onPress,
   totalExercises,
-  stats,
-  hasWorkout,
+  totalSets,
 }: WorkoutCardHeaderProps) {
+  const { t } = useTranslation();
+  const exerciseCount = totalExercises ?? 0;
   return (
-    <View className="h-200 justify-between w-full">
-      {/* Dark overlay */}
-      <View style={styles.darkOverlay} />
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      className="w-full flex-row items-center gap-4 p-4 active:opacity-70"
+    >
+      <View className="h-12 w-12 items-center justify-center rounded-full bg-accent-tint">
+        <Ionicons name="barbell-outline" size={22} color={WorkoutTheme.accent.purple} />
+      </View>
 
-      {/* Header info */}
-      <View style={styles.headerContent}>
-        <Text style={styles.workoutName} numberOfLines={2}>
+      <View className="flex-1">
+        <Text numberOfLines={1} className="text-lg font-semibold text-ink">
           {title}
         </Text>
-      </View>
-
-      {/* Bottom bar with stats */}
-      <View style={styles.bottomBar}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statBadge}>
-            <Ionicons
-              name="repeat"
-              size={14}
-              color={WorkoutTheme.accent.purple}
-            />
-            <Text style={styles.statBadgeText}>{stats.totalSets} séries</Text>
-          </View>
-          {hasWorkout && (
-            <View style={styles.statBadge}>
-              <Ionicons
-                name="barbell"
-                size={14}
-                color={WorkoutTheme.status.success}
-              />
-              <Text style={styles.statBadgeText}>{stats.totalWeight} kg</Text>
-            </View>
+        <View className="mt-1 flex-row items-center gap-4">
+          {exerciseCount > 0 && (
+            <Text className="text-sm text-ink-muted">
+              {format(t.exercisesCount, { n: exerciseCount })}
+            </Text>
           )}
-          {totalExercises && totalExercises > 0 && (
-            <View style={styles.statBadge}>
-              <Ionicons
-                name="fitness"
-                size={14}
-                color={WorkoutTheme.status.info}
-              />
-              <Text style={styles.statBadgeText}>
-                {totalExercises} exercices
-              </Text>
-            </View>
+          {totalSets !== undefined && (
+            <Text className="text-sm text-ink-muted">
+              {format(t.setsCount, { n: totalSets })}
+            </Text>
           )}
         </View>
-
-        {/* Menu toggle button */}
-        <TouchableOpacity onPress={onToggleExpand} style={styles.menuButton}>
-          <Ionicons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color={WorkoutTheme.accent.purple}
-          />
-        </TouchableOpacity>
       </View>
-    </View>
+
+      <Ionicons
+        name="chevron-forward"
+        size={18}
+        color={WorkoutTheme.text.tertiary}
+      />
+    </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  imageBackground: {
-    height: 200,
-    justifyContent: "space-between",
-  },
-  darkOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-  },
-  headerContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-    flex: 1,
-    justifyContent: "flex-start",
-  },
-  workoutName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "white",
-    textShadowColor: "rgba(0, 0, 0, 0.7)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  bottomBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statBadgeText: {
-    color: WorkoutTheme.text.primary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  menuButton: {
-    padding: 8,
-  },
-});
+export default React.memo(WorkoutCardHeader);

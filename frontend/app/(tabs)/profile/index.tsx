@@ -1,152 +1,140 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { View, Text } from "react-native";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { TokenService } from "@/services/token.service";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { UserService, CurrentUser, UserProfile } from "@/services/user.service";
-import { StatsService } from "@/services/stats.service";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { WorkoutTheme } from "@/constants/Colors";
+import Screen from "@/components/ui/Screen";
+import { FEATURES } from "@/constants/features";
+import Avatar from "@/components/ui/Avatar";
+import Stat from "@/components/ui/Stat";
+import Glass from "@/components/ui/Glass";
+import IconButton from "@/components/ui/IconButton";
+import PressableScale from "@/components/ui/PressableScale";
+import MyPostsSection from "@/components/profile/MyPostsSection";
+import { usePostInteractions } from "@/components/explorePage/PostInteractions";
+import GlobalStatsSection from "@/components/profile/GlobalStatsSection";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import ErrorState from "@/components/ui/ErrorState";
+import { ProfileSkeleton } from "@/components/ui/skeletons";
 
-function formatJoinDate(dateStr: string): string {
+function formatJoinDate(dateStr: string, months: string[]): string {
   const d = new Date(dateStr);
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
   return `${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  const MENU_ITEMS = [
-    {
-      id: "edit",
-      label: t.editProfile,
-      icon: "person-outline" as const,
-      route: "/(tabs)/profile/edit-profile",
-    },
-    {
-      id: "privacy",
-      label: t.privacyPolicy,
-      icon: "shield-checkmark-outline" as const,
-      route: "/(tabs)/profile/privacy-policy",
-    },
-    {
-      id: "settings",
-      label: t.settings,
-      icon: "settings-outline" as const,
-      route: "/(tabs)/profile/settings",
-    },
-  ];
+  const [tab, setTab] = useState<"stats" | "posts">("stats");
+  const { data, loading, error, reload, mutate } = useCachedQuery("profile:me", async () => {
+    const id = await UserService.getMyId();
+    if (!id) throw new Error(t.loadingError);
+    const [user, profile] = await Promise.all([UserService.getMe(), UserService.getProfile(id)]);
+    return { user, profile };
+  });
+  const user: CurrentUser | null = data?.user ?? null;
+  const profile: UserProfile | null = data?.profile ?? null;
+  const { openLikes, openComments, modals } = usePostInteractions(
+    user?.id ?? "",
+    { userProfilePath: "/(tabs)/profile/user-profile" },
+  );
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const me = await UserService.getMe();
-      setUser(me);
-
-      const [profileData] = await Promise.all([
-        UserService.getProfile(me.id),
-        StatsService.getSummary("month").catch(() => null),
-      ]);
-      setProfile(profileData);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleSignOut = () => {
-    Alert.alert(t.signOutConfirmTitle, t.signOutConfirmMsg, [
-      { text: t.cancel, style: "cancel" },
-      {
-        text: t.signOut,
-        style: "destructive",
-        onPress: async () => {
-          await TokenService.remove();
-          router.replace("/(auth)/LoginScreen");
-        },
+  const handlePostDeleted = (postId: string) => {
+    mutate((current) => ({
+      ...current,
+      profile: {
+        ...current.profile,
+        posts: (current.profile.posts ?? []).filter((p) => p.id !== postId),
+        postsCount: Math.max(0, current.profile.postsCount - 1),
       },
-    ]);
+    }));
   };
 
-  const userName = user?.displayName ?? "Athlete";
-  const initials = userName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  const joinedDate = user?.createdAt ? formatJoinDate(user.createdAt) : "";
+  const goalLabels = {
+    gain_weight: t.goalGainWeight,
+    lose_weight: t.goalLoseWeight,
+    get_fitter: t.goalGetFitter,
+    flexibility: t.goalFlexibility,
+    learn_basics: t.goalLearnBasics,
+  };
+  const userName = user?.displayName ?? "";
+  const joinedDate = user?.createdAt
+    ? formatJoinDate(user.createdAt, t.months)
+    : "";
   const workoutsCount = profile?.workoutsCount ?? 0;
   const followersCount = profile?.followersCount ?? 0;
   const followingCount = profile?.followingCount ?? 0;
 
   return (
-    <View style={styles.container}>
-      {/* Pinned above the content so it can never ride up under the clock. */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.headerTitle}>{t.profile}</Text>
-      </View>
+    <>
+      <Screen>
+        <View className="flex-row items-center justify-between">
+          {FEATURES.premium ? (
+          <PressableScale
+            onPress={() => router.push("/(tabs)/profile/premium" as any)}
+            accessibilityRole="button"
+            accessibilityLabel={t.premiumTitle}
+            style={{ width: 44, height: 44, borderRadius: 22 }}
+          >
+            <Glass
+              className="items-center justify-center"
+              style={{ width: 44, height: 44, borderRadius: 22 }}
+            >
+              <MaterialCommunityIcons
+                name="crown"
+                size={22}
+                color={WorkoutTheme.status.warning}
+              />
+            </Glass>
+          </PressableScale>
+          ) : (
+            <View />
+          )}
 
-      {/* Fixed height, no scroll: spacing below is tuned so everything fits
-          between the header and the tab bar. */}
-      <View style={[styles.content, { paddingBottom: insets.bottom + 100 }]}>
+          <IconButton
+            icon="settings-outline"
+            variant="glass"
+            label={t.settings}
+            onPress={() => router.push("/(tabs)/profile/settings")}
+          />
+        </View>
+
         {loading ? (
-          <ActivityIndicator size="large" color="#7B5CF0" />
+          <ProfileSkeleton />
+        ) : error || !user ? (
+          <ErrorState
+            message={error ?? undefined}
+            onRetry={reload}
+          />
         ) : (
           <>
-            {/* Avatar */}
-            <View style={styles.avatarSection}>
-              <View style={styles.avatarRing}>
-                <View style={styles.avatarInner}>
-                  <Text style={styles.avatarInitials}>{initials}</Text>
-                </View>
+            <View className="-mt-4 items-center gap-1">
+              <View className="mb-2 rounded-full bg-accent p-[3px]">
+                <Avatar uri={user?.avatarUrl} name={userName} size={96} />
               </View>
-              <Text style={styles.userName}>{userName}</Text>
+              <Text className="text-xl font-semibold text-ink">{userName}</Text>
               {user?.uniqueName ? (
-                <Text style={styles.pseudoText}>@{user.uniqueName}</Text>
+                <Text className="text-sm font-medium text-accent-light">
+                  @{user.uniqueName}
+                </Text>
+              ) : null}
+              {user.goal ? (
+                <Text className="text-xs text-ink-soft">{goalLabels[user.goal]}</Text>
               ) : null}
               {joinedDate ? (
-                <Text style={styles.joinedText}>
+                <Text className="text-xs text-ink-muted">
                   {t.joined} {joinedDate}
                 </Text>
               ) : null}
             </View>
 
-            {/* Stats row */}
-            <View style={styles.statsRow}>
-              <TouchableOpacity
-                style={styles.statItem}
+            <View className="flex-row gap-3">
+              <PressableScale
+                className="flex-1 items-center rounded-tile bg-surface p-4"
+                accessibilityRole="button"
                 onPress={() =>
                   router.push({
                     pathname: "/(tabs)/profile/followers",
@@ -154,12 +142,15 @@ export default function ProfileScreen() {
                   } as any)
                 }
               >
-                <Text style={styles.statNum}>{followersCount}</Text>
-                <Text style={styles.statLabel}>Followers</Text>
-              </TouchableOpacity>
-              <View style={styles.statDivider} />
-              <TouchableOpacity
-                style={styles.statItem}
+                <Stat
+                  value={followersCount}
+                  label={t.followersLabel}
+                  className="items-center"
+                />
+              </PressableScale>
+              <PressableScale
+                className="flex-1 items-center rounded-tile bg-surface p-4"
+                accessibilityRole="button"
                 onPress={() =>
                   router.push({
                     pathname: "/(tabs)/profile/followers",
@@ -167,167 +158,57 @@ export default function ProfileScreen() {
                   } as any)
                 }
               >
-                <Text style={styles.statNum}>{followingCount}</Text>
-                <Text style={styles.statLabel}>Following</Text>
-              </TouchableOpacity>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNum}>{workoutsCount}</Text>
-                <Text style={styles.statLabel}>{t.workoutsLabel}</Text>
-              </View>
-            </View>
-
-            {/* PRO card */}
-            <TouchableOpacity style={styles.proCard}>
-              <View>
-                <Text style={styles.proTitle}>{t.upgradeToPro}</Text>
-                <Text style={styles.proSub}>{t.unlockAll}</Text>
-              </View>
-              <View style={styles.proBadge}>
-                <MaterialCommunityIcons
-                  name="crown"
-                  size={18}
-                  color="#F59E0B"
+                <Stat
+                  value={followingCount}
+                  label={t.followingLabel}
+                  className="items-center"
                 />
-              </View>
-            </TouchableOpacity>
-
-            {/* Menu */}
-            <View style={styles.menuSection}>
-              {MENU_ITEMS.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.menuItem}
-                  onPress={() => item.route && router.push(item.route as any)}
-                >
-                  <View style={styles.menuIconWrap}>
-                    <Ionicons name={item.icon} size={20} color="#7B5CF0" />
-                  </View>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
-                  <Ionicons name="chevron-forward" size={18} color="#555" />
-                </TouchableOpacity>
-              ))}
+              </PressableScale>
+              <PressableScale
+                className="flex-1 items-center rounded-tile bg-surface p-4"
+                accessibilityRole="button"
+                onPress={() => router.push("/(tabs)/profile/completed-workouts" as any)}
+              >
+                <Stat
+                  value={workoutsCount}
+                  label={t.workoutsLabel}
+                  className="items-center"
+                />
+              </PressableScale>
             </View>
 
-            {/* Sign Out */}
-            <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-              <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
-              <Text style={styles.signOutText}>{t.signOut}</Text>
-            </TouchableOpacity>
+            <SegmentedControl
+              id="profile-tab"
+              options={[
+                { value: "stats", label: t.profileTabStats },
+                { value: "posts", label: t.profileTabPosts },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
+
+            {tab === "stats" ? (
+              <GlobalStatsSection />
+            ) : (
+              <MyPostsSection
+                posts={profile?.posts ?? []}
+                authorName={userName}
+                authorId={user?.id}
+                onDeleted={handlePostDeleted}
+                onOpenPost={(post) =>
+                  router.push({
+                    pathname: "/(tabs)/profile/userPost",
+                    params: { postId: post.id },
+                  } as any)
+                }
+                onShowLikes={openLikes}
+                onShowComments={openComments}
+              />
+            )}
           </>
         )}
-      </View>
-    </View>
+      </Screen>
+      {modals}
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingHorizontal: 24, paddingBottom: 8 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
-
-  content: { flex: 1, justifyContent: "center" },
-  avatarSection: {
-    alignItems: "center",
-    paddingTop: 4,
-    paddingBottom: 16,
-  },
-  avatarRing: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    padding: 3,
-    backgroundColor: "#7B5CF0",
-    marginBottom: 10,
-  },
-  avatarInner: {
-    flex: 1,
-    borderRadius: 42,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitials: { color: "#fff", fontSize: 26, fontWeight: "700" },
-  userName: { color: "#fff", fontSize: 20, fontWeight: "700", marginBottom: 2 },
-  pseudoText: {
-    color: "#7B5CF0",
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  joinedText: { color: "#888", fontSize: 13 },
-
-  statsRow: {
-    flexDirection: "row",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    marginHorizontal: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  statItem: { flex: 1, alignItems: "center" },
-  statNum: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 4 },
-  statLabel: { color: "#888", fontSize: 12 },
-  statDivider: { width: 1, backgroundColor: "#2a2a2a" },
-
-  proCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    marginHorizontal: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#F59E0B44",
-  },
-  proTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 4 },
-  proSub: { color: "#888", fontSize: 13 },
-  proBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F59E0B22",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  menuSection: {
-    marginHorizontal: 16,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 12,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2a2a2a",
-    gap: 14,
-  },
-  menuIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#2a1f4a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuLabel: { flex: 1, color: "#fff", fontSize: 15, fontWeight: "500" },
-
-  signOutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    marginHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-  },
-  signOutText: { color: "#FF6B6B", fontSize: 15, fontWeight: "600" },
-});

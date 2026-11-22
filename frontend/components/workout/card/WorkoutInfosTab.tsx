@@ -1,31 +1,21 @@
+import { useUnits } from "@/contexts/UnitsContext";
 import React from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { WorkoutTheme } from "@/constants/Colors";
-import ExerciseSetupItem, { ExerciseSetupData } from "@/components/workout/exercises/ExerciseSetupItem";
-import WorkoutActionButtons from "@/components/workout/card/WorkoutActionButtons";
+import { router } from "expo-router";
+import { View, Text } from "react-native";
+import ExerciseSetupItem, {
+  ExerciseSetupData,
+} from "@/components/workout/exercises/ExerciseSetupItem";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
 
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { WorkoutTheme } from "@/constants/Colors";
+import PressableScale from "@/components/ui/PressableScale";
+import Card from "@/components/ui/Card";
+import { useTranslation } from "@/contexts/LanguageContext";
+import EmptyState from "@/components/ui/EmptyState";
 interface WorkoutInfosTabProps {
   isEditing: boolean;
-  hasChanges: boolean;
-  isSaving: boolean;
-  editedTitle: string;
-  editedDescription: string;
   editedExercises: ExerciseSetupData[];
-  onEdit: () => void;
-  onDelete: () => void;
-  onSave: () => void;
-  onCancel: () => void;
-  onTitleChange: (text: string) => void;
-  onDescriptionChange: (text: string) => void;
   onExerciseUpdate: (index: number, updated: ExerciseSetupData) => void;
   onRemoveExercise: (index: number) => void;
   onAddExercise?: (exercise: ExerciseSetupData) => void;
@@ -33,191 +23,112 @@ interface WorkoutInfosTabProps {
 
 export default function WorkoutInfosTab({
   isEditing,
-  hasChanges,
-  isSaving,
-  editedTitle,
-  editedDescription,
   editedExercises,
-  onEdit,
-  onDelete,
-  onSave,
-  onCancel,
-  onTitleChange,
-  onDescriptionChange,
   onExerciseUpdate,
   onRemoveExercise,
   onAddExercise,
 }: WorkoutInfosTabProps) {
+  const { t } = useTranslation();
+  const { formatWeight } = useUnits();
   const [showAddModal, setShowAddModal] = React.useState(false);
+
   return (
-    <ScrollView
-      style={styles.tabContent}
-      scrollEnabled={true}
-      nestedScrollEnabled={true}
-    >
-      <View style={styles.infosContent}>
-        {/* Action Buttons */}
-        <WorkoutActionButtons
-          isEditing={isEditing}
-          hasChanges={hasChanges}
-          isSaving={isSaving}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onSave={onSave}
-          onCancel={onCancel}
-        />
-
-        {/* Title Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Titre</Text>
+    <View className="gap-5 px-5">
+      <View className="gap-3">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-lg font-semibold text-ink">
+            {t.exercises} ({editedExercises.length})
+          </Text>
           {isEditing ? (
-            <TextInput
-              style={styles.textInput}
-              value={editedTitle}
-              onChangeText={onTitleChange}
-              placeholderTextColor={WorkoutTheme.text.tertiary}
-              editable
-            />
-          ) : (
-            <Text style={styles.fieldValue}>{editedTitle}</Text>
-          )}
+            <PressableScale
+              halo={false}
+              hitSlop={12}
+              onPress={() => setShowAddModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t.addExerciseTitle}
+            >
+              <Ionicons name="add" size={26} color={WorkoutTheme.text.primary} />
+            </PressableScale>
+          ) : null}
         </View>
 
-        {/* Description Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Description</Text>
-          {isEditing ? (
-            <TextInput
-              style={[styles.textInput, styles.multilineInput]}
-              value={editedDescription}
-              onChangeText={onDescriptionChange}
-              placeholderTextColor={WorkoutTheme.text.tertiary}
-              placeholder="Ajouter une description..."
-              multiline
-              numberOfLines={3}
-              editable
+        {editedExercises.length === 0 ? (
+          <EmptyState plain icon="barbell-outline" title={t.noExerciseShort} />
+        ) : isEditing ? (
+          editedExercises.map((exercise, index) => (
+            <ExerciseSetupItem
+              key={exercise.id}
+              exercise={exercise}
+              onUpdate={(updated) => onExerciseUpdate(index, updated)}
+              onRemove={() => onRemoveExercise(index)}
+              defaultRestSeconds={90}
             />
-          ) : (
-            <Text style={styles.fieldValue}>
-              {editedDescription || "Pas de description"}
-            </Text>
-          )}
-        </View>
-
-        {/* Exercises Section */}
-        <View style={styles.exercisesSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Exercices ({editedExercises.length})
-            </Text>
-            {isEditing && (
-              <TouchableOpacity
-                onPress={() => setShowAddModal(true)}
-                style={{
-                  backgroundColor: WorkoutTheme.accent.purple,
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginLeft: 8,
-                }}
+          ))
+        ) : (
+          editedExercises.map((exercise) => (
+            <Card key={exercise.id} className="gap-4">
+              <View
+                className={`flex-row justify-between gap-3 ${exercise.sets.length === 0 ? "items-center" : "items-start"}`}
               >
-                <Ionicons name="add" size={16} color="white" />
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 12,
-                    fontWeight: "600",
-                    textAlign: "center",
-                    marginLeft: 6,
-                  }}
-                >
-                  Ajouter
+                <Text className="flex-1 text-lg font-semibold text-ink">
+                  {exercise.name}
                 </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {editedExercises.length > 0 ? (
-            <View>
-              {isEditing
-                ? // Edit mode: use ExerciseSetupItem
-                  editedExercises.map((exercise, index) => (
-                    <ExerciseSetupItem
-                      key={exercise.id}
-                      exercise={exercise}
-                      onUpdate={(updated) => onExerciseUpdate(index, updated)}
-                      onRemove={() => onRemoveExercise(index)}
+                <View className="flex-row items-center gap-3">
+                  {exercise.plannedRestSeconds !== undefined ? (
+                    <View className="flex-row items-center gap-1">
+                      <Ionicons
+                        name="hourglass-outline"
+                        size={14}
+                        color={WorkoutTheme.text.primary}
+                      />
+                      <Text className="text-sm font-semibold text-ink-muted">
+                        {exercise.plannedRestSeconds}s
+                      </Text>
+                    </View>
+                  ) : null}
+                  <PressableScale
+                    halo={false}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel={exercise.name}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(tabs)/workouts/exercise-detail",
+                        params: { exerciseId: exercise.id },
+                      })
+                    }
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={22}
+                      color={WorkoutTheme.text.primary}
                     />
-                  ))
-                : // Display mode: show exercise with series details
-                  editedExercises.map((exercise, index) => (
+                  </PressableScale>
+                </View>
+              </View>
+              {exercise.sets.length > 0 ? (
+                <View className="gap-2">
+                  {exercise.sets.map((set, setIndex) => (
                     <View
-                      key={exercise.id}
-                      style={[
-                        styles.exerciseCard,
-                        index !== editedExercises.length - 1 &&
-                          styles.exerciseCardBorder,
-                      ]}
+                      key={setIndex}
+                      className="flex-row items-center justify-between rounded-full bg-raised px-5 py-3"
                     >
-                      <View style={styles.exerciseHeader}>
-                        <Ionicons
-                          name="barbell"
-                          size={18}
-                          color={WorkoutTheme.accent.purple}
-                        />
-                        <Text style={styles.exerciseCardName}>
-                          {exercise.name}
-                        </Text>
-                        <View style={styles.setBadge}>
-                          <Text style={styles.setBadgeText}>
-                            {exercise.sets.length} séries
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Sets Display */}
-                      <View style={styles.setsDisplay}>
-                        {exercise.sets.map((set, setIndex) => (
-                          <View key={setIndex} style={styles.setDisplayItem}>
-                            <Text style={styles.setNumber}>
-                              Série {setIndex + 1}
-                            </Text>
-                            <View style={styles.setDisplayDetails}>
-                              <View style={styles.setDetailBadge}>
-                                <Ionicons
-                                  name="fitness"
-                                  size={14}
-                                  color={WorkoutTheme.accent.purple}
-                                />
-                                <Text style={styles.setDetailText}>
-                                  {set.reps} reps
-                                </Text>
-                              </View>
-                              <View style={styles.setDetailBadge}>
-                                <Ionicons
-                                  name="barbell"
-                                  size={14}
-                                  color={WorkoutTheme.status.success}
-                                />
-                                <Text style={styles.setDetailText}>
-                                  {set.weight} kg
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-                        ))}
-                      </View>
+                      <Text className="text-sm text-ink-muted">
+                        {t.setLabel} {setIndex + 1}
+                      </Text>
+                      <Text className="text-base font-semibold text-ink">
+                        {formatWeight(set.weight)} × {set.reps}
+                      </Text>
                     </View>
                   ))}
-            </View>
-          ) : (
-            <Text style={styles.emptyText}>Aucun exercice</Text>
-          )}
-        </View>
+                </View>
+              ) : null}
+            </Card>
+          ))
+        )}
+
       </View>
+
       <ExerciseSearch
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
@@ -232,135 +143,6 @@ export default function WorkoutInfosTab({
         }}
         existingExerciseIds={editedExercises.map((ex) => ex.id)}
       />
-    </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  tabContent: {
-    maxHeight: 600,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  infosContent: {
-    paddingBottom: 12,
-  },
-  fieldContainer: {
-    marginBottom: 16,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: WorkoutTheme.text.secondary,
-    marginBottom: 6,
-    textTransform: "uppercase",
-  },
-  fieldValue: {
-    fontSize: 14,
-    color: WorkoutTheme.text.primary,
-    lineHeight: 20,
-  },
-  textInput: {
-    backgroundColor: WorkoutTheme.backgroundTertiary,
-    borderWidth: 1,
-    borderColor: WorkoutTheme.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: WorkoutTheme.text.primary,
-    fontSize: 14,
-  },
-  multilineInput: {
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  exercisesSection: {
-    marginTop: 8,
-  },
-  sectionHeader: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    paddingBottom: 10,
-    fontSize: 14,
-    fontWeight: "700",
-    color: WorkoutTheme.text.primary,
-  },
-  exerciseCard: {
-    backgroundColor: WorkoutTheme.backgroundTertiary,
-    borderWidth: 1,
-    borderColor: WorkoutTheme.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  exerciseCardBorder: {
-    marginBottom: 8,
-  },
-  exerciseHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  exerciseCardName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: WorkoutTheme.text.primary,
-    flex: 1,
-  },
-  setBadge: {
-    backgroundColor: WorkoutTheme.accent.purple,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  setBadgeText: {
-    color: WorkoutTheme.text.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  setsDisplay: {
-    gap: 10,
-  },
-  setDisplayItem: {
-    backgroundColor: WorkoutTheme.background,
-    borderRadius: 8,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: WorkoutTheme.border,
-  },
-  setNumber: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: WorkoutTheme.text.secondary,
-    marginBottom: 6,
-  },
-  setDisplayDetails: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  setDetailBadge: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: WorkoutTheme.backgroundSecondary,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 6,
-    gap: 6,
-  },
-  setDetailText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: WorkoutTheme.text.primary,
-  },
-  emptyText: {
-    color: WorkoutTheme.text.tertiary,
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 12,
-  },
-});

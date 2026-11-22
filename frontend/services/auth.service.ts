@@ -1,10 +1,11 @@
 import { api } from "./api";
+import { buildUniqueName } from "@/utils/validation";
 
-export interface LoginResponse {
+interface LoginResponse {
   access_token: string;
 }
 
-export interface RegisterResponse {
+interface RegisterResponse {
   access_token: string;
   id: string;
 }
@@ -14,20 +15,28 @@ export const AuthService = {
     return api.post<LoginResponse>("/auth/login", { identifier, password });
   },
 
-  async register(email: string, password: string, name: string): Promise<RegisterResponse> {
-    const base = name.trim()
-      ? name.trim().toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9_]/g, "")
-      : email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "");
-    const uniqueName = base + Math.floor(Math.random() * 1000);
+  forgotPassword(email: string) {
+    return api.post<void>("/auth/forgot-password", { email: email.trim() });
+  },
 
+  /** Confirme le changement d'e-mail depuis le lien reçu (`204`). Les anciennes sessions sont coupées. */
+  confirmEmail(token: string) {
+    return api.post<void>("/auth/confirm-email", { token });
+  },
+
+  resetPassword(token: string, password: string) {
+    return api.post<void>("/auth/reset-password", { token, password });
+  },
+
+  async register(email: string, password: string, name: string): Promise<RegisterResponse> {
     const user = await api.post<{ id: string }>("/users/register", {
-      email,
+      email: email.trim(),
       password,
-      displayName: name,
-      uniqueName,
+      displayName: name.trim(),
+      uniqueName: buildUniqueName(name, email),
     });
 
-    const auth = await api.post<LoginResponse>("/auth/login", { identifier: email, password });
+    const auth = await api.post<LoginResponse>("/auth/login", { identifier: email.trim(), password });
 
     return { access_token: auth.access_token, id: user.id };
   },

@@ -1,391 +1,229 @@
-import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { chromeScrollProps } from "@/components/ui/chromeScroll";
+import { View, Text, FlatList, RefreshControl } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import PressableScale from "@/components/ui/PressableScale";
 import { useFocusEffect, router } from "expo-router";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
 import WorkoutCard from "@/components/workout/card/WorkoutCard";
+import EmptyHint from "@/components/workout/EmptyHint";
+import WorkoutsListSheet from "@/components/workout/WorkoutsListSheet";
+import IconButton from "@/components/ui/IconButton";
 import {
-  getPlannedWorkouts,
+  plannedWorkoutsList,
   PlannedWorkout,
-  fullPlannedWorkout,
 } from "@/services/workouts.service";
-import { TokenService } from "@/services/token.service";
-import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
+import ProgrammeHero, { ProgrammeHeroEmpty } from "@/components/workout/programmes/ProgrammeHero";
+import SectionHeader from "@/components/ui/SectionHeader";
+import ProgrammeRail from "@/components/workout/programmes/ProgrammeRail";
+import {
+  getTodayProgramme,
+  programmsList,
+  SmallProgramm,
+} from "@/services/programms.service";
+import { localDate } from "@/utils/date";
+import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
+import { useBottomOffset } from "@/hooks/useKeyboardOffset";
+import { WorkoutListSkeleton } from "@/components/ui/skeletons";
+import { queryCache } from "@/services/queryCache";
+
+const ACTIVE_KEY = "workouts:active";
+const TAB_STALE_MS = 45_000;
+type ActiveInfo = { id?: string; day?: number; startedOn?: string };
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
-  const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
-  const [filteredWorkouts, setFilteredWorkouts] = useState<PlannedWorkout[]>(
-    [],
+  const bottomOffset = useBottomOffset();
+  const [workouts, setWorkouts] = useState<PlannedWorkout[]>(
+    () => plannedWorkoutsList.peek() ?? [],
   );
+  const [programmes, setProgrammes] = useState<SmallProgramm[]>(
+    () => programmsList.peek() ?? [],
+  );
+  const cachedActive = queryCache.peek<ActiveInfo>(ACTIVE_KEY);
+  const [activeProgrammeId, setActiveProgrammeId] = useState<string | undefined>(cachedActive?.id);
+  const [activeDay, setActiveDay] = useState<number | undefined>(cachedActive?.day);
+  const [startedOn, setStartedOn] = useState<string | undefined>(cachedActive?.startedOn);
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => plannedWorkoutsList.peek() === null);
   const [error, setError] = useState<string | null>(null);
-  const { bottomOffset } = useKeyboardOffset();
+  const [sheet, setSheet] = useState<"programmes" | "sessions" | null>(null);
+  const closeSheet = useCallback(() => setSheet(null), []);
 
   const loadWorkouts = useCallback(async () => {
     try {
       setError(null);
-      const token = await TokenService.get();
-      const plannedWorkouts = await getPlannedWorkouts(token || undefined);
-      setWorkouts(plannedWorkouts);
-      setFilteredWorkouts(plannedWorkouts);
+      const [list, programmeList, today] = await Promise.all([
+        plannedWorkoutsList.load(),
+        programmsList.load().catch(() => programmsList.peek() ?? []),
+        getTodayProgramme(localDate()).catch(() => null),
+      ]);
+      setWorkouts(list);
+      setProgrammes(programmeList);
+      setActiveProgrammeId(today?.programme.id);
+      setActiveDay(today?.dayNumber);
+      setStartedOn(today?.startedOn);
+      queryCache.set<ActiveInfo>(ACTIVE_KEY, {
+        id: today?.programme.id,
+        day: today?.dayNumber,
+        startedOn: today?.startedOn,
+      });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Erreur lors du chargement";
-      setError(message);
+      setError(err instanceof Error ? err.message : t.loadingError);
       console.error("Erreur:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
+      // Données récentes et aucune modification depuis : pas de nouvelle requête.
+      if (queryCache.isFresh(ACTIVE_KEY, TAB_STALE_MS) && plannedWorkoutsList.peek() !== null) return;
       loadWorkouts();
     }, [loadWorkouts]),
   );
+
+  useEffect(() => {
+    plannedWorkoutsList.set(workouts);
+  }, [workouts]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadWorkouts().finally(() => setRefreshing(false));
   }, [loadWorkouts]);
 
+  const activeProgramme = useMemo(
+    () => programmes.find((p) => p.id === activeProgrammeId),
+    [programmes, activeProgrammeId],
+  );
+
+  const rail = (
+    <View>
+      <View className="-mx-5">
+        <WorkoutsNavBar />
+      </View>
+      <View className="gap-6">
+      {activeProgramme && activeDay != null ? (
+        <ProgrammeHero programme={activeProgramme} dayNumber={activeDay} startedOn={startedOn} />
+      ) : (
+        <ProgrammeHeroEmpty onChoose={() => setSheet("programmes")} />
+      )}
+      <ProgrammeRail
+        programmes={programmes.filter((p) => p.id !== activeProgrammeId)}
+        onSearch={() => setSheet("programmes")}
+        empty={programmes.filter((p) => p.id !== activeProgrammeId).length === 0}
+        hasActive={!!activeProgramme}
+      />
+      <SectionHeader
+        title={t.sessions}
+        className="mb-4"
+        right={
+          <>
+            <IconButton
+              icon="add"
+              variant="accent"
+              size={40}
+              label={t.createWorkout}
+              onPress={() => router.push("/(tabs)/workouts/create/workout")}
+            />
+            <IconButton
+              icon="search-outline"
+              size={40}
+              label={t.searchLabel}
+              onPress={() => setSheet("sessions")}
+            />
+          </>
+        }
+      />
+      </View>
+    </View>
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: PlannedWorkout }) => <WorkoutCard workout={item} />,
+    [],
+  );
+
+  const refreshControl = (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      tintColor={WorkoutTheme.accent.purple}
+      colors={[WorkoutTheme.accent.purple]}
+    />
+  );
+
   return (
-    <View style={styles.container}>
-      {/* Quick stats */}
-      {!loading && !error && workouts.length > 0 && (
-        <View style={styles.quickStats}>
-          <View style={styles.quickStatItem}>
-            <View
-              style={[styles.quickStatIcon, { backgroundColor: "#2a1f4a" }]}
-            >
-              <Ionicons name="barbell" size={16} color="#7B5CF0" />
-            </View>
-            <Text style={styles.quickStatValue}>{workouts.length}</Text>
-            <Text style={styles.quickStatLabel}>{t.sessions}</Text>
-          </View>
-          <View style={styles.quickStatDivider} />
-          <View style={styles.quickStatItem}>
-            <View
-              style={[styles.quickStatIcon, { backgroundColor: "#1a2f1a" }]}
-            >
-              <Ionicons name="fitness" size={16} color="#34D399" />
-            </View>
-            <Text style={styles.quickStatValue}>
-              {workouts.reduce((sum, w) => sum + (w.totalExercises ?? 0), 0)}
-            </Text>
-            <Text style={styles.quickStatLabel}>{t.exercises}</Text>
+    <View className="flex-1">
+      {loading ? (
+        <View className="flex-1">
+          <WorkoutsNavBar />
+          <View className="flex-1 px-4 pt-4">
+            <WorkoutListSkeleton count={4} />
           </View>
         </View>
+      ) : error ? (
+        <View className="flex-1">
+          <WorkoutsNavBar />
+          <View className="flex-1 items-center justify-center px-8 py-[60px]">
+          <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-danger-tint">
+            <Ionicons name="alert-circle" size={48} color={WorkoutTheme.status.danger} />
+          </View>
+          <Text className="mb-2 text-xl font-bold text-ink">{t.oops}</Text>
+          <Text className="text-center text-sm leading-[20px] text-ink-muted">{error}</Text>
+          <PressableScale
+            onPress={() => {
+              setLoading(true);
+              loadWorkouts();
+            }}
+            className="mt-6 h-[52px] flex-row items-center gap-2 rounded-full bg-accent px-6"
+          >
+            <Ionicons name="refresh" size={20} color={WorkoutTheme.text.primary} />
+            <Text className="text-sm font-semibold text-ink">{t.retryBtn}</Text>
+          </PressableScale>
+          </View>
+        </View>
+      ) : (
+        <FlatList {...chromeScrollProps}
+          data={workouts}
+          ListHeaderComponent={rail}
+          ListEmptyComponent={
+            <EmptyHint
+              icon="barbell-outline"
+              message={t.emptyWorkoutsHint}
+              actionLabel={t.createWorkout}
+              onAction={() => router.push("/(tabs)/workouts/create/workout")}
+            />
+          }
+          keyExtractor={(w) => w.id}
+          renderItem={renderItem}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          refreshControl={refreshControl}
+          contentContainerClassName="px-5 pt-2"
+          contentContainerStyle={{ paddingTop: 0, paddingBottom: bottomOffset + 80 }}
+        />
       )}
 
-      {/* Workouts List */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: bottomOffset },
-        ]}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#7B5CF0"
-            colors={["#7B5CF0"]}
-          />
-        }
-      >
-        {loading ? (
-          <View style={styles.centerContainer}>
-            <View style={styles.loadingRing}>
-              <ActivityIndicator size="large" color="#7B5CF0" />
-            </View>
-            <Text style={styles.loadingText}>{t.loadingWorkouts}</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.centerContainer}>
-            <View style={styles.errorIconWrap}>
-              <Ionicons name="alert-circle" size={48} color="#EF4444" />
-            </View>
-            <Text style={styles.errorTitle}>{t.oops}</Text>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity
-              onPress={() => {
-                setLoading(true);
-                loadWorkouts();
-              }}
-              style={styles.retryButton}
-            >
-              <Ionicons name="refresh" size={20} color="#fff" />
-              <Text style={styles.retryButtonText}>{t.retryBtn}</Text>
-            </TouchableOpacity>
-          </View>
-        ) : workouts.length > 0 ? (
-          <View style={styles.workoutsContainer}>
-            {filteredWorkouts.map((workout) => (
-              <WorkoutCard
-                key={workout.id}
-                workout={workout}
-                onDelete={() => {
-                  setWorkouts((prev) =>
-                    prev.filter((w) => w.id !== workout.id),
-                  );
-                }}
-                onUpdate={(updatedWorkout: fullPlannedWorkout) => {
-                  const updatedPlanned: PlannedWorkout = {
-                    id: updatedWorkout.id,
-                    title: updatedWorkout.title,
-                    description: updatedWorkout.description,
-                    totalExercises: updatedWorkout.totalExercises,
-                  };
-                  setWorkouts((prev) =>
-                    prev.map((w) =>
-                      w.id === updatedWorkout.id ? updatedPlanned : w,
-                    ),
-                  );
-                }}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <Ionicons name="barbell-outline" size={48} color="#7B5CF0" />
-            </View>
-            <Text style={styles.emptyStateTitle}>{t.noWorkouts}</Text>
-            <Text style={styles.emptyStateText}>{t.createFirstWorkout}</Text>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/workouts/create/workout")}
-              style={styles.emptyStateButton}
-            >
-              <Ionicons name="add-circle" size={22} color="#fff" />
-              <Text style={styles.emptyStateButtonText}>{t.createWorkout}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      <WorkoutsListSheet
+        visible={sheet !== null}
+        kind={sheet ?? "sessions"}
+        onClose={closeSheet}
+        programmes={programmes}
+        workouts={workouts}
+        onProgrammeAdded={loadWorkouts}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 64,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#fff",
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#888",
-    marginTop: 2,
-  },
-  createButton: {
-    backgroundColor: "#7B5CF0",
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#7B5CF0",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-
-  quickStats: {
-    flexDirection: "row",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 16,
-  },
-  quickStatItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 6,
-  },
-  quickStatIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quickStatValue: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  quickStatLabel: {
-    color: "#888",
-    fontSize: 11,
-  },
-  quickStatDivider: {
-    width: 1,
-    backgroundColor: "#2a2a2a",
-    marginVertical: 4,
-  },
-
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-    paddingVertical: 60,
-  },
-  loadingRing: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: "#888",
-  },
-
-  errorIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#2a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: "#888",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#7B5CF0",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 14,
-    marginTop: 24,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-
-  workoutsContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    gap: 12,
-  },
-
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-    paddingVertical: 60,
-  },
-  emptyIconWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "#1a1a2e",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: "#888",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  emptyStateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#7B5CF0",
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 16,
-    marginTop: 28,
-    shadowColor: "#7B5CF0",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  emptyStateButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: WorkoutTheme.accent.purple,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    zIndex: 100,
-  },
-});
