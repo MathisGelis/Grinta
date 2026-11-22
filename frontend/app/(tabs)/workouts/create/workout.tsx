@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { chromeScrollProps } from "@/components/ui/chromeScroll";
-import { View, ScrollView, Alert } from "react-native";
+import { View, Text, ScrollView, Alert } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "@/contexts/LanguageContext";
 import ExerciseSearch from "@/components/workout/exercises/ExerciseSearch";
@@ -20,6 +20,7 @@ import WorkoutPickerSheet from "@/components/workout/editor/WorkoutPickerSheet";
 import { estimateWorkoutMinutes } from "@/utils/estimateDuration";
 import WorkoutStats from "@/components/workout/editor/WorkoutStats";
 
+import Button from "@/components/ui/Button";
 import IconButton from "@/components/ui/IconButton";
 import { TAB_BAR_SPACE } from "@/components/ui/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -188,6 +189,16 @@ export default function CreateWorkoutScreen() {
         contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: TAB_BAR_SPACE + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
+        <View className="gap-4">
+          <Text className="text-sm text-ink-muted">{t.workoutIntro}</Text>
+          <Button
+            label={t.imEntry}
+            variant="secondary"
+            icon="document-text-outline"
+            onPress={() => router.push("/(tabs)/workouts/import" as any)}
+          />
+        </View>
+
         <WorkoutFormFields
           name={name}
           onNameChange={setName}
@@ -217,10 +228,6 @@ export default function CreateWorkoutScreen() {
         workouts={workouts}
         onClose={() => setShowWorkoutPicker(false)}
         onSelect={handleImportWorkout}
-        onCreate={() => {
-          setShowWorkoutPicker(false);
-          router.push("/(tabs)/workouts/create/workout");
-        }}
       />
 
       <ExerciseSearch

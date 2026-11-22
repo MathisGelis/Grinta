@@ -19,7 +19,7 @@ import ScreenHeader, { useFloatingHeaderHeight } from "@/components/ui/ScreenHea
 import { FormField, TextField } from "@/components/ui/FormField";
 import { selectStyles } from "@/components/ui/selectStyles";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { FormSkeleton } from "@/components/ui/skeletons";
+import { ExerciseFormSkeleton } from "@/components/ui/skeletons";
 import { LIMITS } from "@/utils/validation";
 export default function CreateExerciseScreen() {
   const { t } = useTranslation();
@@ -128,7 +128,7 @@ export default function CreateExerciseScreen() {
       <ScreenBackground flat />
       <ScreenHeader floating title={isEditing ? t.editExercise : t.newExercise} />
       {!ready ? (
-        <View className="flex-1 px-5" style={{ paddingTop: headerHeight }}><FormSkeleton fields={6} /></View>
+        <View className="flex-1 px-5" style={{ paddingTop: headerHeight }}><ExerciseFormSkeleton /></View>
       ) : (
         <ScrollView {...chromeScrollProps}
           className="flex-1"

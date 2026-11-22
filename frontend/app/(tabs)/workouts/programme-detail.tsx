@@ -203,7 +203,7 @@ export default function ProgrammeDetailScreen() {
             <IconButton
               icon="checkmark"
               label={t.save}
-              variant="glass"
+              variant="accent"
               className={saving ? "opacity-50" : ""}
               onPress={saving ? undefined : handleSave}
             />

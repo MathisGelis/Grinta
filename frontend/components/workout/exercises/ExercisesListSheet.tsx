@@ -1,8 +1,8 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
+import Reanimated from "react-native-reanimated";
+import { useKeyboardSheet } from "@/hooks/useKeyboardOffset";
 import {
   FlatList,
-  Keyboard,
-  Platform,
   Text,
   View,
   useWindowDimensions,
@@ -14,10 +14,10 @@ import PressableScale from "@/components/ui/PressableScale";
 import GlassSearchBar from "@/components/GlassSearchBar";
 import BottomBlur from "@/components/ui/BottomBlur";
 import ExerciseRow from "@/components/workout/exercises/ExerciseRow";
-import ExerciseFilterSheet, {
+import ExerciseFilterPanel, {
   ExerciseFilters,
   NO_FILTERS,
-} from "@/components/workout/exercises/ExerciseFilterSheet";
+} from "@/components/workout/exercises/ExerciseFilterPanel";
 import { buildExerciseRows, indexExercises, type ExerciseListRow } from "@/components/workout/exercises/exerciseRows";
 import { WorkoutTheme } from "@/constants/Colors";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -42,23 +42,8 @@ function ExercisesListSheet({ visible, onClose, exercises, createdIds, onOpen, o
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<ExerciseFilters>(NO_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [keyboard, setKeyboard] = useState(0);
+  const { keyboard, sheetStyle } = useKeyboardSheet();
   const deferredQuery = useDeferredValue(query);
-
-  useEffect(() => {
-    const show = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => setKeyboard(e.endCoordinates.height),
-    );
-    const hide = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setKeyboard(0),
-    );
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (!visible) {
@@ -96,68 +81,71 @@ function ExercisesListSheet({ visible, onClose, exercises, createdIds, onOpen, o
       animationIn="slideInUp"
       style={{ justifyContent: "flex-end", margin: 0 }}
     >
-      <View
+      <Reanimated.View
         className="rounded-t-hero bg-background pt-3"
-        style={{ height: windowHeight * 0.85, marginBottom: keyboard }}
+        style={[{ height: windowHeight * 0.85 }, sheetStyle]}
       >
         <View className="mb-5 h-1.5 w-12 self-center rounded-full bg-raised" />
-        <View className="flex-row items-center justify-between px-5 pb-5">
-          <Text className="text-xl font-semibold text-ink">{t.exercises}</Text>
-          <PressableScale
-            onPress={onClose}
-            halo={false}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel={t.closeLabel}
-          >
-            <Ionicons name="close" size={26} color={WorkoutTheme.text.primary} />
-          </PressableScale>
-        </View>
-
-        <FlatList
-          data={rows}
-          keyExtractor={(row) => row.key}
-          className="flex-1"
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace, flexGrow: 1 }}
-          renderItem={({ item }) => (
-            <ExerciseRow
-              exercise={item.exercise}
-              canDelete={item.canDelete}
-              onOpen={open}
-              onDelete={onDelete}
-            />
-          )}
-          ListEmptyComponent={
-            <EmptyState plain icon="barbell-outline" title={t.noExerciseFound} />
-          }
-        />
-
-        <BottomBlur height={barSpace + 20} />
-        <View
-          className="absolute inset-x-0 bottom-0 px-5"
-          style={{ paddingBottom: bottomPad }}
-        >
-          <GlassSearchBar
-            blur
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t.searchExercise}
-            onFilter={() => setFiltersOpen(true)}
+        {filtersOpen ? (
+          <ExerciseFilterPanel
+            value={filters}
+            onBack={() => setFiltersOpen(false)}
+            onApply={(next) => {
+              setFilters(next);
+              setFiltersOpen(false);
+            }}
           />
-        </View>
+        ) : (
+          <>
+          <View className="flex-row items-center justify-between px-5 pb-5">
+            <Text className="text-xl font-semibold text-ink">{t.exercises}</Text>
+            <PressableScale
+              onPress={onClose}
+              halo={false}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={t.closeLabel}
+            >
+              <Ionicons name="close" size={26} color={WorkoutTheme.text.primary} />
+            </PressableScale>
+          </View>
 
-        <ExerciseFilterSheet
-          visible={filtersOpen}
-          value={filters}
-          onClose={() => setFiltersOpen(false)}
-          onApply={(next) => {
-            setFilters(next);
-            setFiltersOpen(false);
-          }}
-        />
-      </View>
+          <FlatList
+            data={rows}
+            keyExtractor={(row) => row.key}
+            className="flex-1"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: barSpace, flexGrow: 1 }}
+            renderItem={({ item }) => (
+              <ExerciseRow
+                exercise={item.exercise}
+                canDelete={item.canDelete}
+                onOpen={open}
+                onDelete={onDelete}
+              />
+            )}
+            ListEmptyComponent={
+              <EmptyState plain icon="barbell-outline" title={t.noExerciseFound} />
+            }
+          />
+
+          <BottomBlur height={barSpace + 20} />
+          <View
+            className="absolute inset-x-0 bottom-0 px-5"
+            style={{ paddingBottom: bottomPad }}
+          >
+            <GlassSearchBar
+              blur
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t.searchExercise}
+              onFilter={() => setFiltersOpen(true)}
+            />
+          </View>
+          </>
+        )}
+      </Reanimated.View>
     </Modal>
   );
 }

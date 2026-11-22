@@ -30,7 +30,7 @@ import {
 import { localDate } from "@/utils/date";
 import { WorkoutsNavBar } from "@/components/workout/WorkoutsNavBar";
 import { useBottomOffset } from "@/hooks/useKeyboardOffset";
-import { WorkoutListSkeleton } from "@/components/ui/skeletons";
+import { WorkoutsPageSkeleton } from "@/components/ui/skeletons";
 import { queryCache } from "@/services/queryCache";
 
 const ACTIVE_KEY = "workouts:active";
@@ -165,8 +165,8 @@ export default function WorkoutScreen() {
       {loading ? (
         <View className="flex-1">
           <WorkoutsNavBar />
-          <View className="flex-1 px-4 pt-4">
-            <WorkoutListSkeleton count={4} />
+          <View className="flex-1 px-5">
+            <WorkoutsPageSkeleton />
           </View>
         </View>
       ) : error ? (
